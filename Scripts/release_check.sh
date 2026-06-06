@@ -43,11 +43,111 @@ check_sips_property() {
   fi
 }
 
+check_icon_artwork() {
+  local path="$1"
+  if [[ ! -f "$path" ]]; then
+    return
+  fi
+
+  python3 - "$path" <<'PY'
+import struct
+import sys
+import zlib
+
+path = sys.argv[1]
+data = open(path, "rb").read()
+if not data.startswith(b"\x89PNG\r\n\x1a\n"):
+    raise SystemExit("FAIL: App icon artwork must be a PNG")
+
+pos = 8
+width = height = bit_depth = color_type = None
+compressed = bytearray()
+
+while pos < len(data):
+    length = struct.unpack(">I", data[pos:pos + 4])[0]
+    chunk_type = data[pos + 4:pos + 8]
+    payload = data[pos + 8:pos + 8 + length]
+    pos += 12 + length
+
+    if chunk_type == b"IHDR":
+        width, height, bit_depth, color_type, _, _, _ = struct.unpack(">IIBBBBB", payload)
+    elif chunk_type == b"IDAT":
+        compressed.extend(payload)
+    elif chunk_type == b"IEND":
+        break
+
+if bit_depth != 8 or color_type not in (2, 6):
+    raise SystemExit(f"FAIL: Unsupported app icon PNG format: bit_depth={bit_depth}, color_type={color_type}")
+
+channels = 4 if color_type == 6 else 3
+stride = width * channels
+raw = zlib.decompress(bytes(compressed))
+previous = [0] * stride
+offset = 0
+sample_step = max(1, width // 96)
+total_luminance = 0
+sample_count = 0
+interesting = 0
+colors = set()
+
+for y in range(height):
+    filter_type = raw[offset]
+    offset += 1
+    scanline = list(raw[offset:offset + stride])
+    offset += stride
+
+    for i, value in enumerate(scanline):
+        left = scanline[i - channels] if i >= channels else 0
+        up = previous[i]
+        up_left = previous[i - channels] if i >= channels else 0
+        if filter_type == 1:
+            scanline[i] = (value + left) & 0xFF
+        elif filter_type == 2:
+            scanline[i] = (value + up) & 0xFF
+        elif filter_type == 3:
+            scanline[i] = (value + ((left + up) // 2)) & 0xFF
+        elif filter_type == 4:
+            p = left + up - up_left
+            pa = abs(p - left)
+            pb = abs(p - up)
+            pc = abs(p - up_left)
+            predictor = left if pa <= pb and pa <= pc else up if pb <= pc else up_left
+            scanline[i] = (value + predictor) & 0xFF
+        elif filter_type != 0:
+            raise SystemExit(f"FAIL: Unsupported app icon PNG filter: {filter_type}")
+
+    if y % sample_step == 0:
+        for x in range(0, width, sample_step):
+            i = x * channels
+            red, green, blue = scanline[i], scanline[i + 1], scanline[i + 2]
+            luminance = 0.2126 * red + 0.7152 * green + 0.0722 * blue
+            total_luminance += luminance
+            sample_count += 1
+            if luminance > 24:
+                interesting += 1
+            colors.add((red // 24, green // 24, blue // 24))
+    previous = scanline
+
+average_luminance = total_luminance / max(1, sample_count)
+interesting_ratio = interesting / max(1, sample_count)
+if average_luminance < 30 or interesting_ratio < 0.35 or len(colors) < 8:
+    raise SystemExit(
+        "FAIL: App icon artwork looks blank or placeholder-like "
+        f"(average_luminance={average_luminance:.1f}, interesting_ratio={interesting_ratio:.2f}, color_buckets={len(colors)})"
+    )
+PY
+  local result=$?
+  if [[ "$result" -ne 0 ]]; then
+    failures=$((failures + 1))
+  fi
+}
+
 check_file "FreePrintStudio/Resources/Assets.xcassets/AppIcon.appiconset/AppIcon.png" "App Store icon PNG is required"
 check_contains "FreePrintStudio/Resources/Assets.xcassets/AppIcon.appiconset/Contents.json" "AppIcon.png" "AppIcon asset catalog must reference AppIcon.png"
 check_sips_property "FreePrintStudio/Resources/Assets.xcassets/AppIcon.appiconset/AppIcon.png" "pixelWidth" "1024" "App Store icon must be 1024px wide"
 check_sips_property "FreePrintStudio/Resources/Assets.xcassets/AppIcon.appiconset/AppIcon.png" "pixelHeight" "1024" "App Store icon must be 1024px tall"
 check_sips_property "FreePrintStudio/Resources/Assets.xcassets/AppIcon.appiconset/AppIcon.png" "hasAlpha" "no" "App Store icon must not contain an alpha channel"
+check_icon_artwork "FreePrintStudio/Resources/Assets.xcassets/AppIcon.appiconset/AppIcon.png"
 check_file "FreePrintStudio/Resources/PrivacyInfo.xcprivacy" "Privacy manifest is required for release documentation"
 check_contains "FreePrintStudio.xcodeproj/project.pbxproj" "PrivacyInfo.xcprivacy" "Privacy manifest must be included in the Xcode project"
 check_contains "FreePrintStudio/ContentView.swift" "About FreePrint Studio" "App must expose an About screen"

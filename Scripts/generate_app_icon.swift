@@ -1,11 +1,9 @@
 import AppKit
+import CoreGraphics
+import Foundation
 
-let size = NSSize(width: 1024, height: 1024)
 let outputDirectory = "FreePrintStudio/Resources/Assets.xcassets/AppIcon.appiconset"
-
-func color(_ red: CGFloat, _ green: CGFloat, _ blue: CGFloat) -> NSColor {
-    NSColor(calibratedRed: red / 255, green: green / 255, blue: blue / 255, alpha: 1)
-}
+let designSize: CGFloat = 1024
 
 let iconPixels: [(String, Int)] = [
     ("Icon-20@1x.png", 20),
@@ -24,114 +22,162 @@ let iconPixels: [(String, Int)] = [
     ("AppIcon.png", 1024),
 ]
 
-func drawIcon(into bitmap: NSBitmapImageRep) {
-    bitmap.size = size
-    NSGraphicsContext.saveGraphicsState()
-    NSGraphicsContext.current = NSGraphicsContext(bitmapImageRep: bitmap)
+func color(_ red: CGFloat, _ green: CGFloat, _ blue: CGFloat, _ alpha: CGFloat = 1) -> CGColor {
+    CGColor(red: red / 255, green: green / 255, blue: blue / 255, alpha: alpha)
+}
 
-    let bounds = NSRect(origin: .zero, size: size)
-    let background = NSGradient(colors: [
-        color(15, 118, 110),
-        color(20, 184, 166),
-        color(59, 130, 246),
-    ])!
-    background.draw(in: bounds, angle: 45)
+func roundedRect(_ rect: CGRect, radius: CGFloat) -> CGPath {
+    CGPath(roundedRect: rect, cornerWidth: radius, cornerHeight: radius, transform: nil)
+}
 
-    let shadow = NSShadow()
-    shadow.shadowColor = NSColor.black.withAlphaComponent(0.24)
-    shadow.shadowBlurRadius = 32
-    shadow.shadowOffset = NSSize(width: 0, height: -18)
+func strokeLine(_ context: CGContext, from start: CGPoint, to end: CGPoint, width: CGFloat, color strokeColor: CGColor) {
+    context.setStrokeColor(strokeColor)
+    context.setLineWidth(width)
+    context.setLineCap(.round)
+    context.move(to: start)
+    context.addLine(to: end)
+    context.strokePath()
+}
 
-    NSGraphicsContext.saveGraphicsState()
-    shadow.set()
-    let paperRect = NSRect(x: 268, y: 188, width: 488, height: 648)
-    let paperPath = NSBezierPath(roundedRect: paperRect, xRadius: 42, yRadius: 42)
-    color(252, 253, 255).setFill()
-    paperPath.fill()
-    NSGraphicsContext.restoreGraphicsState()
+func fillPath(_ context: CGContext, points: [CGPoint], color fillColor: CGColor) {
+    guard let first = points.first else { return }
+    context.beginPath()
+    context.move(to: first)
+    for point in points.dropFirst() {
+        context.addLine(to: point)
+    }
+    context.closePath()
+    context.setFillColor(fillColor)
+    context.fillPath()
+}
 
-    let foldPath = NSBezierPath()
-    foldPath.move(to: NSPoint(x: 650, y: 836))
-    foldPath.line(to: NSPoint(x: 756, y: 730))
-    foldPath.line(to: NSPoint(x: 650, y: 730))
-    foldPath.close()
-    color(216, 232, 255).setFill()
-    foldPath.fill()
+func makeIcon(pixels: Int) -> CGImage {
+    guard let context = CGContext(
+        data: nil,
+        width: pixels,
+        height: pixels,
+        bitsPerComponent: 8,
+        bytesPerRow: 0,
+        space: CGColorSpaceCreateDeviceRGB(),
+        bitmapInfo: CGImageAlphaInfo.noneSkipLast.rawValue
+    ) else {
+        fatalError("Unable to create bitmap context")
+    }
 
-    color(37, 99, 235).setStroke()
-    let rulerPath = NSBezierPath()
-    rulerPath.lineWidth = 26
-    rulerPath.lineCapStyle = .round
-    rulerPath.move(to: NSPoint(x: 230, y: 246))
-    rulerPath.line(to: NSPoint(x: 230, y: 778))
-    rulerPath.move(to: NSPoint(x: 230, y: 246))
-    rulerPath.line(to: NSPoint(x: 794, y: 246))
-    rulerPath.stroke()
+    let scale = CGFloat(pixels) / designSize
+    context.scaleBy(x: scale, y: scale)
+    context.setAllowsAntialiasing(true)
+    context.setShouldAntialias(true)
+    context.interpolationQuality = .high
+
+    let gradient = CGGradient(
+        colorsSpace: CGColorSpaceCreateDeviceRGB(),
+        colors: [
+            color(10, 93, 111),
+            color(20, 184, 166),
+            color(37, 99, 235),
+            color(124, 58, 237),
+        ] as CFArray,
+        locations: [0, 0.42, 0.78, 1]
+    )!
+    context.drawLinearGradient(
+        gradient,
+        start: CGPoint(x: 120, y: 980),
+        end: CGPoint(x: 920, y: 60),
+        options: [.drawsBeforeStartLocation, .drawsAfterEndLocation]
+    )
+
+    context.setFillColor(color(255, 255, 255, 0.16))
+    context.fillEllipse(in: CGRect(x: 644, y: 680, width: 300, height: 300))
+    context.setFillColor(color(255, 255, 255, 0.10))
+    context.fillEllipse(in: CGRect(x: 80, y: 82, width: 292, height: 292))
+
+    context.saveGState()
+    context.setShadow(offset: CGSize(width: 0, height: -24), blur: 40, color: color(0, 0, 0, 0.28))
+    let paperRect = CGRect(x: 278, y: 188, width: 468, height: 648)
+    context.addPath(roundedRect(paperRect, radius: 42))
+    context.setFillColor(color(252, 253, 255))
+    context.fillPath()
+    context.restoreGState()
+
+    fillPath(
+        context,
+        points: [
+            CGPoint(x: 638, y: 836),
+            CGPoint(x: 746, y: 728),
+            CGPoint(x: 638, y: 728),
+        ],
+        color: color(213, 228, 255)
+    )
+
+    let rulerColor = color(29, 78, 216)
+    strokeLine(context, from: CGPoint(x: 226, y: 248), to: CGPoint(x: 226, y: 774), width: 26, color: rulerColor)
+    strokeLine(context, from: CGPoint(x: 226, y: 248), to: CGPoint(x: 800, y: 248), width: 26, color: rulerColor)
 
     for index in 0...7 {
         let y = CGFloat(306 + index * 58)
-        let length: CGFloat = index % 2 == 0 ? 76 : 46
-        let tick = NSBezierPath()
-        tick.lineWidth = 16
-        tick.lineCapStyle = .round
-        tick.move(to: NSPoint(x: 230, y: y))
-        tick.line(to: NSPoint(x: 230 + length, y: y))
-        tick.stroke()
+        let length: CGFloat = index.isMultiple(of: 2) ? 78 : 48
+        strokeLine(
+            context,
+            from: CGPoint(x: 226, y: y),
+            to: CGPoint(x: 226 + length, y: y),
+            width: 16,
+            color: rulerColor
+        )
     }
 
     for index in 0...8 {
         let x = CGFloat(292 + index * 58)
-        let length: CGFloat = index % 2 == 0 ? 76 : 46
-        let tick = NSBezierPath()
-        tick.lineWidth = 16
-        tick.lineCapStyle = .round
-        tick.move(to: NSPoint(x: x, y: 246))
-        tick.line(to: NSPoint(x: x, y: 246 + length))
-        tick.stroke()
+        let length: CGFloat = index.isMultiple(of: 2) ? 78 : 48
+        strokeLine(
+            context,
+            from: CGPoint(x: x, y: 248),
+            to: CGPoint(x: x, y: 248 + length),
+            width: 16,
+            color: rulerColor
+        )
     }
 
-    let imageFrame = NSRect(x: 354, y: 344, width: 316, height: 316)
-    let framePath = NSBezierPath(roundedRect: imageFrame, xRadius: 34, yRadius: 34)
-    color(235, 248, 255).setFill()
-    framePath.fill()
-    color(14, 116, 144).setStroke()
-    framePath.lineWidth = 18
-    framePath.stroke()
+    let imageFrame = CGRect(x: 350, y: 340, width: 324, height: 324)
+    context.addPath(roundedRect(imageFrame, radius: 36))
+    context.setFillColor(color(236, 253, 245))
+    context.fillPath()
 
-    let sunPath = NSBezierPath(ovalIn: NSRect(x: 574, y: 570, width: 56, height: 56))
-    color(250, 204, 21).setFill()
-    sunPath.fill()
+    context.addPath(roundedRect(imageFrame, radius: 36))
+    context.setStrokeColor(color(14, 116, 144))
+    context.setLineWidth(18)
+    context.strokePath()
 
-    let mountainPath = NSBezierPath()
-    mountainPath.move(to: NSPoint(x: 382, y: 382))
-    mountainPath.line(to: NSPoint(x: 482, y: 512))
-    mountainPath.line(to: NSPoint(x: 548, y: 448))
-    mountainPath.line(to: NSPoint(x: 642, y: 560))
-    mountainPath.line(to: NSPoint(x: 642, y: 382))
-    mountainPath.close()
-    color(34, 197, 94).setFill()
-    mountainPath.fill()
+    context.setFillColor(color(250, 204, 21))
+    context.fillEllipse(in: CGRect(x: 574, y: 568, width: 58, height: 58))
 
-    NSGraphicsContext.restoreGraphicsState()
+    fillPath(
+        context,
+        points: [
+            CGPoint(x: 382, y: 382),
+            CGPoint(x: 480, y: 512),
+            CGPoint(x: 548, y: 448),
+            CGPoint(x: 642, y: 560),
+            CGPoint(x: 642, y: 382),
+        ],
+        color: color(34, 197, 94)
+    )
+
+    context.setStrokeColor(color(15, 23, 42, 0.28))
+    context.setLineWidth(10)
+    strokeLine(context, from: CGPoint(x: 386, y: 716), to: CGPoint(x: 568, y: 716), width: 18, color: color(15, 23, 42, 0.24))
+    strokeLine(context, from: CGPoint(x: 386, y: 676), to: CGPoint(x: 614, y: 676), width: 14, color: color(15, 23, 42, 0.18))
+
+    guard let image = context.makeImage() else {
+        fatalError("Unable to produce app icon image")
+    }
+    return image
 }
 
 for (filename, pixels) in iconPixels {
-    guard let bitmap = NSBitmapImageRep(
-        bitmapDataPlanes: nil,
-        pixelsWide: pixels,
-        pixelsHigh: pixels,
-        bitsPerSample: 8,
-        samplesPerPixel: 3,
-        hasAlpha: false,
-        isPlanar: false,
-        colorSpaceName: .deviceRGB,
-        bytesPerRow: 0,
-        bitsPerPixel: 0
-    ) else {
-        fatalError("Unable to create bitmap context for \(filename)")
-    }
-
-    drawIcon(into: bitmap)
+    let cgImage = makeIcon(pixels: pixels)
+    let bitmap = NSBitmapImageRep(cgImage: cgImage)
+    bitmap.size = NSSize(width: pixels, height: pixels)
 
     guard let pngData = bitmap.representation(using: .png, properties: [:]) else {
         fatalError("Unable to encode \(filename)")
