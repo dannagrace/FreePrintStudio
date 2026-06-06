@@ -1,0 +1,38 @@
+default_platform(:ios)
+
+platform :ios do
+  desc "Run the full local release verification gate"
+  lane :verify do
+    sh("Scripts/verify_release.sh")
+  end
+
+  desc "Audit App Store readiness and report blockers"
+  lane :readiness do
+    sh("Scripts/check_app_store_readiness.sh")
+  end
+
+  desc "Upload App Store Connect metadata and screenshots without submitting"
+  lane :metadata do
+    deliver(
+      app_identifier: "com.dannagrace.FreePrintStudio",
+      app_version: "1.0",
+      metadata_path: "./fastlane/metadata",
+      screenshots_path: "./fastlane/screenshots",
+      skip_binary_upload: true,
+      skip_app_version_update: true,
+      submit_for_review: false,
+      automatic_release: false,
+      force: true,
+      overwrite_screenshots: true
+    )
+  end
+
+  desc "Create a signed App Store archive after signing is configured"
+  lane :archive do
+    team_id = ENV["DEVELOPMENT_TEAM_ID"]
+    UI.user_error!("Set DEVELOPMENT_TEAM_ID before running ios archive") if team_id.to_s.empty?
+
+    allow_updates = ENV["ALLOW_PROVISIONING_UPDATES"] || "1"
+    sh("DEVELOPMENT_TEAM_ID=#{team_id} ALLOW_PROVISIONING_UPDATES=#{allow_updates} Scripts/archive_app_store.sh")
+  end
+end

@@ -62,7 +62,16 @@ The archive script runs the local release gate first, then creates `build/FreePr
 App Store Connect metadata is mirrored under `fastlane/`. After installing and authenticating Fastlane, upload metadata and screenshots without submitting for review:
 
 ```sh
-fastlane deliver --skip_binary_upload true --submit_for_review false
+bundle install
+bundle exec fastlane ios metadata
+```
+
+Fastlane can also call the local gates:
+
+```sh
+bundle exec fastlane ios verify
+bundle exec fastlane ios readiness
+bundle exec fastlane ios archive
 ```
 
 App Store Connect questionnaire drafts are stored in:

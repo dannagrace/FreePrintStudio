@@ -18,6 +18,7 @@
 - Archive with Xcode 26 or later using `DEVELOPMENT_TEAM_ID=... ALLOW_PROVISIONING_UPDATES=1 Scripts/archive_app_store.sh`.
 - Upload the signed archive or exported IPA to App Store Connect.
 - Add app name, subtitle, description, promotional text, keywords, categories, review notes, and support contact from `AppStore/metadata.md`; the reusable Fastlane copy lives under `fastlane/metadata/en-US`.
+- Optional automation: run `bundle install` and `bundle exec fastlane ios metadata` to upload App Store metadata and screenshots without submitting for review.
 - Upload screenshots from `fastlane/screenshots/en-US` or through App Store Connect.
 - Host a public privacy policy page and add its URL in App Store Connect.
 - Enter App Privacy details as no data collected, no tracking, no third-party analytics, and no advertising SDKs.

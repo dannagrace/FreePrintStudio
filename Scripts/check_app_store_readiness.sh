@@ -44,9 +44,17 @@ check_public_page() {
   local url="$2"
   local expected="$3"
   local body_path
+  local safe_label
   local status
-  body_path="$(mktemp "/tmp/freeprintstudio-${label}.XXXXXX.html")"
-  status="$(curl -L -s -o "$body_path" -w '%{http_code}' "$url" || true)"
+  local attempt
+  safe_label="$(tr -cd '[:alnum:]_-' <<<"$label")"
+  body_path="$(mktemp "/tmp/freeprintstudio-${safe_label}.XXXXXX")"
+  status="000"
+  for attempt in 1 2 3; do
+    status="$(curl -L -s --connect-timeout 10 --max-time 20 -o "$body_path" -w '%{http_code}' "$url" || true)"
+    [[ "$status" == "200" ]] && break
+    sleep 2
+  done
   if [[ "$status" != "200" ]]; then
     block "$label URL is not publicly reachable: $url returned $status"
   elif ! grep -q "$expected" "$body_path"; then
@@ -136,7 +144,13 @@ fi
 if command -v fastlane >/dev/null 2>&1; then
   ok "Fastlane available: $(fastlane --version | head -n 1)"
 else
-  warn "Fastlane is not installed; metadata can still be entered manually in App Store Connect"
+  warn "Fastlane is not installed globally; use bundle install before Fastlane metadata upload"
+fi
+
+if bundle check >/tmp/freeprintstudio-bundle-check.log 2>&1; then
+  ok "Bundler dependencies are installed"
+else
+  warn "Bundler dependencies are not installed; run bundle install"
 fi
 
 printf '\n== Signing ==\n'
