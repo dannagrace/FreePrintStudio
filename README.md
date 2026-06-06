@@ -40,6 +40,8 @@ Validate that the app renderer exports a PDF with the expected paper MediaBox:
 Scripts/validate_pdf_export.sh
 ```
 
+GitHub Actions runs `Scripts/verify_release.sh` on pushes to `main` and pull requests.
+
 Audit App Store readiness, including public URLs, screenshots, Xcode, and signing state:
 
 ```sh

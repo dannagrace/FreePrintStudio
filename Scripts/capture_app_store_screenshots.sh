@@ -12,8 +12,15 @@ else
     xcrun simctl list devices available \
       | grep -E "$IPHONE_DEVICE_PATTERN" \
       | sed -nE 's/.*\(([A-F0-9-]{36})\).*/\1/p' \
-      | head -n 1
+      | head -n 1 || true
   )"
+  if [[ -z "$DEVICE" ]]; then
+    DEVICE="$(
+      xcrun simctl list devices available \
+      | sed -nE '/iPhone/s/.*\(([A-F0-9-]{36})\).*/\1/p' \
+      | head -n 1
+    )"
+  fi
   if [[ -z "$DEVICE" ]]; then
     DEVICE="$(
       xcrun simctl list devices booted \
@@ -21,7 +28,10 @@ else
       | head -n 1
     )"
   fi
-  DEVICE="${DEVICE:-booted}"
+  if [[ -z "$DEVICE" ]]; then
+    printf 'No available iPhone simulator found. Set SIMULATOR_UDID to a booted simulator UDID.\n'
+    exit 1
+  fi
 fi
 BUNDLE_ID="com.dannagrace.FreePrintStudio"
 DERIVED_DATA_PATH="${DERIVED_DATA_PATH:-/tmp/freeprintstudio-derived-data}"
