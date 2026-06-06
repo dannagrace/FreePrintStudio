@@ -141,16 +141,27 @@ else
   block "xcodebuild is not available"
 fi
 
-if command -v fastlane >/dev/null 2>&1; then
-  ok "Fastlane available: $(fastlane --version | head -n 1)"
+ruby_version="$(ruby -e 'print RUBY_VERSION' 2>/dev/null || true)"
+if [[ -n "$ruby_version" ]]; then
+  ok "Ruby available for Bundler/Fastlane: $ruby_version"
 else
-  warn "Fastlane is not installed globally; use bundle install before Fastlane metadata upload"
+  block "Ruby is not available for Bundler/Fastlane"
 fi
 
 if bundle check >/tmp/freeprintstudio-bundle-check.log 2>&1; then
   ok "Bundler dependencies are installed"
+  if bundle exec fastlane --version >/tmp/freeprintstudio-fastlane-version.log 2>&1; then
+    ok "Fastlane available via Bundler: $(head -n 1 /tmp/freeprintstudio-fastlane-version.log)"
+  else
+    warn "Bundler dependencies are installed, but bundle exec fastlane did not run"
+  fi
 else
-  warn "Bundler dependencies are not installed; run bundle install"
+  warn "Bundler dependencies are not installed; run Scripts/install_release_dependencies.sh. Gemfile pins Fastlane below 2.232 for macOS system Ruby 2.6 compatibility."
+  if command -v fastlane >/dev/null 2>&1; then
+    ok "Fastlane available globally: $(fastlane --version | head -n 1)"
+  else
+    warn "Fastlane is not available yet; install Bundler dependencies before metadata upload"
+  fi
 fi
 
 printf '\n== Signing ==\n'
