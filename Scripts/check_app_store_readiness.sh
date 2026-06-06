@@ -155,13 +155,11 @@ if bundle check >/tmp/freeprintstudio-bundle-check.log 2>&1; then
   else
     warn "Bundler dependencies are installed, but bundle exec fastlane did not run"
   fi
+elif command -v fastlane >/dev/null 2>&1; then
+  ok "Fastlane available globally: $(fastlane --version | head -n 1)"
 else
   warn "Bundler dependencies are not installed; run Scripts/install_release_dependencies.sh. Gemfile pins Fastlane below 2.232 for macOS system Ruby 2.6 compatibility."
-  if command -v fastlane >/dev/null 2>&1; then
-    ok "Fastlane available globally: $(fastlane --version | head -n 1)"
-  else
-    warn "Fastlane is not available yet; install Bundler dependencies before metadata upload"
-  fi
+  warn "Fastlane is not available yet; install Bundler dependencies or run brew install fastlane before metadata upload"
 fi
 
 printf '\n== Signing ==\n'

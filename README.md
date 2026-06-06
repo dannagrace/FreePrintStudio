@@ -78,15 +78,15 @@ App Store Connect metadata is mirrored under `fastlane/`. After installing and a
 
 ```sh
 Scripts/install_release_dependencies.sh
-bundle exec fastlane ios metadata
+Scripts/run_fastlane.sh ios metadata
 ```
 
 Fastlane can also call the local gates:
 
 ```sh
-bundle exec fastlane ios verify
-bundle exec fastlane ios readiness
-bundle exec fastlane ios archive
+Scripts/run_fastlane.sh ios verify
+Scripts/run_fastlane.sh ios readiness
+Scripts/run_fastlane.sh ios archive
 ```
 
 App Store Connect questionnaire drafts are stored in:
