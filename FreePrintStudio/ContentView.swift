@@ -3,6 +3,7 @@ import SwiftUI
 import UIKit
 
 struct ContentView: View {
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @State private var selectedPaper: PaperPreset = .letter
     @State private var selectedOrientation: PaperOrientation = .portrait
     @State private var selectedUnit: MeasurementUnit = .inch
@@ -100,20 +101,16 @@ struct ContentView: View {
         let isTargetInvalid = validationMessage != nil
 
         return VStack(spacing: 14) {
-            HStack(spacing: 12) {
-                PhotosPicker(selection: $selectedPhoto, matching: .images) {
-                    Label(selectedImage == nil ? "Choose Image" : "Change Image", systemImage: "photo.on.rectangle")
-                        .frame(maxWidth: .infinity)
+            if usesAccessibilityLayout {
+                VStack(spacing: 12) {
+                    chooseImageButton
+                    centerButton(isDisabled: isTargetInvalid)
                 }
-                .buttonStyle(.borderedProminent)
-
-                Button {
-                    recenterImage()
-                } label: {
-                    Label("Center", systemImage: "scope")
+            } else {
+                HStack(spacing: 12) {
+                    chooseImageButton
+                    centerButton(isDisabled: isTargetInvalid)
                 }
-                .buttonStyle(.bordered)
-                .disabled(isTargetInvalid)
             }
 
             Picker("Paper", selection: $selectedPaper) {
@@ -144,9 +141,16 @@ struct ContentView: View {
             }
             .pickerStyle(.segmented)
 
-            HStack(spacing: 12) {
-                MeasurementField(title: "Width", text: $widthText, unit: selectedUnit.displayName, isInvalid: isTargetInvalid)
-                MeasurementField(title: "Height", text: $heightText, unit: selectedUnit.displayName, isInvalid: isTargetInvalid)
+            Group {
+                if usesAccessibilityLayout {
+                    VStack(spacing: 12) {
+                        measurementFields(isTargetInvalid: isTargetInvalid)
+                    }
+                } else {
+                    HStack(spacing: 12) {
+                        measurementFields(isTargetInvalid: isTargetInvalid)
+                    }
+                }
             }
             .onChange(of: widthText) { _, _ in recenterImage() }
             .onChange(of: heightText) { _, _ in recenterImage() }
@@ -165,28 +169,92 @@ struct ContentView: View {
         .padding(.horizontal, 16)
     }
 
-    private var actionBar: some View {
-        HStack(spacing: 12) {
-            Button {
-                exportPDF()
-            } label: {
-                Label("Export PDF", systemImage: "square.and.arrow.up")
-                    .frame(maxWidth: .infinity)
-            }
-            .buttonStyle(.bordered)
-            .disabled(!isTargetSizeValid)
+    private var chooseImageButton: some View {
+        PhotosPicker(selection: $selectedPhoto, matching: .images) {
+            commandLabel(
+                selectedImage == nil ? "Choose Image" : "Change Image",
+                systemImage: "photo.on.rectangle"
+            )
+        }
+        .buttonStyle(.borderedProminent)
+    }
 
-            Button {
-                printPDF()
-            } label: {
-                Label("Print", systemImage: "printer")
-                    .frame(maxWidth: .infinity)
+    private func centerButton(isDisabled: Bool) -> some View {
+        Button {
+            recenterImage()
+        } label: {
+            commandLabel("Center", systemImage: "scope")
+        }
+        .buttonStyle(.bordered)
+        .disabled(isDisabled)
+    }
+
+    @ViewBuilder
+    private func measurementFields(isTargetInvalid: Bool) -> some View {
+        MeasurementField(
+            title: "Width",
+            text: $widthText,
+            unit: selectedUnit.displayName,
+            isInvalid: isTargetInvalid,
+            usesAccessibilityLayout: usesAccessibilityLayout
+        )
+        MeasurementField(
+            title: "Height",
+            text: $heightText,
+            unit: selectedUnit.displayName,
+            isInvalid: isTargetInvalid,
+            usesAccessibilityLayout: usesAccessibilityLayout
+        )
+    }
+
+    private var actionBar: some View {
+        Group {
+            if usesAccessibilityLayout {
+                VStack(spacing: 12) {
+                    exportButton
+                    printButton
+                }
+            } else {
+                HStack(spacing: 12) {
+                    exportButton
+                    printButton
+                }
             }
-            .buttonStyle(.borderedProminent)
-            .disabled(!isTargetSizeValid)
         }
         .padding(16)
         .background(.regularMaterial)
+    }
+
+    private var exportButton: some View {
+        Button {
+            exportPDF()
+        } label: {
+            commandLabel("Export PDF", systemImage: "square.and.arrow.up")
+        }
+        .buttonStyle(.bordered)
+        .disabled(!isTargetSizeValid)
+    }
+
+    private var printButton: some View {
+        Button {
+            printPDF()
+        } label: {
+            commandLabel("Print", systemImage: "printer")
+        }
+        .buttonStyle(.borderedProminent)
+        .disabled(!isTargetSizeValid)
+    }
+
+    private func commandLabel(_ title: String, systemImage: String) -> some View {
+        Label {
+            Text(title)
+                .lineLimit(usesAccessibilityLayout ? 2 : 1)
+                .minimumScaleFactor(0.82)
+                .multilineTextAlignment(.center)
+        } icon: {
+            Image(systemName: systemImage)
+        }
+        .frame(maxWidth: .infinity, minHeight: usesAccessibilityLayout ? 64 : 0)
     }
 
     private func loadPhoto(_ item: PhotosPickerItem?) async {
@@ -212,6 +280,10 @@ struct ContentView: View {
 
     private var paperSize: PrintSize {
         selectedPaper.size(orientation: selectedOrientation)
+    }
+
+    private var usesAccessibilityLayout: Bool {
+        dynamicTypeSize.isAccessibilitySize
     }
 
     private var parsedWidth: Double? {
@@ -374,21 +446,25 @@ private struct MeasurementField: View {
     @Binding var text: String
     let unit: String
     let isInvalid: Bool
+    let usesAccessibilityLayout: Bool
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text(title)
                 .font(.caption)
                 .foregroundStyle(.secondary)
-            HStack {
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
                 TextField(title, text: $text)
                     .keyboardType(.decimalPad)
                     .textFieldStyle(.plain)
+                    .lineLimit(1)
                 Text(unit)
                     .foregroundStyle(.secondary)
+                    .lineLimit(1)
             }
             .padding(.horizontal, 10)
-            .frame(height: 40)
+            .padding(.vertical, usesAccessibilityLayout ? 12 : 0)
+            .frame(minHeight: usesAccessibilityLayout ? 64 : 40)
             .background(Color(.secondarySystemGroupedBackground))
             .overlay {
                 RoundedRectangle(cornerRadius: 8)
