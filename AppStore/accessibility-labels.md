@@ -25,6 +25,7 @@ Use this file when completing App Accessibility in App Store Connect.
 
 - Main controls use native SwiftUI buttons, pickers, text fields, links, and system sheets.
 - The About button has an explicit accessibility label.
+- The image picker, centering action, print preview, target width and height fields, Export PDF, and Print actions expose explicit VoiceOver labels, hints, or values.
 - The app supports system dark mode through native semantic colors.
 - The primary workflow does not require color alone to identify actions.
 - No custom animation is required to complete the workflow.

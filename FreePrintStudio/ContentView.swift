@@ -94,6 +94,10 @@ struct ContentView: View {
         .frame(width: previewSize.width, height: previewSize.height)
         .frame(maxWidth: .infinity)
         .padding(.horizontal, 16)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Print preview")
+        .accessibilityValue(previewAccessibilityValue)
+        .accessibilityHint("Drag the selected image on the paper preview to adjust placement.")
     }
 
     private var controls: some View {
@@ -177,6 +181,8 @@ struct ContentView: View {
             )
         }
         .buttonStyle(.borderedProminent)
+        .accessibilityLabel("Choose Image")
+        .accessibilityHint("Select or replace the image used for the print layout.")
     }
 
     private func centerButton(isDisabled: Bool) -> some View {
@@ -187,6 +193,8 @@ struct ContentView: View {
         }
         .buttonStyle(.bordered)
         .disabled(isDisabled)
+        .accessibilityLabel("Center")
+        .accessibilityHint("Center the target print area on the selected paper.")
     }
 
     @ViewBuilder
@@ -196,14 +204,16 @@ struct ContentView: View {
             text: $widthText,
             unit: selectedUnit.displayName,
             isInvalid: isTargetInvalid,
-            usesAccessibilityLayout: usesAccessibilityLayout
+            usesAccessibilityLayout: usesAccessibilityLayout,
+            accessibilityHint: "Enter the target print width in \(selectedUnit.displayName)."
         )
         MeasurementField(
             title: "Height",
             text: $heightText,
             unit: selectedUnit.displayName,
             isInvalid: isTargetInvalid,
-            usesAccessibilityLayout: usesAccessibilityLayout
+            usesAccessibilityLayout: usesAccessibilityLayout,
+            accessibilityHint: "Enter the target print height in \(selectedUnit.displayName)."
         )
     }
 
@@ -233,6 +243,8 @@ struct ContentView: View {
         }
         .buttonStyle(.bordered)
         .disabled(!isTargetSizeValid)
+        .accessibilityLabel("Export PDF")
+        .accessibilityHint("Create a PDF with the selected paper, size, and image placement.")
     }
 
     private var printButton: some View {
@@ -243,6 +255,8 @@ struct ContentView: View {
         }
         .buttonStyle(.borderedProminent)
         .disabled(!isTargetSizeValid)
+        .accessibilityLabel("Print")
+        .accessibilityHint("Open the system print sheet for the prepared PDF.")
     }
 
     private func commandLabel(_ title: String, systemImage: String) -> some View {
@@ -284,6 +298,15 @@ struct ContentView: View {
 
     private var usesAccessibilityLayout: Bool {
         dynamicTypeSize.isAccessibilitySize
+    }
+
+    private var previewAccessibilityValue: String {
+        let paperDescription = "\(selectedPaper.displayName) \(selectedOrientation.displayName.lowercased())"
+        if selectedImage == nil {
+            return "No image selected. \(paperDescription) paper."
+        }
+
+        return "Image selected. Target size \(widthText) \(selectedUnit.displayName) by \(heightText) \(selectedUnit.displayName) on \(paperDescription) paper."
     }
 
     private var parsedWidth: Double? {
@@ -447,6 +470,7 @@ private struct MeasurementField: View {
     let unit: String
     let isInvalid: Bool
     let usesAccessibilityLayout: Bool
+    let accessibilityHint: String
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
@@ -458,9 +482,13 @@ private struct MeasurementField: View {
                     .keyboardType(.decimalPad)
                     .textFieldStyle(.plain)
                     .lineLimit(1)
+                    .accessibilityLabel(title)
+                    .accessibilityValue("\(text) \(unit)")
+                    .accessibilityHint(accessibilityHint)
                 Text(unit)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
+                    .accessibilityHidden(true)
             }
             .padding(.horizontal, 10)
             .padding(.vertical, usesAccessibilityLayout ? 12 : 0)
