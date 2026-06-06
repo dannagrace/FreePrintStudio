@@ -110,57 +110,110 @@ check_screenshot_dimensions() {
   fi
 }
 
-printf '== Static release checks ==\n'
-Scripts/release_check.sh
+run_static_checks() {
+  printf '== Static release checks ==\n'
+  Scripts/release_check.sh
+}
 
-printf '\n== Core checks ==\n'
-swift run FreePrintStudioCoreChecks
+run_core_checks() {
+  printf '== Core checks ==\n'
+  swift run FreePrintStudioCoreChecks
+}
 
-printf '\n== Property list lint ==\n'
-plutil -lint \
-  FreePrintStudio/Resources/Info.plist \
-  FreePrintStudio/Resources/PrivacyInfo.xcprivacy
+run_plist_lint() {
+  printf '== Property list lint ==\n'
+  plutil -lint \
+    FreePrintStudio/Resources/Info.plist \
+    FreePrintStudio/Resources/PrivacyInfo.xcprivacy
+}
 
-printf '\n== PDF export validation ==\n'
-Scripts/validate_pdf_export.sh
+run_pdf_export_validation() {
+  printf '== PDF export validation ==\n'
+  Scripts/validate_pdf_export.sh
+}
 
-printf '\n== Release iOS build ==\n'
-xcodebuild \
-  -project FreePrintStudio.xcodeproj \
-  -scheme FreePrintStudio \
-  -configuration Release \
-  -destination 'generic/platform=iOS' \
-  CODE_SIGNING_ALLOWED=NO \
-  build >"$LOG_PATH" 2>&1
-tail -n 20 "$LOG_PATH"
+run_release_build() {
+  printf '== Release iOS build ==\n'
+  xcodebuild \
+    -project FreePrintStudio.xcodeproj \
+    -scheme FreePrintStudio \
+    -configuration Release \
+    -destination 'generic/platform=iOS' \
+    CODE_SIGNING_ALLOWED=NO \
+    build >"$LOG_PATH" 2>&1
+  tail -n 20 "$LOG_PATH"
 
-unexpected_messages="$(
-  grep -nE 'warning:|error:' "$LOG_PATH" \
-    | grep -v 'warning: Metadata extraction skipped. No AppIntents.framework dependency found.' \
-    || true
-)"
-if [[ -n "$unexpected_messages" ]]; then
-  printf '%s\n' "$unexpected_messages"
-  printf '\nRelease build emitted warnings or errors. See %s\n' "$LOG_PATH"
-  exit 1
-fi
-
-printf '\n== Screenshot asset ==\n'
-for screenshot_path in "${SCREENSHOT_PATHS[@]}"; do
-  if [[ ! -s "$screenshot_path" ]]; then
-    printf 'Missing screenshot: %s\n' "$screenshot_path"
+  unexpected_messages="$(
+    grep -nE 'warning:|error:' "$LOG_PATH" \
+      | grep -v 'warning: Metadata extraction skipped. No AppIntents.framework dependency found.' \
+      || true
+  )"
+  if [[ -n "$unexpected_messages" ]]; then
+    printf '%s\n' "$unexpected_messages"
+    printf '\nRelease build emitted warnings or errors. See %s\n' "$LOG_PATH"
     exit 1
   fi
-  sips -g pixelWidth -g pixelHeight -g hasAlpha "$screenshot_path"
-  case "$screenshot_path" in
-    *iphone-main.jpg)
-      check_screenshot_dimensions "$screenshot_path" "1260 x 2736,1290 x 2796,1320 x 2868"
-      ;;
-    *ipad-main.jpg)
-      check_screenshot_dimensions "$screenshot_path" "2048 x 2732,2064 x 2752"
-      ;;
-  esac
-  check_screenshot_not_blank "$screenshot_path"
-done
+}
 
-printf '\nRelease verification passed.\n'
+run_screenshot_checks() {
+  printf '== Screenshot asset ==\n'
+  for screenshot_path in "${SCREENSHOT_PATHS[@]}"; do
+    if [[ ! -s "$screenshot_path" ]]; then
+      printf 'Missing screenshot: %s\n' "$screenshot_path"
+      exit 1
+    fi
+    sips -g pixelWidth -g pixelHeight -g hasAlpha "$screenshot_path"
+    case "$screenshot_path" in
+      *iphone-main.jpg)
+        check_screenshot_dimensions "$screenshot_path" "1260 x 2736,1290 x 2796,1320 x 2868"
+        ;;
+      *ipad-main.jpg)
+        check_screenshot_dimensions "$screenshot_path" "2048 x 2732,2064 x 2752"
+        ;;
+    esac
+    check_screenshot_not_blank "$screenshot_path"
+  done
+}
+
+run_all() {
+  run_static_checks
+  printf '\n'
+  run_core_checks
+  printf '\n'
+  run_plist_lint
+  printf '\n'
+  run_pdf_export_validation
+  printf '\n'
+  run_release_build
+  printf '\n'
+  run_screenshot_checks
+  printf '\nRelease verification passed.\n'
+}
+
+case "${1:-all}" in
+  all)
+    run_all
+    ;;
+  static)
+    run_static_checks
+    ;;
+  core)
+    run_core_checks
+    ;;
+  plist)
+    run_plist_lint
+    ;;
+  pdf)
+    run_pdf_export_validation
+    ;;
+  build)
+    run_release_build
+    ;;
+  screenshots)
+    run_screenshot_checks
+    ;;
+  *)
+    printf 'Usage: %s [all|static|core|plist|pdf|build|screenshots]\n' "$0"
+    exit 1
+    ;;
+esac

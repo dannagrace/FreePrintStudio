@@ -19,5 +19,22 @@ jobs:
       - name: Show Xcode version
         run: xcodebuild -version
 
-      - name: Run release gate
-        run: Scripts/verify_release.sh
+      - name: Static release checks
+        run: Scripts/verify_release.sh static
+
+      - name: Core checks
+        run: Scripts/verify_release.sh core
+
+      - name: Property list lint
+        run: Scripts/verify_release.sh plist
+
+      - name: PDF export validation
+        timeout-minutes: 10
+        run: Scripts/verify_release.sh pdf
+
+      - name: Release iOS build
+        timeout-minutes: 10
+        run: Scripts/verify_release.sh build
+
+      - name: Screenshot asset checks
+        run: Scripts/verify_release.sh screenshots
