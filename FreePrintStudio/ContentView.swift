@@ -460,6 +460,37 @@ struct ContentView: View {
 
         selectedImage = image
         recenterImage()
+        exportDebugPDFIfRequested(arguments: arguments, image: image)
+    }
+
+    private func exportDebugPDFIfRequested(arguments: [String], image: UIImage) {
+        guard let exportPathIndex = arguments.firstIndex(of: "-FreePrintStudioAutoExportPDFPath"),
+              arguments.indices.contains(exportPathIndex + 1) else {
+            return
+        }
+
+        let exportURL = URL(fileURLWithPath: arguments[exportPathIndex + 1])
+        let exportPaperSize = selectedPaper.size(orientation: selectedOrientation)
+        let exportWidth = Double(widthText) ?? 4
+        let exportHeight = Double(heightText) ?? 6
+        let exportTargetSize = PrintSizing.targetSize(width: exportWidth, height: exportHeight, unit: selectedUnit)
+        let exportPlacement = PrintSizing.centeredPlacement(targetSize: exportTargetSize, on: exportPaperSize)
+
+        do {
+            try FileManager.default.createDirectory(
+                at: exportURL.deletingLastPathComponent(),
+                withIntermediateDirectories: true
+            )
+            try PDFRenderer.render(
+                image: image,
+                paperSize: exportPaperSize,
+                placement: exportPlacement,
+                fitMode: selectedFitMode,
+                to: exportURL
+            )
+        } catch {
+            alertMessage = "Debug PDF export failed: \(error.localizedDescription)"
+        }
     }
     #endif
 }

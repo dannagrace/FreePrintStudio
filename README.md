@@ -34,6 +34,12 @@ Run the local release gate before archiving:
 Scripts/verify_release.sh
 ```
 
+Validate that the app renderer exports a PDF with the expected paper MediaBox:
+
+```sh
+Scripts/validate_pdf_export.sh
+```
+
 Audit App Store readiness, including public URLs, screenshots, Xcode, and signing state:
 
 ```sh

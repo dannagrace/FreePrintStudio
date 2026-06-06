@@ -3,6 +3,7 @@
 ## Local gates
 
 - Run `Scripts/verify_release.sh`.
+- Run `Scripts/validate_pdf_export.sh` after print/PDF rendering changes.
 - Run `Scripts/check_app_store_readiness.sh`; fix every `BLOCKED` item before archiving.
 - Run `Scripts/capture_app_store_screenshots.sh` after UI changes and inspect `AppStore/Screenshots/iphone-main.jpg`.
 - Run the iPad screenshot command from `README.md` and inspect `AppStore/Screenshots/ipad-main.jpg`.
