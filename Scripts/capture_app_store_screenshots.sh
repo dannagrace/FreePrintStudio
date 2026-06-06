@@ -30,6 +30,8 @@ SAMPLE_IMAGE="$ROOT_DIR/AppStore/Assets/sample-print-image.png"
 SCREENSHOT_PATH="${SCREENSHOT_PATH:-$ROOT_DIR/AppStore/Screenshots/iphone-main.jpg}"
 TEST_PAPER="${FREEPRINTSTUDIO_PAPER:-fourBySix}"
 TEST_FIT_MODE="${FREEPRINTSTUDIO_FIT_MODE:-fit}"
+TEST_TARGET_WIDTH="${FREEPRINTSTUDIO_TARGET_WIDTH:-}"
+TEST_TARGET_HEIGHT="${FREEPRINTSTUDIO_TARGET_HEIGHT:-}"
 SCREENSHOT_DELAY="${SCREENSHOT_DELAY:-5}"
 
 Scripts/generate_store_sample_image.py
@@ -58,10 +60,21 @@ mkdir -p "$TEST_DIR"
 cp "$SAMPLE_IMAGE" "$TEST_DIR/sample-print-image.png"
 
 xcrun simctl terminate "$DEVICE" "$BUNDLE_ID" >/dev/null 2>&1 || true
-xcrun simctl launch "$DEVICE" "$BUNDLE_ID" \
+launch_args=(
   -FreePrintStudioTestImagePath "$TEST_DIR/sample-print-image.png" \
   -FreePrintStudioPaper "$TEST_PAPER" \
-  -FreePrintStudioFitMode "$TEST_FIT_MODE" >/tmp/freeprintstudio-screenshot-launch.log
+  -FreePrintStudioFitMode "$TEST_FIT_MODE"
+)
+
+if [[ -n "$TEST_TARGET_WIDTH" ]]; then
+  launch_args+=(-FreePrintStudioTargetWidth "$TEST_TARGET_WIDTH")
+fi
+
+if [[ -n "$TEST_TARGET_HEIGHT" ]]; then
+  launch_args+=(-FreePrintStudioTargetHeight "$TEST_TARGET_HEIGHT")
+fi
+
+xcrun simctl launch "$DEVICE" "$BUNDLE_ID" "${launch_args[@]}" >/tmp/freeprintstudio-screenshot-launch.log
 
 sleep "$SCREENSHOT_DELAY"
 xcrun simctl io "$DEVICE" screenshot --type=jpeg "$SCREENSHOT_PATH" >/tmp/freeprintstudio-screenshot-capture.log

@@ -96,7 +96,10 @@ struct ContentView: View {
     }
 
     private var controls: some View {
-        VStack(spacing: 14) {
+        let validationMessage = targetValidationMessage
+        let isTargetInvalid = validationMessage != nil
+
+        return VStack(spacing: 14) {
             HStack(spacing: 12) {
                 PhotosPicker(selection: $selectedPhoto, matching: .images) {
                     Label(selectedImage == nil ? "Choose Image" : "Change Image", systemImage: "photo.on.rectangle")
@@ -110,6 +113,7 @@ struct ContentView: View {
                     Label("Center", systemImage: "scope")
                 }
                 .buttonStyle(.bordered)
+                .disabled(isTargetInvalid)
             }
 
             Picker("Paper", selection: $selectedPaper) {
@@ -141,11 +145,19 @@ struct ContentView: View {
             .pickerStyle(.segmented)
 
             HStack(spacing: 12) {
-                MeasurementField(title: "Width", text: $widthText, unit: selectedUnit.displayName)
-                MeasurementField(title: "Height", text: $heightText, unit: selectedUnit.displayName)
+                MeasurementField(title: "Width", text: $widthText, unit: selectedUnit.displayName, isInvalid: isTargetInvalid)
+                MeasurementField(title: "Height", text: $heightText, unit: selectedUnit.displayName, isInvalid: isTargetInvalid)
             }
             .onChange(of: widthText) { _, _ in recenterImage() }
             .onChange(of: heightText) { _, _ in recenterImage() }
+
+            if let validationMessage {
+                Text(validationMessage)
+                    .font(.footnote)
+                    .foregroundStyle(.red)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .accessibilityIdentifier("target-size-error")
+            }
         }
         .padding(16)
         .background(.background)
@@ -162,6 +174,7 @@ struct ContentView: View {
                     .frame(maxWidth: .infinity)
             }
             .buttonStyle(.bordered)
+            .disabled(!isTargetSizeValid)
 
             Button {
                 printPDF()
@@ -170,6 +183,7 @@ struct ContentView: View {
                     .frame(maxWidth: .infinity)
             }
             .buttonStyle(.borderedProminent)
+            .disabled(!isTargetSizeValid)
         }
         .padding(16)
         .background(.regularMaterial)
@@ -200,14 +214,51 @@ struct ContentView: View {
         selectedPaper.size(orientation: selectedOrientation)
     }
 
+    private var parsedWidth: Double? {
+        Double(widthText.trimmingCharacters(in: .whitespacesAndNewlines))
+    }
+
+    private var parsedHeight: Double? {
+        Double(heightText.trimmingCharacters(in: .whitespacesAndNewlines))
+    }
+
+    private var targetValidation: TargetSizeValidation {
+        PrintSizing.targetSizeValidation(
+            width: parsedWidth,
+            height: parsedHeight,
+            unit: selectedUnit,
+            paperSize: paperSize
+        )
+    }
+
+    private var isTargetSizeValid: Bool {
+        targetValidation == .valid
+    }
+
+    private var targetValidationMessage: String? {
+        switch targetValidation {
+        case .valid:
+            return nil
+        case .invalidDimension:
+            return "Enter a width and height greater than 0."
+        case .exceedsPaper(let maxWidth, let maxHeight):
+            return "Size must fit on \(selectedPaper.displayName) \(selectedOrientation.displayName.lowercased()): up to \(formatMeasurement(maxWidth)) \(selectedUnit.displayName) x \(formatMeasurement(maxHeight)) \(selectedUnit.displayName)."
+        }
+    }
+
     private var targetSize: PrintSize? {
-        guard let width = Double(widthText), let height = Double(heightText), width > 0, height > 0 else {
+        guard isTargetSizeValid,
+              let width = parsedWidth,
+              let height = parsedHeight else {
             return nil
         }
         return PrintSizing.targetSize(width: width, height: height, unit: selectedUnit)
     }
 
     private func renderPDF() throws -> URL {
+        if let validationMessage = targetValidationMessage {
+            throw FreePrintStudioError.invalidTargetSize(validationMessage)
+        }
         guard let image = selectedImage else {
             throw FreePrintStudioError.missingImage
         }
@@ -302,6 +353,16 @@ struct ContentView: View {
             selectedPaper = paper
         }
 
+        if let widthIndex = arguments.firstIndex(of: "-FreePrintStudioTargetWidth"),
+           arguments.indices.contains(widthIndex + 1) {
+            widthText = arguments[widthIndex + 1]
+        }
+
+        if let heightIndex = arguments.firstIndex(of: "-FreePrintStudioTargetHeight"),
+           arguments.indices.contains(heightIndex + 1) {
+            heightText = arguments[heightIndex + 1]
+        }
+
         selectedImage = image
         recenterImage()
     }
@@ -312,6 +373,7 @@ private struct MeasurementField: View {
     let title: String
     @Binding var text: String
     let unit: String
+    let isInvalid: Bool
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
@@ -328,6 +390,10 @@ private struct MeasurementField: View {
             .padding(.horizontal, 10)
             .frame(height: 40)
             .background(Color(.secondarySystemGroupedBackground))
+            .overlay {
+                RoundedRectangle(cornerRadius: 8)
+                    .stroke(isInvalid ? Color.red.opacity(0.7) : Color.clear, lineWidth: 1)
+            }
             .clipShape(RoundedRectangle(cornerRadius: 8))
         }
     }
@@ -335,11 +401,14 @@ private struct MeasurementField: View {
 
 private enum FreePrintStudioError: LocalizedError {
     case missingImage
+    case invalidTargetSize(String)
 
     var errorDescription: String? {
         switch self {
         case .missingImage:
             return "Choose an image before exporting or printing."
+        case .invalidTargetSize(let message):
+            return message
         }
     }
 }

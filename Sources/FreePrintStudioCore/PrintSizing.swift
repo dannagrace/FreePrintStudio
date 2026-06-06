@@ -182,11 +182,47 @@ public struct CanvasPreviewSize: Equatable, Sendable {
     }
 }
 
+public enum TargetSizeValidation: Equatable, Sendable {
+    case valid
+    case invalidDimension
+    case exceedsPaper(maxWidth: Double, maxHeight: Double)
+}
+
 public enum PrintSizing {
     public static let pointsPerInch: Double = 72
 
     public static func targetSize(width: Double, height: Double, unit: MeasurementUnit) -> PrintSize {
         PrintSize(widthPoints: unit.points(from: width), heightPoints: unit.points(from: height))
+    }
+
+    public static func targetSizeValidation(
+        width: Double?,
+        height: Double?,
+        unit: MeasurementUnit,
+        paperSize: PrintSize
+    ) -> TargetSizeValidation {
+        guard let width,
+              let height,
+              width.isFinite,
+              height.isFinite,
+              width > 0,
+              height > 0 else {
+            return .invalidDimension
+        }
+
+        let widthPoints = unit.points(from: width)
+        let heightPoints = unit.points(from: height)
+        let tolerance = 0.0001
+
+        if widthPoints - paperSize.widthPoints > tolerance ||
+            heightPoints - paperSize.heightPoints > tolerance {
+            return .exceedsPaper(
+                maxWidth: paperSize.width(in: unit),
+                maxHeight: paperSize.height(in: unit)
+            )
+        }
+
+        return .valid
     }
 
     public static func convertMeasurement(_ value: Double, from sourceUnit: MeasurementUnit, to targetUnit: MeasurementUnit) -> Double {

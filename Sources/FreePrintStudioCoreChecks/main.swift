@@ -28,6 +28,15 @@ check(abs(fourInchesAsCentimeters - 10.16) < 0.0001, "4 inches should be 10.16 c
 let sixInchesAsMillimeters = PrintSizing.convertMeasurement(6, from: .inch, to: .millimeter)
 check(abs(sixInchesAsMillimeters - 152.4) < 0.0001, "6 inches should be 152.4 mm")
 
+let validTargetValidation = PrintSizing.targetSizeValidation(width: 4, height: 6, unit: .inch, paperSize: letter)
+check(validTargetValidation == .valid, "4 x 6 in should fit on portrait Letter paper")
+
+let invalidTargetValidation = PrintSizing.targetSizeValidation(width: 0, height: 6, unit: .inch, paperSize: letter)
+check(invalidTargetValidation == .invalidDimension, "Zero width should be rejected")
+
+let oversizedTargetValidation = PrintSizing.targetSizeValidation(width: 12, height: 9, unit: .inch, paperSize: letter)
+check(oversizedTargetValidation == .exceedsPaper(maxWidth: 8.5, maxHeight: 11), "12 x 9 in should be rejected for portrait Letter paper")
+
 let target = PrintSizing.targetSize(width: 4, height: 6, unit: .inch)
 let placement = PrintSizing.centeredPlacement(targetSize: target, on: letter)
 check(placement.widthPoints == 288, "4 inch target width should be 288 points")
