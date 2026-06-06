@@ -1,0 +1,10 @@
+FreePrint Studio does not require an account or network service.
+
+To test:
+1. Choose an image from Photos.
+2. Select a paper preset and orientation.
+3. Enter a target width and height.
+4. Switch Fit, Fill, and Stretch to verify preview behavior.
+5. Export PDF or open the system AirPrint sheet.
+
+The app processes selected images locally on device. It does not upload images, create accounts, use analytics, show ads, or track users.

@@ -1,0 +1,1 @@
+print,size,pdf,photo,image,airprint,label,craft,template,inch,cm,mm

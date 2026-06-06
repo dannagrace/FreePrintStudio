@@ -51,4 +51,10 @@ DEVELOPMENT_TEAM_ID=ABCDE12345 ALLOW_PROVISIONING_UPDATES=1 Scripts/archive_app_
 
 The archive script runs the local release gate first, then creates `build/FreePrintStudio.xcarchive` and exports an App Store Connect IPA under `build/AppStoreExport/`.
 
+App Store Connect metadata is mirrored under `fastlane/`. After installing and authenticating Fastlane, upload metadata and screenshots without submitting for review:
+
+```sh
+fastlane deliver --skip_binary_upload true --submit_for_review false
+```
+
 The privacy and support pages are in `docs/`. For the metadata URLs in `AppStore/metadata.md` to be public, enable GitHub Pages for this repository from the `docs` folder.

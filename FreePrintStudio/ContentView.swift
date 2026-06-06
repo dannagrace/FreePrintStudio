@@ -346,6 +346,8 @@ private enum FreePrintStudioError: LocalizedError {
 
 private struct AboutView: View {
     @Environment(\.dismiss) private var dismiss
+    private let privacyPolicyURL = URL(string: "https://dannagrace.github.io/FreePrintStudio/privacy-policy.html")!
+    private let supportURL = URL(string: "https://dannagrace.github.io/FreePrintStudio/support.html")!
 
     var body: some View {
         NavigationStack {
@@ -357,6 +359,15 @@ private struct AboutView: View {
                 Section("Privacy Policy") {
                     Text("FreePrint Studio does not collect, transmit, sell, or share personal data. Selected images are processed locally for preview, export, and printing. The app does not use accounts, analytics, advertising SDKs, or tracking.")
                     Text("If you contact the developer outside the app, information you choose to provide is used only to respond to your request.")
+                    Link(destination: privacyPolicyURL) {
+                        Label("Open Privacy Policy", systemImage: "safari")
+                    }
+                }
+
+                Section("Support") {
+                    Link(destination: supportURL) {
+                        Label("Open Support", systemImage: "questionmark.circle")
+                    }
                 }
 
                 Section("Version") {

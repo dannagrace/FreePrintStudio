@@ -1,0 +1,13 @@
+app_identifier("com.dannagrace.FreePrintStudio")
+app_version("1.0")
+platform("ios")
+
+metadata_path("./fastlane/metadata")
+screenshots_path("./fastlane/screenshots")
+
+submit_for_review(false)
+automatic_release(false)
+force(true)
+skip_binary_upload(true)
+skip_app_version_update(true)
+overwrite_screenshots(true)
