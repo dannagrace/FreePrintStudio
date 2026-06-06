@@ -1,0 +1,163 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$ROOT_DIR"
+
+LOG_PATH="/tmp/freeprintstudio-release-build.log"
+SCREENSHOT_PATHS=(
+  "AppStore/Screenshots/iphone-main.jpg"
+  "AppStore/Screenshots/ipad-main.jpg"
+)
+
+check_screenshot_not_blank() {
+  local screenshot_path="$1"
+  local converted_png
+  converted_png="$(mktemp /tmp/freeprintstudio-screenshot.XXXXXX.png)"
+  sips -s format png "$screenshot_path" --out "$converted_png" >/dev/null
+
+  python3 - "$converted_png" <<'PY'
+import struct
+import sys
+import zlib
+
+path = sys.argv[1]
+data = open(path, "rb").read()
+if not data.startswith(b"\x89PNG\r\n\x1a\n"):
+    raise SystemExit("Converted screenshot is not a PNG")
+
+pos = 8
+width = height = bit_depth = color_type = None
+compressed = bytearray()
+
+while pos < len(data):
+    length = struct.unpack(">I", data[pos:pos + 4])[0]
+    chunk_type = data[pos + 4:pos + 8]
+    payload = data[pos + 8:pos + 8 + length]
+    pos += 12 + length
+
+    if chunk_type == b"IHDR":
+        width, height, bit_depth, color_type, _, _, _ = struct.unpack(">IIBBBBB", payload)
+    elif chunk_type == b"IDAT":
+        compressed.extend(payload)
+    elif chunk_type == b"IEND":
+        break
+
+if bit_depth != 8 or color_type not in (2, 6):
+    raise SystemExit(f"Unsupported PNG format: bit_depth={bit_depth}, color_type={color_type}")
+
+channels = 4 if color_type == 6 else 3
+stride = width * channels
+raw = zlib.decompress(bytes(compressed))
+previous = [0] * stride
+interesting = 0
+total = width * height
+offset = 0
+
+for _ in range(height):
+    filter_type = raw[offset]
+    offset += 1
+    scanline = list(raw[offset:offset + stride])
+    offset += stride
+
+    for i, value in enumerate(scanline):
+        left = scanline[i - channels] if i >= channels else 0
+        up = previous[i]
+        up_left = previous[i - channels] if i >= channels else 0
+        if filter_type == 1:
+            scanline[i] = (value + left) & 0xFF
+        elif filter_type == 2:
+            scanline[i] = (value + up) & 0xFF
+        elif filter_type == 3:
+            scanline[i] = (value + ((left + up) // 2)) & 0xFF
+        elif filter_type == 4:
+            p = left + up - up_left
+            pa = abs(p - left)
+            pb = abs(p - up)
+            pc = abs(p - up_left)
+            predictor = left if pa <= pb and pa <= pc else up if pb <= pc else up_left
+            scanline[i] = (value + predictor) & 0xFF
+        elif filter_type != 0:
+            raise SystemExit(f"Unsupported PNG filter: {filter_type}")
+
+    for i in range(0, stride, channels):
+        red, green, blue = scanline[i], scanline[i + 1], scanline[i + 2]
+        if red < 245 or green < 245 or blue < 245:
+            interesting += 1
+    previous = scanline
+
+ratio = interesting / total
+print(f"  nonWhiteRatio: {ratio:.4f}")
+if ratio < 0.02:
+    raise SystemExit("Screenshot looks blank or under-rendered")
+PY
+
+  rm -f "$converted_png"
+}
+
+check_screenshot_dimensions() {
+  local screenshot_path="$1"
+  local accepted_dimensions="$2"
+  local width
+  local height
+  width="$(sips -g pixelWidth "$screenshot_path" | awk -F': ' '/pixelWidth/ { print $2 }')"
+  height="$(sips -g pixelHeight "$screenshot_path" | awk -F': ' '/pixelHeight/ { print $2 }')"
+
+  if ! grep -Eq "(^|,)$width x $height(,|$)" <<<"$accepted_dimensions"; then
+    printf 'Invalid screenshot size for %s: %s x %s. Accepted: %s\n' \
+      "$screenshot_path" "$width" "$height" "$accepted_dimensions"
+    exit 1
+  fi
+}
+
+printf '== Static release checks ==\n'
+Scripts/release_check.sh
+
+printf '\n== Core checks ==\n'
+swift run FreePrintStudioCoreChecks
+
+printf '\n== Property list lint ==\n'
+plutil -lint \
+  FreePrintStudio/Resources/Info.plist \
+  FreePrintStudio/Resources/PrivacyInfo.xcprivacy
+
+printf '\n== Release iOS build ==\n'
+xcodebuild \
+  -project FreePrintStudio.xcodeproj \
+  -scheme FreePrintStudio \
+  -configuration Release \
+  -destination 'generic/platform=iOS' \
+  CODE_SIGNING_ALLOWED=NO \
+  build >"$LOG_PATH" 2>&1
+tail -n 20 "$LOG_PATH"
+
+unexpected_messages="$(
+  grep -nE 'warning:|error:' "$LOG_PATH" \
+    | grep -v 'warning: Metadata extraction skipped. No AppIntents.framework dependency found.' \
+    || true
+)"
+if [[ -n "$unexpected_messages" ]]; then
+  printf '%s\n' "$unexpected_messages"
+  printf '\nRelease build emitted warnings or errors. See %s\n' "$LOG_PATH"
+  exit 1
+fi
+
+printf '\n== Screenshot asset ==\n'
+for screenshot_path in "${SCREENSHOT_PATHS[@]}"; do
+  if [[ ! -s "$screenshot_path" ]]; then
+    printf 'Missing screenshot: %s\n' "$screenshot_path"
+    exit 1
+  fi
+  sips -g pixelWidth -g pixelHeight -g hasAlpha "$screenshot_path"
+  case "$screenshot_path" in
+    *iphone-main.jpg)
+      check_screenshot_dimensions "$screenshot_path" "1260 x 2736,1290 x 2796,1320 x 2868"
+      ;;
+    *ipad-main.jpg)
+      check_screenshot_dimensions "$screenshot_path" "2048 x 2732,2064 x 2752"
+      ;;
+  esac
+  check_screenshot_not_blank "$screenshot_path"
+done
+
+printf '\nRelease verification passed.\n'

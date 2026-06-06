@@ -74,6 +74,45 @@ public enum PaperPreset: String, CaseIterable, Identifiable, Sendable {
             return PrintSize(widthPoints: 5 * PrintSizing.pointsPerInch, heightPoints: 7 * PrintSizing.pointsPerInch)
         }
     }
+
+    public func size(orientation: PaperOrientation) -> PrintSize {
+        size.oriented(orientation)
+    }
+}
+
+public enum PaperOrientation: String, CaseIterable, Identifiable, Sendable {
+    case portrait
+    case landscape
+
+    public var id: String { rawValue }
+
+    public var displayName: String {
+        switch self {
+        case .portrait:
+            return "Portrait"
+        case .landscape:
+            return "Landscape"
+        }
+    }
+}
+
+public enum ImageFitMode: String, CaseIterable, Identifiable, Sendable {
+    case fit
+    case fill
+    case stretch
+
+    public var id: String { rawValue }
+
+    public var displayName: String {
+        switch self {
+        case .fit:
+            return "Fit"
+        case .fill:
+            return "Fill"
+        case .stretch:
+            return "Stretch"
+        }
+    }
 }
 
 public struct PrintSize: Equatable, Sendable {
@@ -91,6 +130,29 @@ public struct PrintSize: Equatable, Sendable {
 
     public func height(in unit: MeasurementUnit) -> Double {
         unit.value(fromPoints: heightPoints)
+    }
+
+    public func oriented(_ orientation: PaperOrientation) -> PrintSize {
+        switch orientation {
+        case .portrait:
+            return self
+        case .landscape:
+            return PrintSize(widthPoints: heightPoints, heightPoints: widthPoints)
+        }
+    }
+}
+
+public struct PrintRect: Equatable, Sendable {
+    public var xPoints: Double
+    public var yPoints: Double
+    public var widthPoints: Double
+    public var heightPoints: Double
+
+    public init(xPoints: Double, yPoints: Double, widthPoints: Double, heightPoints: Double) {
+        self.xPoints = xPoints
+        self.yPoints = yPoints
+        self.widthPoints = widthPoints
+        self.heightPoints = heightPoints
     }
 }
 
@@ -110,11 +172,79 @@ public struct PrintPlacement: Equatable, Sendable {
     }
 }
 
+public struct CanvasPreviewSize: Equatable, Sendable {
+    public var width: Double
+    public var height: Double
+
+    public init(width: Double, height: Double) {
+        self.width = width
+        self.height = height
+    }
+}
+
 public enum PrintSizing {
     public static let pointsPerInch: Double = 72
 
     public static func targetSize(width: Double, height: Double, unit: MeasurementUnit) -> PrintSize {
         PrintSize(widthPoints: unit.points(from: width), heightPoints: unit.points(from: height))
+    }
+
+    public static func convertMeasurement(_ value: Double, from sourceUnit: MeasurementUnit, to targetUnit: MeasurementUnit) -> Double {
+        targetUnit.value(fromPoints: sourceUnit.points(from: value))
+    }
+
+    public static func previewSize(paperSize: PrintSize, maxWidth: Double, maxHeight: Double) -> CanvasPreviewSize {
+        guard paperSize.widthPoints > 0,
+              paperSize.heightPoints > 0,
+              maxWidth > 0,
+              maxHeight > 0 else {
+            return CanvasPreviewSize(width: 0, height: 0)
+        }
+
+        let ratio = paperSize.widthPoints / paperSize.heightPoints
+        var width = maxWidth
+        var height = width / ratio
+
+        if height > maxHeight {
+            height = maxHeight
+            width = height * ratio
+        }
+
+        return CanvasPreviewSize(width: width, height: height)
+    }
+
+    public static func imageDrawRect(imageSize: PrintSize, in placement: PrintPlacement, mode: ImageFitMode) -> PrintRect {
+        let placementRect = PrintRect(
+            xPoints: placement.xPoints,
+            yPoints: placement.yPoints,
+            widthPoints: placement.widthPoints,
+            heightPoints: placement.heightPoints
+        )
+
+        guard imageSize.widthPoints > 0,
+              imageSize.heightPoints > 0,
+              placement.widthPoints > 0,
+              placement.heightPoints > 0 else {
+            return placementRect
+        }
+
+        switch mode {
+        case .stretch:
+            return placementRect
+        case .fit, .fill:
+            let widthScale = placement.widthPoints / imageSize.widthPoints
+            let heightScale = placement.heightPoints / imageSize.heightPoints
+            let scale = mode == .fit ? min(widthScale, heightScale) : max(widthScale, heightScale)
+            let drawWidth = imageSize.widthPoints * scale
+            let drawHeight = imageSize.heightPoints * scale
+
+            return PrintRect(
+                xPoints: placement.xPoints + (placement.widthPoints - drawWidth) / 2,
+                yPoints: placement.yPoints + (placement.heightPoints - drawHeight) / 2,
+                widthPoints: drawWidth,
+                heightPoints: drawHeight
+            )
+        }
     }
 
     public static func centeredPlacement(targetSize: PrintSize, on paperSize: PrintSize) -> PrintPlacement {

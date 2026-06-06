@@ -4,6 +4,7 @@ import UIKit
 struct PaperCanvasView: View {
     let paperSize: PrintSize
     let image: UIImage?
+    let fitMode: ImageFitMode
     @Binding var placement: PrintPlacement
     @State private var dragStart: PrintPlacement?
 
@@ -25,39 +26,7 @@ struct PaperCanvasView: View {
                         .fill(.white)
                     GridOverlay()
                     if let image {
-                        Image(uiImage: image)
-                            .resizable()
-                            .scaledToFill()
-                            .frame(width: placement.widthPoints * scale, height: placement.heightPoints * scale)
-                            .clipped()
-                            .overlay(
-                                Rectangle()
-                                    .stroke(.blue, lineWidth: 2)
-                            )
-                            .position(
-                                x: (placement.xPoints + placement.widthPoints / 2) * scale,
-                                y: (placement.yPoints + placement.heightPoints / 2) * scale
-                            )
-                            .gesture(
-                                DragGesture()
-                                    .onChanged { value in
-                                        if dragStart == nil {
-                                            dragStart = placement
-                                        }
-                                        let origin = dragStart ?? placement
-                                        let updated = PrintPlacement(
-                                            xPoints: origin.xPoints + value.translation.width / scale,
-                                            yPoints: origin.yPoints + value.translation.height / scale,
-                                            widthPoints: origin.widthPoints,
-                                            heightPoints: origin.heightPoints,
-                                            rotationDegrees: origin.rotationDegrees
-                                        )
-                                        placement = PrintSizing.clamped(updated, to: paperSize)
-                                    }
-                                    .onEnded { _ in
-                                        dragStart = nil
-                                    }
-                            )
+                        imageLayer(image, scale: scale)
                     } else {
                         VStack(spacing: 10) {
                             Image(systemName: "photo")
@@ -76,6 +45,58 @@ struct PaperCanvasView: View {
             .frame(width: geometry.size.width, height: geometry.size.height)
         }
         .aspectRatio(paperSize.widthPoints / paperSize.heightPoints, contentMode: .fit)
+    }
+
+    private func imageLayer(_ image: UIImage, scale: Double) -> some View {
+        let drawRect = PrintSizing.imageDrawRect(
+            imageSize: PrintSize(widthPoints: image.size.width, heightPoints: image.size.height),
+            in: placement,
+            mode: fitMode
+        )
+
+        return ZStack(alignment: .topLeading) {
+            Image(uiImage: image)
+                .resizable()
+                .frame(width: drawRect.widthPoints * scale, height: drawRect.heightPoints * scale)
+                .position(
+                    x: (drawRect.xPoints - placement.xPoints + drawRect.widthPoints / 2) * scale,
+                    y: (drawRect.yPoints - placement.yPoints + drawRect.heightPoints / 2) * scale
+                )
+
+            Rectangle()
+                .stroke(.blue, lineWidth: 2)
+                .frame(width: placement.widthPoints * scale, height: placement.heightPoints * scale)
+                .position(
+                    x: placement.widthPoints * scale / 2,
+                    y: placement.heightPoints * scale / 2
+                )
+        }
+        .frame(width: placement.widthPoints * scale, height: placement.heightPoints * scale)
+        .position(
+            x: (placement.xPoints + placement.widthPoints / 2) * scale,
+            y: (placement.yPoints + placement.heightPoints / 2) * scale
+        )
+        .clipped()
+        .gesture(
+            DragGesture()
+                .onChanged { value in
+                    if dragStart == nil {
+                        dragStart = placement
+                    }
+                    let origin = dragStart ?? placement
+                    let updated = PrintPlacement(
+                        xPoints: origin.xPoints + value.translation.width / scale,
+                        yPoints: origin.yPoints + value.translation.height / scale,
+                        widthPoints: origin.widthPoints,
+                        heightPoints: origin.heightPoints,
+                        rotationDegrees: origin.rotationDegrees
+                    )
+                    placement = PrintSizing.clamped(updated, to: paperSize)
+                }
+                .onEnded { _ in
+                    dragStart = nil
+                }
+        )
     }
 }
 
