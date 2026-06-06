@@ -65,4 +65,10 @@ App Store Connect metadata is mirrored under `fastlane/`. After installing and a
 fastlane deliver --skip_binary_upload true --submit_for_review false
 ```
 
+App Store Connect questionnaire drafts are stored in:
+
+- `AppStore/app-privacy.md`
+- `AppStore/age-rating.md`
+- `AppStore/accessibility-labels.md`
+
 The privacy and support pages are in `docs/`. For the metadata URLs in `AppStore/metadata.md` to be public, enable GitHub Pages for this repository from the `docs` folder.

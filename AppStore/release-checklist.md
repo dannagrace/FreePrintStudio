@@ -21,7 +21,9 @@
 - Upload screenshots from `fastlane/screenshots/en-US` or through App Store Connect.
 - Host a public privacy policy page and add its URL in App Store Connect.
 - Enter App Privacy details as no data collected, no tracking, no third-party analytics, and no advertising SDKs.
-- Complete age rating and accessibility nutrition label fields.
+- Complete App Privacy using `AppStore/app-privacy.md`.
+- Complete age rating using `AppStore/age-rating.md`.
+- Complete Accessibility Nutrition Label fields using `AppStore/accessibility-labels.md` after validating the listed device checks.
 - Upload final screenshots accepted by App Store Connect for every supported device family.
 - If iPad remains supported, validate the iPad UI on a real device or TestFlight and upload iPad screenshots.
 - Run TestFlight on at least one real device before submitting for review.

@@ -100,6 +100,28 @@ check_screenshot_size "AppStore/Screenshots/ipad-main.jpg" "iPad 13-inch" "2048 
 check_screenshot_size "fastlane/screenshots/en-US/iphone-main.jpg" "Fastlane iPhone" "1260 x 2736,1290 x 2796,1320 x 2868"
 check_screenshot_size "fastlane/screenshots/en-US/ipad-main.jpg" "Fastlane iPad" "2048 x 2732,2064 x 2752"
 
+printf '\n== App Store Questionnaires ==\n'
+if grep -q "No, we do not collect data from this app" AppStore/app-privacy.md \
+  && grep -q "Tracking: No" AppStore/app-privacy.md; then
+  ok "App privacy answers prepared: no data collection, no tracking"
+else
+  block "App privacy answers are incomplete"
+fi
+
+if grep -q "Expected global age rating: 4+" AppStore/age-rating.md \
+  && grep -q "User-generated content: None" AppStore/age-rating.md; then
+  ok "Age rating answers prepared: expected 4+"
+else
+  block "Age rating answers are incomplete"
+fi
+
+if grep -q "VoiceOver: Supported" AppStore/accessibility-labels.md \
+  && grep -q "Larger Text: Supported" AppStore/accessibility-labels.md; then
+  ok "Accessibility Nutrition Label draft prepared"
+else
+  block "Accessibility Nutrition Label draft is incomplete"
+fi
+
 printf '\n== Public Pages ==\n'
 check_public_page "Privacy policy" "https://dannagrace.github.io/FreePrintStudio/privacy-policy.html" "FreePrint Studio Privacy Policy"
 check_public_page "Support" "https://dannagrace.github.io/FreePrintStudio/support.html" "FreePrint Studio Support"
