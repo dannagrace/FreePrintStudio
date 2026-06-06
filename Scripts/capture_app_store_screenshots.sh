@@ -32,7 +32,27 @@ TEST_PAPER="${FREEPRINTSTUDIO_PAPER:-fourBySix}"
 TEST_FIT_MODE="${FREEPRINTSTUDIO_FIT_MODE:-fit}"
 TEST_TARGET_WIDTH="${FREEPRINTSTUDIO_TARGET_WIDTH:-}"
 TEST_TARGET_HEIGHT="${FREEPRINTSTUDIO_TARGET_HEIGHT:-}"
+TEST_APPEARANCE="${FREEPRINTSTUDIO_APPEARANCE:-}"
+TEST_CONTENT_SIZE="${FREEPRINTSTUDIO_CONTENT_SIZE:-}"
 SCREENSHOT_DELAY="${SCREENSHOT_DELAY:-5}"
+
+ORIGINAL_APPEARANCE=""
+ORIGINAL_CONTENT_SIZE=""
+RESTORE_SIMULATOR_UI=0
+
+restore_simulator_ui() {
+  if [[ "$RESTORE_SIMULATOR_UI" != "1" ]]; then
+    return
+  fi
+  if [[ -n "$ORIGINAL_APPEARANCE" && "$ORIGINAL_APPEARANCE" != "unsupported" && "$ORIGINAL_APPEARANCE" != "unknown" ]]; then
+    xcrun simctl ui "$DEVICE" appearance "$ORIGINAL_APPEARANCE" >/dev/null 2>&1 || true
+  fi
+  if [[ -n "$ORIGINAL_CONTENT_SIZE" && "$ORIGINAL_CONTENT_SIZE" != "unsupported" && "$ORIGINAL_CONTENT_SIZE" != "unknown" ]]; then
+    xcrun simctl ui "$DEVICE" content_size "$ORIGINAL_CONTENT_SIZE" >/dev/null 2>&1 || true
+  fi
+}
+
+trap restore_simulator_ui EXIT
 
 Scripts/generate_store_sample_image.py
 
@@ -43,6 +63,28 @@ if [[ "$DEVICE" != "booted" ]]; then
   xcrun simctl bootstatus "$DEVICE" -b >/dev/null
 fi
 printf 'Using simulator: %s\n' "$DEVICE"
+
+if [[ -n "$TEST_APPEARANCE" || -n "$TEST_CONTENT_SIZE" ]]; then
+  ORIGINAL_APPEARANCE="$(xcrun simctl ui "$DEVICE" appearance 2>/dev/null || true)"
+  ORIGINAL_CONTENT_SIZE="$(xcrun simctl ui "$DEVICE" content_size 2>/dev/null || true)"
+  RESTORE_SIMULATOR_UI=1
+fi
+
+if [[ -n "$TEST_APPEARANCE" ]]; then
+  case "$TEST_APPEARANCE" in
+    light|dark)
+      xcrun simctl ui "$DEVICE" appearance "$TEST_APPEARANCE"
+      ;;
+    *)
+      printf 'Invalid FREEPRINTSTUDIO_APPEARANCE: %s. Use light or dark.\n' "$TEST_APPEARANCE"
+      exit 1
+      ;;
+  esac
+fi
+
+if [[ -n "$TEST_CONTENT_SIZE" ]]; then
+  xcrun simctl ui "$DEVICE" content_size "$TEST_CONTENT_SIZE"
+fi
 
 xcodebuild \
   -project FreePrintStudio.xcodeproj \

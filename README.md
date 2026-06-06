@@ -49,6 +49,13 @@ Scripts/capture_app_store_screenshots.sh
 SIMULATOR_UDID=2E8A23AC-6267-44FB-94A7-49221C184C79 SCREENSHOT_PATH="$PWD/AppStore/Screenshots/ipad-main.jpg" Scripts/capture_app_store_screenshots.sh
 ```
 
+The same script can reproduce accessibility appearance checks without permanently changing the simulator:
+
+```sh
+FREEPRINTSTUDIO_APPEARANCE=dark SCREENSHOT_PATH=/tmp/freeprintstudio-dark.jpg Scripts/capture_app_store_screenshots.sh
+FREEPRINTSTUDIO_CONTENT_SIZE=accessibility-extra-extra-large SCREENSHOT_PATH=/tmp/freeprintstudio-large-text.jpg Scripts/capture_app_store_screenshots.sh
+```
+
 Release metadata, screenshot assets, and the remaining App Store Connect checklist live under `AppStore/`.
 
 Prepare a signed App Store archive after configuring an Apple Developer Team in Xcode:

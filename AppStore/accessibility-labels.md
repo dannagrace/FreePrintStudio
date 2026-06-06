@@ -29,6 +29,7 @@ Use this file when completing App Accessibility in App Store Connect.
 - The app supports system dark mode through native semantic colors.
 - The primary workflow does not require color alone to identify actions.
 - No custom animation is required to complete the workflow.
+- Dark Interface was checked on an iPhone 17 Pro Max simulator on 2026-06-06 using `FREEPRINTSTUDIO_APPEARANCE=dark`; the main workflow remains readable and the paper preview preserves a white printable page.
 - Larger Text was checked on iPhone 17 Pro Max and iPad Pro 13-inch simulators on 2026-06-06 using `accessibility-extra-extra-large`; primary action buttons and measurement fields remain readable and usable, with overflow content available through scrolling.
 
 ## Device Testing Required Before Publishing Labels
