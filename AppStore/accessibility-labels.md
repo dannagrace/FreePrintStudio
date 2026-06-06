@@ -28,10 +28,9 @@ Use this file when completing App Accessibility in App Store Connect.
 - The app supports system dark mode through native semantic colors.
 - The primary workflow does not require color alone to identify actions.
 - No custom animation is required to complete the workflow.
-- Larger Text was checked on an iPhone 17 Pro Max simulator on 2026-06-06 using `accessibility-extra-extra-large`; primary action buttons and measurement fields remain readable and usable, with overflow content available through scrolling.
+- Larger Text was checked on iPhone 17 Pro Max and iPad Pro 13-inch simulators on 2026-06-06 using `accessibility-extra-extra-large`; primary action buttons and measurement fields remain readable and usable, with overflow content available through scrolling.
 
 ## Device Testing Required Before Publishing Labels
 
 - Verify VoiceOver can reach Choose Image, Center, paper selection, orientation selection, unit selection, fit mode selection, width and height fields, Export PDF, Print, About, Privacy Policy, and Support.
-- Verify Larger Text on iPad before final submission.
 - Verify exported PDF and AirPrint workflows on a real device.
