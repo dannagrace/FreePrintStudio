@@ -1,0 +1,166 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$ROOT_DIR"
+
+failures=0
+warnings=0
+
+ok() {
+  printf 'OK: %s\n' "$1"
+}
+
+warn() {
+  printf 'WARN: %s\n' "$1"
+  warnings=$((warnings + 1))
+}
+
+block() {
+  printf 'BLOCKED: %s\n' "$1"
+  failures=$((failures + 1))
+}
+
+setting_value() {
+  local key="$1"
+  xcodebuild \
+    -project FreePrintStudio.xcodeproj \
+    -scheme FreePrintStudio \
+    -configuration Release \
+    -showBuildSettings 2>/dev/null \
+    | awk -F'= ' -v key="$key" '{
+        lhs = $1
+        gsub(/^[ \t]+|[ \t]+$/, "", lhs)
+        if (lhs == key) {
+          gsub(/^[ \t]+|[ \t]+$/, "", $2)
+          print $2
+          exit
+        }
+      }'
+}
+
+check_public_page() {
+  local label="$1"
+  local url="$2"
+  local expected="$3"
+  local body_path
+  local status
+  body_path="$(mktemp "/tmp/freeprintstudio-${label}.XXXXXX.html")"
+  status="$(curl -L -s -o "$body_path" -w '%{http_code}' "$url" || true)"
+  if [[ "$status" != "200" ]]; then
+    block "$label URL is not publicly reachable: $url returned $status"
+  elif ! grep -q "$expected" "$body_path"; then
+    block "$label URL did not contain expected text: $expected"
+  else
+    ok "$label URL is public: $url"
+  fi
+  rm -f "$body_path"
+}
+
+check_screenshot_size() {
+  local path="$1"
+  local label="$2"
+  local accepted="$3"
+  local width
+  local height
+
+  if [[ ! -s "$path" ]]; then
+    block "$label screenshot missing: $path"
+    return
+  fi
+
+  width="$(sips -g pixelWidth "$path" | awk -F': ' '/pixelWidth/ { print $2 }')"
+  height="$(sips -g pixelHeight "$path" | awk -F': ' '/pixelHeight/ { print $2 }')"
+  if grep -Eq "(^|,)$width x $height(,|$)" <<<"$accepted"; then
+    ok "$label screenshot size accepted: $width x $height"
+  else
+    block "$label screenshot size invalid: $width x $height; accepted: $accepted"
+  fi
+}
+
+printf '== Project ==\n'
+bundle_id="$(setting_value PRODUCT_BUNDLE_IDENTIFIER)"
+marketing_version="$(setting_value MARKETING_VERSION)"
+build_number="$(setting_value CURRENT_PROJECT_VERSION)"
+project_team_id="$(setting_value DEVELOPMENT_TEAM)"
+team_id="${DEVELOPMENT_TEAM_ID:-$project_team_id}"
+
+[[ "$bundle_id" == "com.dannagrace.FreePrintStudio" ]] && ok "Bundle ID: $bundle_id" || block "Unexpected bundle ID: ${bundle_id:-missing}"
+[[ "$marketing_version" == "1.0" ]] && ok "Marketing version: $marketing_version" || block "Unexpected marketing version: ${marketing_version:-missing}"
+[[ "$build_number" == "1" ]] && ok "Build number: $build_number" || block "Unexpected build number: ${build_number:-missing}"
+
+printf '\n== Static Assets ==\n'
+Scripts/release_check.sh >/tmp/freeprintstudio-release-check.log 2>&1 && ok "Static release assets pass Scripts/release_check.sh" || {
+  block "Static release assets failed Scripts/release_check.sh"
+  cat /tmp/freeprintstudio-release-check.log
+}
+
+check_screenshot_size "AppStore/Screenshots/iphone-main.jpg" "iPhone 6.9-inch" "1260 x 2736,1290 x 2796,1320 x 2868"
+check_screenshot_size "AppStore/Screenshots/ipad-main.jpg" "iPad 13-inch" "2048 x 2732,2064 x 2752"
+check_screenshot_size "fastlane/screenshots/en-US/iphone-main.jpg" "Fastlane iPhone" "1260 x 2736,1290 x 2796,1320 x 2868"
+check_screenshot_size "fastlane/screenshots/en-US/ipad-main.jpg" "Fastlane iPad" "2048 x 2732,2064 x 2752"
+
+printf '\n== Public Pages ==\n'
+check_public_page "Privacy policy" "https://dannagrace.github.io/FreePrintStudio/privacy-policy.html" "FreePrint Studio Privacy Policy"
+check_public_page "Support" "https://dannagrace.github.io/FreePrintStudio/support.html" "FreePrint Studio Support"
+
+printf '\n== Tooling ==\n'
+if xcode_version="$(xcodebuild -version 2>/dev/null | tr '\n' ' ')"; then
+  ok "Xcode available: $xcode_version"
+else
+  block "xcodebuild is not available"
+fi
+
+if command -v fastlane >/dev/null 2>&1; then
+  ok "Fastlane available: $(fastlane --version | head -n 1)"
+else
+  warn "Fastlane is not installed; metadata can still be entered manually in App Store Connect"
+fi
+
+printf '\n== Signing ==\n'
+if [[ -n "$team_id" ]]; then
+  ok "Apple Developer Team ID configured via DEVELOPMENT_TEAM_ID or project: $team_id"
+else
+  block "Apple Developer Team ID missing; set DEVELOPMENT_TEAM_ID or configure DEVELOPMENT_TEAM in Xcode"
+fi
+
+identity_count="$(
+  security find-identity -v -p codesigning 2>/dev/null \
+    | awk '/valid identities found/ { print $1 }'
+)"
+identity_count="${identity_count:-0}"
+if [[ "$identity_count" =~ ^[0-9]+$ ]] && (( identity_count > 0 )); then
+  ok "Code signing identities available: $identity_count"
+else
+  block "No valid code signing identities found in the keychain"
+fi
+
+profiles_dir="$HOME/Library/MobileDevice/Provisioning Profiles"
+if [[ -d "$profiles_dir" ]]; then
+  profile_count="$(
+    find "$profiles_dir" -maxdepth 1 -type f 2>/dev/null \
+      | wc -l \
+      | tr -d ' '
+  )"
+else
+  profile_count="0"
+fi
+profile_count="${profile_count:-0}"
+if [[ "$profile_count" =~ ^[0-9]+$ ]] && (( profile_count > 0 )); then
+  ok "Provisioning profiles available: $profile_count"
+else
+  block "No provisioning profiles found under ~/Library/MobileDevice/Provisioning Profiles"
+fi
+
+printf '\n== App Store Connect ==\n'
+warn "App Store Connect app record and TestFlight status require account-specific verification outside this local audit"
+
+printf '\nSummary: %d blocker(s), %d warning(s).\n' "$failures" "$warnings"
+if (( failures > 0 )); then
+  printf '\nNext signed archive command after fixing blockers:\n'
+  printf '  DEVELOPMENT_TEAM_ID=YOURTEAMID ALLOW_PROVISIONING_UPDATES=1 Scripts/archive_app_store.sh\n'
+  exit 1
+fi
+
+printf '\nReady to attempt a signed App Store archive:\n'
+printf '  DEVELOPMENT_TEAM_ID=%s ALLOW_PROVISIONING_UPDATES=1 Scripts/archive_app_store.sh\n' "$team_id"

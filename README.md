@@ -34,6 +34,14 @@ Run the local release gate before archiving:
 Scripts/verify_release.sh
 ```
 
+Audit App Store readiness, including public URLs, screenshots, Xcode, and signing state:
+
+```sh
+Scripts/check_app_store_readiness.sh
+```
+
+This audit exits nonzero until an Apple Developer Team ID, signing identity, and provisioning profile are available.
+
 Generate the draft App Store screenshots. The default iPhone command prefers a 6.9-inch simulator such as iPhone 17 Pro Max.
 
 ```sh
