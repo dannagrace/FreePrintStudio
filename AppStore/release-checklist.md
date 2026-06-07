@@ -16,7 +16,7 @@
 - Run `Scripts/capture_app_store_screenshot_set.sh` after UI, fit mode, paper, orientation, unit, or iPad layout changes and inspect `iphone-main.jpg`, `iphone-fit.jpg`, `iphone-fill.jpg`, `iphone-stretch.jpg`, `iphone-metric-landscape.jpg`, and `ipad-main.jpg`.
 - Run `Scripts/capture_app_store_screenshots.sh` only when refreshing or debugging one screenshot in isolation.
 - Run the standalone iPad screenshot command from `README.md` only when refreshing or debugging the iPad screenshot in isolation.
-- Run the dark interface and Larger Text screenshot commands from `README.md` after visible UI changes.
+- Run `Scripts/verify_release.sh accessibility` after visible UI changes; it calls `Scripts/validate_accessibility_screenshots.sh` for dark interface and Larger Text screenshots.
 - Confirm the app opens, imports a photo, changes size units, exports PDF, and opens the print sheet on a simulator.
 - Confirm the same flow on a real iPhone.
 - Confirm AirPrint output on a real printer or a production-equivalent print workflow.

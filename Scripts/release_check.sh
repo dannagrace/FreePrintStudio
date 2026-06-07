@@ -438,6 +438,14 @@ check_contains "Scripts/capture_app_store_screenshots.sh" "FREEPRINTSTUDIO_ORIEN
 check_contains "Scripts/capture_app_store_screenshots.sh" "FREEPRINTSTUDIO_UNIT" "Screenshot script must support reproducible measurement unit captures"
 check_contains "Scripts/capture_app_store_screenshots.sh" "FREEPRINTSTUDIO_APPEARANCE" "Screenshot script must support reproducible light/dark captures"
 check_contains "Scripts/capture_app_store_screenshots.sh" "FREEPRINTSTUDIO_CONTENT_SIZE" "Screenshot script must support reproducible Larger Text captures"
+check_file "Scripts/validate_accessibility_screenshots.sh" "Accessibility screenshot validation script is required"
+if [[ ! -x "Scripts/validate_accessibility_screenshots.sh" ]]; then
+  printf 'FAIL: Accessibility screenshot validation script must be executable (Scripts/validate_accessibility_screenshots.sh)\n'
+  failures=$((failures + 1))
+fi
+check_contains "Scripts/validate_accessibility_screenshots.sh" "FREEPRINTSTUDIO_APPEARANCE=dark" "Accessibility screenshot validation must capture dark mode"
+check_contains "Scripts/validate_accessibility_screenshots.sh" "FREEPRINTSTUDIO_CONTENT_SIZE=accessibility-extra-extra-large" "Accessibility screenshot validation must capture Larger Text"
+check_contains "Scripts/verify_release.sh" "validate_accessibility_screenshots.sh" "Release verification must expose accessibility screenshot validation"
 check_file "Scripts/validate_screenshot_sync.sh" "Screenshot sync validation script is required"
 if [[ ! -x "Scripts/validate_screenshot_sync.sh" ]]; then
   printf 'FAIL: Screenshot sync validation script must be executable (Scripts/validate_screenshot_sync.sh)\n'
@@ -504,6 +512,8 @@ check_contains "README.md" "APP_REVIEW_CONTACT_EMAIL" "README must document priv
 check_contains "README.md" "Scripts/validate_app_store_metadata.sh" "README must document App Store metadata limit validation"
 check_contains "README.md" "Scripts/validate_app_icon_set.sh" "README must document app icon set validation"
 check_contains "README.md" "Scripts/validate_app_store_export.sh" "README must document App Store archive/export validation"
+check_contains "README.md" "Scripts/validate_accessibility_screenshots.sh" "README must document accessibility screenshot validation"
+check_contains "README.md" "Scripts/verify_release.sh accessibility" "README must document the accessibility screenshot release command"
 check_contains "AppStore/release-checklist.md" "Scripts/run_fastlane.sh ios upload_testflight" "Release checklist must include the TestFlight upload command"
 check_contains "AppStore/release-checklist.md" "Scripts/run_fastlane.sh ios app_store_connect_state" "Release checklist must include the App Store Connect state preflight command"
 check_contains "AppStore/release-checklist.md" "Scripts/run_fastlane.sh ios privacy_details" "Release checklist must include the App Privacy Details upload command"
@@ -517,6 +527,8 @@ check_contains "AppStore/release-checklist.md" "APP_REVIEW_CONTACT_EMAIL" "Relea
 check_contains "AppStore/release-checklist.md" "Scripts/validate_app_store_metadata.sh" "Release checklist must include metadata limit validation"
 check_contains "AppStore/release-checklist.md" "Scripts/validate_app_icon_set.sh" "Release checklist must include app icon set validation"
 check_contains "AppStore/release-checklist.md" "Scripts/validate_app_store_export.sh" "Release checklist must include App Store archive/export validation"
+check_contains "AppStore/release-checklist.md" "Scripts/validate_accessibility_screenshots.sh" "Release checklist must include accessibility screenshot validation"
+check_contains "AppStore/release-checklist.md" "Scripts/verify_release.sh accessibility" "Release checklist must include the accessibility screenshot release command"
 check_file ".github/workflows/release.yml" "GitHub Actions release gate workflow is required"
 check_contains ".github/workflows/release.yml" "Scripts/verify_release.sh" "Release workflow must run the local release gate"
 check_contains ".github/workflows/release.yml" "timeout-minutes: 10" "Slow release workflow steps must have command-level timeouts"

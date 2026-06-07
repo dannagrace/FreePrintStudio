@@ -21,16 +21,18 @@ struct ContentView: View {
     var body: some View {
         NavigationStack {
             GeometryReader { geometry in
-                VStack(spacing: 0) {
+                if usesAccessibilityLayout {
                     ScrollView {
-                        VStack(spacing: 18) {
-                            controls
-                            paperPreview(availableSize: geometry.size)
-                        }
-                        .padding(.vertical, 18)
+                        scrollContent(availableSize: geometry.size, includesActionBar: true)
                     }
+                } else {
+                    VStack(spacing: 0) {
+                        ScrollView {
+                            scrollContent(availableSize: geometry.size, includesActionBar: false)
+                        }
 
-                    actionBar
+                        actionBar
+                    }
                 }
             }
             .background(Color(.systemGroupedBackground))
@@ -80,6 +82,17 @@ struct ContentView: View {
             }
             #endif
         }
+    }
+
+    private func scrollContent(availableSize: CGSize, includesActionBar: Bool) -> some View {
+        VStack(spacing: 18) {
+            controls
+            paperPreview(availableSize: availableSize)
+            if includesActionBar {
+                actionBar
+            }
+        }
+        .padding(.vertical, 18)
     }
 
     private func paperPreview(availableSize: CGSize) -> some View {

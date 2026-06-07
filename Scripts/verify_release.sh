@@ -286,6 +286,11 @@ run_screenshot_checks() {
   Scripts/validate_screenshot_sync.sh
 }
 
+run_accessibility_screenshot_validation() {
+  printf '== Accessibility screenshot validation ==\n'
+  Scripts/validate_accessibility_screenshots.sh
+}
+
 run_all() {
   run_static_checks
   printf '\n'
@@ -328,8 +333,11 @@ case "${1:-all}" in
   screenshots)
     run_screenshot_checks
     ;;
+  accessibility)
+    run_accessibility_screenshot_validation
+    ;;
   *)
-    printf 'Usage: %s [all|static|core|plist|privacy|pdf|build|screenshots]\n' "$0"
+    printf 'Usage: %s [all|static|core|plist|privacy|pdf|build|screenshots|accessibility]\n' "$0"
     exit 1
     ;;
 esac
