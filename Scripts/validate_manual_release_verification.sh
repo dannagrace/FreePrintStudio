@@ -148,6 +148,14 @@ require_recent_date MANUAL_TESTFLIGHT_TEST_DATE "TestFlight verification"
 require_pass MANUAL_TESTFLIGHT_INSTALL "TestFlight install"
 require_pass MANUAL_TESTFLIGHT_PRINT_WORKFLOW "TestFlight print workflow"
 
+if [[ -n "${APP_STORE_BUILD_NUMBER:-}" && -n "${MANUAL_TESTFLIGHT_BUILD_NUMBER:-}" ]]; then
+  if [[ "$MANUAL_TESTFLIGHT_BUILD_NUMBER" == "$APP_STORE_BUILD_NUMBER" ]]; then
+    ok "TestFlight build matches selected App Store build $APP_STORE_BUILD_NUMBER"
+  else
+    block "TestFlight build number $MANUAL_TESTFLIGHT_BUILD_NUMBER does not match selected APP_STORE_BUILD_NUMBER $APP_STORE_BUILD_NUMBER"
+  fi
+fi
+
 if (( failures > 0 )); then
   printf '\nManual release verification evidence failed with %d issue(s).\n' "$failures"
   exit 1

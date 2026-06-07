@@ -174,6 +174,8 @@ cp Config/manual-release-verification.env.example Config/manual-release-verifica
 Scripts/validate_manual_release_verification.sh
 ```
 
+When validating the final App Review build, run the manual evidence check with the same APP_STORE_BUILD_NUMBER that will be submitted so the tested TestFlight build cannot drift from the selected App Store build.
+
 Prepare a local App Store submission packet with metadata, questionnaire drafts, screenshots, checksums, readiness audit output, and next commands:
 
 ```sh
@@ -253,6 +255,8 @@ Before submitting for App Review, run the final preflight without triggering sub
 ```sh
 APP_STORE_BUILD_NUMBER=1 Scripts/preflight_app_review_submission.sh
 ```
+
+The preflight requires `MANUAL_TESTFLIGHT_BUILD_NUMBER` in `Config/manual-release-verification.env` to match the same APP_STORE_BUILD_NUMBER.
 
 After the uploaded build is processed in App Store Connect and the store listing, privacy details, age rating, screenshots, and review contact details are final, submit the selected build for App Review:
 
