@@ -75,6 +75,13 @@ def validate_app_review_contact!
   UI.user_error!("Set valid APP_REVIEW_CONTACT_* values before uploading metadata or submitting for review.")
 end
 
+def verify_app_store_connect_state!
+  state_script = File.join(PROJECT_ROOT, "Scripts/check_app_store_connect_state.sh")
+  return if system(Shellwords.escape(state_script))
+
+  UI.user_error!("App Store Connect app, version, or selected build preflight failed.")
+end
+
 def submission_information_options
   {
     export_compliance_uses_encryption: false,
@@ -175,6 +182,7 @@ platform :ios do
 
     build_number = ENV["APP_STORE_BUILD_NUMBER"].to_s.strip
     UI.user_error!("Set APP_STORE_BUILD_NUMBER to the processed App Store Connect build number before submitting for review") if build_number.empty?
+    verify_app_store_connect_state!
 
     deliver(
       app_store_connect_credentials(required: true).merge(

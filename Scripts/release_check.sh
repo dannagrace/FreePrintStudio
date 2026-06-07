@@ -325,6 +325,16 @@ check_contains "fastlane/Fastfile" "review_information_options" "Fastfile must p
 check_contains "fastlane/Fastfile" "APP_REVIEW_CONTACT_EMAIL" "Fastfile must support private App Review contact details"
 check_contains "fastlane/Fastfile" "Scripts/validate_app_review_contact.sh" "Fastfile must run App Review contact validation before upload or submission"
 check_occurrences_at_least "fastlane/Fastfile" "validate_app_review_contact!" 2 "Fastfile metadata and submit lanes must require App Review contact validation"
+check_file "Scripts/validate_fastlane_release_lanes.sh" "Fastlane release lane validation script is required"
+if [[ ! -x "Scripts/validate_fastlane_release_lanes.sh" ]]; then
+  printf 'FAIL: Fastlane release lane validation script must be executable (Scripts/validate_fastlane_release_lanes.sh)\n'
+  failures=$((failures + 1))
+fi
+if [[ -x "Scripts/validate_fastlane_release_lanes.sh" ]]; then
+  Scripts/validate_fastlane_release_lanes.sh || failures=$((failures + 1))
+fi
+check_contains "Scripts/validate_fastlane_release_lanes.sh" "validate_app_review_contact!" "Fastlane lane validation must check App Review contact gates"
+check_contains "Scripts/validate_fastlane_release_lanes.sh" "verify_app_store_connect_state!" "Fastlane lane validation must check App Store Connect state preflight gates"
 check_contains "fastlane/Deliverfile" "project_root" "Deliverfile must use project-root absolute paths"
 check_contains "fastlane/Deliverfile" "primary_category(\"Graphics & Design\")" "Deliverfile must set the primary App Store category"
 check_contains "fastlane/Deliverfile" "secondary_category(\"Productivity\")" "Deliverfile must set the secondary App Store category"
