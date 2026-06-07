@@ -72,6 +72,8 @@ if source:
         fail("Fastfile must call Scripts/validate_screenshot_sync.sh")
     if "Scripts/validate_app_privacy_details.sh" not in source:
         fail("Fastfile must call Scripts/validate_app_privacy_details.sh")
+    if "Scripts/validate_privacy_surface.sh" not in source:
+        fail("Fastfile must call Scripts/validate_privacy_surface.sh")
 
     metadata = lane_body(source, "metadata")
     if metadata:
@@ -87,6 +89,7 @@ if source:
     privacy_details = lane_body(source, "privacy_details")
     if privacy_details:
         require_before("privacy_details", privacy_details, "confirm_upload_app_privacy!", "upload_app_privacy_details_to_app_store")
+        require_before("privacy_details", privacy_details, "validate_privacy_surface!", "upload_app_privacy_details_to_app_store")
         require_before("privacy_details", privacy_details, "validate_app_privacy_details!", "upload_app_privacy_details_to_app_store")
         if "APP_PRIVACY_SKIP_PUBLISH" not in privacy_details:
             fail("lane :privacy_details must preserve the APP_PRIVACY_SKIP_PUBLISH option")

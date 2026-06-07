@@ -96,6 +96,13 @@ def validate_app_privacy_details!
   )
 end
 
+def validate_privacy_surface!
+  run_release_script!(
+    "Scripts/validate_privacy_surface.sh",
+    "Privacy surface validation failed."
+  )
+end
+
 def validate_app_review_contact!
   run_release_script!(
     "Scripts/validate_app_review_contact.sh",
@@ -185,6 +192,7 @@ platform :ios do
   desc "Upload App Privacy Details to App Store Connect"
   lane :privacy_details do
     confirm_upload_app_privacy!
+    validate_privacy_surface!
     validate_app_privacy_details!
 
     username = ENV["FASTLANE_USER"].to_s.strip
