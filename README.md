@@ -46,7 +46,7 @@ Validate App Privacy Details before uploading them to App Store Connect:
 Scripts/validate_app_privacy_details.sh
 ```
 
-Validate that the app renderer exports a PDF with the expected paper MediaBox:
+Validate that the app renderer exports PDFs with the expected paper MediaBox and embedded image output for Fit, Fill, and Stretch modes:
 
 ```sh
 Scripts/validate_pdf_export.sh
