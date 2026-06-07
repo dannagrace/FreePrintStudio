@@ -41,6 +41,7 @@ run_step "Privacy surface" Scripts/validate_privacy_surface.sh
 run_step "App Privacy Details" Scripts/validate_app_privacy_details.sh
 run_step "App Store questionnaires" Scripts/validate_app_store_questionnaires.sh
 run_step "App Review contact" Scripts/validate_app_review_contact.sh
+run_step "Manual release verification evidence" Scripts/validate_manual_release_verification.sh
 run_step "App Store Connect credentials" Scripts/check_app_store_connect_credentials.sh
 run_build_number_step
 run_step "App Store Connect selected build" Scripts/check_app_store_connect_state.sh

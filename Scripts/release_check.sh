@@ -620,6 +620,7 @@ check_contains "Scripts/preflight_app_review_submission.sh" "Scripts/validate_pr
 check_contains "Scripts/preflight_app_review_submission.sh" "Scripts/validate_app_privacy_details.sh" "App Review preflight must validate App Privacy Details"
 check_contains "Scripts/preflight_app_review_submission.sh" "Scripts/validate_app_store_questionnaires.sh" "App Review preflight must validate questionnaire consistency"
 check_contains "Scripts/preflight_app_review_submission.sh" "Scripts/validate_app_review_contact.sh" "App Review preflight must validate App Review contact details"
+check_contains "Scripts/preflight_app_review_submission.sh" "Scripts/validate_manual_release_verification.sh" "App Review preflight must validate manual release evidence"
 check_contains "Scripts/preflight_app_review_submission.sh" "Scripts/check_app_store_connect_credentials.sh" "App Review preflight must validate App Store Connect credentials"
 check_contains "Scripts/preflight_app_review_submission.sh" "Scripts/check_app_store_connect_state.sh" "App Review preflight must require a processed selected build"
 check_contains "Scripts/preflight_app_review_submission.sh" "APP_STORE_BUILD_NUMBER" "App Review preflight must require an explicit selected build number"
