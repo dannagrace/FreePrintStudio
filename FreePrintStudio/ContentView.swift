@@ -458,6 +458,12 @@ struct ContentView: View {
             selectedOrientation = orientation
         }
 
+        if let unitIndex = arguments.firstIndex(of: "-FreePrintStudioUnit"),
+           arguments.indices.contains(unitIndex + 1),
+           let unit = MeasurementUnit(rawValue: arguments[unitIndex + 1]) {
+            selectedUnit = unit
+        }
+
         if let widthIndex = arguments.firstIndex(of: "-FreePrintStudioTargetWidth"),
            arguments.indices.contains(widthIndex + 1) {
             widthText = arguments[widthIndex + 1]

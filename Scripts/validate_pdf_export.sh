@@ -40,6 +40,7 @@ APP_PATH="$DERIVED_DATA_PATH/Build/Products/Debug-iphonesimulator/FreePrintStudi
 SAMPLE_IMAGE="$ROOT_DIR/AppStore/Assets/sample-print-image.png"
 TEST_PAPER="${FREEPRINTSTUDIO_PAPER:-letter}"
 TEST_ORIENTATION="${FREEPRINTSTUDIO_ORIENTATION:-portrait}"
+TEST_UNIT="${FREEPRINTSTUDIO_UNIT:-inch}"
 TEST_TARGET_WIDTH="${FREEPRINTSTUDIO_TARGET_WIDTH:-4}"
 TEST_TARGET_HEIGHT="${FREEPRINTSTUDIO_TARGET_HEIGHT:-6}"
 if [[ -n "${FREEPRINTSTUDIO_FIT_MODE:-}" ]]; then
@@ -62,6 +63,15 @@ case "$TEST_ORIENTATION" in
     ;;
   *)
     printf 'Unsupported FREEPRINTSTUDIO_ORIENTATION for PDF validation: %s\n' "$TEST_ORIENTATION"
+    exit 1
+    ;;
+esac
+
+case "$TEST_UNIT" in
+  inch|centimeter|millimeter)
+    ;;
+  *)
+    printf 'Unsupported FREEPRINTSTUDIO_UNIT for PDF validation: %s\n' "$TEST_UNIT"
     exit 1
     ;;
 esac
@@ -112,8 +122,9 @@ validate_pdf() {
   local mode="$2"
   local paper="$3"
   local orientation="$4"
-  local target_width="$5"
-  local target_height="$6"
+  local unit="$5"
+  local target_width="$6"
+  local target_height="$7"
   local app_pdf_path="$TEST_DIR/export-validation-$label.pdf"
   local host_pdf_path
   local expected_width_points
@@ -169,6 +180,15 @@ validate_pdf() {
       ;;
   esac
 
+  case "$unit" in
+    inch|centimeter|millimeter)
+      ;;
+    *)
+      printf 'Unsupported measurement unit for PDF validation: %s\n' "$unit"
+      exit 1
+      ;;
+  esac
+
   rm -f "$app_pdf_path" "$host_pdf_path"
 
   xcrun simctl terminate "$DEVICE" "$BUNDLE_ID" >/dev/null 2>&1 || true
@@ -176,6 +196,7 @@ validate_pdf() {
     -FreePrintStudioTestImagePath "$TEST_DIR/sample-print-image.png" \
     -FreePrintStudioPaper "$paper" \
     -FreePrintStudioOrientation "$orientation" \
+    -FreePrintStudioUnit "$unit" \
     -FreePrintStudioFitMode "$mode" \
     -FreePrintStudioTargetWidth "$target_width" \
     -FreePrintStudioTargetHeight "$target_height" \
@@ -197,7 +218,7 @@ validate_pdf() {
   mkdir -p "$(dirname "$host_pdf_path")"
   cp "$app_pdf_path" "$host_pdf_path"
 
-  python3 - "$host_pdf_path" "$expected_width_points" "$expected_height_points" "$mode" "$target_width" "$target_height" <<'PY'
+  python3 - "$host_pdf_path" "$expected_width_points" "$expected_height_points" "$mode" "$unit" "$target_width" "$target_height" <<'PY'
 import re
 import sys
 import zlib
@@ -206,8 +227,9 @@ path = sys.argv[1]
 expected_width = float(sys.argv[2])
 expected_height = float(sys.argv[3])
 mode = sys.argv[4]
-target_width_text = sys.argv[5]
-target_height_text = sys.argv[6]
+unit = sys.argv[5]
+target_width_text = sys.argv[6]
+target_height_text = sys.argv[7]
 data = open(path, "rb").read()
 
 if not data.startswith(b"%PDF-"):
@@ -244,8 +266,18 @@ def parse_measurement(value: str) -> float:
         value = value.replace(",", ".")
     return float(value)
 
-expected_target_width = parse_measurement(target_width_text) * 72
-expected_target_height = parse_measurement(target_height_text) * 72
+def target_points(value_text: str, unit_name: str) -> float:
+    value = parse_measurement(value_text)
+    if unit_name == "inch":
+        return value * 72
+    if unit_name == "centimeter":
+        return value / 2.54 * 72
+    if unit_name == "millimeter":
+        return value / 25.4 * 72
+    raise SystemExit(f"Unsupported measurement unit: {unit_name}")
+
+expected_target_width = target_points(target_width_text, unit)
+expected_target_height = target_points(target_height_text, unit)
 decoded_streams = []
 for stream in re.findall(rb"stream\r?\n(.*?)\r?\nendstream", data, re.S):
     try:
@@ -300,10 +332,12 @@ PY
 }
 
 for mode in "${FIT_MODES[@]}"; do
-  validate_pdf "$mode" "$mode" "$TEST_PAPER" "$TEST_ORIENTATION" "$TEST_TARGET_WIDTH" "$TEST_TARGET_HEIGHT"
+  validate_pdf "$mode" "$mode" "$TEST_PAPER" "$TEST_ORIENTATION" "$TEST_UNIT" "$TEST_TARGET_WIDTH" "$TEST_TARGET_HEIGHT"
 done
 
-if [[ -z "${FREEPRINTSTUDIO_TARGET_WIDTH:-}" && -z "${FREEPRINTSTUDIO_TARGET_HEIGHT:-}" && -z "${FREEPRINTSTUDIO_FIT_MODE:-}" && -z "${FREEPRINTSTUDIO_PAPER:-}" && -z "${FREEPRINTSTUDIO_ORIENTATION:-}" ]]; then
-  validate_pdf "localized-decimal-stretch" "stretch" "letter" "portrait" "4,5" "6,25"
-  validate_pdf "landscape-letter-stretch" "stretch" "letter" "landscape" "4" "6"
+if [[ -z "${FREEPRINTSTUDIO_TARGET_WIDTH:-}" && -z "${FREEPRINTSTUDIO_TARGET_HEIGHT:-}" && -z "${FREEPRINTSTUDIO_FIT_MODE:-}" && -z "${FREEPRINTSTUDIO_PAPER:-}" && -z "${FREEPRINTSTUDIO_ORIENTATION:-}" && -z "${FREEPRINTSTUDIO_UNIT:-}" ]]; then
+  validate_pdf "localized-decimal-stretch" "stretch" "letter" "portrait" "inch" "4,5" "6,25"
+  validate_pdf "landscape-letter-stretch" "stretch" "letter" "landscape" "inch" "4" "6"
+  validate_pdf "centimeter-a4-stretch" "stretch" "a4" "portrait" "centimeter" "10" "15"
+  validate_pdf "millimeter-a4-stretch" "stretch" "a4" "portrait" "millimeter" "100" "150"
 fi
