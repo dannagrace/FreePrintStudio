@@ -124,6 +124,25 @@ if source:
         if "build_number: build_number" not in submit_review:
             fail("lane :submit_review must submit only the explicit APP_STORE_BUILD_NUMBER")
 
+    submission_information = re.search(
+        r"def\s+submission_information_options\b(.*?)^\s*end\b",
+        source,
+        re.M | re.S,
+    )
+    if submission_information is None:
+        fail("Fastfile must define submission_information_options")
+    else:
+        submission_body = submission_information.group(1)
+        for required in (
+            "export_compliance_uses_encryption: false",
+            "content_rights_contains_third_party_content: false",
+            "add_id_info_serves_ads: false",
+            "add_id_info_tracks_action: false",
+            "add_id_info_tracks_install: false",
+        ):
+            if required not in submission_body:
+                fail(f"submission_information_options must include {required}")
+
     upload_testflight = lane_body(source, "upload_testflight")
     if upload_testflight:
         require_before("upload_testflight", upload_testflight, "validate_app_store_export!", "upload_to_testflight(")

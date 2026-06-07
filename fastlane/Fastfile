@@ -134,7 +134,10 @@ end
 def submission_information_options
   {
     export_compliance_uses_encryption: false,
-    content_rights_contains_third_party_content: false
+    content_rights_contains_third_party_content: false,
+    add_id_info_serves_ads: false,
+    add_id_info_tracks_action: false,
+    add_id_info_tracks_install: false
   }
 end
 
