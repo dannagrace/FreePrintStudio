@@ -109,11 +109,12 @@ ok "App Store Connect API credentials are syntactically configured"
 app_identifier="${APP_IDENTIFIER:-$(setting_value PRODUCT_BUNDLE_IDENTIFIER)}"
 app_version="${APP_VERSION:-$(setting_value MARKETING_VERSION)}"
 selected_build_number="${APP_STORE_BUILD_NUMBER:-}"
+skip_build_check="${APP_STORE_CONNECT_SKIP_BUILD_CHECK:-}"
 
 [[ -n "$app_identifier" ]] || block "Could not determine PRODUCT_BUNDLE_IDENTIFIER from the Xcode project"
 [[ -n "$app_version" ]] || block "Could not determine MARKETING_VERSION from the Xcode project"
 
-run_spaceship_ruby "$app_identifier" "$app_version" "$selected_build_number" <<'RUBY'
+run_spaceship_ruby "$app_identifier" "$app_version" "$selected_build_number" "$skip_build_check" <<'RUBY'
 require "json"
 require "pathname"
 require "spaceship"
@@ -121,6 +122,7 @@ require "spaceship"
 app_identifier = ARGV.fetch(0)
 app_version = ARGV.fetch(1)
 selected_build_number = ARGV.fetch(2, "").strip
+skip_build_check = ARGV.fetch(3, "").strip == "1"
 
 def ok(message)
   puts("OK: #{message}")
@@ -183,6 +185,11 @@ begin
     block("App Store Connect version #{app_version} for iOS was not found#{suffix}")
   end
   ok("App Store Connect version #{version.version_string} found with state #{version.app_version_state || version.app_store_state || "UNKNOWN"}")
+
+  if skip_build_check
+    ok("Skipping TestFlight build lookup because APP_STORE_CONNECT_SKIP_BUILD_CHECK=1")
+    exit(0)
+  end
 
   build_filter = {
     app_id: app.id,

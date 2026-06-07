@@ -580,7 +580,20 @@ check_file "Scripts/check_app_store_connect_state.sh" "App Store Connect state p
 check_contains "Scripts/check_app_store_connect_state.sh" "Spaceship::ConnectAPI::App.find" "App Store Connect state preflight must verify the app record"
 check_contains "Scripts/check_app_store_connect_state.sh" "Spaceship::ConnectAPI::Build.all" "App Store Connect state preflight must inspect TestFlight builds"
 check_contains "Scripts/check_app_store_connect_state.sh" "APP_STORE_BUILD_NUMBER" "App Store Connect state preflight must support a selected build number"
+check_contains "Scripts/check_app_store_connect_state.sh" "APP_STORE_CONNECT_SKIP_BUILD_CHECK" "App Store Connect state preflight must support app/version-only checks before TestFlight upload"
+check_file "Scripts/preflight_testflight_upload.sh" "TestFlight upload preflight script is required"
+if [[ ! -x "Scripts/preflight_testflight_upload.sh" ]]; then
+  printf 'FAIL: TestFlight upload preflight script must be executable (Scripts/preflight_testflight_upload.sh)\n'
+  failures=$((failures + 1))
+fi
+check_contains "Scripts/preflight_testflight_upload.sh" "Scripts/check_app_store_connect_credentials.sh" "TestFlight preflight must validate App Store Connect credentials"
+check_contains "Scripts/preflight_testflight_upload.sh" "Scripts/validate_app_store_export.sh" "TestFlight preflight must validate the signed IPA export"
+check_contains "Scripts/preflight_testflight_upload.sh" "APP_STORE_CONNECT_SKIP_BUILD_CHECK=1" "TestFlight preflight must verify the App Store Connect app/version before upload without requiring an existing build"
+check_contains "Scripts/preflight_testflight_upload.sh" "Scripts/check_app_store_connect_state.sh" "TestFlight preflight must query App Store Connect state"
+check_contains "Scripts/preflight_testflight_upload.sh" "TestFlight upload preflight passed" "TestFlight preflight must print a clear success message"
+check_contains "Scripts/verify_release.sh" "testflight-preflight" "Release verification must expose the TestFlight upload preflight command"
 check_contains "README.md" "Scripts/run_fastlane.sh ios upload_testflight" "README must document the TestFlight upload command"
+check_contains "README.md" "Scripts/preflight_testflight_upload.sh" "README must document the TestFlight upload preflight command"
 check_contains "README.md" "Scripts/run_fastlane.sh ios app_store_connect_state" "README must document the App Store Connect state preflight command"
 check_contains "README.md" "Scripts/run_fastlane.sh ios privacy_details" "README must document the App Privacy Details upload command"
 check_contains "README.md" "Scripts/validate_app_privacy_details.sh" "README must document App Privacy Details validation"
@@ -610,6 +623,7 @@ check_contains "README.md" "Scripts/prepare_app_store_submission_packet.sh" "REA
 check_contains "README.md" "Scripts/verify_release.sh submission-packet" "README must document the submission packet release command"
 check_contains "README.md" "Scripts/verify_release.sh store-ready" "README must document the single local store-ready release command"
 check_contains "AppStore/release-checklist.md" "Scripts/run_fastlane.sh ios upload_testflight" "Release checklist must include the TestFlight upload command"
+check_contains "AppStore/release-checklist.md" "Scripts/preflight_testflight_upload.sh" "Release checklist must include the TestFlight upload preflight command"
 check_contains "AppStore/release-checklist.md" "Scripts/run_fastlane.sh ios app_store_connect_state" "Release checklist must include the App Store Connect state preflight command"
 check_contains "AppStore/release-checklist.md" "Scripts/run_fastlane.sh ios privacy_details" "Release checklist must include the App Privacy Details upload command"
 check_contains "AppStore/release-checklist.md" "Scripts/validate_app_privacy_details.sh" "Release checklist must include App Privacy Details validation"
@@ -648,6 +662,7 @@ check_contains "Scripts/prepare_app_store_submission_packet.sh" 'readiness_statu
 check_contains "Scripts/prepare_app_store_submission_packet.sh" "ACTION_ITEMS.md" "Submission packet generator must write actionable external release blockers"
 check_contains "Scripts/prepare_app_store_submission_packet.sh" "Scripts/bootstrap_release_env.sh" "Submission packet action items must include the release environment bootstrap"
 check_contains "Scripts/prepare_app_store_submission_packet.sh" "Scripts/preflight_app_store_archive.sh" "Submission packet action items must include the App Store archive preflight"
+check_contains "Scripts/prepare_app_store_submission_packet.sh" "Scripts/preflight_testflight_upload.sh" "Submission packet action items must include the TestFlight upload preflight"
 check_contains "Scripts/prepare_app_store_submission_packet.sh" "Readiness Blockers" "Submission packet action items must summarize readiness blockers"
 check_contains "Scripts/prepare_app_store_submission_packet.sh" "Readiness Warnings" "Submission packet action items must summarize readiness warnings"
 check_contains "Scripts/prepare_app_store_submission_packet.sh" "sha256" "Submission packet generator must record file checksums"
