@@ -1,6 +1,50 @@
 require "shellwords"
 
 PROJECT_ROOT = File.expand_path("..", __dir__)
+APP_IDENTIFIER = "com.dannagrace.FreePrintStudio"
+APP_VERSION = "1.0"
+DEFAULT_EXPORT_PATH = File.join(PROJECT_ROOT, "build/AppStoreExport")
+
+def app_store_connect_credentials(required: false)
+  api_key_json = ENV["APP_STORE_CONNECT_API_KEY_JSON"].to_s
+  unless api_key_json.empty?
+    UI.user_error!("APP_STORE_CONNECT_API_KEY_JSON does not exist: #{api_key_json}") if required && !File.file?(api_key_json)
+    return File.file?(api_key_json) ? { api_key_path: api_key_json } : {}
+  end
+
+  key_id = ENV["ASC_KEY_ID"].to_s
+  issuer_id = ENV["ASC_ISSUER_ID"].to_s
+  key_path = ENV["ASC_KEY_PATH"].to_s
+
+  if key_id.empty? || issuer_id.empty? || key_path.empty?
+    if required
+      UI.user_error!(
+        "Set APP_STORE_CONNECT_API_KEY_JSON, or set ASC_KEY_ID, ASC_ISSUER_ID, and ASC_KEY_PATH before uploading."
+      )
+    end
+    return {}
+  end
+
+  UI.user_error!("ASC_KEY_PATH does not exist: #{key_path}") if required && !File.file?(key_path)
+  return {} unless File.file?(key_path)
+
+  {
+    api_key: app_store_connect_api_key(
+      key_id: key_id,
+      issuer_id: issuer_id,
+      key_filepath: key_path,
+      duration: 1200,
+      in_house: false
+    )
+  }
+end
+
+def exported_ipa_path
+  explicit_path = ENV["IPA_PATH"].to_s
+  return explicit_path unless explicit_path.empty?
+
+  Dir[File.join(DEFAULT_EXPORT_PATH, "*.ipa")].sort.first
+end
 
 opt_out_usage
 default_platform(:ios)
@@ -22,16 +66,18 @@ platform :ios do
   desc "Upload App Store Connect metadata and screenshots without submitting"
   lane :metadata do
     deliver(
-      app_identifier: "com.dannagrace.FreePrintStudio",
-      app_version: "1.0",
-      metadata_path: File.join(PROJECT_ROOT, "fastlane/metadata"),
-      screenshots_path: File.join(PROJECT_ROOT, "fastlane/screenshots"),
-      skip_binary_upload: true,
-      skip_app_version_update: true,
-      submit_for_review: false,
-      automatic_release: false,
-      force: true,
-      overwrite_screenshots: true
+      app_store_connect_credentials(required: false).merge(
+        app_identifier: APP_IDENTIFIER,
+        app_version: APP_VERSION,
+        metadata_path: File.join(PROJECT_ROOT, "fastlane/metadata"),
+        screenshots_path: File.join(PROJECT_ROOT, "fastlane/screenshots"),
+        skip_binary_upload: true,
+        skip_app_version_update: true,
+        submit_for_review: false,
+        automatic_release: false,
+        force: true,
+        overwrite_screenshots: true
+      )
     )
   end
 
@@ -46,6 +92,41 @@ platform :ios do
       "DEVELOPMENT_TEAM_ID=#{Shellwords.escape(team_id)} " \
       "ALLOW_PROVISIONING_UPDATES=#{Shellwords.escape(allow_updates)} " \
       "#{Shellwords.escape(archive_script)}"
+    )
+  end
+
+  desc "Upload the signed App Store IPA to TestFlight without external distribution"
+  lane :upload_testflight do
+    credential_options = app_store_connect_credentials(required: true)
+    ipa_path = exported_ipa_path
+
+    unless ipa_path && File.file?(ipa_path)
+      UI.message("No exported IPA found; creating one with Scripts/archive_app_store.sh.")
+
+      team_id = ENV["DEVELOPMENT_TEAM_ID"]
+      UI.user_error!("Set DEVELOPMENT_TEAM_ID before running ios upload_testflight") if team_id.to_s.empty?
+
+      allow_updates = ENV["ALLOW_PROVISIONING_UPDATES"] || "1"
+      archive_script = File.join(PROJECT_ROOT, "Scripts/archive_app_store.sh")
+      sh(
+        "DEVELOPMENT_TEAM_ID=#{Shellwords.escape(team_id)} " \
+        "ALLOW_PROVISIONING_UPDATES=#{Shellwords.escape(allow_updates)} " \
+        "#{Shellwords.escape(archive_script)}"
+      )
+      ipa_path = exported_ipa_path
+    end
+
+    UI.user_error!("No exported IPA found under #{DEFAULT_EXPORT_PATH}; set IPA_PATH explicitly.") unless ipa_path && File.file?(ipa_path)
+
+    upload_to_testflight(
+      credential_options.merge(
+        app_identifier: APP_IDENTIFIER,
+        ipa: ipa_path,
+        skip_waiting_for_build_processing: true,
+        distribute_external: false,
+        notify_external_testers: false,
+        changelog: ENV["TESTFLIGHT_CHANGELOG"] || "Initial FreePrint Studio TestFlight build."
+      )
     )
   end
 end

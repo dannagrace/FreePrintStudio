@@ -73,6 +73,7 @@ DEVELOPMENT_TEAM_ID=ABCDE12345 ALLOW_PROVISIONING_UPDATES=1 Scripts/archive_app_
 ```
 
 The archive script runs the local release gate first, then creates `build/FreePrintStudio.xcarchive` and exports an App Store Connect IPA under `build/AppStoreExport/`.
+`Config/release.env.example` lists the signing and App Store Connect variables used by the release scripts. Keep the filled file and any `AuthKey_*.p8` private key outside git.
 
 App Store Connect metadata is mirrored under `fastlane/`. Install Fastlane through the project Bundler path or Homebrew, then upload metadata and screenshots without submitting for review:
 
@@ -82,13 +83,21 @@ Scripts/install_release_dependencies.sh
 Scripts/run_fastlane.sh ios metadata
 ```
 
-Fastlane can also call the local gates:
+Fastlane can also call the local gates and create the signed archive:
 
 ```sh
 Scripts/run_fastlane.sh ios verify
 Scripts/run_fastlane.sh ios readiness
 Scripts/run_fastlane.sh ios archive
 ```
+
+After the archive exports an IPA and an App Store Connect API key is configured, upload the build to TestFlight without external distribution:
+
+```sh
+ASC_KEY_ID=XXXXXXXXXX ASC_ISSUER_ID=00000000-0000-0000-0000-000000000000 ASC_KEY_PATH=/secure/AuthKey_XXXXXXXXXX.p8 Scripts/run_fastlane.sh ios upload_testflight
+```
+
+If the exported IPA lives outside the default `build/AppStoreExport/` folder, pass `IPA_PATH=/absolute/path/to/FreePrintStudio.ipa`.
 
 App Store Connect questionnaire drafts are stored in:
 

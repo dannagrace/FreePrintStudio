@@ -6,5 +6,7 @@ vendor/bundle/
 DerivedData/
 xcuserdata/
 *.xcuserstate
+*.p8
+Config/release.env
 fastlane/README.md
 fastlane/report.xml
