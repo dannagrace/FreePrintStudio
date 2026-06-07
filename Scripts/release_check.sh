@@ -183,6 +183,12 @@ else
   printf 'FAIL: App Store metadata limit validation script must be executable (Scripts/validate_app_store_metadata.sh)\n'
   failures=$((failures + 1))
 fi
+check_contains "Scripts/validate_app_store_metadata.sh" "name.txt" "Metadata validation must check the Fastlane app name"
+check_contains "Scripts/validate_app_store_metadata.sh" "subtitle.txt" "Metadata validation must check the Fastlane subtitle"
+check_contains "Scripts/validate_app_store_metadata.sh" "promotional_text.txt" "Metadata validation must check the Fastlane promotional text"
+check_contains "Scripts/validate_app_store_metadata.sh" "description.txt" "Metadata validation must check the Fastlane description"
+check_contains "Scripts/validate_app_store_metadata.sh" "privacy_url.txt" "Metadata validation must check the Fastlane privacy URL"
+check_contains "Scripts/validate_app_store_metadata.sh" "support_url.txt" "Metadata validation must check the Fastlane support URL"
 check_contains "AppStore/metadata.md" "Privacy Policy" "Metadata must include privacy policy copy"
 check_contains "AppStore/metadata.md" "Privacy Policy URL" "Metadata must include a privacy policy URL field"
 check_contains "AppStore/metadata.md" "Support URL" "Metadata must include a support URL field"

@@ -10,7 +10,7 @@ Print images at exact size
 Prepare photos, labels, craft templates, and reference images for exact-size printing.
 
 ## Description
-FreePrint Studio helps you print an image at a precise physical size.
+FreePrint Studio helps you prepare exact-size image prints at a precise physical size.
 
 Choose a photo, pick a paper size, enter the printed width and height, then preview the result on a paper canvas before exporting or printing. You can switch between inches, centimeters, and millimeters, use portrait or landscape paper, and choose Fit, Fill, or Stretch placement depending on whether you want the full image preserved or the target area filled.
 

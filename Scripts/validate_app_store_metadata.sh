@@ -42,6 +42,27 @@ def check_char_limit(label: str, path: str, minimum: int | None, maximum: int, b
         failures.append(f"{label} is {count} characters; maximum is {maximum}")
 
 
+def metadata_section(markdown: str, heading: str) -> str:
+    match = re.search(rf"^## {re.escape(heading)}\n(.*?)(?=^## |\Z)", markdown, re.M | re.S)
+    if not match:
+        failures.append(f"AppStore/metadata.md is missing section: {heading}")
+        return ""
+    return match.group(1).strip()
+
+
+def labeled_value(section: str, label: str) -> str:
+    match = re.search(rf"^{re.escape(label)}:\s*(.+)$", section, re.M)
+    if not match:
+        failures.append(f"AppStore/metadata.md is missing value: {label}")
+        return ""
+    return match.group(1).strip()
+
+
+def check_metadata_match(label: str, expected: str, actual: str) -> None:
+    if expected and actual and expected != actual:
+        failures.append(f"{label} must match the Fastlane upload source")
+
+
 check_char_limit("App name", "name.txt", 2, 30)
 check_char_limit("Subtitle", "subtitle.txt", None, 30)
 check_char_limit("Promotional text", "promotional_text.txt", None, 170)
@@ -70,14 +91,35 @@ for keyword in keywords:
         failures.append(f"Keyword '{keyword}' must not contain a comma")
 
 metadata_draft = read_text(APPSTORE_METADATA)
-if keywords_text and keywords_text not in metadata_draft:
-    failures.append("AppStore/metadata.md keywords must match fastlane keywords.txt")
-if copyright_text and copyright_text not in metadata_draft:
-    failures.append("AppStore/metadata.md must include the Fastlane copyright value")
-if read_text(METADATA / "release_notes.txt") not in metadata_draft:
-    failures.append("AppStore/metadata.md must include the Fastlane release notes")
-if read_text(REVIEW_METADATA / "notes.txt") not in metadata_draft:
-    failures.append("AppStore/metadata.md must include the Fastlane app review notes")
+urls_section = metadata_section(metadata_draft, "URLs")
+
+metadata_matches = [
+    ("App name", read_text(METADATA / "name.txt"), metadata_section(metadata_draft, "App Name")),
+    ("Subtitle", read_text(METADATA / "subtitle.txt"), metadata_section(metadata_draft, "Subtitle")),
+    (
+        "Promotional text",
+        read_text(METADATA / "promotional_text.txt"),
+        metadata_section(metadata_draft, "Promotional Text"),
+    ),
+    ("Description", read_text(METADATA / "description.txt"), metadata_section(metadata_draft, "Description")),
+    ("Keywords", keywords_text, metadata_section(metadata_draft, "Keywords")),
+    ("Copyright", copyright_text, metadata_section(metadata_draft, "Copyright")),
+    ("Release notes", read_text(METADATA / "release_notes.txt"), metadata_section(metadata_draft, "Version Release Notes")),
+    ("Review notes", read_text(REVIEW_METADATA / "notes.txt"), metadata_section(metadata_draft, "Review Notes")),
+    (
+        "Privacy URL",
+        read_text(METADATA / "privacy_url.txt"),
+        labeled_value(urls_section, "Privacy Policy URL"),
+    ),
+    (
+        "Support URL",
+        read_text(METADATA / "support_url.txt"),
+        labeled_value(urls_section, "Support URL"),
+    ),
+]
+
+for label, expected, actual in metadata_matches:
+    check_metadata_match(label, expected, actual)
 
 if failures:
     for failure in failures:
