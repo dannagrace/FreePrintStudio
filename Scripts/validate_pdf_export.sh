@@ -80,7 +80,7 @@ boot_simulator() {
   local device="$1"
   if [[ "$device" != "booted" ]]; then
     xcrun simctl boot "$device" >/dev/null 2>&1 || true
-    xcrun simctl bootstatus "$device" -b >/dev/null
+    run_with_timeout "$SIMCTL_TIMEOUT_SECONDS" xcrun simctl bootstatus "$device" -b >/dev/null
   fi
 }
 
@@ -117,6 +117,7 @@ PY
 select_installed_simulator() {
   local candidate
   local candidates
+  local boot_output
   local install_output
   candidates="$(unique_candidate_simulators)"
   if [[ -z "$candidates" ]]; then
@@ -127,7 +128,14 @@ select_installed_simulator() {
   while IFS= read -r candidate; do
     [[ -n "$candidate" ]] || continue
     printf 'Trying simulator: %s\n' "$candidate" >&2
-    boot_simulator "$candidate"
+    boot_output=""
+    if ! boot_output="$(boot_simulator "$candidate" 2>&1)"; then
+      if [[ -n "$boot_output" ]]; then
+        printf '%s\n' "$boot_output" >&2
+      fi
+      printf 'Skipping simulator after boot failure: %s\n' "$candidate" >&2
+      continue
+    fi
     install_output=""
     if install_output="$(run_with_timeout "$SIMCTL_TIMEOUT_SECONDS" xcrun simctl install "$candidate" "$APP_PATH" 2>&1)"; then
       if [[ -n "$install_output" ]]; then
