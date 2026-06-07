@@ -308,6 +308,14 @@ check_contains ".gitignore" "Config/release.env" "Filled release environment fil
 check_contains ".gitignore" "*.p8" "App Store Connect private keys must stay untracked"
 check_file "Scripts/load_release_env.sh" "Release environment loader script is required"
 check_contains "Scripts/load_release_env.sh" "Config/release.env" "Release environment loader must read the untracked release.env file"
+check_file "Scripts/bootstrap_release_env.sh" "Release environment bootstrap script is required"
+if [[ ! -x "Scripts/bootstrap_release_env.sh" ]]; then
+  printf 'FAIL: Release environment bootstrap script must be executable (Scripts/bootstrap_release_env.sh)\n'
+  failures=$((failures + 1))
+fi
+check_contains "Scripts/bootstrap_release_env.sh" "Config/release.env" "Release environment bootstrap must target the untracked release.env file"
+check_contains "Scripts/bootstrap_release_env.sh" "git check-ignore" "Release environment bootstrap must verify release.env stays ignored"
+check_contains "Scripts/bootstrap_release_env.sh" "chmod 600" "Release environment bootstrap must protect private release.env permissions"
 check_file "Scripts/validate_release_env.sh" "Release environment placeholder validation script is required"
 if [[ -x "Scripts/validate_release_env.sh" ]]; then
   Scripts/validate_release_env.sh || failures=$((failures + 1))
@@ -566,6 +574,7 @@ check_contains "README.md" "Scripts/run_fastlane.sh ios privacy_details" "README
 check_contains "README.md" "Scripts/validate_app_privacy_details.sh" "README must document App Privacy Details validation"
 check_contains "README.md" "Scripts/validate_privacy_surface.sh" "README must document privacy surface validation"
 check_contains "README.md" "Scripts/validate_release_env.sh" "README must document release environment placeholder validation"
+check_contains "README.md" "Scripts/bootstrap_release_env.sh" "README must document release environment bootstrap"
 check_contains "README.md" "Scripts/check_code_signing_assets.sh" "README must document precise code signing asset validation"
 check_contains "README.md" "Scripts/validate_app_review_contact.sh" "README must document App Review contact validation"
 check_contains "README.md" "Scripts/run_fastlane.sh ios submit_review" "README must document the guarded App Review submission command"
@@ -593,6 +602,7 @@ check_contains "AppStore/release-checklist.md" "Scripts/run_fastlane.sh ios priv
 check_contains "AppStore/release-checklist.md" "Scripts/validate_app_privacy_details.sh" "Release checklist must include App Privacy Details validation"
 check_contains "AppStore/release-checklist.md" "Scripts/validate_privacy_surface.sh" "Release checklist must include privacy surface validation"
 check_contains "AppStore/release-checklist.md" "Scripts/validate_release_env.sh" "Release checklist must include release environment placeholder validation"
+check_contains "AppStore/release-checklist.md" "Scripts/bootstrap_release_env.sh" "Release checklist must include release environment bootstrap"
 check_contains "AppStore/release-checklist.md" "Scripts/check_code_signing_assets.sh" "Release checklist must include precise code signing asset validation"
 check_contains "AppStore/release-checklist.md" "Scripts/validate_app_review_contact.sh" "Release checklist must include App Review contact validation"
 check_contains "AppStore/release-checklist.md" "Scripts/run_fastlane.sh ios submit_review" "Release checklist must include the guarded App Review submission command"
@@ -622,6 +632,7 @@ check_contains "Scripts/prepare_app_store_submission_packet.sh" "AppStoreSubmiss
 check_contains "Scripts/prepare_app_store_submission_packet.sh" "check_app_store_readiness.sh" "Submission packet generator must include the readiness audit"
 check_contains "Scripts/prepare_app_store_submission_packet.sh" 'readiness_status="$?"' "Submission packet generator must preserve the readiness audit exit code"
 check_contains "Scripts/prepare_app_store_submission_packet.sh" "ACTION_ITEMS.md" "Submission packet generator must write actionable external release blockers"
+check_contains "Scripts/prepare_app_store_submission_packet.sh" "Scripts/bootstrap_release_env.sh" "Submission packet action items must include the release environment bootstrap"
 check_contains "Scripts/prepare_app_store_submission_packet.sh" "Readiness Blockers" "Submission packet action items must summarize readiness blockers"
 check_contains "Scripts/prepare_app_store_submission_packet.sh" "Readiness Warnings" "Submission packet action items must summarize readiness warnings"
 check_contains "Scripts/prepare_app_store_submission_packet.sh" "sha256" "Submission packet generator must record file checksums"

@@ -97,6 +97,7 @@ Scripts/validate_photo_import.sh
 Validate that private release settings do not still contain copied placeholder values:
 
 ```sh
+Scripts/bootstrap_release_env.sh
 Scripts/validate_release_env.sh
 ```
 
