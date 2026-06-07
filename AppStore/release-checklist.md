@@ -28,6 +28,7 @@
 - Optional automation: run `Scripts/install_release_dependencies.sh` or `brew install fastlane`, then `Scripts/run_fastlane.sh ios metadata` to upload App Store metadata and screenshots without submitting for review.
 - App Privacy automation: verify `AppStore/app_privacy_details.json`, then run `FASTLANE_USER=... CONFIRM_UPLOAD_APP_PRIVACY=1 Scripts/run_fastlane.sh ios privacy_details`.
 - Optional TestFlight automation: configure `ASC_KEY_ID`, `ASC_ISSUER_ID`, and `ASC_KEY_PATH`, then run `Scripts/run_fastlane.sh ios upload_testflight` to upload the exported IPA without external distribution.
+- App Store Connect state preflight: after the build processes, run `APP_STORE_BUILD_NUMBER=... Scripts/run_fastlane.sh ios app_store_connect_state` to verify the app record, version, and selected build before review submission.
 - Final review submission automation: after the uploaded build has processed and every listing field is final, run `APP_STORE_BUILD_NUMBER=... CONFIRM_SUBMIT_FOR_REVIEW=1 Scripts/run_fastlane.sh ios submit_review`.
 - Upload screenshots from `fastlane/screenshots/en-US` or through App Store Connect.
 - Host a public privacy policy page and add its URL in App Store Connect.

@@ -131,6 +131,11 @@ platform :ios do
     )
   end
 
+  desc "Verify App Store Connect app record, version, and processed TestFlight build"
+  lane :app_store_connect_state do
+    sh(Shellwords.escape(File.join(PROJECT_ROOT, "Scripts/check_app_store_connect_state.sh")))
+  end
+
   desc "Upload App Privacy Details to App Store Connect"
   lane :privacy_details do
     confirm_upload_app_privacy!

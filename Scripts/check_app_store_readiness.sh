@@ -286,6 +286,12 @@ fi
 
 if Scripts/check_app_store_connect_credentials.sh >/tmp/freeprintstudio-asc-credentials.log 2>&1; then
   ok "Fastlane App Store Connect API credentials are configured"
+  if Scripts/check_app_store_connect_state.sh >/tmp/freeprintstudio-asc-state.log 2>&1; then
+    ok "App Store Connect app record, version, and processed build preflight passed"
+  else
+    block "App Store Connect app record, version, or processed build preflight failed"
+    sed 's/^/  /' /tmp/freeprintstudio-asc-state.log
+  fi
 else
   warn "Fastlane App Store Connect API credentials are not configured; automated metadata and TestFlight upload will be blocked"
   sed 's/^BLOCKED:/missing:/; s/^/  /' /tmp/freeprintstudio-asc-credentials.log
