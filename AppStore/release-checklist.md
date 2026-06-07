@@ -3,6 +3,7 @@
 ## Local gates
 
 - Run `Scripts/verify_release.sh`.
+- Run `Scripts/verify_release.sh store-ready` before handing the project to App Store Connect; it runs the default release gate plus simulator workflow, real Photos import, accessibility screenshots, print sheet validation, and submission packet generation.
 - Run `Scripts/validate_app_store_metadata.sh`.
 - Run `Scripts/validate_app_privacy_details.sh`.
 - Run `Scripts/validate_app_icon_set.sh`.

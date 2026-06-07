@@ -431,6 +431,8 @@ check_contains "Scripts/capture_app_store_screenshots.sh" "Invalid FREEPRINTSTUD
 check_contains "Scripts/capture_app_store_screenshots.sh" "Invalid FREEPRINTSTUDIO_FIT_MODE" "Screenshot script must reject invalid fit mode overrides"
 check_contains "Scripts/capture_app_store_screenshots.sh" "FREEPRINTSTUDIO_VALIDATE_OPTIONS_ONLY" "Screenshot script must support fast option-only validation"
 check_contains "Scripts/capture_app_store_screenshots.sh" "Screenshot capture options valid" "Screenshot script must report successful option-only validation"
+check_contains "Scripts/capture_app_store_screenshots.sh" "SIMCTL_TIMEOUT_SECONDS" "Screenshot capture must bound simulator install commands"
+check_contains "Scripts/capture_app_store_screenshots.sh" "Skipping simulator after install failure" "Screenshot capture must skip unhealthy simulators"
 if [[ -x "Scripts/capture_app_store_screenshots.sh" ]]; then
   if ! FREEPRINTSTUDIO_VALIDATE_OPTIONS_ONLY=1 \
     FREEPRINTSTUDIO_PAPER=a4 \
@@ -474,6 +476,8 @@ fi
 check_contains "Scripts/validate_screenshot_sync.sh" "AppStore/Screenshots" "Screenshot sync validation must check reviewed App Store screenshots"
 check_contains "Scripts/validate_screenshot_sync.sh" "fastlane/screenshots/en-US" "Screenshot sync validation must check Fastlane upload screenshots"
 check_contains "Scripts/verify_release.sh" "validate_screenshot_sync.sh" "Release verification must validate screenshot sync"
+check_contains "Scripts/verify_release.sh" "run_store_ready_validation" "Release verification must expose a single local store-ready gate"
+check_contains "Scripts/verify_release.sh" "store-ready)" "Release verification must accept the store-ready command"
 check_file "Scripts/validate_pdf_export.sh" "PDF export validation script is required"
 check_contains "Scripts/validate_pdf_export.sh" "FreePrintStudioAutoExportPDFPath" "PDF export validation must exercise the app renderer"
 check_contains "Scripts/validate_pdf_export.sh" "FIT_MODES=(fit fill stretch)" "PDF export validation must cover Fit, Fill, and Stretch output modes"
@@ -521,6 +525,8 @@ check_contains "FreePrintStudio/Printing/PrintService.swift" "presentationFailed
 check_contains "Scripts/validate_print_sheet.sh" "FreePrintStudioAutoOpenPrintSheet" "Print sheet validation must exercise the debug print sheet workflow"
 check_contains "Scripts/validate_print_sheet.sh" "FreePrintStudioPrintSheetStatusPath" "Print sheet validation must read the debug print sheet status"
 check_contains "Scripts/verify_release.sh" "validate_print_sheet.sh" "Release verification must expose print sheet validation"
+check_contains "Scripts/validate_print_sheet.sh" "SIMCTL_TIMEOUT_SECONDS" "Print sheet validation must bound simulator install commands"
+check_contains "Scripts/validate_print_sheet.sh" "Skipping simulator after install failure" "Print sheet validation must skip unhealthy simulators"
 check_file "Scripts/check_app_store_readiness.sh" "App Store readiness audit script is required"
 check_contains "Scripts/check_app_store_readiness.sh" "DEVELOPMENT_TEAM_ID" "Readiness audit must check Apple Developer Team ID"
 check_contains "Scripts/check_app_store_readiness.sh" "check_code_signing_assets.sh" "Readiness audit must run the precise code signing asset preflight"
@@ -580,6 +586,7 @@ check_contains "README.md" "Scripts/validate_print_sheet.sh" "README must docume
 check_contains "README.md" "Scripts/verify_release.sh print-sheet" "README must document the print sheet release command"
 check_contains "README.md" "Scripts/prepare_app_store_submission_packet.sh" "README must document the App Store submission packet generator"
 check_contains "README.md" "Scripts/verify_release.sh submission-packet" "README must document the submission packet release command"
+check_contains "README.md" "Scripts/verify_release.sh store-ready" "README must document the single local store-ready release command"
 check_contains "AppStore/release-checklist.md" "Scripts/run_fastlane.sh ios upload_testflight" "Release checklist must include the TestFlight upload command"
 check_contains "AppStore/release-checklist.md" "Scripts/run_fastlane.sh ios app_store_connect_state" "Release checklist must include the App Store Connect state preflight command"
 check_contains "AppStore/release-checklist.md" "Scripts/run_fastlane.sh ios privacy_details" "Release checklist must include the App Privacy Details upload command"
@@ -605,6 +612,7 @@ check_contains "AppStore/release-checklist.md" "Scripts/validate_print_sheet.sh"
 check_contains "AppStore/release-checklist.md" "Scripts/verify_release.sh print-sheet" "Release checklist must include the print sheet release command"
 check_contains "AppStore/release-checklist.md" "Scripts/prepare_app_store_submission_packet.sh" "Release checklist must include the App Store submission packet generator"
 check_contains "AppStore/release-checklist.md" "Scripts/verify_release.sh submission-packet" "Release checklist must include the submission packet release command"
+check_contains "AppStore/release-checklist.md" "Scripts/verify_release.sh store-ready" "Release checklist must include the single local store-ready release command"
 check_file "Scripts/prepare_app_store_submission_packet.sh" "App Store submission packet generator is required"
 if [[ ! -x "Scripts/prepare_app_store_submission_packet.sh" ]]; then
   printf 'FAIL: App Store submission packet generator must be executable (Scripts/prepare_app_store_submission_packet.sh)\n'

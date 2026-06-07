@@ -335,9 +335,27 @@ run_all() {
   printf '\nRelease verification passed.\n'
 }
 
+run_store_ready_validation() {
+  run_all
+  printf '\n'
+  run_simulator_workflow_validation
+  printf '\n'
+  run_photo_import_validation
+  printf '\n'
+  run_accessibility_screenshot_validation
+  printf '\n'
+  run_print_sheet_validation
+  printf '\n'
+  run_submission_packet_generation
+  printf '\nLocal store-ready verification passed.\n'
+}
+
 case "${1:-all}" in
   all)
     run_all
+    ;;
+  store-ready)
+    run_store_ready_validation
     ;;
   static)
     run_static_checks
@@ -379,7 +397,7 @@ case "${1:-all}" in
     run_submission_packet_generation
     ;;
   *)
-    printf 'Usage: %s [all|static|core|plist|privacy|questionnaires|pdf|build|screenshots|accessibility|simulator-workflow|photo-import|print-sheet|submission-packet]\n' "$0"
+    printf 'Usage: %s [all|store-ready|static|core|plist|privacy|questionnaires|pdf|build|screenshots|accessibility|simulator-workflow|photo-import|print-sheet|submission-packet]\n' "$0"
     exit 1
     ;;
 esac
