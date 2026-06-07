@@ -161,6 +161,13 @@ else
   sed 's/^/  /' /tmp/freeprintstudio-app-privacy-details.log
 fi
 
+if Scripts/validate_privacy_surface.sh >/tmp/freeprintstudio-privacy-surface.log 2>&1; then
+  ok "Privacy surface matches no-data-collection and no-tracking disclosures"
+else
+  block "Privacy surface conflicts with App Privacy disclosures"
+  sed 's/^/  /' /tmp/freeprintstudio-privacy-surface.log
+fi
+
 if grep -q "Expected global age rating: 4+" AppStore/age-rating.md \
   && grep -q "User-generated content: None" AppStore/age-rating.md; then
   ok "Age rating answers prepared: expected 4+"

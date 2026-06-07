@@ -46,6 +46,12 @@ Validate App Privacy Details before uploading them to App Store Connect:
 Scripts/validate_app_privacy_details.sh
 ```
 
+Validate that the app source and release configuration still match the no-data-collection and no-tracking privacy disclosures:
+
+```sh
+Scripts/validate_privacy_surface.sh
+```
+
 Validate that the app renderer exports PDFs with the expected paper MediaBox and embedded image output for Fit, Fill, and Stretch modes:
 
 ```sh

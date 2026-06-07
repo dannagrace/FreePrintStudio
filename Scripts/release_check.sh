@@ -243,6 +243,16 @@ else
   printf 'FAIL: App Privacy Details validation script must be executable (Scripts/validate_app_privacy_details.sh)\n'
   failures=$((failures + 1))
 fi
+check_file "Scripts/validate_privacy_surface.sh" "Privacy surface validation script is required"
+if [[ -x "Scripts/validate_privacy_surface.sh" ]]; then
+  Scripts/validate_privacy_surface.sh || failures=$((failures + 1))
+else
+  printf 'FAIL: Privacy surface validation script must be executable (Scripts/validate_privacy_surface.sh)\n'
+  failures=$((failures + 1))
+fi
+check_contains "Scripts/validate_privacy_surface.sh" "analytics" "Privacy surface validation must scan for analytics SDK references"
+check_contains "Scripts/validate_privacy_surface.sh" "URLSession" "Privacy surface validation must scan for direct network API usage"
+check_contains "Scripts/verify_release.sh" "validate_privacy_surface.sh" "Release verification must run privacy surface validation"
 check_file "AppStore/age-rating.md" "Age rating questionnaire answers are required"
 check_contains "AppStore/age-rating.md" "Expected global age rating: 4+" "Age rating answers must record the expected 4+ rating"
 check_contains "AppStore/age-rating.md" "User-generated content: None" "Age rating answers must record no user-generated content"
@@ -386,6 +396,7 @@ check_contains "Scripts/check_app_store_readiness.sh" "privacy-policy.html" "Rea
 check_contains "Scripts/check_app_store_readiness.sh" "APP_REVIEW_CONTACT_EMAIL" "Readiness audit must check App Review contact variables"
 check_contains "Scripts/check_app_store_readiness.sh" "validate_app_review_contact.sh" "Readiness audit must validate App Review contact details"
 check_contains "Scripts/check_app_store_readiness.sh" "validate_app_privacy_details.sh" "Readiness audit must validate App Privacy Details"
+check_contains "Scripts/check_app_store_readiness.sh" "validate_privacy_surface.sh" "Readiness audit must validate privacy surface"
 check_contains "Scripts/check_app_store_readiness.sh" "check_app_store_connect_state.sh" "Readiness audit must run the App Store Connect state preflight when credentials are available"
 check_file "Scripts/check_app_store_connect_credentials.sh" "App Store Connect credential audit script is required"
 check_contains "Scripts/check_app_store_connect_credentials.sh" "APP_STORE_CONNECT_API_KEY_JSON" "Credential audit must support Fastlane API key JSON"
@@ -415,6 +426,7 @@ check_contains "README.md" "Scripts/run_fastlane.sh ios upload_testflight" "READ
 check_contains "README.md" "Scripts/run_fastlane.sh ios app_store_connect_state" "README must document the App Store Connect state preflight command"
 check_contains "README.md" "Scripts/run_fastlane.sh ios privacy_details" "README must document the App Privacy Details upload command"
 check_contains "README.md" "Scripts/validate_app_privacy_details.sh" "README must document App Privacy Details validation"
+check_contains "README.md" "Scripts/validate_privacy_surface.sh" "README must document privacy surface validation"
 check_contains "README.md" "Scripts/validate_release_env.sh" "README must document release environment placeholder validation"
 check_contains "README.md" "Scripts/check_code_signing_assets.sh" "README must document precise code signing asset validation"
 check_contains "README.md" "Scripts/validate_app_review_contact.sh" "README must document App Review contact validation"
@@ -425,6 +437,7 @@ check_contains "AppStore/release-checklist.md" "Scripts/run_fastlane.sh ios uplo
 check_contains "AppStore/release-checklist.md" "Scripts/run_fastlane.sh ios app_store_connect_state" "Release checklist must include the App Store Connect state preflight command"
 check_contains "AppStore/release-checklist.md" "Scripts/run_fastlane.sh ios privacy_details" "Release checklist must include the App Privacy Details upload command"
 check_contains "AppStore/release-checklist.md" "Scripts/validate_app_privacy_details.sh" "Release checklist must include App Privacy Details validation"
+check_contains "AppStore/release-checklist.md" "Scripts/validate_privacy_surface.sh" "Release checklist must include privacy surface validation"
 check_contains "AppStore/release-checklist.md" "Scripts/validate_release_env.sh" "Release checklist must include release environment placeholder validation"
 check_contains "AppStore/release-checklist.md" "Scripts/check_code_signing_assets.sh" "Release checklist must include precise code signing asset validation"
 check_contains "AppStore/release-checklist.md" "Scripts/validate_app_review_contact.sh" "Release checklist must include App Review contact validation"

@@ -130,6 +130,11 @@ run_plist_lint() {
     FreePrintStudio/Resources/PrivacyInfo.xcprivacy
 }
 
+run_privacy_surface_validation() {
+  printf '== Privacy surface validation ==\n'
+  Scripts/validate_privacy_surface.sh
+}
+
 run_pdf_export_validation() {
   printf '== PDF export validation ==\n'
   Scripts/validate_pdf_export.sh
@@ -186,6 +191,8 @@ run_all() {
   printf '\n'
   run_plist_lint
   printf '\n'
+  run_privacy_surface_validation
+  printf '\n'
   run_pdf_export_validation
   printf '\n'
   run_release_build
@@ -207,6 +214,9 @@ case "${1:-all}" in
   plist)
     run_plist_lint
     ;;
+  privacy)
+    run_privacy_surface_validation
+    ;;
   pdf)
     run_pdf_export_validation
     ;;
@@ -217,7 +227,7 @@ case "${1:-all}" in
     run_screenshot_checks
     ;;
   *)
-    printf 'Usage: %s [all|static|core|plist|pdf|build|screenshots]\n' "$0"
+    printf 'Usage: %s [all|static|core|plist|privacy|pdf|build|screenshots]\n' "$0"
     exit 1
     ;;
 esac
