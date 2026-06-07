@@ -58,6 +58,12 @@ Validate that private release settings do not still contain copied placeholder v
 Scripts/validate_release_env.sh
 ```
 
+Validate that installed signing assets match the release bundle, Apple team, and App Store Connect export method:
+
+```sh
+Scripts/check_code_signing_assets.sh
+```
+
 GitHub Actions runs `Scripts/verify_release.sh` on pushes to `main` and pull requests.
 
 Audit App Store readiness, including public URLs, screenshots, Xcode, and signing state:
@@ -67,6 +73,7 @@ Scripts/check_app_store_readiness.sh
 ```
 
 This audit exits nonzero until an Apple Developer Team ID, signing identity, and provisioning profile are available.
+The signing check requires an `Apple Distribution` identity and an App Store provisioning profile for `com.dannagrace.FreePrintStudio`; development or Ad Hoc profiles are not accepted.
 
 Generate the draft App Store screenshots. The default iPhone command prefers a 6.9-inch simulator such as iPhone 17 Pro Max.
 

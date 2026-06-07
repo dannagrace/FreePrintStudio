@@ -250,38 +250,16 @@ else
 fi
 
 printf '\n== Signing ==\n'
-if [[ -n "$team_id" ]]; then
-  ok "Apple Developer Team ID configured via DEVELOPMENT_TEAM_ID or project: $team_id"
+if Scripts/check_code_signing_assets.sh >/tmp/freeprintstudio-signing-assets.log 2>&1; then
+  ok "Code signing assets match the release bundle, team, and App Store export method"
 else
-  block "Apple Developer Team ID missing; set DEVELOPMENT_TEAM_ID or configure DEVELOPMENT_TEAM in Xcode"
-fi
-
-identity_count="$(
-  security find-identity -v -p codesigning 2>/dev/null \
-    | awk '/valid identities found/ { print $1 }'
-)"
-identity_count="${identity_count:-0}"
-if [[ "$identity_count" =~ ^[0-9]+$ ]] && (( identity_count > 0 )); then
-  ok "Code signing identities available: $identity_count"
-else
-  block "No valid code signing identities found in the keychain"
-fi
-
-profiles_dir="$HOME/Library/MobileDevice/Provisioning Profiles"
-if [[ -d "$profiles_dir" ]]; then
-  profile_count="$(
-    find "$profiles_dir" -maxdepth 1 -type f 2>/dev/null \
-      | wc -l \
-      | tr -d ' '
-  )"
-else
-  profile_count="0"
-fi
-profile_count="${profile_count:-0}"
-if [[ "$profile_count" =~ ^[0-9]+$ ]] && (( profile_count > 0 )); then
-  ok "Provisioning profiles available: $profile_count"
-else
-  block "No provisioning profiles found under ~/Library/MobileDevice/Provisioning Profiles"
+  while IFS= read -r line; do
+    case "$line" in
+      OK:*) ok "${line#OK: }" ;;
+      BLOCKED:*) block "${line#BLOCKED: }" ;;
+      *) printf '  %s\n' "$line" ;;
+    esac
+  done </tmp/freeprintstudio-signing-assets.log
 fi
 
 printf '\n== App Store Connect ==\n'
