@@ -6,3 +6,5 @@ vendor/bundle/
 DerivedData/
 xcuserdata/
 *.xcuserstate
+fastlane/README.md
+fastlane/report.xml

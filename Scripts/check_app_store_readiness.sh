@@ -86,6 +86,30 @@ check_screenshot_size() {
   fi
 }
 
+bundle_check() {
+  local log_path="$1"
+  python3 - "$log_path" <<'PY'
+import subprocess
+import sys
+
+log_path = sys.argv[1]
+with open(log_path, "w") as log:
+    try:
+        result = subprocess.run(
+            ["bundle", "check"],
+            stdout=log,
+            stderr=subprocess.STDOUT,
+            timeout=15,
+        )
+    except FileNotFoundError:
+        sys.exit(127)
+    except subprocess.TimeoutExpired:
+        log.write("bundle check timed out after 15 seconds\n")
+        sys.exit(124)
+sys.exit(result.returncode)
+PY
+}
+
 printf '== Project ==\n'
 bundle_id="$(setting_value PRODUCT_BUNDLE_IDENTIFIER)"
 marketing_version="$(setting_value MARKETING_VERSION)"
@@ -148,15 +172,17 @@ else
   block "Ruby is not available for Bundler/Fastlane"
 fi
 
-if bundle check >/tmp/freeprintstudio-bundle-check.log 2>&1; then
+if [[ -f Gemfile.lock ]] && bundle_check /tmp/freeprintstudio-bundle-check.log; then
   ok "Bundler dependencies are installed"
   if bundle exec fastlane --version >/tmp/freeprintstudio-fastlane-version.log 2>&1; then
-    ok "Fastlane available via Bundler: $(head -n 1 /tmp/freeprintstudio-fastlane-version.log)"
+    fastlane_version="$(awk '/^fastlane [0-9]+/ { print; exit }' /tmp/freeprintstudio-fastlane-version.log)"
+    ok "Fastlane available via Bundler: ${fastlane_version:-$(head -n 1 /tmp/freeprintstudio-fastlane-version.log)}"
   else
     warn "Bundler dependencies are installed, but bundle exec fastlane did not run"
   fi
 elif command -v fastlane >/dev/null 2>&1; then
-  ok "Fastlane available globally: $(fastlane --version | head -n 1)"
+  fastlane_version="$(SKIP_SLOW_FASTLANE_WARNING=1 FASTLANE_SKIP_UPDATE_CHECK=1 fastlane --version | awk '/^fastlane [0-9]+/ { print; exit }')"
+  ok "Fastlane available globally: ${fastlane_version:-$(command -v fastlane)}"
 else
   warn "Bundler dependencies are not installed; run Scripts/install_release_dependencies.sh. Gemfile pins Fastlane below 2.232 for macOS system Ruby 2.6 compatibility."
   warn "Fastlane is not available yet; install Bundler dependencies or run brew install fastlane before metadata upload"

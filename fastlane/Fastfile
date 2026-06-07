@@ -1,14 +1,22 @@
+require "shellwords"
+
+PROJECT_ROOT = File.expand_path("..", __dir__)
+
+opt_out_usage
 default_platform(:ios)
 
 platform :ios do
   desc "Run the full local release verification gate"
   lane :verify do
-    sh("Scripts/verify_release.sh")
+    sh(Shellwords.escape(File.join(PROJECT_ROOT, "Scripts/verify_release.sh")))
   end
 
   desc "Audit App Store readiness and report blockers"
   lane :readiness do
-    sh("Scripts/check_app_store_readiness.sh")
+    readiness_script = File.join(PROJECT_ROOT, "Scripts/check_app_store_readiness.sh")
+    unless system(readiness_script)
+      UI.important("Readiness blockers remain; see audit output above.")
+    end
   end
 
   desc "Upload App Store Connect metadata and screenshots without submitting"
@@ -16,8 +24,8 @@ platform :ios do
     deliver(
       app_identifier: "com.dannagrace.FreePrintStudio",
       app_version: "1.0",
-      metadata_path: "./fastlane/metadata",
-      screenshots_path: "./fastlane/screenshots",
+      metadata_path: File.join(PROJECT_ROOT, "fastlane/metadata"),
+      screenshots_path: File.join(PROJECT_ROOT, "fastlane/screenshots"),
       skip_binary_upload: true,
       skip_app_version_update: true,
       submit_for_review: false,
@@ -33,6 +41,11 @@ platform :ios do
     UI.user_error!("Set DEVELOPMENT_TEAM_ID before running ios archive") if team_id.to_s.empty?
 
     allow_updates = ENV["ALLOW_PROVISIONING_UPDATES"] || "1"
-    sh("DEVELOPMENT_TEAM_ID=#{team_id} ALLOW_PROVISIONING_UPDATES=#{allow_updates} Scripts/archive_app_store.sh")
+    archive_script = File.join(PROJECT_ROOT, "Scripts/archive_app_store.sh")
+    sh(
+      "DEVELOPMENT_TEAM_ID=#{Shellwords.escape(team_id)} " \
+      "ALLOW_PROVISIONING_UPDATES=#{Shellwords.escape(allow_updates)} " \
+      "#{Shellwords.escape(archive_script)}"
+    )
   end
 end

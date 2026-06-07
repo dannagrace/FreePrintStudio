@@ -1,9 +1,11 @@
+project_root = File.expand_path("..", __dir__)
+
 app_identifier("com.dannagrace.FreePrintStudio")
 app_version("1.0")
 platform("ios")
 
-metadata_path("./fastlane/metadata")
-screenshots_path("./fastlane/screenshots")
+metadata_path(File.join(project_root, "fastlane/metadata"))
+screenshots_path(File.join(project_root, "fastlane/screenshots"))
 
 submit_for_review(false)
 automatic_release(false)
