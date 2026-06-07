@@ -203,16 +203,40 @@ def parse_measurement(value: str) -> float:
         value = value.replace(",", ".")
     return float(value)
 
+expected_target_width = parse_measurement(target_width_text) * 72
+expected_target_height = parse_measurement(target_height_text) * 72
+decoded_streams = []
+for stream in re.findall(rb"stream\r?\n(.*?)\r?\nendstream", data, re.S):
+    try:
+        decoded_streams.append(zlib.decompress(stream))
+    except zlib.error:
+        decoded_streams.append(stream)
+content = b"\n".join(decoded_streams)
+clip_match = re.search(
+    rb"([-+]?[0-9]*\.?[0-9]+)\s+([-+]?[0-9]*\.?[0-9]+)\s+m\s+"
+    rb"([-+]?[0-9]*\.?[0-9]+)\s+([-+]?[0-9]*\.?[0-9]+)\s+l\s+"
+    rb"([-+]?[0-9]*\.?[0-9]+)\s+([-+]?[0-9]*\.?[0-9]+)\s+l\s+"
+    rb"([-+]?[0-9]*\.?[0-9]+)\s+([-+]?[0-9]*\.?[0-9]+)\s+l\s+h\s+W\s+n",
+    content,
+)
+if not clip_match:
+    raise SystemExit("Image clip rectangle not found in PDF content stream")
+
+clip_values = [float(value) for value in clip_match.groups()]
+clip_x_values = clip_values[0::2]
+clip_y_values = clip_values[1::2]
+clip_width = max(clip_x_values) - min(clip_x_values)
+clip_height = max(clip_y_values) - min(clip_y_values)
+if abs(clip_width - expected_target_width) > tolerance or abs(clip_height - expected_target_height) > tolerance:
+    raise SystemExit(
+        f"Unexpected image clip rectangle size: {clip_width:.4f} x {clip_height:.4f}, "
+        f"expected {expected_target_width:.4f} x {expected_target_height:.4f}"
+    )
+print(f"Image clip rectangle: {clip_width:.4f} x {clip_height:.4f} pt")
+
 if mode == "stretch":
-    expected_draw_width = parse_measurement(target_width_text) * 72
-    expected_draw_height = parse_measurement(target_height_text) * 72
-    decoded_streams = []
-    for stream in re.findall(rb"stream\r?\n(.*?)\r?\nendstream", data, re.S):
-        try:
-            decoded_streams.append(zlib.decompress(stream))
-        except zlib.error:
-            decoded_streams.append(stream)
-    content = b"\n".join(decoded_streams)
+    expected_draw_width = expected_target_width
+    expected_draw_height = expected_target_height
     matrix_match = re.search(
         rb"([-+]?[0-9]*\.?[0-9]+)\s+0\s+0\s+([-+]?[0-9]*\.?[0-9]+)\s+"
         rb"([-+]?[0-9]*\.?[0-9]+)\s+([-+]?[0-9]*\.?[0-9]+)\s+cm\s+/Im\d+\s+Do",
