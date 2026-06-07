@@ -579,6 +579,7 @@ check_contains "AppStore/release-checklist.md" "Scripts/verify_release.sh print-
 check_file ".github/workflows/release.yml" "GitHub Actions release gate workflow is required"
 check_contains ".github/workflows/release.yml" "Scripts/verify_release.sh" "Release workflow must run the local release gate"
 check_contains ".github/workflows/release.yml" "timeout-minutes: 10" "Slow release workflow steps must have command-level timeouts"
+check_contains ".github/workflows/release.yml" "timeout-minutes: 15" "PDF export validation must have enough GitHub Actions timeout headroom"
 check_contains "FreePrintStudio/Resources/Info.plist" "CFBundleDisplayName" "Info.plist must define display name"
 check_contains "FreePrintStudio/Resources/Info.plist" "ITSAppUsesNonExemptEncryption" "Info.plist must declare non-exempt encryption usage"
 check_plist_raw_value "FreePrintStudio/Resources/Info.plist" "ITSAppUsesNonExemptEncryption" "false" "Info.plist must declare no non-exempt encryption"

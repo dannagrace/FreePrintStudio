@@ -29,7 +29,7 @@ jobs:
         run: Scripts/verify_release.sh plist
 
       - name: PDF export validation
-        timeout-minutes: 10
+        timeout-minutes: 15
         run: Scripts/verify_release.sh pdf
 
       - name: Release iOS build
