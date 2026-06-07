@@ -330,6 +330,8 @@ check_contains "Scripts/check_app_store_readiness.sh" "validate_manual_release_v
 check_contains "Scripts/verify_release.sh" "manual-verification" "Release verification must expose manual release evidence validation"
 check_file "Scripts/load_release_env.sh" "Release environment loader script is required"
 check_contains "Scripts/load_release_env.sh" "Config/release.env" "Release environment loader must read the untracked release.env file"
+check_contains "Scripts/load_release_env.sh" "not a valid shell env file" "Release environment loader must explain invalid release.env syntax"
+check_contains "Scripts/load_release_env.sh" "Quote values containing spaces" "Release environment loader must explain how to fix values containing spaces"
 check_file "Scripts/bootstrap_release_env.sh" "Release environment bootstrap script is required"
 if [[ ! -x "Scripts/bootstrap_release_env.sh" ]]; then
   printf 'FAIL: Release environment bootstrap script must be executable (Scripts/bootstrap_release_env.sh)\n'
