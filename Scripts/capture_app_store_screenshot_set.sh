@@ -8,6 +8,7 @@ APPSTORE_SCREENSHOTS_DIR="$ROOT_DIR/AppStore/Screenshots"
 FASTLANE_SCREENSHOTS_DIR="$ROOT_DIR/fastlane/screenshots/en-US"
 DERIVED_DATA_PATH="${DERIVED_DATA_PATH:-/tmp/freeprintstudio-derived-data}"
 SCREENSHOT_DELAY="${SCREENSHOT_DELAY:-5}"
+IPAD_DEVICE_PATTERN="${FREEPRINTSTUDIO_IPAD_DEVICE_PATTERN:-iPad Pro 13-inch|iPad Air 13-inch}"
 
 mkdir -p "$APPSTORE_SCREENSHOTS_DIR" "$FASTLANE_SCREENSHOTS_DIR"
 
@@ -42,5 +43,15 @@ DERIVED_DATA_PATH="$DERIVED_DATA_PATH" \
   Scripts/capture_app_store_screenshots.sh
 
 cp "$APPSTORE_SCREENSHOTS_DIR/iphone-metric-landscape.jpg" "$FASTLANE_SCREENSHOTS_DIR/iphone-metric-landscape.jpg"
+
+printf '== iPad main screenshot ==\n'
+DERIVED_DATA_PATH="$DERIVED_DATA_PATH" \
+  FREEPRINTSTUDIO_DEVICE_PATTERN="$IPAD_DEVICE_PATTERN" \
+  FREEPRINTSTUDIO_DEVICE_FALLBACK_NAME=iPad \
+  SCREENSHOT_DELAY="$SCREENSHOT_DELAY" \
+  SCREENSHOT_PATH="$APPSTORE_SCREENSHOTS_DIR/ipad-main.jpg" \
+  Scripts/capture_app_store_screenshots.sh
+
+cp "$APPSTORE_SCREENSHOTS_DIR/ipad-main.jpg" "$FASTLANE_SCREENSHOTS_DIR/ipad-main.jpg"
 
 printf '\nSynced screenshots to %s\n' "$FASTLANE_SCREENSHOTS_DIR"

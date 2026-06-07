@@ -79,28 +79,30 @@ if [[ -n "${SIMULATOR_UDID:-}" ]]; then
   DEVICE="$SIMULATOR_UDID"
 else
   IPHONE_DEVICE_PATTERN="${FREEPRINTSTUDIO_IPHONE_DEVICE_PATTERN:-iPhone 17 Pro Max|iPhone Air|iPhone 16 Pro Max|iPhone 16 Plus|iPhone 15 Pro Max|iPhone 15 Plus|iPhone 14 Pro Max}"
+  DEVICE_PATTERN="${FREEPRINTSTUDIO_DEVICE_PATTERN:-$IPHONE_DEVICE_PATTERN}"
+  FALLBACK_DEVICE_NAME="${FREEPRINTSTUDIO_DEVICE_FALLBACK_NAME:-iPhone}"
   DEVICE="$(
     xcrun simctl list devices available \
-      | grep -E "$IPHONE_DEVICE_PATTERN" \
+      | grep -E "$DEVICE_PATTERN" \
       | sed -nE 's/.*\(([A-F0-9-]{36})\).*/\1/p' \
       | head -n 1 || true
   )"
   if [[ -z "$DEVICE" ]]; then
     DEVICE="$(
       xcrun simctl list devices available \
-      | sed -nE '/iPhone/s/.*\(([A-F0-9-]{36})\).*/\1/p' \
+      | sed -nE "/$FALLBACK_DEVICE_NAME/s/.*\\(([A-F0-9-]{36})\\).*/\\1/p" \
       | head -n 1
     )"
   fi
   if [[ -z "$DEVICE" ]]; then
     DEVICE="$(
       xcrun simctl list devices booted \
-      | sed -nE 's/.*iPhone.*\(([A-F0-9-]{36})\).*/\1/p' \
+      | sed -nE "s/.*$FALLBACK_DEVICE_NAME.*\\(([A-F0-9-]{36})\\).*/\\1/p" \
       | head -n 1
     )"
   fi
   if [[ -z "$DEVICE" ]]; then
-    printf 'No available iPhone simulator found. Set SIMULATOR_UDID to a booted simulator UDID.\n'
+    printf 'No available simulator found for pattern %s. Set SIMULATOR_UDID to a booted simulator UDID.\n' "$DEVICE_PATTERN"
     exit 1
   fi
 fi

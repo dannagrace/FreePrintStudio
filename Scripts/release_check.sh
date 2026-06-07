@@ -403,6 +403,8 @@ check_contains "Scripts/capture_app_store_screenshot_set.sh" "iphone-fit.jpg" "S
 check_contains "Scripts/capture_app_store_screenshot_set.sh" "iphone-fill.jpg" "Screenshot set script must capture Fill mode"
 check_contains "Scripts/capture_app_store_screenshot_set.sh" "iphone-stretch.jpg" "Screenshot set script must capture Stretch mode"
 check_contains "Scripts/capture_app_store_screenshot_set.sh" "iphone-metric-landscape.jpg" "Screenshot set script must capture metric landscape mode"
+check_contains "Scripts/capture_app_store_screenshot_set.sh" "ipad-main.jpg" "Screenshot set script must capture the iPad main screenshot"
+check_contains "Scripts/capture_app_store_screenshots.sh" "FREEPRINTSTUDIO_DEVICE_PATTERN" "Screenshot script must support reproducible non-iPhone simulator captures"
 check_contains "Scripts/capture_app_store_screenshots.sh" "Invalid FREEPRINTSTUDIO_PAPER" "Screenshot script must reject invalid paper overrides"
 check_contains "Scripts/capture_app_store_screenshots.sh" "Invalid FREEPRINTSTUDIO_FIT_MODE" "Screenshot script must reject invalid fit mode overrides"
 check_contains "Scripts/capture_app_store_screenshots.sh" "FREEPRINTSTUDIO_VALIDATE_OPTIONS_ONLY" "Screenshot script must support fast option-only validation"
