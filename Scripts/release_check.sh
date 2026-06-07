@@ -175,6 +175,19 @@ check_contains "FreePrintStudio/ContentView.swift" "selectedImage != nil && isTa
 check_contains "FreePrintStudio/ContentView.swift" ".disabled(!isOutputReady)" "Export and print buttons must be disabled until output is ready"
 check_contains "FreePrintStudio/Resources/Info.plist" "NSPhotoLibraryUsageDescription" "Info.plist must explain photo library access"
 check_contains "FreePrintStudio/Resources/Info.plist" "selected image locally" "Photo library usage description must explain local image processing"
+check_file "Scripts/validate_app_identity.sh" "App identity validation script is required"
+if [[ ! -x "Scripts/validate_app_identity.sh" ]]; then
+  printf 'FAIL: App identity validation script must be executable (Scripts/validate_app_identity.sh)\n'
+  failures=$((failures + 1))
+fi
+if [[ -x "Scripts/validate_app_identity.sh" ]]; then
+  Scripts/validate_app_identity.sh || failures=$((failures + 1))
+fi
+check_contains "Scripts/validate_app_identity.sh" "PRODUCT_BUNDLE_IDENTIFIER" "App identity validation must check the Xcode bundle identifier"
+check_contains "Scripts/validate_app_identity.sh" "CFBundleDisplayName" "App identity validation must check the display name"
+check_contains "Scripts/validate_app_identity.sh" "TARGETED_DEVICE_FAMILY" "App identity validation must check supported device families"
+check_contains "Scripts/validate_app_identity.sh" "fastlane/Fastfile" "App identity validation must check Fastlane constants"
+check_contains "Scripts/validate_app_identity.sh" "fastlane/Deliverfile" "App identity validation must check Deliverfile constants"
 check_file "AppStore/metadata.md" "App Store metadata draft is required"
 check_file "Scripts/validate_app_store_metadata.sh" "App Store metadata limit validation script is required"
 if [[ -x "Scripts/validate_app_store_metadata.sh" ]]; then
