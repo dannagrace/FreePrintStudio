@@ -223,6 +223,7 @@ check_file "Config/ExportOptions-AppStore.plist" "App Store export options plist
 check_contains "Config/ExportOptions-AppStore.plist" "app-store-connect" "Export options must use the current App Store Connect export method"
 check_file "Config/release.env.example" "Release environment template is required"
 check_contains "Config/release.env.example" "DEVELOPMENT_TEAM_ID" "Release environment template must document the Apple Developer Team ID"
+check_contains "Config/release.env.example" "# DEVELOPMENT_TEAM_ID=" "Release environment template must keep placeholder Team ID commented out"
 check_contains "Config/release.env.example" "ASC_KEY_ID" "Release environment template must document App Store Connect API key variables"
 check_contains "Config/release.env.example" "APP_REVIEW_CONTACT_EMAIL" "Release environment template must document App Review contact variables"
 check_contains "Config/release.env.example" "CONFIRM_UPLOAD_APP_PRIVACY" "Release environment template must document the App Privacy Details upload guard"
@@ -231,7 +232,18 @@ check_contains ".gitignore" "Config/release.env" "Filled release environment fil
 check_contains ".gitignore" "*.p8" "App Store Connect private keys must stay untracked"
 check_file "Scripts/load_release_env.sh" "Release environment loader script is required"
 check_contains "Scripts/load_release_env.sh" "Config/release.env" "Release environment loader must read the untracked release.env file"
+check_file "Scripts/validate_release_env.sh" "Release environment placeholder validation script is required"
+if [[ -x "Scripts/validate_release_env.sh" ]]; then
+  Scripts/validate_release_env.sh || failures=$((failures + 1))
+else
+  printf 'FAIL: Release environment placeholder validation script must be executable (Scripts/validate_release_env.sh)\n'
+  failures=$((failures + 1))
+fi
+check_contains "Scripts/validate_release_env.sh" "PLACEHOLDER_VALUES" "Release environment validation must detect known placeholder values"
+check_contains "Scripts/validate_release_env.sh" "APP_REVIEW_CONTACT_EMAIL" "Release environment validation must check App Review contact placeholders"
+check_contains "Scripts/validate_release_env.sh" "FASTLANE_USER" "Release environment validation must check Fastlane Apple ID placeholders"
 check_contains "Scripts/check_app_store_readiness.sh" "source Scripts/load_release_env.sh" "Readiness audit must load Config/release.env"
+check_contains "Scripts/check_app_store_readiness.sh" "validate_release_env.sh" "Readiness audit must reject placeholder release environment values"
 check_contains "Scripts/check_app_store_connect_credentials.sh" "source Scripts/load_release_env.sh" "Credential audit must load Config/release.env"
 check_contains "Scripts/archive_app_store.sh" "source Scripts/load_release_env.sh" "Archive script must load Config/release.env"
 check_contains "Scripts/run_fastlane.sh" "source Scripts/load_release_env.sh" "Fastlane wrapper must load Config/release.env"
@@ -325,6 +337,7 @@ check_contains "README.md" "Scripts/run_fastlane.sh ios upload_testflight" "READ
 check_contains "README.md" "Scripts/run_fastlane.sh ios app_store_connect_state" "README must document the App Store Connect state preflight command"
 check_contains "README.md" "Scripts/run_fastlane.sh ios privacy_details" "README must document the App Privacy Details upload command"
 check_contains "README.md" "Scripts/validate_app_privacy_details.sh" "README must document App Privacy Details validation"
+check_contains "README.md" "Scripts/validate_release_env.sh" "README must document release environment placeholder validation"
 check_contains "README.md" "Scripts/run_fastlane.sh ios submit_review" "README must document the guarded App Review submission command"
 check_contains "README.md" "APP_REVIEW_CONTACT_EMAIL" "README must document private App Review contact variables"
 check_contains "README.md" "Scripts/validate_app_store_metadata.sh" "README must document App Store metadata limit validation"
@@ -332,6 +345,7 @@ check_contains "AppStore/release-checklist.md" "Scripts/run_fastlane.sh ios uplo
 check_contains "AppStore/release-checklist.md" "Scripts/run_fastlane.sh ios app_store_connect_state" "Release checklist must include the App Store Connect state preflight command"
 check_contains "AppStore/release-checklist.md" "Scripts/run_fastlane.sh ios privacy_details" "Release checklist must include the App Privacy Details upload command"
 check_contains "AppStore/release-checklist.md" "Scripts/validate_app_privacy_details.sh" "Release checklist must include App Privacy Details validation"
+check_contains "AppStore/release-checklist.md" "Scripts/validate_release_env.sh" "Release checklist must include release environment placeholder validation"
 check_contains "AppStore/release-checklist.md" "Scripts/run_fastlane.sh ios submit_review" "Release checklist must include the guarded App Review submission command"
 check_contains "AppStore/release-checklist.md" "APP_REVIEW_CONTACT_EMAIL" "Release checklist must include App Review contact configuration"
 check_contains "AppStore/release-checklist.md" "Scripts/validate_app_store_metadata.sh" "Release checklist must include metadata limit validation"

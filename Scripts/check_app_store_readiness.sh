@@ -118,6 +118,13 @@ build_number="$(setting_value CURRENT_PROJECT_VERSION)"
 project_team_id="$(setting_value DEVELOPMENT_TEAM)"
 team_id="${DEVELOPMENT_TEAM_ID:-$project_team_id}"
 
+if Scripts/validate_release_env.sh >/tmp/freeprintstudio-release-env.log 2>&1; then
+  ok "Release environment contains no placeholder values"
+else
+  block "Release environment still contains placeholder values"
+  sed 's/^/  /' /tmp/freeprintstudio-release-env.log
+fi
+
 [[ "$bundle_id" == "com.dannagrace.FreePrintStudio" ]] && ok "Bundle ID: $bundle_id" || block "Unexpected bundle ID: ${bundle_id:-missing}"
 [[ "$marketing_version" == "1.0" ]] && ok "Marketing version: $marketing_version" || block "Unexpected marketing version: ${marketing_version:-missing}"
 [[ "$build_number" == "1" ]] && ok "Build number: $build_number" || block "Unexpected build number: ${build_number:-missing}"
