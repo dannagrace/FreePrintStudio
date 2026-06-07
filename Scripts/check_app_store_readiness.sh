@@ -198,21 +198,18 @@ else
   block "App Review notes are missing from fastlane/metadata/review_information/notes.txt"
 fi
 
-missing_review_contact=()
-for env_name in \
-  APP_REVIEW_CONTACT_FIRST_NAME \
-  APP_REVIEW_CONTACT_LAST_NAME \
-  APP_REVIEW_CONTACT_PHONE \
-  APP_REVIEW_CONTACT_EMAIL; do
-  if [[ -z "${!env_name:-}" ]]; then
-    missing_review_contact+=("$env_name")
-  fi
-done
-
-if (( ${#missing_review_contact[@]} == 0 )); then
-  ok "App Review contact details configured through private environment variables"
+# Validates APP_REVIEW_CONTACT_FIRST_NAME, APP_REVIEW_CONTACT_LAST_NAME,
+# APP_REVIEW_CONTACT_PHONE, and APP_REVIEW_CONTACT_EMAIL.
+if Scripts/validate_app_review_contact.sh >/tmp/freeprintstudio-review-contact.log 2>&1; then
+  ok "App Review contact details are present and formatted"
 else
-  block "App Review contact details missing: ${missing_review_contact[*]}"
+  while IFS= read -r line; do
+    case "$line" in
+      OK:*) ok "${line#OK: }" ;;
+      BLOCKED:*) block "${line#BLOCKED: }" ;;
+      *) printf '  %s\n' "$line" ;;
+    esac
+  done </tmp/freeprintstudio-review-contact.log
 fi
 
 printf '\n== Public Pages ==\n'

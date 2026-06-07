@@ -64,6 +64,12 @@ Validate that installed signing assets match the release bundle, Apple team, and
 Scripts/check_code_signing_assets.sh
 ```
 
+Validate the private App Review contact fields before metadata upload or review submission:
+
+```sh
+Scripts/validate_app_review_contact.sh
+```
+
 GitHub Actions runs `Scripts/verify_release.sh` on pushes to `main` and pull requests.
 
 Audit App Store readiness, including public URLs, screenshots, Xcode, and signing state:
