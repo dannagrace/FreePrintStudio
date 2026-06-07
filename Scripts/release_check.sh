@@ -399,6 +399,8 @@ check_file "Scripts/capture_app_store_screenshot_set.sh" "App Store screenshot s
 check_contains "Scripts/capture_app_store_screenshot_set.sh" "iphone-fit.jpg" "Screenshot set script must capture Fit mode"
 check_contains "Scripts/capture_app_store_screenshot_set.sh" "iphone-fill.jpg" "Screenshot set script must capture Fill mode"
 check_contains "Scripts/capture_app_store_screenshot_set.sh" "iphone-stretch.jpg" "Screenshot set script must capture Stretch mode"
+check_contains "Scripts/capture_app_store_screenshots.sh" "FREEPRINTSTUDIO_ORIENTATION" "Screenshot script must support reproducible paper orientation captures"
+check_contains "Scripts/capture_app_store_screenshots.sh" "FREEPRINTSTUDIO_UNIT" "Screenshot script must support reproducible measurement unit captures"
 check_contains "Scripts/capture_app_store_screenshots.sh" "FREEPRINTSTUDIO_APPEARANCE" "Screenshot script must support reproducible light/dark captures"
 check_contains "Scripts/capture_app_store_screenshots.sh" "FREEPRINTSTUDIO_CONTENT_SIZE" "Screenshot script must support reproducible Larger Text captures"
 check_file "Scripts/validate_screenshot_sync.sh" "Screenshot sync validation script is required"

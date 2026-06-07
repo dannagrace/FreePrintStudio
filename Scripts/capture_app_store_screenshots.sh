@@ -39,6 +39,8 @@ APP_PATH="$DERIVED_DATA_PATH/Build/Products/Debug-iphonesimulator/FreePrintStudi
 SAMPLE_IMAGE="$ROOT_DIR/AppStore/Assets/sample-print-image.png"
 SCREENSHOT_PATH="${SCREENSHOT_PATH:-$ROOT_DIR/AppStore/Screenshots/iphone-main.jpg}"
 TEST_PAPER="${FREEPRINTSTUDIO_PAPER:-fourBySix}"
+TEST_ORIENTATION="${FREEPRINTSTUDIO_ORIENTATION:-portrait}"
+TEST_UNIT="${FREEPRINTSTUDIO_UNIT:-inch}"
 TEST_FIT_MODE="${FREEPRINTSTUDIO_FIT_MODE:-fit}"
 TEST_TARGET_WIDTH="${FREEPRINTSTUDIO_TARGET_WIDTH:-}"
 TEST_TARGET_HEIGHT="${FREEPRINTSTUDIO_TARGET_HEIGHT:-}"
@@ -92,6 +94,24 @@ if [[ -n "$TEST_APPEARANCE" ]]; then
   esac
 fi
 
+case "$TEST_ORIENTATION" in
+  portrait|landscape)
+    ;;
+  *)
+    printf 'Invalid FREEPRINTSTUDIO_ORIENTATION: %s. Use portrait or landscape.\n' "$TEST_ORIENTATION"
+    exit 1
+    ;;
+esac
+
+case "$TEST_UNIT" in
+  inch|centimeter|millimeter)
+    ;;
+  *)
+    printf 'Invalid FREEPRINTSTUDIO_UNIT: %s. Use inch, centimeter, or millimeter.\n' "$TEST_UNIT"
+    exit 1
+    ;;
+esac
+
 if [[ -n "$TEST_CONTENT_SIZE" ]]; then
   xcrun simctl ui "$DEVICE" content_size "$TEST_CONTENT_SIZE"
 fi
@@ -115,6 +135,8 @@ xcrun simctl terminate "$DEVICE" "$BUNDLE_ID" >/dev/null 2>&1 || true
 launch_args=(
   -FreePrintStudioTestImagePath "$TEST_DIR/sample-print-image.png" \
   -FreePrintStudioPaper "$TEST_PAPER" \
+  -FreePrintStudioOrientation "$TEST_ORIENTATION" \
+  -FreePrintStudioUnit "$TEST_UNIT" \
   -FreePrintStudioFitMode "$TEST_FIT_MODE"
 )
 
