@@ -9,6 +9,8 @@ DERIVED_DATA_PATH="${DERIVED_DATA_PATH:-/tmp/freeprintstudio-derived-data}"
 APP_PATH="$DERIVED_DATA_PATH/Build/Products/Debug-iphonesimulator/FreePrintStudio.app"
 SAMPLE_IMAGE="$ROOT_DIR/AppStore/Assets/sample-print-image.png"
 SIMCTL_TIMEOUT_SECONDS="${FREEPRINTSTUDIO_SIMCTL_TIMEOUT_SECONDS:-30}"
+XCODEBUILD_TIMEOUT_SECONDS="${FREEPRINTSTUDIO_XCODEBUILD_TIMEOUT_SECONDS:-300}"
+APP_LAUNCH_TIMEOUT_SECONDS="${FREEPRINTSTUDIO_APP_LAUNCH_TIMEOUT_SECONDS:-30}"
 TEST_PAPER="${FREEPRINTSTUDIO_PAPER:-letter}"
 TEST_ORIENTATION="${FREEPRINTSTUDIO_ORIENTATION:-portrait}"
 TEST_UNIT="${FREEPRINTSTUDIO_UNIT:-inch}"
@@ -154,18 +156,22 @@ select_installed_simulator() {
   exit 1
 }
 
-xcodebuild \
-  -project FreePrintStudio.xcodeproj \
-  -scheme FreePrintStudio \
-  -destination 'generic/platform=iOS Simulator' \
-  -derivedDataPath "$DERIVED_DATA_PATH" \
-  CODE_SIGNING_ALLOWED=NO \
-  build >/tmp/freeprintstudio-pdf-validation-build.log
+if ! run_with_timeout "$XCODEBUILD_TIMEOUT_SECONDS" \
+  xcodebuild \
+    -project FreePrintStudio.xcodeproj \
+    -scheme FreePrintStudio \
+    -destination 'generic/platform=iOS Simulator' \
+    -derivedDataPath "$DERIVED_DATA_PATH" \
+    CODE_SIGNING_ALLOWED=NO \
+    build >/tmp/freeprintstudio-pdf-validation-build.log 2>&1; then
+  cat /tmp/freeprintstudio-pdf-validation-build.log
+  exit 1
+fi
 
 DEVICE="$(select_installed_simulator)"
 printf 'Using simulator: %s\n' "$DEVICE"
 
-CONTAINER="$(xcrun simctl get_app_container "$DEVICE" "$BUNDLE_ID" data)"
+CONTAINER="$(run_with_timeout "$SIMCTL_TIMEOUT_SECONDS" xcrun simctl get_app_container "$DEVICE" "$BUNDLE_ID" data)"
 TEST_DIR="$CONTAINER/Documents/FreePrintStudioPDFValidation"
 mkdir -p "$TEST_DIR"
 cp "$SAMPLE_IMAGE" "$TEST_DIR/sample-print-image.png"
@@ -262,8 +268,8 @@ validate_pdf() {
 
   rm -f "$app_pdf_path" "$host_pdf_path"
 
-  xcrun simctl terminate "$DEVICE" "$BUNDLE_ID" >/dev/null 2>&1 || true
-  xcrun simctl launch "$DEVICE" "$BUNDLE_ID" \
+  run_with_timeout "$SIMCTL_TIMEOUT_SECONDS" xcrun simctl terminate "$DEVICE" "$BUNDLE_ID" >/dev/null 2>&1 || true
+  if ! run_with_timeout "$APP_LAUNCH_TIMEOUT_SECONDS" xcrun simctl launch "$DEVICE" "$BUNDLE_ID" \
     -FreePrintStudioTestImagePath "$TEST_DIR/sample-print-image.png" \
     -FreePrintStudioPaper "$paper" \
     -FreePrintStudioOrientation "$orientation" \
@@ -272,7 +278,10 @@ validate_pdf() {
     -FreePrintStudioTargetWidth "$target_width" \
     -FreePrintStudioTargetHeight "$target_height" \
     -FreePrintStudioAutoExportPDFPath "$app_pdf_path" \
-    >/tmp/freeprintstudio-pdf-validation-launch.log
+    >/tmp/freeprintstudio-pdf-validation-launch.log 2>&1; then
+    cat /tmp/freeprintstudio-pdf-validation-launch.log
+    exit 1
+  fi
 
   for _ in {1..30}; do
     if [[ -s "$app_pdf_path" ]]; then
