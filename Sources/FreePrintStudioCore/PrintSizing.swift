@@ -191,6 +191,20 @@ public enum TargetSizeValidation: Equatable, Sendable {
 public enum PrintSizing {
     public static let pointsPerInch: Double = 72
 
+    public static func parseMeasurement(_ text: String) -> Double? {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return nil }
+
+        let commaCount = trimmed.filter { $0 == "," }.count
+        let dotCount = trimmed.filter { $0 == "." }.count
+        guard commaCount <= 1, dotCount <= 1, !(commaCount == 1 && dotCount == 1) else {
+            return nil
+        }
+
+        let normalized = commaCount == 1 ? trimmed.replacingOccurrences(of: ",", with: ".") : trimmed
+        return Double(normalized)
+    }
+
     public static func targetSize(width: Double, height: Double, unit: MeasurementUnit) -> PrintSize {
         PrintSize(widthPoints: unit.points(from: width), heightPoints: unit.points(from: height))
     }

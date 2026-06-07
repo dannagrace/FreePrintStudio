@@ -310,11 +310,11 @@ struct ContentView: View {
     }
 
     private var parsedWidth: Double? {
-        Double(widthText.trimmingCharacters(in: .whitespacesAndNewlines))
+        PrintSizing.parseMeasurement(widthText)
     }
 
     private var parsedHeight: Double? {
-        Double(heightText.trimmingCharacters(in: .whitespacesAndNewlines))
+        PrintSizing.parseMeasurement(heightText)
     }
 
     private var targetValidation: TargetSizeValidation {
@@ -399,10 +399,10 @@ struct ContentView: View {
 
     private func convertMeasurementFields(from oldUnit: MeasurementUnit, to newUnit: MeasurementUnit) {
         guard oldUnit != newUnit else { return }
-        if let width = Double(widthText), width > 0 {
+        if let width = PrintSizing.parseMeasurement(widthText), width > 0 {
             widthText = formatMeasurement(PrintSizing.convertMeasurement(width, from: oldUnit, to: newUnit))
         }
-        if let height = Double(heightText), height > 0 {
+        if let height = PrintSizing.parseMeasurement(heightText), height > 0 {
             heightText = formatMeasurement(PrintSizing.convertMeasurement(height, from: oldUnit, to: newUnit))
         }
         recenterImage()
@@ -475,8 +475,8 @@ struct ContentView: View {
 
         let exportURL = URL(fileURLWithPath: arguments[exportPathIndex + 1])
         let exportPaperSize = selectedPaper.size(orientation: selectedOrientation)
-        let exportWidth = Double(widthText) ?? 4
-        let exportHeight = Double(heightText) ?? 6
+        let exportWidth = PrintSizing.parseMeasurement(widthText) ?? 4
+        let exportHeight = PrintSizing.parseMeasurement(heightText) ?? 6
         let exportTargetSize = PrintSizing.targetSize(width: exportWidth, height: exportHeight, unit: selectedUnit)
         let exportPlacement = PrintSizing.centeredPlacement(targetSize: exportTargetSize, on: exportPaperSize)
 
