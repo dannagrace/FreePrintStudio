@@ -26,6 +26,7 @@
 - Add app name, subtitle, description, promotional text, keywords, categories, review notes, and support contact from `AppStore/metadata.md`; the reusable Fastlane copy lives under `fastlane/metadata/en-US`.
 - Optional automation: run `Scripts/install_release_dependencies.sh` or `brew install fastlane`, then `Scripts/run_fastlane.sh ios metadata` to upload App Store metadata and screenshots without submitting for review.
 - Optional TestFlight automation: configure `ASC_KEY_ID`, `ASC_ISSUER_ID`, and `ASC_KEY_PATH`, then run `Scripts/run_fastlane.sh ios upload_testflight` to upload the exported IPA without external distribution.
+- Final review submission automation: after the uploaded build has processed and every listing field is final, run `APP_STORE_BUILD_NUMBER=... CONFIRM_SUBMIT_FOR_REVIEW=1 Scripts/run_fastlane.sh ios submit_review`.
 - Upload screenshots from `fastlane/screenshots/en-US` or through App Store Connect.
 - Host a public privacy policy page and add its URL in App Store Connect.
 - Enter App Privacy details as no data collected, no tracking, no third-party analytics, and no advertising SDKs.

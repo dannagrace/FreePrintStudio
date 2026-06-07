@@ -67,6 +67,22 @@ def review_information_options
   info
 end
 
+def submission_information_options
+  {
+    export_compliance_uses_encryption: false,
+    content_rights_contains_third_party_content: false
+  }
+end
+
+def confirm_submit_for_review!
+  return if ENV["CONFIRM_SUBMIT_FOR_REVIEW"].to_s == "1"
+
+  UI.user_error!(
+    "Set CONFIRM_SUBMIT_FOR_REVIEW=1 only after the App Store Connect build, metadata, screenshots, " \
+    "privacy details, age rating, and App Review contact details are final."
+  )
+end
+
 opt_out_usage
 default_platform(:ios)
 
@@ -98,6 +114,33 @@ platform :ios do
         skip_binary_upload: true,
         skip_app_version_update: true,
         submit_for_review: false,
+        automatic_release: false,
+        force: true,
+        overwrite_screenshots: true
+      )
+    )
+  end
+
+  desc "Submit an already uploaded App Store Connect build for App Review"
+  lane :submit_review do
+    confirm_submit_for_review!
+
+    build_number = ENV["APP_STORE_BUILD_NUMBER"].to_s.strip
+    UI.user_error!("Set APP_STORE_BUILD_NUMBER to the processed App Store Connect build number before submitting for review") if build_number.empty?
+
+    deliver(
+      app_store_connect_credentials(required: true).merge(
+        app_identifier: APP_IDENTIFIER,
+        app_version: APP_VERSION,
+        build_number: build_number,
+        primary_category: PRIMARY_CATEGORY,
+        secondary_category: SECONDARY_CATEGORY,
+        app_review_information: review_information_options,
+        submission_information: submission_information_options,
+        metadata_path: File.join(PROJECT_ROOT, "fastlane/metadata"),
+        screenshots_path: File.join(PROJECT_ROOT, "fastlane/screenshots"),
+        skip_binary_upload: true,
+        submit_for_review: true,
         automatic_release: false,
         force: true,
         overwrite_screenshots: true

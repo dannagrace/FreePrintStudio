@@ -123,6 +123,14 @@ ASC_KEY_ID=XXXXXXXXXX ASC_ISSUER_ID=00000000-0000-0000-0000-000000000000 ASC_KEY
 
 If the exported IPA lives outside the default `build/AppStoreExport/` folder, pass `IPA_PATH=/absolute/path/to/FreePrintStudio.ipa`.
 
+After the uploaded build is processed in App Store Connect and the store listing, privacy details, age rating, screenshots, and review contact details are final, submit the selected build for App Review:
+
+```sh
+APP_STORE_BUILD_NUMBER=1 CONFIRM_SUBMIT_FOR_REVIEW=1 Scripts/run_fastlane.sh ios submit_review
+```
+
+`submit_review` uses manual release (`automatic_release: false`) and submits only the explicit `APP_STORE_BUILD_NUMBER`.
+
 App Store Connect questionnaire drafts are stored in:
 
 - `AppStore/app-privacy.md`
