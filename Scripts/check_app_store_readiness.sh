@@ -135,6 +135,13 @@ Scripts/release_check.sh >/tmp/freeprintstudio-release-check.log 2>&1 && ok "Sta
   cat /tmp/freeprintstudio-release-check.log
 }
 
+if Scripts/validate_app_icon_set.sh >/tmp/freeprintstudio-app-icon-set.log 2>&1; then
+  ok "App icon catalog has complete dimensions and no alpha channels"
+else
+  block "App icon catalog is incomplete or invalid"
+  sed 's/^/  /' /tmp/freeprintstudio-app-icon-set.log
+fi
+
 check_screenshot_size "AppStore/Screenshots/iphone-main.jpg" "iPhone 6.9-inch" "1260 x 2736,1290 x 2796,1320 x 2868"
 check_screenshot_size "AppStore/Screenshots/iphone-fit.jpg" "iPhone Fit mode" "1260 x 2736,1290 x 2796,1320 x 2868"
 check_screenshot_size "AppStore/Screenshots/iphone-fill.jpg" "iPhone Fill mode" "1260 x 2736,1290 x 2796,1320 x 2868"

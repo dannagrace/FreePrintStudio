@@ -5,6 +5,7 @@
 - Run `Scripts/verify_release.sh`.
 - Run `Scripts/validate_app_store_metadata.sh`.
 - Run `Scripts/validate_app_privacy_details.sh`.
+- Run `Scripts/validate_app_icon_set.sh`.
 - Run `Scripts/validate_privacy_surface.sh`.
 - Run `Scripts/validate_release_env.sh` after creating or editing `Config/release.env`.
 - Run `Scripts/check_code_signing_assets.sh` after installing certificates or provisioning profiles.

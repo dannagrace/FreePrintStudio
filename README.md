@@ -46,6 +46,12 @@ Validate App Privacy Details before uploading them to App Store Connect:
 Scripts/validate_app_privacy_details.sh
 ```
 
+Validate the full iPhone, iPad, and App Store marketing icon catalog:
+
+```sh
+Scripts/validate_app_icon_set.sh
+```
+
 Validate that the app source and release configuration still match the no-data-collection and no-tracking privacy disclosures:
 
 ```sh

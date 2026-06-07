@@ -180,6 +180,16 @@ check_sips_property "FreePrintStudio/Resources/Assets.xcassets/AppIcon.appiconse
 check_sips_property "FreePrintStudio/Resources/Assets.xcassets/AppIcon.appiconset/AppIcon.png" "pixelHeight" "1024" "App Store icon must be 1024px tall"
 check_sips_property "FreePrintStudio/Resources/Assets.xcassets/AppIcon.appiconset/AppIcon.png" "hasAlpha" "no" "App Store icon must not contain an alpha channel"
 check_icon_artwork "FreePrintStudio/Resources/Assets.xcassets/AppIcon.appiconset/AppIcon.png"
+check_file "Scripts/validate_app_icon_set.sh" "App icon set validation script is required"
+if [[ -x "Scripts/validate_app_icon_set.sh" ]]; then
+  Scripts/validate_app_icon_set.sh || failures=$((failures + 1))
+else
+  printf 'FAIL: App icon set validation script must be executable (Scripts/validate_app_icon_set.sh)\n'
+  failures=$((failures + 1))
+fi
+check_contains "Scripts/validate_app_icon_set.sh" "ios-marketing" "App icon set validation must check the marketing icon"
+check_contains "Scripts/validate_app_icon_set.sh" "hasAlpha" "App icon set validation must reject alpha channels"
+check_contains "Scripts/check_app_store_readiness.sh" "validate_app_icon_set.sh" "Readiness audit must validate the app icon catalog"
 check_file "FreePrintStudio/Resources/PrivacyInfo.xcprivacy" "Privacy manifest is required for release documentation"
 check_contains "FreePrintStudio.xcodeproj/project.pbxproj" "PrivacyInfo.xcprivacy" "Privacy manifest must be included in the Xcode project"
 check_contains "FreePrintStudio/ContentView.swift" "About FreePrint Studio" "App must expose an About screen"
@@ -433,6 +443,7 @@ check_contains "README.md" "Scripts/validate_app_review_contact.sh" "README must
 check_contains "README.md" "Scripts/run_fastlane.sh ios submit_review" "README must document the guarded App Review submission command"
 check_contains "README.md" "APP_REVIEW_CONTACT_EMAIL" "README must document private App Review contact variables"
 check_contains "README.md" "Scripts/validate_app_store_metadata.sh" "README must document App Store metadata limit validation"
+check_contains "README.md" "Scripts/validate_app_icon_set.sh" "README must document app icon set validation"
 check_contains "AppStore/release-checklist.md" "Scripts/run_fastlane.sh ios upload_testflight" "Release checklist must include the TestFlight upload command"
 check_contains "AppStore/release-checklist.md" "Scripts/run_fastlane.sh ios app_store_connect_state" "Release checklist must include the App Store Connect state preflight command"
 check_contains "AppStore/release-checklist.md" "Scripts/run_fastlane.sh ios privacy_details" "Release checklist must include the App Privacy Details upload command"
@@ -444,6 +455,7 @@ check_contains "AppStore/release-checklist.md" "Scripts/validate_app_review_cont
 check_contains "AppStore/release-checklist.md" "Scripts/run_fastlane.sh ios submit_review" "Release checklist must include the guarded App Review submission command"
 check_contains "AppStore/release-checklist.md" "APP_REVIEW_CONTACT_EMAIL" "Release checklist must include App Review contact configuration"
 check_contains "AppStore/release-checklist.md" "Scripts/validate_app_store_metadata.sh" "Release checklist must include metadata limit validation"
+check_contains "AppStore/release-checklist.md" "Scripts/validate_app_icon_set.sh" "Release checklist must include app icon set validation"
 check_file ".github/workflows/release.yml" "GitHub Actions release gate workflow is required"
 check_contains ".github/workflows/release.yml" "Scripts/verify_release.sh" "Release workflow must run the local release gate"
 check_contains ".github/workflows/release.yml" "timeout-minutes: 10" "Slow release workflow steps must have command-level timeouts"
