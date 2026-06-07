@@ -107,6 +107,14 @@ Validate that installed signing assets match the release bundle, Apple team, and
 Scripts/check_code_signing_assets.sh
 ```
 
+Run the full App Store archive preflight after private release values and signing assets are configured, before creating the signed archive:
+
+```sh
+Scripts/verify_release.sh archive-preflight
+# Or directly:
+Scripts/preflight_app_store_archive.sh
+```
+
 Validate a signed archive and exported App Store IPA before uploading to TestFlight:
 
 ```sh
@@ -172,6 +180,7 @@ Release metadata, screenshot assets, and the remaining App Store Connect checkli
 Prepare a signed App Store archive after configuring an Apple Developer Team in Xcode:
 
 ```sh
+Scripts/preflight_app_store_archive.sh
 DEVELOPMENT_TEAM_ID=ABCDE12345 ALLOW_PROVISIONING_UPDATES=1 Scripts/archive_app_store.sh
 ```
 

@@ -316,6 +316,11 @@ run_submission_packet_generation() {
   Scripts/prepare_app_store_submission_packet.sh
 }
 
+run_archive_preflight_validation() {
+  printf '== App Store archive preflight ==\n'
+  Scripts/preflight_app_store_archive.sh
+}
+
 run_all() {
   run_static_checks
   printf '\n'
@@ -396,8 +401,11 @@ case "${1:-all}" in
   submission-packet)
     run_submission_packet_generation
     ;;
+  archive-preflight)
+    run_archive_preflight_validation
+    ;;
   *)
-    printf 'Usage: %s [all|store-ready|static|core|plist|privacy|questionnaires|pdf|build|screenshots|accessibility|simulator-workflow|photo-import|print-sheet|submission-packet]\n' "$0"
+    printf 'Usage: %s [all|store-ready|static|core|plist|privacy|questionnaires|pdf|build|screenshots|accessibility|simulator-workflow|photo-import|print-sheet|submission-packet|archive-preflight]\n' "$0"
     exit 1
     ;;
 esac

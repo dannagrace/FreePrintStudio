@@ -418,6 +418,18 @@ check_file "fastlane/screenshots/en-US/ipad-main.jpg" "Fastlane iPad screenshot 
 check_file "Scripts/archive_app_store.sh" "App Store archive script is required"
 check_contains "Scripts/archive_app_store.sh" "xcodebuild" "Archive script must use xcodebuild"
 check_contains "Scripts/archive_app_store.sh" "DEVELOPMENT_TEAM_ID" "Archive script must support an explicit Apple Developer Team ID"
+check_file "Scripts/preflight_app_store_archive.sh" "App Store archive preflight script is required"
+if [[ ! -x "Scripts/preflight_app_store_archive.sh" ]]; then
+  printf 'FAIL: App Store archive preflight script must be executable (Scripts/preflight_app_store_archive.sh)\n'
+  failures=$((failures + 1))
+fi
+check_contains "Scripts/preflight_app_store_archive.sh" "Scripts/verify_release.sh" "Archive preflight must run the local release gate"
+check_contains "Scripts/preflight_app_store_archive.sh" "Scripts/validate_release_env.sh" "Archive preflight must validate private release env placeholders"
+check_contains "Scripts/preflight_app_store_archive.sh" "Scripts/validate_app_review_contact.sh" "Archive preflight must validate App Review contact details"
+check_contains "Scripts/preflight_app_store_archive.sh" "Scripts/check_code_signing_assets.sh" "Archive preflight must validate signing assets"
+check_contains "Scripts/preflight_app_store_archive.sh" "Scripts/check_app_store_readiness.sh" "Archive preflight must finish with the full readiness audit"
+check_contains "Scripts/preflight_app_store_archive.sh" "App Store archive preflight passed" "Archive preflight must print a clear success message"
+check_contains "Scripts/verify_release.sh" "archive-preflight" "Release verification must expose the archive preflight command"
 check_file "Scripts/validate_app_store_export.sh" "App Store archive/export validation script is required"
 if [[ ! -x "Scripts/validate_app_store_export.sh" ]]; then
   printf 'FAIL: App Store archive/export validation script must be executable (Scripts/validate_app_store_export.sh)\n'
@@ -582,6 +594,7 @@ check_contains "README.md" "APP_REVIEW_CONTACT_EMAIL" "README must document priv
 check_contains "README.md" "Scripts/validate_app_store_metadata.sh" "README must document App Store metadata limit validation"
 check_contains "README.md" "Scripts/validate_app_icon_set.sh" "README must document app icon set validation"
 check_contains "README.md" "Scripts/validate_app_store_export.sh" "README must document App Store archive/export validation"
+check_contains "README.md" "Scripts/preflight_app_store_archive.sh" "README must document App Store archive preflight validation"
 check_contains "README.md" "Scripts/validate_app_store_questionnaires.sh" "README must document App Store questionnaire consistency validation"
 check_contains "README.md" "Scripts/verify_release.sh questionnaires" "README must document the questionnaire release command"
 check_contains "README.md" "Fastlane metadata, App Privacy Details, and final review-submission lanes run the local App Store questionnaire validation" "README must document Fastlane questionnaire validation gates"
@@ -610,6 +623,7 @@ check_contains "AppStore/release-checklist.md" "APP_REVIEW_CONTACT_EMAIL" "Relea
 check_contains "AppStore/release-checklist.md" "Scripts/validate_app_store_metadata.sh" "Release checklist must include metadata limit validation"
 check_contains "AppStore/release-checklist.md" "Scripts/validate_app_icon_set.sh" "Release checklist must include app icon set validation"
 check_contains "AppStore/release-checklist.md" "Scripts/validate_app_store_export.sh" "Release checklist must include App Store archive/export validation"
+check_contains "AppStore/release-checklist.md" "Scripts/preflight_app_store_archive.sh" "Release checklist must include App Store archive preflight validation"
 check_contains "AppStore/release-checklist.md" "Scripts/validate_app_store_questionnaires.sh" "Release checklist must include App Store questionnaire consistency validation"
 check_contains "AppStore/release-checklist.md" "Scripts/verify_release.sh questionnaires" "Release checklist must include the questionnaire release command"
 check_contains "AppStore/release-checklist.md" "Scripts/validate_simulator_workflow.sh" "Release checklist must include simulator workflow validation"
@@ -633,6 +647,7 @@ check_contains "Scripts/prepare_app_store_submission_packet.sh" "check_app_store
 check_contains "Scripts/prepare_app_store_submission_packet.sh" 'readiness_status="$?"' "Submission packet generator must preserve the readiness audit exit code"
 check_contains "Scripts/prepare_app_store_submission_packet.sh" "ACTION_ITEMS.md" "Submission packet generator must write actionable external release blockers"
 check_contains "Scripts/prepare_app_store_submission_packet.sh" "Scripts/bootstrap_release_env.sh" "Submission packet action items must include the release environment bootstrap"
+check_contains "Scripts/prepare_app_store_submission_packet.sh" "Scripts/preflight_app_store_archive.sh" "Submission packet action items must include the App Store archive preflight"
 check_contains "Scripts/prepare_app_store_submission_packet.sh" "Readiness Blockers" "Submission packet action items must summarize readiness blockers"
 check_contains "Scripts/prepare_app_store_submission_packet.sh" "Readiness Warnings" "Submission packet action items must summarize readiness warnings"
 check_contains "Scripts/prepare_app_store_submission_packet.sh" "sha256" "Submission packet generator must record file checksums"

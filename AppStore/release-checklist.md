@@ -12,6 +12,7 @@
 - Run `Scripts/bootstrap_release_env.sh` before filling private Apple signing, App Review contact, and App Store Connect values in `Config/release.env`.
 - Run `Scripts/validate_release_env.sh` after creating or editing `Config/release.env`.
 - Run `Scripts/check_code_signing_assets.sh` after installing certificates or provisioning profiles.
+- Run `Scripts/verify_release.sh archive-preflight` before creating the signed App Store archive.
 - Run `Scripts/validate_app_store_export.sh` after creating a signed archive and App Store IPA.
 - Run `Scripts/validate_app_review_contact.sh` after setting App Review contact values.
 - Run `Scripts/validate_pdf_export.sh` after print/PDF rendering changes; it validates Fit, Fill, and Stretch PDF output.
@@ -35,6 +36,7 @@
 - Configure signing with an Apple Developer Program team in Xcode.
 - Fill local release environment values from `Config/release.env.example`; release scripts automatically load `Config/release.env` when it exists. Keep `Config/release.env` and any `AuthKey_*.p8` private key out of git.
 - Set private App Review contact values before metadata upload or submission: `APP_REVIEW_CONTACT_FIRST_NAME`, `APP_REVIEW_CONTACT_LAST_NAME`, `APP_REVIEW_CONTACT_PHONE`, and `APP_REVIEW_CONTACT_EMAIL`.
+- Run `Scripts/preflight_app_store_archive.sh` and fix every failed step before archiving.
 - Archive with Xcode 26 or later using `DEVELOPMENT_TEAM_ID=... ALLOW_PROVISIONING_UPDATES=1 Scripts/archive_app_store.sh`.
 - Confirm `Scripts/archive_app_store.sh` finishes the `Validate Export` step before uploading the IPA.
 - Upload the signed archive or exported IPA to App Store Connect.
