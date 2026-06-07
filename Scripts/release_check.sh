@@ -412,6 +412,8 @@ check_contains "Scripts/verify_release.sh" "validate_screenshot_sync.sh" "Releas
 check_file "Scripts/validate_pdf_export.sh" "PDF export validation script is required"
 check_contains "Scripts/validate_pdf_export.sh" "FreePrintStudioAutoExportPDFPath" "PDF export validation must exercise the app renderer"
 check_contains "Scripts/validate_pdf_export.sh" "FIT_MODES=(fit fill stretch)" "PDF export validation must cover Fit, Fill, and Stretch output modes"
+check_contains "Scripts/validate_pdf_export.sh" "4,5" "PDF export validation must cover localized decimal comma width input"
+check_contains "Scripts/validate_pdf_export.sh" "6,25" "PDF export validation must cover localized decimal comma height input"
 check_file "Scripts/check_app_store_readiness.sh" "App Store readiness audit script is required"
 check_contains "Scripts/check_app_store_readiness.sh" "DEVELOPMENT_TEAM_ID" "Readiness audit must check Apple Developer Team ID"
 check_contains "Scripts/check_app_store_readiness.sh" "check_code_signing_assets.sh" "Readiness audit must run the precise code signing asset preflight"

@@ -93,29 +93,32 @@ TEST_DIR="$CONTAINER/Documents/FreePrintStudioPDFValidation"
 mkdir -p "$TEST_DIR"
 cp "$SAMPLE_IMAGE" "$TEST_DIR/sample-print-image.png"
 
-host_pdf_path_for_mode() {
-  local mode="$1"
+host_pdf_path_for_label() {
+  local label="$1"
   local requested_path="${PDF_EXPORT_PATH:-}"
 
   if [[ -z "$requested_path" ]]; then
-    printf '/tmp/freeprintstudio-export-validation-%s.pdf\n' "$mode"
+    printf '/tmp/freeprintstudio-export-validation-%s.pdf\n' "$label"
     return
   fi
 
   if (( ${#FIT_MODES[@]} == 1 )); then
     printf '%s\n' "$requested_path"
   elif [[ "$requested_path" == *.* ]]; then
-    printf '%s-%s.%s\n' "${requested_path%.*}" "$mode" "${requested_path##*.}"
+    printf '%s-%s.%s\n' "${requested_path%.*}" "$label" "${requested_path##*.}"
   else
-    printf '%s-%s.pdf\n' "$requested_path" "$mode"
+    printf '%s-%s.pdf\n' "$requested_path" "$label"
   fi
 }
 
 validate_pdf() {
-  local mode="$1"
-  local app_pdf_path="$TEST_DIR/export-validation-$mode.pdf"
+  local label="$1"
+  local mode="$2"
+  local target_width="$3"
+  local target_height="$4"
+  local app_pdf_path="$TEST_DIR/export-validation-$label.pdf"
   local host_pdf_path
-  host_pdf_path="$(host_pdf_path_for_mode "$mode")"
+  host_pdf_path="$(host_pdf_path_for_label "$label")"
 
   case "$mode" in
     fit|fill|stretch)
@@ -133,8 +136,8 @@ validate_pdf() {
     -FreePrintStudioTestImagePath "$TEST_DIR/sample-print-image.png" \
     -FreePrintStudioPaper "$TEST_PAPER" \
     -FreePrintStudioFitMode "$mode" \
-    -FreePrintStudioTargetWidth "$TEST_TARGET_WIDTH" \
-    -FreePrintStudioTargetHeight "$TEST_TARGET_HEIGHT" \
+    -FreePrintStudioTargetWidth "$target_width" \
+    -FreePrintStudioTargetHeight "$target_height" \
     -FreePrintStudioAutoExportPDFPath "$app_pdf_path" \
     >/tmp/freeprintstudio-pdf-validation-launch.log
 
@@ -153,14 +156,17 @@ validate_pdf() {
   mkdir -p "$(dirname "$host_pdf_path")"
   cp "$app_pdf_path" "$host_pdf_path"
 
-  python3 - "$host_pdf_path" "$EXPECTED_WIDTH_POINTS" "$EXPECTED_HEIGHT_POINTS" "$mode" <<'PY'
+  python3 - "$host_pdf_path" "$EXPECTED_WIDTH_POINTS" "$EXPECTED_HEIGHT_POINTS" "$mode" "$target_width" "$target_height" <<'PY'
 import re
 import sys
+import zlib
 
 path = sys.argv[1]
 expected_width = float(sys.argv[2])
 expected_height = float(sys.argv[3])
 mode = sys.argv[4]
+target_width_text = sys.argv[5]
+target_height_text = sys.argv[6]
 data = open(path, "rb").read()
 
 if not data.startswith(b"%PDF-"):
@@ -191,10 +197,47 @@ if b"/Subtype /Image" not in data:
 if len(data) < 1000:
     raise SystemExit("Exported PDF is unexpectedly small")
 
+def parse_measurement(value: str) -> float:
+    value = value.strip()
+    if value.count(",") == 1 and "." not in value:
+        value = value.replace(",", ".")
+    return float(value)
+
+if mode == "stretch":
+    expected_draw_width = parse_measurement(target_width_text) * 72
+    expected_draw_height = parse_measurement(target_height_text) * 72
+    decoded_streams = []
+    for stream in re.findall(rb"stream\r?\n(.*?)\r?\nendstream", data, re.S):
+        try:
+            decoded_streams.append(zlib.decompress(stream))
+        except zlib.error:
+            decoded_streams.append(stream)
+    content = b"\n".join(decoded_streams)
+    matrix_match = re.search(
+        rb"([-+]?[0-9]*\.?[0-9]+)\s+0\s+0\s+([-+]?[0-9]*\.?[0-9]+)\s+"
+        rb"([-+]?[0-9]*\.?[0-9]+)\s+([-+]?[0-9]*\.?[0-9]+)\s+cm\s+/Im\d+\s+Do",
+        content,
+    )
+    if not matrix_match:
+        raise SystemExit("Image draw matrix not found in stretch PDF content stream")
+
+    draw_width = float(matrix_match.group(1))
+    draw_height = float(matrix_match.group(2))
+    if abs(draw_width - expected_draw_width) > tolerance or abs(draw_height - expected_draw_height) > tolerance:
+        raise SystemExit(
+            f"Unexpected stretch image draw size: {draw_width:.4f} x {draw_height:.4f}, "
+            f"expected {expected_draw_width:.4f} x {expected_draw_height:.4f}"
+        )
+    print(f"Image draw matrix: {draw_width:.4f} x {draw_height:.4f} pt")
+
 print(f"Validated {mode} exported PDF: {path}")
 PY
 }
 
 for mode in "${FIT_MODES[@]}"; do
-  validate_pdf "$mode"
+  validate_pdf "$mode" "$mode" "$TEST_TARGET_WIDTH" "$TEST_TARGET_HEIGHT"
 done
+
+if [[ -z "${FREEPRINTSTUDIO_TARGET_WIDTH:-}" && -z "${FREEPRINTSTUDIO_TARGET_HEIGHT:-}" && -z "${FREEPRINTSTUDIO_FIT_MODE:-}" ]]; then
+  validate_pdf "localized-decimal-stretch" "stretch" "4,5" "6,25"
+fi
