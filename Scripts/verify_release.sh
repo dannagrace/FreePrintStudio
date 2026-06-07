@@ -176,6 +176,7 @@ run_screenshot_checks() {
     esac
     check_screenshot_not_blank "$screenshot_path"
   done
+  Scripts/validate_screenshot_sync.sh
 }
 
 run_all() {

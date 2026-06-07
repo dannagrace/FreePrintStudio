@@ -324,6 +324,14 @@ check_contains "Scripts/capture_app_store_screenshot_set.sh" "iphone-fill.jpg" "
 check_contains "Scripts/capture_app_store_screenshot_set.sh" "iphone-stretch.jpg" "Screenshot set script must capture Stretch mode"
 check_contains "Scripts/capture_app_store_screenshots.sh" "FREEPRINTSTUDIO_APPEARANCE" "Screenshot script must support reproducible light/dark captures"
 check_contains "Scripts/capture_app_store_screenshots.sh" "FREEPRINTSTUDIO_CONTENT_SIZE" "Screenshot script must support reproducible Larger Text captures"
+check_file "Scripts/validate_screenshot_sync.sh" "Screenshot sync validation script is required"
+if [[ ! -x "Scripts/validate_screenshot_sync.sh" ]]; then
+  printf 'FAIL: Screenshot sync validation script must be executable (Scripts/validate_screenshot_sync.sh)\n'
+  failures=$((failures + 1))
+fi
+check_contains "Scripts/validate_screenshot_sync.sh" "AppStore/Screenshots" "Screenshot sync validation must check reviewed App Store screenshots"
+check_contains "Scripts/validate_screenshot_sync.sh" "fastlane/screenshots/en-US" "Screenshot sync validation must check Fastlane upload screenshots"
+check_contains "Scripts/verify_release.sh" "validate_screenshot_sync.sh" "Release verification must validate screenshot sync"
 check_file "Scripts/validate_pdf_export.sh" "PDF export validation script is required"
 check_contains "Scripts/validate_pdf_export.sh" "FreePrintStudioAutoExportPDFPath" "PDF export validation must exercise the app renderer"
 check_file "Scripts/check_app_store_readiness.sh" "App Store readiness audit script is required"
