@@ -76,6 +76,12 @@ Validate that installed signing assets match the release bundle, Apple team, and
 Scripts/check_code_signing_assets.sh
 ```
 
+Validate a signed archive and exported App Store IPA before uploading to TestFlight:
+
+```sh
+Scripts/validate_app_store_export.sh
+```
+
 Validate the private App Review contact fields before metadata upload or review submission:
 
 ```sh
@@ -122,6 +128,7 @@ DEVELOPMENT_TEAM_ID=ABCDE12345 ALLOW_PROVISIONING_UPDATES=1 Scripts/archive_app_
 ```
 
 The archive script runs the local release gate first, then creates `build/FreePrintStudio.xcarchive` and exports an App Store Connect IPA under `build/AppStoreExport/`.
+After export it runs `Scripts/validate_app_store_export.sh`, which checks the archive metadata, signed app bundle, dSYM, IPA `Payload`, bundle ID, app version, and build number before upload.
 `Config/release.env.example` lists the signing and App Store Connect variables used by the release scripts. Its placeholder assignments are commented out so a copied file cannot accidentally satisfy readiness checks. Keep the filled file and any `AuthKey_*.p8` private key outside git.
 Release scripts automatically load `Config/release.env` when it exists; set `RELEASE_ENV_PATH` to load a different private env file.
 

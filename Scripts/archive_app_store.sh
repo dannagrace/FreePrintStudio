@@ -76,5 +76,10 @@ xcodebuild \
   >"$EXPORT_LOG" 2>&1
 tail -n 20 "$EXPORT_LOG"
 
+printf '\n== Validate Export ==\n'
+ARCHIVE_PATH="$ARCHIVE_PATH" \
+EXPORT_PATH="$EXPORT_PATH" \
+  Scripts/validate_app_store_export.sh
+
 printf '\nArchive: %s\n' "$ARCHIVE_PATH"
 printf 'Export: %s\n' "$EXPORT_PATH"

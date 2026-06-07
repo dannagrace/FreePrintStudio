@@ -328,6 +328,7 @@ check_contains "fastlane/Fastfile" "lane :app_store_connect_state" "Fastfile mus
 check_contains "fastlane/Fastfile" "lane :archive" "Fastfile must expose an archive lane"
 check_contains "fastlane/Fastfile" "lane :upload_testflight" "Fastfile must expose a TestFlight upload lane"
 check_contains "fastlane/Fastfile" "lane :submit_review" "Fastfile must expose a guarded App Store review submission lane"
+check_contains "fastlane/Fastfile" "validate_app_store_export!" "Fastfile must validate App Store export artifacts before upload"
 check_contains "fastlane/Fastfile" "app_store_connect_api_key" "Fastfile must support App Store Connect API key upload"
 check_contains "fastlane/Fastfile" "upload_to_testflight" "Fastfile must upload the signed IPA to TestFlight"
 check_contains "fastlane/Fastfile" "upload_app_privacy_details_to_app_store" "Fastfile must support App Privacy Details upload"
@@ -382,6 +383,14 @@ check_file "fastlane/screenshots/en-US/ipad-main.jpg" "Fastlane iPad screenshot 
 check_file "Scripts/archive_app_store.sh" "App Store archive script is required"
 check_contains "Scripts/archive_app_store.sh" "xcodebuild" "Archive script must use xcodebuild"
 check_contains "Scripts/archive_app_store.sh" "DEVELOPMENT_TEAM_ID" "Archive script must support an explicit Apple Developer Team ID"
+check_file "Scripts/validate_app_store_export.sh" "App Store archive/export validation script is required"
+if [[ ! -x "Scripts/validate_app_store_export.sh" ]]; then
+  printf 'FAIL: App Store archive/export validation script must be executable (Scripts/validate_app_store_export.sh)\n'
+  failures=$((failures + 1))
+fi
+check_contains "Scripts/validate_app_store_export.sh" "FreePrintStudio.xcarchive" "App Store export validation must inspect the archive"
+check_contains "Scripts/validate_app_store_export.sh" "Payload" "App Store export validation must inspect the IPA payload"
+check_contains "Scripts/archive_app_store.sh" "validate_app_store_export.sh" "Archive script must validate the exported App Store artifacts"
 check_file "Scripts/capture_app_store_screenshot_set.sh" "App Store screenshot set script is required"
 check_contains "Scripts/capture_app_store_screenshot_set.sh" "iphone-fit.jpg" "Screenshot set script must capture Fit mode"
 check_contains "Scripts/capture_app_store_screenshot_set.sh" "iphone-fill.jpg" "Screenshot set script must capture Fill mode"
@@ -444,6 +453,7 @@ check_contains "README.md" "Scripts/run_fastlane.sh ios submit_review" "README m
 check_contains "README.md" "APP_REVIEW_CONTACT_EMAIL" "README must document private App Review contact variables"
 check_contains "README.md" "Scripts/validate_app_store_metadata.sh" "README must document App Store metadata limit validation"
 check_contains "README.md" "Scripts/validate_app_icon_set.sh" "README must document app icon set validation"
+check_contains "README.md" "Scripts/validate_app_store_export.sh" "README must document App Store archive/export validation"
 check_contains "AppStore/release-checklist.md" "Scripts/run_fastlane.sh ios upload_testflight" "Release checklist must include the TestFlight upload command"
 check_contains "AppStore/release-checklist.md" "Scripts/run_fastlane.sh ios app_store_connect_state" "Release checklist must include the App Store Connect state preflight command"
 check_contains "AppStore/release-checklist.md" "Scripts/run_fastlane.sh ios privacy_details" "Release checklist must include the App Privacy Details upload command"
@@ -456,6 +466,7 @@ check_contains "AppStore/release-checklist.md" "Scripts/run_fastlane.sh ios subm
 check_contains "AppStore/release-checklist.md" "APP_REVIEW_CONTACT_EMAIL" "Release checklist must include App Review contact configuration"
 check_contains "AppStore/release-checklist.md" "Scripts/validate_app_store_metadata.sh" "Release checklist must include metadata limit validation"
 check_contains "AppStore/release-checklist.md" "Scripts/validate_app_icon_set.sh" "Release checklist must include app icon set validation"
+check_contains "AppStore/release-checklist.md" "Scripts/validate_app_store_export.sh" "Release checklist must include App Store archive/export validation"
 check_file ".github/workflows/release.yml" "GitHub Actions release gate workflow is required"
 check_contains ".github/workflows/release.yml" "Scripts/verify_release.sh" "Release workflow must run the local release gate"
 check_contains ".github/workflows/release.yml" "timeout-minutes: 10" "Slow release workflow steps must have command-level timeouts"

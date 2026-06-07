@@ -18,27 +18,33 @@ def fail(message: str) -> None:
 
 
 def lane_body(source: str, lane_name: str) -> str:
-    marker = re.search(rf"^\s*lane\s+:{re.escape(lane_name)}\s+do\b", source, re.M)
-    if not marker:
+    lines = source.splitlines(keepends=True)
+    marker_pattern = re.compile(rf"^\s*lane\s+:{re.escape(lane_name)}\s+do\b")
+    start_index = next((index for index, line in enumerate(lines) if marker_pattern.search(line)), None)
+    if start_index is None:
         fail(f"fastlane/Fastfile is missing lane :{lane_name}")
         return ""
 
-    index = marker.end()
+    body: list[str] = []
     depth = 1
-    token_pattern = re.compile(r"\b(do|end)\b")
-    while True:
-        token = token_pattern.search(source, index)
-        if not token:
-            fail(f"fastlane/Fastfile lane :{lane_name} is not closed")
-            return source[marker.end():]
+    do_pattern = re.compile(r"\bdo\b")
+    block_open_pattern = re.compile(r"^\s*(if|unless|case|begin)\b")
+    block_close_pattern = re.compile(r"^\s*end\b")
+    for line in lines[start_index + 1:]:
+        code = line.split("#", 1)[0]
+        closing_count = 1 if block_close_pattern.search(code) else 0
+        opening_count = len(do_pattern.findall(code))
+        if block_open_pattern.search(code):
+            opening_count += 1
 
-        if token.group(1) == "do":
-            depth += 1
-        else:
-            depth -= 1
-            if depth == 0:
-                return source[marker.end():token.start()]
-        index = token.end()
+        if depth - closing_count <= 0:
+            return "".join(body)
+
+        body.append(line)
+        depth += opening_count - closing_count
+
+    fail(f"fastlane/Fastfile lane :{lane_name} is not closed")
+    return "".join(body)
 
 
 def index_of(body: str, pattern: str) -> int:
@@ -74,6 +80,8 @@ if source:
         fail("Fastfile must call Scripts/validate_app_privacy_details.sh")
     if "Scripts/validate_privacy_surface.sh" not in source:
         fail("Fastfile must call Scripts/validate_privacy_surface.sh")
+    if "Scripts/validate_app_store_export.sh" not in source:
+        fail("Fastfile must call Scripts/validate_app_store_export.sh")
 
     metadata = lane_body(source, "metadata")
     if metadata:
@@ -110,6 +118,12 @@ if source:
             fail("lane :submit_review must use manual release")
         if "build_number: build_number" not in submit_review:
             fail("lane :submit_review must submit only the explicit APP_STORE_BUILD_NUMBER")
+
+    upload_testflight = lane_body(source, "upload_testflight")
+    if upload_testflight:
+        require_before("upload_testflight", upload_testflight, "validate_app_store_export!", "upload_to_testflight(")
+        if 'ENV["IPA_PATH"] = ipa_path' not in upload_testflight:
+            fail("lane :upload_testflight must pass the selected IPA_PATH into export validation")
 
 if failures:
     for failure in failures:
