@@ -80,6 +80,8 @@ if source:
         fail("Fastfile must call Scripts/validate_app_privacy_details.sh")
     if "Scripts/validate_privacy_surface.sh" not in source:
         fail("Fastfile must call Scripts/validate_privacy_surface.sh")
+    if "Scripts/validate_app_store_questionnaires.sh" not in source:
+        fail("Fastfile must call Scripts/validate_app_store_questionnaires.sh")
     if "Scripts/validate_app_store_export.sh" not in source:
         fail("Fastfile must call Scripts/validate_app_store_export.sh")
 
@@ -87,6 +89,7 @@ if source:
     if metadata:
         require_before("metadata", metadata, "validate_app_store_metadata!", "deliver(")
         require_before("metadata", metadata, "validate_screenshot_sync!", "deliver(")
+        require_before("metadata", metadata, "validate_app_store_questionnaires!", "deliver(")
         require_before("metadata", metadata, "validate_app_review_contact!", "deliver(")
         index_of(metadata, "review_information_options")
         if "submit_for_review: false" not in metadata:
@@ -99,6 +102,7 @@ if source:
         require_before("privacy_details", privacy_details, "confirm_upload_app_privacy!", "upload_app_privacy_details_to_app_store")
         require_before("privacy_details", privacy_details, "validate_privacy_surface!", "upload_app_privacy_details_to_app_store")
         require_before("privacy_details", privacy_details, "validate_app_privacy_details!", "upload_app_privacy_details_to_app_store")
+        require_before("privacy_details", privacy_details, "validate_app_store_questionnaires!", "upload_app_privacy_details_to_app_store")
         if "APP_PRIVACY_SKIP_PUBLISH" not in privacy_details:
             fail("lane :privacy_details must preserve the APP_PRIVACY_SKIP_PUBLISH option")
 
@@ -109,6 +113,7 @@ if source:
         require_before("submit_review", submit_review, "validate_screenshot_sync!", "deliver(")
         require_before("submit_review", submit_review, "validate_privacy_surface!", "deliver(")
         require_before("submit_review", submit_review, "validate_app_privacy_details!", "deliver(")
+        require_before("submit_review", submit_review, "validate_app_store_questionnaires!", "deliver(")
         require_before("submit_review", submit_review, "validate_app_review_contact!", "deliver(")
         require_before("submit_review", submit_review, "verify_app_store_connect_state!", "deliver(")
         index_of(submit_review, "submission_information_options")

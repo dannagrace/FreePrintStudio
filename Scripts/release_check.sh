@@ -363,7 +363,9 @@ check_contains "fastlane/Fastfile" "secondary_category: SECONDARY_CATEGORY" "Fas
 check_contains "fastlane/Fastfile" "review_information_options" "Fastfile must prepare App Store review information"
 check_contains "fastlane/Fastfile" "APP_REVIEW_CONTACT_EMAIL" "Fastfile must support private App Review contact details"
 check_contains "fastlane/Fastfile" "Scripts/validate_app_review_contact.sh" "Fastfile must run App Review contact validation before upload or submission"
+check_contains "fastlane/Fastfile" "Scripts/validate_app_store_questionnaires.sh" "Fastfile must run App Store questionnaire validation before upload or submission"
 check_occurrences_at_least "fastlane/Fastfile" "validate_app_review_contact!" 2 "Fastfile metadata and submit lanes must require App Review contact validation"
+check_occurrences_at_least "fastlane/Fastfile" "validate_app_store_questionnaires!" 4 "Fastfile upload and submit lanes must require App Store questionnaire validation"
 check_file "Scripts/validate_fastlane_release_lanes.sh" "Fastlane release lane validation script is required"
 if [[ ! -x "Scripts/validate_fastlane_release_lanes.sh" ]]; then
   printf 'FAIL: Fastlane release lane validation script must be executable (Scripts/validate_fastlane_release_lanes.sh)\n'
@@ -373,6 +375,7 @@ if [[ -x "Scripts/validate_fastlane_release_lanes.sh" ]]; then
   Scripts/validate_fastlane_release_lanes.sh || failures=$((failures + 1))
 fi
 check_contains "Scripts/validate_fastlane_release_lanes.sh" "validate_app_review_contact!" "Fastlane lane validation must check App Review contact gates"
+check_contains "Scripts/validate_fastlane_release_lanes.sh" "validate_app_store_questionnaires!" "Fastlane lane validation must check App Store questionnaire gates"
 check_contains "Scripts/validate_fastlane_release_lanes.sh" "verify_app_store_connect_state!" "Fastlane lane validation must check App Store Connect state preflight gates"
 check_contains "fastlane/Deliverfile" "project_root" "Deliverfile must use project-root absolute paths"
 check_contains "fastlane/Deliverfile" "primary_category(\"Graphics & Design\")" "Deliverfile must set the primary App Store category"
@@ -549,6 +552,7 @@ check_contains "README.md" "Scripts/validate_app_icon_set.sh" "README must docum
 check_contains "README.md" "Scripts/validate_app_store_export.sh" "README must document App Store archive/export validation"
 check_contains "README.md" "Scripts/validate_app_store_questionnaires.sh" "README must document App Store questionnaire consistency validation"
 check_contains "README.md" "Scripts/verify_release.sh questionnaires" "README must document the questionnaire release command"
+check_contains "README.md" "Fastlane metadata, App Privacy Details, and final review-submission lanes run the local App Store questionnaire validation" "README must document Fastlane questionnaire validation gates"
 check_contains "README.md" "Scripts/validate_simulator_workflow.sh" "README must document simulator workflow validation"
 check_contains "README.md" "Scripts/verify_release.sh simulator-workflow" "README must document the simulator workflow release command"
 check_contains "README.md" "Scripts/validate_accessibility_screenshots.sh" "README must document accessibility screenshot validation"

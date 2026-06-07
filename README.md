@@ -165,6 +165,8 @@ Scripts/install_release_dependencies.sh
 Scripts/run_fastlane.sh ios metadata
 ```
 
+The Fastlane metadata, App Privacy Details, and final review-submission lanes run the local App Store questionnaire validation before uploading or submitting.
+
 Before uploading metadata or submitting for review, set the private App Review contact values in your shell or untracked `Config/release.env`. Do not commit real personal contact details.
 
 ```sh
