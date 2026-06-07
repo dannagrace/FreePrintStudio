@@ -7,6 +7,7 @@
 - Run `Scripts/validate_app_privacy_details.sh`.
 - Run `Scripts/validate_app_icon_set.sh`.
 - Run `Scripts/validate_privacy_surface.sh`.
+- Run `Scripts/verify_release.sh questionnaires`; it calls `Scripts/validate_app_store_questionnaires.sh` to validate age rating, App Privacy, accessibility label, and export compliance drafts against app declarations.
 - Run `Scripts/validate_release_env.sh` after creating or editing `Config/release.env`.
 - Run `Scripts/check_code_signing_assets.sh` after installing certificates or provisioning profiles.
 - Run `Scripts/validate_app_store_export.sh` after creating a signed archive and App Store IPA.

@@ -58,6 +58,14 @@ Validate that the app source and release configuration still match the no-data-c
 Scripts/validate_privacy_surface.sh
 ```
 
+Validate that the App Store questionnaire drafts agree with the app's plist declarations, privacy manifest, App Privacy JSON, and limited public links:
+
+```sh
+Scripts/verify_release.sh questionnaires
+# Or directly:
+Scripts/validate_app_store_questionnaires.sh
+```
+
 Validate that the app renderer exports PDFs with the expected paper MediaBox and embedded image output for Fit, Fill, and Stretch modes:
 
 ```sh

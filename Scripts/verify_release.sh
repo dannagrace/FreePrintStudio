@@ -229,6 +229,11 @@ run_privacy_surface_validation() {
   Scripts/validate_privacy_surface.sh
 }
 
+run_questionnaire_validation() {
+  printf '== App Store questionnaire validation ==\n'
+  Scripts/validate_app_store_questionnaires.sh
+}
+
 run_pdf_export_validation() {
   printf '== PDF export validation ==\n'
   Scripts/validate_pdf_export.sh
@@ -305,6 +310,8 @@ run_all() {
   printf '\n'
   run_privacy_surface_validation
   printf '\n'
+  run_questionnaire_validation
+  printf '\n'
   run_pdf_export_validation
   printf '\n'
   run_release_build
@@ -329,6 +336,9 @@ case "${1:-all}" in
   privacy)
     run_privacy_surface_validation
     ;;
+  questionnaires)
+    run_questionnaire_validation
+    ;;
   pdf)
     run_pdf_export_validation
     ;;
@@ -345,7 +355,7 @@ case "${1:-all}" in
     run_print_sheet_validation
     ;;
   *)
-    printf 'Usage: %s [all|static|core|plist|privacy|pdf|build|screenshots|accessibility|print-sheet]\n' "$0"
+    printf 'Usage: %s [all|static|core|plist|privacy|questionnaires|pdf|build|screenshots|accessibility|print-sheet]\n' "$0"
     exit 1
     ;;
 esac

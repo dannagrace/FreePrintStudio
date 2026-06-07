@@ -156,6 +156,13 @@ check_screenshot_size "fastlane/screenshots/en-US/iphone-metric-landscape.jpg" "
 check_screenshot_size "fastlane/screenshots/en-US/ipad-main.jpg" "Fastlane iPad" "2048 x 2732,2064 x 2752"
 
 printf '\n== App Store Questionnaires ==\n'
+if Scripts/validate_app_store_questionnaires.sh >/tmp/freeprintstudio-app-store-questionnaires.log 2>&1; then
+  ok "App Store questionnaire drafts are internally consistent"
+else
+  block "App Store questionnaire drafts are incomplete or inconsistent"
+  sed 's/^/  /' /tmp/freeprintstudio-app-store-questionnaires.log
+fi
+
 if grep -q "No, we do not collect data from this app" AppStore/app-privacy.md \
   && grep -q "Tracking: No" AppStore/app-privacy.md; then
   ok "App privacy answers prepared: no data collection, no tracking"

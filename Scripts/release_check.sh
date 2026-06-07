@@ -277,6 +277,19 @@ check_contains "AppStore/accessibility-labels.md" "Larger Text: Supported" "Acce
 check_file "AppStore/export-compliance.md" "Export compliance questionnaire answers are required"
 check_contains "AppStore/export-compliance.md" "Uses non-exempt encryption: No" "Export compliance answers must state no non-exempt encryption"
 check_contains "AppStore/export-compliance.md" "ITSAppUsesNonExemptEncryption" "Export compliance answers must reference the Info.plist declaration"
+check_file "Scripts/validate_app_store_questionnaires.sh" "App Store questionnaire consistency validation script is required"
+if [[ -x "Scripts/validate_app_store_questionnaires.sh" ]]; then
+  Scripts/validate_app_store_questionnaires.sh || failures=$((failures + 1))
+else
+  printf 'FAIL: App Store questionnaire consistency validation script must be executable (Scripts/validate_app_store_questionnaires.sh)\n'
+  failures=$((failures + 1))
+fi
+check_contains "Scripts/validate_app_store_questionnaires.sh" "AppStore/age-rating.md" "Questionnaire validation must check age rating answers"
+check_contains "Scripts/validate_app_store_questionnaires.sh" "AppStore/export-compliance.md" "Questionnaire validation must check export compliance answers"
+check_contains "Scripts/validate_app_store_questionnaires.sh" "ITSAppUsesNonExemptEncryption" "Questionnaire validation must compare export compliance against Info.plist encryption declaration"
+check_contains "Scripts/validate_app_store_questionnaires.sh" "AppStore/app-privacy.md" "Questionnaire validation must check App Privacy answers"
+check_contains "Scripts/verify_release.sh" "validate_app_store_questionnaires.sh" "Release verification must run questionnaire consistency validation"
+check_contains "Scripts/check_app_store_readiness.sh" "validate_app_store_questionnaires.sh" "Readiness audit must run questionnaire consistency validation"
 check_file "docs/privacy-policy.html" "Publishable privacy policy page is required"
 check_contains "docs/privacy-policy.html" "FreePrint Studio Privacy Policy" "Privacy page must identify the app and policy"
 check_contains "docs/privacy-policy.html" "does not collect" "Privacy page must state no data collection"
@@ -524,6 +537,8 @@ check_contains "README.md" "APP_REVIEW_CONTACT_EMAIL" "README must document priv
 check_contains "README.md" "Scripts/validate_app_store_metadata.sh" "README must document App Store metadata limit validation"
 check_contains "README.md" "Scripts/validate_app_icon_set.sh" "README must document app icon set validation"
 check_contains "README.md" "Scripts/validate_app_store_export.sh" "README must document App Store archive/export validation"
+check_contains "README.md" "Scripts/validate_app_store_questionnaires.sh" "README must document App Store questionnaire consistency validation"
+check_contains "README.md" "Scripts/verify_release.sh questionnaires" "README must document the questionnaire release command"
 check_contains "README.md" "Scripts/validate_accessibility_screenshots.sh" "README must document accessibility screenshot validation"
 check_contains "README.md" "Scripts/verify_release.sh accessibility" "README must document the accessibility screenshot release command"
 check_contains "README.md" "Scripts/validate_print_sheet.sh" "README must document print sheet validation"
@@ -541,6 +556,8 @@ check_contains "AppStore/release-checklist.md" "APP_REVIEW_CONTACT_EMAIL" "Relea
 check_contains "AppStore/release-checklist.md" "Scripts/validate_app_store_metadata.sh" "Release checklist must include metadata limit validation"
 check_contains "AppStore/release-checklist.md" "Scripts/validate_app_icon_set.sh" "Release checklist must include app icon set validation"
 check_contains "AppStore/release-checklist.md" "Scripts/validate_app_store_export.sh" "Release checklist must include App Store archive/export validation"
+check_contains "AppStore/release-checklist.md" "Scripts/validate_app_store_questionnaires.sh" "Release checklist must include App Store questionnaire consistency validation"
+check_contains "AppStore/release-checklist.md" "Scripts/verify_release.sh questionnaires" "Release checklist must include the questionnaire release command"
 check_contains "AppStore/release-checklist.md" "Scripts/validate_accessibility_screenshots.sh" "Release checklist must include accessibility screenshot validation"
 check_contains "AppStore/release-checklist.md" "Scripts/verify_release.sh accessibility" "Release checklist must include the accessibility screenshot release command"
 check_contains "AppStore/release-checklist.md" "Scripts/validate_print_sheet.sh" "Release checklist must include print sheet validation"
