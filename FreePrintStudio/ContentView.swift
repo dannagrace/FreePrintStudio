@@ -16,6 +16,7 @@ struct ContentView: View {
     @State private var exportedPDF: URL?
     @State private var alertMessage: String?
     @State private var showingAbout = false
+    @State private var shouldPreserveMeasurementFieldsOnNextUnitChange = false
 
     var body: some View {
         NavigationStack {
@@ -66,7 +67,12 @@ struct ContentView: View {
                 recenterImage()
             }
             .onChange(of: selectedUnit) { oldUnit, newUnit in
-                convertMeasurementFields(from: oldUnit, to: newUnit)
+                if shouldPreserveMeasurementFieldsOnNextUnitChange {
+                    shouldPreserveMeasurementFieldsOnNextUnitChange = false
+                    recenterImage()
+                } else {
+                    convertMeasurementFields(from: oldUnit, to: newUnit)
+                }
             }
             #if DEBUG
             .onAppear {
@@ -461,6 +467,9 @@ struct ContentView: View {
         if let unitIndex = arguments.firstIndex(of: "-FreePrintStudioUnit"),
            arguments.indices.contains(unitIndex + 1),
            let unit = MeasurementUnit(rawValue: arguments[unitIndex + 1]) {
+            if unit != selectedUnit && debugArgumentsContainTargetSize(arguments) {
+                shouldPreserveMeasurementFieldsOnNextUnitChange = true
+            }
             selectedUnit = unit
         }
 
@@ -477,6 +486,11 @@ struct ContentView: View {
         selectedImage = image
         recenterImage()
         exportDebugPDFIfRequested(arguments: arguments, image: image)
+    }
+
+    private func debugArgumentsContainTargetSize(_ arguments: [String]) -> Bool {
+        arguments.firstIndex(of: "-FreePrintStudioTargetWidth") != nil ||
+            arguments.firstIndex(of: "-FreePrintStudioTargetHeight") != nil
     }
 
     private func exportDebugPDFIfRequested(arguments: [String], image: UIImage) {

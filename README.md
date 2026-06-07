@@ -99,17 +99,17 @@ Scripts/check_app_store_readiness.sh
 This audit exits nonzero until an Apple Developer Team ID, signing identity, and provisioning profile are available.
 The signing check requires an `Apple Distribution` identity and an App Store provisioning profile for `com.dannagrace.FreePrintStudio`; development or Ad Hoc profiles are not accepted.
 
-Generate the draft App Store screenshots. The default iPhone command prefers a 6.9-inch simulator such as iPhone 17 Pro Max.
+Generate the draft App Store screenshots. The default iPhone command prefers a 6.9-inch simulator such as iPhone 17 Pro Max, and the screenshot set command syncs the reviewed assets to Fastlane.
+
+```sh
+Scripts/capture_app_store_screenshot_set.sh
+```
+
+Capture or debug a single screenshot when needed:
 
 ```sh
 Scripts/capture_app_store_screenshots.sh
 SIMULATOR_UDID=2E8A23AC-6267-44FB-94A7-49221C184C79 SCREENSHOT_PATH="$PWD/AppStore/Screenshots/ipad-main.jpg" Scripts/capture_app_store_screenshots.sh
-```
-
-Generate the Fit, Fill, Stretch, metric landscape iPhone, and iPad screenshot set and sync it to Fastlane:
-
-```sh
-Scripts/capture_app_store_screenshot_set.sh
 ```
 
 The same script can reproduce accessibility appearance checks without permanently changing the simulator:

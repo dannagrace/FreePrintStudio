@@ -12,6 +12,17 @@ IPAD_DEVICE_PATTERN="${FREEPRINTSTUDIO_IPAD_DEVICE_PATTERN:-iPad Pro 13-inch|iPa
 
 mkdir -p "$APPSTORE_SCREENSHOTS_DIR" "$FASTLANE_SCREENSHOTS_DIR"
 
+capture_main() {
+  printf '== iPhone main screenshot ==\n'
+  DERIVED_DATA_PATH="$DERIVED_DATA_PATH" \
+    FREEPRINTSTUDIO_APPEARANCE=light \
+    SCREENSHOT_DELAY="$SCREENSHOT_DELAY" \
+    SCREENSHOT_PATH="$APPSTORE_SCREENSHOTS_DIR/iphone-main.jpg" \
+    Scripts/capture_app_store_screenshots.sh
+
+  cp "$APPSTORE_SCREENSHOTS_DIR/iphone-main.jpg" "$FASTLANE_SCREENSHOTS_DIR/iphone-main.jpg"
+}
+
 capture_mode() {
   local mode="$1"
   local output_name="$2"
@@ -26,6 +37,7 @@ capture_mode() {
   cp "$APPSTORE_SCREENSHOTS_DIR/$output_name" "$FASTLANE_SCREENSHOTS_DIR/$output_name"
 }
 
+capture_main
 capture_mode fit iphone-fit.jpg
 capture_mode fill iphone-fill.jpg
 capture_mode stretch iphone-stretch.jpg

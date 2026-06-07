@@ -399,6 +399,8 @@ check_contains "Scripts/validate_app_store_export.sh" "FreePrintStudio.xcarchive
 check_contains "Scripts/validate_app_store_export.sh" "Payload" "App Store export validation must inspect the IPA payload"
 check_contains "Scripts/archive_app_store.sh" "validate_app_store_export.sh" "Archive script must validate the exported App Store artifacts"
 check_file "Scripts/capture_app_store_screenshot_set.sh" "App Store screenshot set script is required"
+check_contains "Scripts/capture_app_store_screenshot_set.sh" "iphone-main.jpg" "Screenshot set script must capture the iPhone main screenshot"
+check_contains "Scripts/capture_app_store_screenshot_set.sh" "FREEPRINTSTUDIO_APPEARANCE=light" "Screenshot set script must capture the iPhone main screenshot with a deterministic light appearance"
 check_contains "Scripts/capture_app_store_screenshot_set.sh" "iphone-fit.jpg" "Screenshot set script must capture Fit mode"
 check_contains "Scripts/capture_app_store_screenshot_set.sh" "iphone-fill.jpg" "Screenshot set script must capture Fill mode"
 check_contains "Scripts/capture_app_store_screenshot_set.sh" "iphone-stretch.jpg" "Screenshot set script must capture Stretch mode"
