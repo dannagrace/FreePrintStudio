@@ -3,6 +3,8 @@ project_root = File.expand_path("..", __dir__)
 app_identifier("com.dannagrace.FreePrintStudio")
 app_version("1.0")
 platform("ios")
+primary_category("Graphics & Design")
+secondary_category("Productivity")
 
 metadata_path(File.join(project_root, "fastlane/metadata"))
 screenshots_path(File.join(project_root, "fastlane/screenshots"))

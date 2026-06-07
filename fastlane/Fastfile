@@ -3,6 +3,8 @@ require "shellwords"
 PROJECT_ROOT = File.expand_path("..", __dir__)
 APP_IDENTIFIER = "com.dannagrace.FreePrintStudio"
 APP_VERSION = "1.0"
+PRIMARY_CATEGORY = "Graphics & Design"
+SECONDARY_CATEGORY = "Productivity"
 DEFAULT_EXPORT_PATH = File.join(PROJECT_ROOT, "build/AppStoreExport")
 
 def app_store_connect_credentials(required: false)
@@ -69,6 +71,8 @@ platform :ios do
       app_store_connect_credentials(required: false).merge(
         app_identifier: APP_IDENTIFIER,
         app_version: APP_VERSION,
+        primary_category: PRIMARY_CATEGORY,
+        secondary_category: SECONDARY_CATEGORY,
         metadata_path: File.join(PROJECT_ROOT, "fastlane/metadata"),
         screenshots_path: File.join(PROJECT_ROOT, "fastlane/screenshots"),
         skip_binary_upload: true,
