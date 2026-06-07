@@ -23,6 +23,12 @@ print,size,pdf,photo,image,airprint,label,craft,template,inch,cm,mm
 Primary: Graphics & Design
 Secondary: Productivity
 
+## Copyright
+Copyright 2026 dannagrace
+
+## Version Release Notes
+Initial release of FreePrint Studio with exact-size image layout, PDF export, and AirPrint support.
+
 ## URLs
 Privacy Policy URL: https://dannagrace.github.io/FreePrintStudio/privacy-policy.html
 
