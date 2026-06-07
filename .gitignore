@@ -7,6 +7,14 @@ DerivedData/
 xcuserdata/
 *.xcuserstate
 *.p8
+*.p12
+*.cer
+*.mobileprovision
+*.provisionprofile
+*.ipa
+*.xcarchive
+fastlane-api-key.json
+Config/fastlane-api-key.json
 Config/release.env
 Config/manual-release-verification.env
 fastlane/README.md
