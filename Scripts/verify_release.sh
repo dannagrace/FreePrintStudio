@@ -7,6 +7,9 @@ cd "$ROOT_DIR"
 LOG_PATH="/tmp/freeprintstudio-release-build.log"
 SCREENSHOT_PATHS=(
   "AppStore/Screenshots/iphone-main.jpg"
+  "AppStore/Screenshots/iphone-fit.jpg"
+  "AppStore/Screenshots/iphone-fill.jpg"
+  "AppStore/Screenshots/iphone-stretch.jpg"
   "AppStore/Screenshots/ipad-main.jpg"
 )
 
