@@ -66,15 +66,30 @@ if source:
         fail("Fastfile must call Scripts/validate_app_review_contact.sh")
     if "Scripts/check_app_store_connect_state.sh" not in source:
         fail("Fastfile must call Scripts/check_app_store_connect_state.sh")
+    if "Scripts/validate_app_store_metadata.sh" not in source:
+        fail("Fastfile must call Scripts/validate_app_store_metadata.sh")
+    if "Scripts/validate_screenshot_sync.sh" not in source:
+        fail("Fastfile must call Scripts/validate_screenshot_sync.sh")
+    if "Scripts/validate_app_privacy_details.sh" not in source:
+        fail("Fastfile must call Scripts/validate_app_privacy_details.sh")
 
     metadata = lane_body(source, "metadata")
     if metadata:
+        require_before("metadata", metadata, "validate_app_store_metadata!", "deliver(")
+        require_before("metadata", metadata, "validate_screenshot_sync!", "deliver(")
         require_before("metadata", metadata, "validate_app_review_contact!", "deliver(")
         index_of(metadata, "review_information_options")
         if "submit_for_review: false" not in metadata:
             fail("lane :metadata must never submit for review")
         if "skip_binary_upload: true" not in metadata:
             fail("lane :metadata must skip binary upload")
+
+    privacy_details = lane_body(source, "privacy_details")
+    if privacy_details:
+        require_before("privacy_details", privacy_details, "confirm_upload_app_privacy!", "upload_app_privacy_details_to_app_store")
+        require_before("privacy_details", privacy_details, "validate_app_privacy_details!", "upload_app_privacy_details_to_app_store")
+        if "APP_PRIVACY_SKIP_PUBLISH" not in privacy_details:
+            fail("lane :privacy_details must preserve the APP_PRIVACY_SKIP_PUBLISH option")
 
     submit_review = lane_body(source, "submit_review")
     if submit_review:
