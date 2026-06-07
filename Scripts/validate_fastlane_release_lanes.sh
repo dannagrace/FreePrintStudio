@@ -97,6 +97,10 @@ if source:
     submit_review = lane_body(source, "submit_review")
     if submit_review:
         require_before("submit_review", submit_review, "confirm_submit_for_review!", "deliver(")
+        require_before("submit_review", submit_review, "validate_app_store_metadata!", "deliver(")
+        require_before("submit_review", submit_review, "validate_screenshot_sync!", "deliver(")
+        require_before("submit_review", submit_review, "validate_privacy_surface!", "deliver(")
+        require_before("submit_review", submit_review, "validate_app_privacy_details!", "deliver(")
         require_before("submit_review", submit_review, "validate_app_review_contact!", "deliver(")
         require_before("submit_review", submit_review, "verify_app_store_connect_state!", "deliver(")
         index_of(submit_review, "submission_information_options")
