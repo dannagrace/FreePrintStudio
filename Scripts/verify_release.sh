@@ -291,6 +291,11 @@ run_accessibility_screenshot_validation() {
   Scripts/validate_accessibility_screenshots.sh
 }
 
+run_print_sheet_validation() {
+  printf '== Print sheet validation ==\n'
+  Scripts/validate_print_sheet.sh
+}
+
 run_all() {
   run_static_checks
   printf '\n'
@@ -336,8 +341,11 @@ case "${1:-all}" in
   accessibility)
     run_accessibility_screenshot_validation
     ;;
+  print-sheet)
+    run_print_sheet_validation
+    ;;
   *)
-    printf 'Usage: %s [all|static|core|plist|privacy|pdf|build|screenshots|accessibility]\n' "$0"
+    printf 'Usage: %s [all|static|core|plist|privacy|pdf|build|screenshots|accessibility|print-sheet]\n' "$0"
     exit 1
     ;;
 esac

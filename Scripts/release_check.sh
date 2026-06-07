@@ -466,6 +466,18 @@ check_contains "Scripts/validate_pdf_export.sh" "centimeter-a4-stretch" "PDF exp
 check_contains "Scripts/validate_pdf_export.sh" "millimeter-a4-stretch" "PDF export validation must cover millimeter target sizes"
 check_contains "Scripts/validate_pdf_export.sh" "4,5" "PDF export validation must cover localized decimal comma width input"
 check_contains "Scripts/validate_pdf_export.sh" "6,25" "PDF export validation must cover localized decimal comma height input"
+check_file "Scripts/validate_print_sheet.sh" "Print sheet validation script is required"
+if [[ ! -x "Scripts/validate_print_sheet.sh" ]]; then
+  printf 'FAIL: Print sheet validation script must be executable (Scripts/validate_print_sheet.sh)\n'
+  failures=$((failures + 1))
+fi
+check_contains "FreePrintStudio/ContentView.swift" "FreePrintStudioAutoOpenPrintSheet" "Debug workflow must support automatically opening the system print sheet"
+check_contains "FreePrintStudio/ContentView.swift" "FreePrintStudioPrintSheetStatusPath" "Debug workflow must write print sheet validation status"
+check_contains "FreePrintStudio/Printing/PrintService.swift" "@discardableResult" "PrintService must expose whether the print sheet was presented"
+check_contains "FreePrintStudio/Printing/PrintService.swift" "presentationFailed" "PrintService must report print sheet presentation failure"
+check_contains "Scripts/validate_print_sheet.sh" "FreePrintStudioAutoOpenPrintSheet" "Print sheet validation must exercise the debug print sheet workflow"
+check_contains "Scripts/validate_print_sheet.sh" "FreePrintStudioPrintSheetStatusPath" "Print sheet validation must read the debug print sheet status"
+check_contains "Scripts/verify_release.sh" "validate_print_sheet.sh" "Release verification must expose print sheet validation"
 check_file "Scripts/check_app_store_readiness.sh" "App Store readiness audit script is required"
 check_contains "Scripts/check_app_store_readiness.sh" "DEVELOPMENT_TEAM_ID" "Readiness audit must check Apple Developer Team ID"
 check_contains "Scripts/check_app_store_readiness.sh" "check_code_signing_assets.sh" "Readiness audit must run the precise code signing asset preflight"
@@ -514,6 +526,8 @@ check_contains "README.md" "Scripts/validate_app_icon_set.sh" "README must docum
 check_contains "README.md" "Scripts/validate_app_store_export.sh" "README must document App Store archive/export validation"
 check_contains "README.md" "Scripts/validate_accessibility_screenshots.sh" "README must document accessibility screenshot validation"
 check_contains "README.md" "Scripts/verify_release.sh accessibility" "README must document the accessibility screenshot release command"
+check_contains "README.md" "Scripts/validate_print_sheet.sh" "README must document print sheet validation"
+check_contains "README.md" "Scripts/verify_release.sh print-sheet" "README must document the print sheet release command"
 check_contains "AppStore/release-checklist.md" "Scripts/run_fastlane.sh ios upload_testflight" "Release checklist must include the TestFlight upload command"
 check_contains "AppStore/release-checklist.md" "Scripts/run_fastlane.sh ios app_store_connect_state" "Release checklist must include the App Store Connect state preflight command"
 check_contains "AppStore/release-checklist.md" "Scripts/run_fastlane.sh ios privacy_details" "Release checklist must include the App Privacy Details upload command"
@@ -529,6 +543,8 @@ check_contains "AppStore/release-checklist.md" "Scripts/validate_app_icon_set.sh
 check_contains "AppStore/release-checklist.md" "Scripts/validate_app_store_export.sh" "Release checklist must include App Store archive/export validation"
 check_contains "AppStore/release-checklist.md" "Scripts/validate_accessibility_screenshots.sh" "Release checklist must include accessibility screenshot validation"
 check_contains "AppStore/release-checklist.md" "Scripts/verify_release.sh accessibility" "Release checklist must include the accessibility screenshot release command"
+check_contains "AppStore/release-checklist.md" "Scripts/validate_print_sheet.sh" "Release checklist must include print sheet validation"
+check_contains "AppStore/release-checklist.md" "Scripts/verify_release.sh print-sheet" "Release checklist must include the print sheet release command"
 check_file ".github/workflows/release.yml" "GitHub Actions release gate workflow is required"
 check_contains ".github/workflows/release.yml" "Scripts/verify_release.sh" "Release workflow must run the local release gate"
 check_contains ".github/workflows/release.yml" "timeout-minutes: 10" "Slow release workflow steps must have command-level timeouts"

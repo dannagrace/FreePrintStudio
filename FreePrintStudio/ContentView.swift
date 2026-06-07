@@ -499,6 +499,7 @@ struct ContentView: View {
         selectedImage = image
         recenterImage()
         exportDebugPDFIfRequested(arguments: arguments, image: image)
+        openDebugPrintSheetIfRequested(arguments: arguments)
     }
 
     private func debugArgumentsContainTargetSize(_ arguments: [String]) -> Bool {
@@ -533,6 +534,47 @@ struct ContentView: View {
             )
         } catch {
             alertMessage = "Debug PDF export failed: \(error.localizedDescription)"
+        }
+    }
+
+    private func openDebugPrintSheetIfRequested(arguments: [String]) {
+        guard arguments.contains("-FreePrintStudioAutoOpenPrintSheet") else { return }
+
+        let statusURL: URL?
+        if let statusPathIndex = arguments.firstIndex(of: "-FreePrintStudioPrintSheetStatusPath"),
+           arguments.indices.contains(statusPathIndex + 1) {
+            statusURL = URL(fileURLWithPath: arguments[statusPathIndex + 1])
+            writeDebugPrintSheetStatus("starting", to: statusURL)
+        } else {
+            statusURL = nil
+        }
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
+            do {
+                let url = try renderPDF()
+                let didPresent = PrintService.printPDF(url) { result in
+                    if case .failure(let error) = result {
+                        writeDebugPrintSheetStatus("failed: \(error.localizedDescription)", to: statusURL)
+                    }
+                }
+                writeDebugPrintSheetStatus(didPresent ? "presented" : "failed: not presented", to: statusURL)
+            } catch {
+                writeDebugPrintSheetStatus("failed: \(error.localizedDescription)", to: statusURL)
+            }
+        }
+    }
+
+    private func writeDebugPrintSheetStatus(_ status: String, to url: URL?) {
+        guard let url else { return }
+
+        do {
+            try FileManager.default.createDirectory(
+                at: url.deletingLastPathComponent(),
+                withIntermediateDirectories: true
+            )
+            try status.write(to: url, atomically: true, encoding: .utf8)
+        } catch {
+            alertMessage = "Debug print sheet status failed: \(error.localizedDescription)"
         }
     }
     #endif

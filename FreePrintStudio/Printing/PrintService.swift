@@ -2,10 +2,11 @@ import UIKit
 
 enum PrintService {
     @MainActor
-    static func printPDF(_ url: URL, completion: @escaping (Result<Void, Error>) -> Void) {
+    @discardableResult
+    static func printPDF(_ url: URL, completion: @escaping (Result<Void, Error>) -> Void) -> Bool {
         guard UIPrintInteractionController.canPrint(url) else {
             completion(.failure(PrintServiceError.unsupportedPDF))
-            return
+            return false
         }
 
         let controller = UIPrintInteractionController.shared
@@ -14,21 +15,28 @@ enum PrintService {
         info.jobName = "FreePrint Studio"
         controller.printInfo = info
         controller.printingItem = url
-        controller.present(animated: true) { _, _, error in
+        let didPresent = controller.present(animated: true) { _, _, error in
             if let error {
                 completion(.failure(error))
             }
         }
+        if !didPresent {
+            completion(.failure(PrintServiceError.presentationFailed))
+        }
+        return didPresent
     }
 }
 
 private enum PrintServiceError: LocalizedError {
     case unsupportedPDF
+    case presentationFailed
 
     var errorDescription: String? {
         switch self {
         case .unsupportedPDF:
             return "This PDF cannot be printed from this device."
+        case .presentationFailed:
+            return "The system print sheet could not be opened."
         }
     }
 }

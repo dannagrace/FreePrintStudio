@@ -120,6 +120,14 @@ Scripts/verify_release.sh accessibility
 Scripts/validate_accessibility_screenshots.sh
 ```
 
+Validate that the simulator workflow can open the system print sheet:
+
+```sh
+Scripts/verify_release.sh print-sheet
+# Or directly:
+Scripts/validate_print_sheet.sh
+```
+
 Release metadata, screenshot assets, and the remaining App Store Connect checklist live under `AppStore/`.
 
 Prepare a signed App Store archive after configuring an Apple Developer Team in Xcode:
