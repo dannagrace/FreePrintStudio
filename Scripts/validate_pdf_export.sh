@@ -39,6 +39,7 @@ DERIVED_DATA_PATH="${DERIVED_DATA_PATH:-/tmp/freeprintstudio-derived-data}"
 APP_PATH="$DERIVED_DATA_PATH/Build/Products/Debug-iphonesimulator/FreePrintStudio.app"
 SAMPLE_IMAGE="$ROOT_DIR/AppStore/Assets/sample-print-image.png"
 TEST_PAPER="${FREEPRINTSTUDIO_PAPER:-letter}"
+TEST_ORIENTATION="${FREEPRINTSTUDIO_ORIENTATION:-portrait}"
 TEST_TARGET_WIDTH="${FREEPRINTSTUDIO_TARGET_WIDTH:-4}"
 TEST_TARGET_HEIGHT="${FREEPRINTSTUDIO_TARGET_HEIGHT:-6}"
 if [[ -n "${FREEPRINTSTUDIO_FIT_MODE:-}" ]]; then
@@ -48,24 +49,19 @@ else
 fi
 
 case "$TEST_PAPER" in
-  letter)
-    EXPECTED_WIDTH_POINTS="612"
-    EXPECTED_HEIGHT_POINTS="792"
-    ;;
-  a4)
-    EXPECTED_WIDTH_POINTS="595.2755905512"
-    EXPECTED_HEIGHT_POINTS="841.8897637795"
-    ;;
-  fourBySix)
-    EXPECTED_WIDTH_POINTS="288"
-    EXPECTED_HEIGHT_POINTS="432"
-    ;;
-  fiveBySeven)
-    EXPECTED_WIDTH_POINTS="360"
-    EXPECTED_HEIGHT_POINTS="504"
+  letter|a4|fourBySix|fiveBySeven)
     ;;
   *)
     printf 'Unsupported FREEPRINTSTUDIO_PAPER for PDF validation: %s\n' "$TEST_PAPER"
+    exit 1
+    ;;
+esac
+
+case "$TEST_ORIENTATION" in
+  portrait|landscape)
+    ;;
+  *)
+    printf 'Unsupported FREEPRINTSTUDIO_ORIENTATION for PDF validation: %s\n' "$TEST_ORIENTATION"
     exit 1
     ;;
 esac
@@ -114,10 +110,16 @@ host_pdf_path_for_label() {
 validate_pdf() {
   local label="$1"
   local mode="$2"
-  local target_width="$3"
-  local target_height="$4"
+  local paper="$3"
+  local orientation="$4"
+  local target_width="$5"
+  local target_height="$6"
   local app_pdf_path="$TEST_DIR/export-validation-$label.pdf"
   local host_pdf_path
+  local expected_width_points
+  local expected_height_points
+  local portrait_width_points
+  local portrait_height_points
   host_pdf_path="$(host_pdf_path_for_label "$label")"
 
   case "$mode" in
@@ -129,12 +131,51 @@ validate_pdf() {
       ;;
   esac
 
+  case "$paper" in
+    letter)
+      portrait_width_points="612"
+      portrait_height_points="792"
+      ;;
+    a4)
+      portrait_width_points="595.2755905512"
+      portrait_height_points="841.8897637795"
+      ;;
+    fourBySix)
+      portrait_width_points="288"
+      portrait_height_points="432"
+      ;;
+    fiveBySeven)
+      portrait_width_points="360"
+      portrait_height_points="504"
+      ;;
+    *)
+      printf 'Unsupported paper for PDF validation: %s\n' "$paper"
+      exit 1
+      ;;
+  esac
+
+  case "$orientation" in
+    portrait)
+      expected_width_points="$portrait_width_points"
+      expected_height_points="$portrait_height_points"
+      ;;
+    landscape)
+      expected_width_points="$portrait_height_points"
+      expected_height_points="$portrait_width_points"
+      ;;
+    *)
+      printf 'Unsupported orientation for PDF validation: %s\n' "$orientation"
+      exit 1
+      ;;
+  esac
+
   rm -f "$app_pdf_path" "$host_pdf_path"
 
   xcrun simctl terminate "$DEVICE" "$BUNDLE_ID" >/dev/null 2>&1 || true
   xcrun simctl launch "$DEVICE" "$BUNDLE_ID" \
     -FreePrintStudioTestImagePath "$TEST_DIR/sample-print-image.png" \
-    -FreePrintStudioPaper "$TEST_PAPER" \
+    -FreePrintStudioPaper "$paper" \
+    -FreePrintStudioOrientation "$orientation" \
     -FreePrintStudioFitMode "$mode" \
     -FreePrintStudioTargetWidth "$target_width" \
     -FreePrintStudioTargetHeight "$target_height" \
@@ -156,7 +197,7 @@ validate_pdf() {
   mkdir -p "$(dirname "$host_pdf_path")"
   cp "$app_pdf_path" "$host_pdf_path"
 
-  python3 - "$host_pdf_path" "$EXPECTED_WIDTH_POINTS" "$EXPECTED_HEIGHT_POINTS" "$mode" "$target_width" "$target_height" <<'PY'
+  python3 - "$host_pdf_path" "$expected_width_points" "$expected_height_points" "$mode" "$target_width" "$target_height" <<'PY'
 import re
 import sys
 import zlib
@@ -259,9 +300,10 @@ PY
 }
 
 for mode in "${FIT_MODES[@]}"; do
-  validate_pdf "$mode" "$mode" "$TEST_TARGET_WIDTH" "$TEST_TARGET_HEIGHT"
+  validate_pdf "$mode" "$mode" "$TEST_PAPER" "$TEST_ORIENTATION" "$TEST_TARGET_WIDTH" "$TEST_TARGET_HEIGHT"
 done
 
-if [[ -z "${FREEPRINTSTUDIO_TARGET_WIDTH:-}" && -z "${FREEPRINTSTUDIO_TARGET_HEIGHT:-}" && -z "${FREEPRINTSTUDIO_FIT_MODE:-}" ]]; then
-  validate_pdf "localized-decimal-stretch" "stretch" "4,5" "6,25"
+if [[ -z "${FREEPRINTSTUDIO_TARGET_WIDTH:-}" && -z "${FREEPRINTSTUDIO_TARGET_HEIGHT:-}" && -z "${FREEPRINTSTUDIO_FIT_MODE:-}" && -z "${FREEPRINTSTUDIO_PAPER:-}" && -z "${FREEPRINTSTUDIO_ORIENTATION:-}" ]]; then
+  validate_pdf "localized-decimal-stretch" "stretch" "letter" "portrait" "4,5" "6,25"
+  validate_pdf "landscape-letter-stretch" "stretch" "letter" "landscape" "4" "6"
 fi

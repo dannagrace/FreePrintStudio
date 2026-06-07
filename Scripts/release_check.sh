@@ -413,6 +413,8 @@ check_file "Scripts/validate_pdf_export.sh" "PDF export validation script is req
 check_contains "Scripts/validate_pdf_export.sh" "FreePrintStudioAutoExportPDFPath" "PDF export validation must exercise the app renderer"
 check_contains "Scripts/validate_pdf_export.sh" "FIT_MODES=(fit fill stretch)" "PDF export validation must cover Fit, Fill, and Stretch output modes"
 check_contains "Scripts/validate_pdf_export.sh" "Image clip rectangle" "PDF export validation must verify target clip rectangle size"
+check_contains "FreePrintStudio/ContentView.swift" "FreePrintStudioOrientation" "Debug PDF export must support paper orientation arguments"
+check_contains "Scripts/validate_pdf_export.sh" "landscape-letter-stretch" "PDF export validation must cover landscape paper orientation"
 check_contains "Scripts/validate_pdf_export.sh" "4,5" "PDF export validation must cover localized decimal comma width input"
 check_contains "Scripts/validate_pdf_export.sh" "6,25" "PDF export validation must cover localized decimal comma height input"
 check_file "Scripts/check_app_store_readiness.sh" "App Store readiness audit script is required"

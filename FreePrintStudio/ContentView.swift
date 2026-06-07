@@ -452,6 +452,12 @@ struct ContentView: View {
             selectedPaper = paper
         }
 
+        if let orientationIndex = arguments.firstIndex(of: "-FreePrintStudioOrientation"),
+           arguments.indices.contains(orientationIndex + 1),
+           let orientation = PaperOrientation(rawValue: arguments[orientationIndex + 1]) {
+            selectedOrientation = orientation
+        }
+
         if let widthIndex = arguments.firstIndex(of: "-FreePrintStudioTargetWidth"),
            arguments.indices.contains(widthIndex + 1) {
             widthText = arguments[widthIndex + 1]
