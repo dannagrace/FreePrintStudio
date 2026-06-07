@@ -168,6 +168,13 @@ else
   block "Export compliance answers or Info.plist encryption declaration are incomplete"
 fi
 
+photo_usage_description="$(plutil -extract NSPhotoLibraryUsageDescription raw -o - FreePrintStudio/Resources/Info.plist 2>/dev/null || true)"
+if [[ "$photo_usage_description" == *"selected image locally"* ]]; then
+  ok "Photo library usage description prepared"
+else
+  block "Photo library usage description is missing or incomplete"
+fi
+
 printf '\n== Public Pages ==\n'
 check_public_page "Privacy policy" "https://dannagrace.github.io/FreePrintStudio/privacy-policy.html" "FreePrint Studio Privacy Policy"
 check_public_page "Support" "https://dannagrace.github.io/FreePrintStudio/support.html" "FreePrint Studio Support"

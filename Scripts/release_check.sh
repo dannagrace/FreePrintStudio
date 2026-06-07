@@ -173,6 +173,8 @@ check_contains "FreePrintStudio/ContentView.swift" "Enter the target print width
 check_contains "FreePrintStudio/ContentView.swift" "Enter the target print height" "Height field must have a VoiceOver hint"
 check_contains "FreePrintStudio/ContentView.swift" "selectedImage != nil && isTargetSizeValid" "Export and print actions must require both a selected image and a valid target size"
 check_contains "FreePrintStudio/ContentView.swift" ".disabled(!isOutputReady)" "Export and print buttons must be disabled until output is ready"
+check_contains "FreePrintStudio/Resources/Info.plist" "NSPhotoLibraryUsageDescription" "Info.plist must explain photo library access"
+check_contains "FreePrintStudio/Resources/Info.plist" "selected image locally" "Photo library usage description must explain local image processing"
 check_file "AppStore/metadata.md" "App Store metadata draft is required"
 check_file "Scripts/validate_app_store_metadata.sh" "App Store metadata limit validation script is required"
 if [[ -x "Scripts/validate_app_store_metadata.sh" ]]; then
