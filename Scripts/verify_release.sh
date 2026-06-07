@@ -296,6 +296,11 @@ run_accessibility_screenshot_validation() {
   Scripts/validate_accessibility_screenshots.sh
 }
 
+run_simulator_workflow_validation() {
+  printf '== Simulator workflow validation ==\n'
+  Scripts/validate_simulator_workflow.sh
+}
+
 run_print_sheet_validation() {
   printf '== Print sheet validation ==\n'
   Scripts/validate_print_sheet.sh
@@ -351,11 +356,14 @@ case "${1:-all}" in
   accessibility)
     run_accessibility_screenshot_validation
     ;;
+  simulator-workflow)
+    run_simulator_workflow_validation
+    ;;
   print-sheet)
     run_print_sheet_validation
     ;;
   *)
-    printf 'Usage: %s [all|static|core|plist|privacy|questionnaires|pdf|build|screenshots|accessibility|print-sheet]\n' "$0"
+    printf 'Usage: %s [all|static|core|plist|privacy|questionnaires|pdf|build|screenshots|accessibility|simulator-workflow|print-sheet]\n' "$0"
     exit 1
     ;;
 esac

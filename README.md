@@ -72,6 +72,14 @@ Validate that the app renderer exports PDFs with the expected paper MediaBox and
 Scripts/validate_pdf_export.sh
 ```
 
+Validate a simulator workflow with a generated selected image, centimeter units, landscape A4 paper, an app screenshot, and PDF export:
+
+```sh
+Scripts/verify_release.sh simulator-workflow
+# Or directly:
+Scripts/validate_simulator_workflow.sh
+```
+
 Validate that private release settings do not still contain copied placeholder values:
 
 ```sh

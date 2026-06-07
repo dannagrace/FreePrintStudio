@@ -479,6 +479,16 @@ check_contains "Scripts/validate_pdf_export.sh" "centimeter-a4-stretch" "PDF exp
 check_contains "Scripts/validate_pdf_export.sh" "millimeter-a4-stretch" "PDF export validation must cover millimeter target sizes"
 check_contains "Scripts/validate_pdf_export.sh" "4,5" "PDF export validation must cover localized decimal comma width input"
 check_contains "Scripts/validate_pdf_export.sh" "6,25" "PDF export validation must cover localized decimal comma height input"
+check_file "Scripts/validate_simulator_workflow.sh" "Simulator workflow validation script is required"
+if [[ ! -x "Scripts/validate_simulator_workflow.sh" ]]; then
+  printf 'FAIL: Simulator workflow validation script must be executable (Scripts/validate_simulator_workflow.sh)\n'
+  failures=$((failures + 1))
+fi
+check_contains "Scripts/validate_simulator_workflow.sh" "capture_app_store_screenshots.sh" "Simulator workflow validation must capture an app screenshot"
+check_contains "Scripts/validate_simulator_workflow.sh" "validate_pdf_export.sh" "Simulator workflow validation must verify PDF export"
+check_contains "Scripts/validate_simulator_workflow.sh" "FREEPRINTSTUDIO_UNIT=centimeter" "Simulator workflow validation must exercise unit switching"
+check_contains "Scripts/validate_simulator_workflow.sh" "validationErrorRedPixels" "Simulator workflow validation must reject validation error screenshots"
+check_contains "Scripts/verify_release.sh" "validate_simulator_workflow.sh" "Release verification must expose simulator workflow validation"
 check_file "Scripts/validate_print_sheet.sh" "Print sheet validation script is required"
 if [[ ! -x "Scripts/validate_print_sheet.sh" ]]; then
   printf 'FAIL: Print sheet validation script must be executable (Scripts/validate_print_sheet.sh)\n'
@@ -539,6 +549,8 @@ check_contains "README.md" "Scripts/validate_app_icon_set.sh" "README must docum
 check_contains "README.md" "Scripts/validate_app_store_export.sh" "README must document App Store archive/export validation"
 check_contains "README.md" "Scripts/validate_app_store_questionnaires.sh" "README must document App Store questionnaire consistency validation"
 check_contains "README.md" "Scripts/verify_release.sh questionnaires" "README must document the questionnaire release command"
+check_contains "README.md" "Scripts/validate_simulator_workflow.sh" "README must document simulator workflow validation"
+check_contains "README.md" "Scripts/verify_release.sh simulator-workflow" "README must document the simulator workflow release command"
 check_contains "README.md" "Scripts/validate_accessibility_screenshots.sh" "README must document accessibility screenshot validation"
 check_contains "README.md" "Scripts/verify_release.sh accessibility" "README must document the accessibility screenshot release command"
 check_contains "README.md" "Scripts/validate_print_sheet.sh" "README must document print sheet validation"
@@ -558,6 +570,8 @@ check_contains "AppStore/release-checklist.md" "Scripts/validate_app_icon_set.sh
 check_contains "AppStore/release-checklist.md" "Scripts/validate_app_store_export.sh" "Release checklist must include App Store archive/export validation"
 check_contains "AppStore/release-checklist.md" "Scripts/validate_app_store_questionnaires.sh" "Release checklist must include App Store questionnaire consistency validation"
 check_contains "AppStore/release-checklist.md" "Scripts/verify_release.sh questionnaires" "Release checklist must include the questionnaire release command"
+check_contains "AppStore/release-checklist.md" "Scripts/validate_simulator_workflow.sh" "Release checklist must include simulator workflow validation"
+check_contains "AppStore/release-checklist.md" "Scripts/verify_release.sh simulator-workflow" "Release checklist must include the simulator workflow release command"
 check_contains "AppStore/release-checklist.md" "Scripts/validate_accessibility_screenshots.sh" "Release checklist must include accessibility screenshot validation"
 check_contains "AppStore/release-checklist.md" "Scripts/verify_release.sh accessibility" "Release checklist must include the accessibility screenshot release command"
 check_contains "AppStore/release-checklist.md" "Scripts/validate_print_sheet.sh" "Release checklist must include print sheet validation"
