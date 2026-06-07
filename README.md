@@ -241,6 +241,12 @@ After the build has processed in App Store Connect, verify the app record, versi
 APP_STORE_BUILD_NUMBER=1 Scripts/run_fastlane.sh ios app_store_connect_state
 ```
 
+Before submitting for App Review, run the final preflight without triggering submission:
+
+```sh
+APP_STORE_BUILD_NUMBER=1 Scripts/preflight_app_review_submission.sh
+```
+
 After the uploaded build is processed in App Store Connect and the store listing, privacy details, age rating, screenshots, and review contact details are final, submit the selected build for App Review:
 
 ```sh

@@ -326,6 +326,11 @@ run_testflight_preflight_validation() {
   Scripts/preflight_testflight_upload.sh
 }
 
+run_review_preflight_validation() {
+  printf '== App Review submission preflight ==\n'
+  Scripts/preflight_app_review_submission.sh
+}
+
 run_all() {
   run_static_checks
   printf '\n'
@@ -412,8 +417,11 @@ case "${1:-all}" in
   testflight-preflight)
     run_testflight_preflight_validation
     ;;
+  review-preflight)
+    run_review_preflight_validation
+    ;;
   *)
-    printf 'Usage: %s [all|store-ready|static|core|plist|privacy|questionnaires|pdf|build|screenshots|accessibility|simulator-workflow|photo-import|print-sheet|submission-packet|archive-preflight|testflight-preflight]\n' "$0"
+    printf 'Usage: %s [all|store-ready|static|core|plist|privacy|questionnaires|pdf|build|screenshots|accessibility|simulator-workflow|photo-import|print-sheet|submission-packet|archive-preflight|testflight-preflight|review-preflight]\n' "$0"
     exit 1
     ;;
 esac
