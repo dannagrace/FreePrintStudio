@@ -68,6 +68,13 @@ def review_information_options
   info
 end
 
+def validate_app_review_contact!
+  contact_script = File.join(PROJECT_ROOT, "Scripts/validate_app_review_contact.sh")
+  return if system(Shellwords.escape(contact_script))
+
+  UI.user_error!("Set valid APP_REVIEW_CONTACT_* values before uploading metadata or submitting for review.")
+end
+
 def submission_information_options
   {
     export_compliance_uses_encryption: false,
@@ -112,6 +119,8 @@ platform :ios do
 
   desc "Upload App Store Connect metadata and screenshots without submitting"
   lane :metadata do
+    validate_app_review_contact!
+
     deliver(
       app_store_connect_credentials(required: false).merge(
         app_identifier: APP_IDENTIFIER,
@@ -162,6 +171,7 @@ platform :ios do
   desc "Submit an already uploaded App Store Connect build for App Review"
   lane :submit_review do
     confirm_submit_for_review!
+    validate_app_review_contact!
 
     build_number = ENV["APP_STORE_BUILD_NUMBER"].to_s.strip
     UI.user_error!("Set APP_STORE_BUILD_NUMBER to the processed App Store Connect build number before submitting for review") if build_number.empty?

@@ -30,6 +30,25 @@ check_contains() {
   fi
 }
 
+check_occurrences_at_least() {
+  local path="$1"
+  local pattern="$2"
+  local minimum="$3"
+  local message="$4"
+  local count
+  if [[ ! -f "$path" ]]; then
+    printf 'FAIL: %s (%s missing)\n' "$message" "$path"
+    failures=$((failures + 1))
+    return
+  fi
+  count="$(grep -c "$pattern" "$path" || true)"
+  if (( count < minimum )); then
+    printf 'FAIL: %s (%s has %s occurrence(s) of %s, expected at least %s)\n' \
+      "$message" "$path" "$count" "$pattern" "$minimum"
+    failures=$((failures + 1))
+  fi
+}
+
 check_sips_property() {
   local path="$1"
   local property="$2"
@@ -304,6 +323,8 @@ check_contains "fastlane/Fastfile" "primary_category: PRIMARY_CATEGORY" "Fastfil
 check_contains "fastlane/Fastfile" "secondary_category: SECONDARY_CATEGORY" "Fastfile metadata lane must set the secondary App Store category"
 check_contains "fastlane/Fastfile" "review_information_options" "Fastfile must prepare App Store review information"
 check_contains "fastlane/Fastfile" "APP_REVIEW_CONTACT_EMAIL" "Fastfile must support private App Review contact details"
+check_contains "fastlane/Fastfile" "Scripts/validate_app_review_contact.sh" "Fastfile must run App Review contact validation before upload or submission"
+check_occurrences_at_least "fastlane/Fastfile" "validate_app_review_contact!" 2 "Fastfile metadata and submit lanes must require App Review contact validation"
 check_contains "fastlane/Deliverfile" "project_root" "Deliverfile must use project-root absolute paths"
 check_contains "fastlane/Deliverfile" "primary_category(\"Graphics & Design\")" "Deliverfile must set the primary App Store category"
 check_contains "fastlane/Deliverfile" "secondary_category(\"Productivity\")" "Deliverfile must set the secondary App Store category"
