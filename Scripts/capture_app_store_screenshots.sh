@@ -94,6 +94,15 @@ if [[ -n "$TEST_APPEARANCE" ]]; then
   esac
 fi
 
+case "$TEST_PAPER" in
+  letter|a4|fourBySix|fiveBySeven)
+    ;;
+  *)
+    printf 'Invalid FREEPRINTSTUDIO_PAPER: %s. Use letter, a4, fourBySix, or fiveBySeven.\n' "$TEST_PAPER"
+    exit 1
+    ;;
+esac
+
 case "$TEST_ORIENTATION" in
   portrait|landscape)
     ;;
@@ -108,6 +117,15 @@ case "$TEST_UNIT" in
     ;;
   *)
     printf 'Invalid FREEPRINTSTUDIO_UNIT: %s. Use inch, centimeter, or millimeter.\n' "$TEST_UNIT"
+    exit 1
+    ;;
+esac
+
+case "$TEST_FIT_MODE" in
+  fit|fill|stretch)
+    ;;
+  *)
+    printf 'Invalid FREEPRINTSTUDIO_FIT_MODE: %s. Use fit, fill, or stretch.\n' "$TEST_FIT_MODE"
     exit 1
     ;;
 esac
