@@ -301,6 +301,11 @@ run_simulator_workflow_validation() {
   Scripts/validate_simulator_workflow.sh
 }
 
+run_photo_import_validation() {
+  printf '== Photo import validation ==\n'
+  Scripts/validate_photo_import.sh
+}
+
 run_print_sheet_validation() {
   printf '== Print sheet validation ==\n'
   Scripts/validate_print_sheet.sh
@@ -364,6 +369,9 @@ case "${1:-all}" in
   simulator-workflow)
     run_simulator_workflow_validation
     ;;
+  photo-import)
+    run_photo_import_validation
+    ;;
   print-sheet)
     run_print_sheet_validation
     ;;
@@ -371,7 +379,7 @@ case "${1:-all}" in
     run_submission_packet_generation
     ;;
   *)
-    printf 'Usage: %s [all|static|core|plist|privacy|questionnaires|pdf|build|screenshots|accessibility|simulator-workflow|print-sheet|submission-packet]\n' "$0"
+    printf 'Usage: %s [all|static|core|plist|privacy|questionnaires|pdf|build|screenshots|accessibility|simulator-workflow|photo-import|print-sheet|submission-packet]\n' "$0"
     exit 1
     ;;
 esac

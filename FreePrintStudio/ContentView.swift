@@ -200,7 +200,7 @@ struct ContentView: View {
             )
         }
         .buttonStyle(.borderedProminent)
-        .accessibilityLabel("Choose Image")
+        .accessibilityLabel(selectedImage == nil ? "Choose Image" : "Change Image")
         .accessibilityHint("Select or replace the image used for the print layout.")
     }
 

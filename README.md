@@ -80,6 +80,14 @@ Scripts/verify_release.sh simulator-workflow
 Scripts/validate_simulator_workflow.sh
 ```
 
+Validate that the real Photos picker can import an image from the simulator photo library and enable the export/print workflow:
+
+```sh
+Scripts/verify_release.sh photo-import
+# Or directly:
+Scripts/validate_photo_import.sh
+```
+
 Validate that private release settings do not still contain copied placeholder values:
 
 ```sh

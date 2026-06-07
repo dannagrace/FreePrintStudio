@@ -16,7 +16,18 @@
 		001000000000000000000007 /* PrintSizing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 002000000000000000000007 /* PrintSizing.swift */; };
 		001000000000000000000008 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 002000000000000000000008 /* Assets.xcassets */; };
 		001000000000000000000009 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 002000000000000000000013 /* PrivacyInfo.xcprivacy */; };
+		001000000000000000000010 /* PhotoImportUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 002000000000000000000014 /* PhotoImportUITests.swift */; };
 /* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		00B000000000000000000001 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 008000000000000000000001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 005000000000000000000001;
+			remoteInfo = FreePrintStudio;
+		};
+/* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
 		002000000000000000000001 /* FreePrintStudioApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FreePrintStudioApp.swift; sourceTree = "<group>"; };
@@ -32,10 +43,19 @@
 		002000000000000000000011 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = SOURCE_ROOT; };
 		002000000000000000000012 /* FreePrintStudio.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = FreePrintStudio.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		002000000000000000000013 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		002000000000000000000014 /* PhotoImportUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoImportUITests.swift; sourceTree = "<group>"; };
+		002000000000000000000015 /* FreePrintStudioUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = FreePrintStudioUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		003000000000000000000001 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		003000000000000000000002 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -51,6 +71,7 @@
 				002000000000000000000010 /* Package.swift */,
 				002000000000000000000011 /* README.md */,
 				004000000000000000000002 /* FreePrintStudio */,
+				004000000000000000000009 /* FreePrintStudioUITests */,
 				004000000000000000000007 /* Sources */,
 				004000000000000000000008 /* Products */,
 			);
@@ -108,8 +129,17 @@
 			isa = PBXGroup;
 			children = (
 				002000000000000000000012 /* FreePrintStudio.app */,
+				002000000000000000000015 /* FreePrintStudioUITests.xctest */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		004000000000000000000009 /* FreePrintStudioUITests */ = {
+			isa = PBXGroup;
+			children = (
+				002000000000000000000014 /* PhotoImportUITests.swift */,
+			);
+			path = FreePrintStudioUITests;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -132,6 +162,24 @@
 			productReference = 002000000000000000000012 /* FreePrintStudio.app */;
 			productType = "com.apple.product-type.application";
 		};
+		005000000000000000000002 /* FreePrintStudioUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 010000000000000000000003 /* Build configuration list for PBXNativeTarget "FreePrintStudioUITests" */;
+			buildPhases = (
+				006000000000000000000002 /* Sources */,
+				003000000000000000000002 /* Frameworks */,
+				007000000000000000000002 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				00C000000000000000000001 /* PBXTargetDependency */,
+			);
+			name = FreePrintStudioUITests;
+			productName = FreePrintStudioUITests;
+			productReference = 002000000000000000000015 /* FreePrintStudioUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -144,6 +192,10 @@
 				TargetAttributes = {
 					005000000000000000000001 = {
 						CreatedOnToolsVersion = 16.2;
+					};
+					005000000000000000000002 = {
+						CreatedOnToolsVersion = 16.2;
+						TestTargetID = 005000000000000000000001;
 					};
 				};
 			};
@@ -161,6 +213,7 @@
 			projectRoot = "";
 			targets = (
 				005000000000000000000001 /* FreePrintStudio */,
+				005000000000000000000002 /* FreePrintStudioUITests */,
 			);
 		};
 /* End PBXProject section */
@@ -172,6 +225,13 @@
 			files = (
 				001000000000000000000008 /* Assets.xcassets in Resources */,
 				001000000000000000000009 /* PrivacyInfo.xcprivacy in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		007000000000000000000002 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -192,7 +252,23 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		006000000000000000000002 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				001000000000000000000010 /* PhotoImportUITests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		00C000000000000000000001 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 005000000000000000000001 /* FreePrintStudio */;
+			targetProxy = 00B000000000000000000001 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		009000000000000000000001 /* Debug */ = {
@@ -365,6 +441,58 @@
 			};
 			name = Release;
 		};
+		009000000000000000000005 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.dannagrace.FreePrintStudioUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = FreePrintStudio;
+			};
+			name = Debug;
+		};
+		009000000000000000000006 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.dannagrace.FreePrintStudioUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = FreePrintStudio;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -382,6 +510,15 @@
 			buildConfigurations = (
 				009000000000000000000003 /* Debug */,
 				009000000000000000000004 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		010000000000000000000003 /* Build configuration list for PBXNativeTarget "FreePrintStudioUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				009000000000000000000005 /* Debug */,
+				009000000000000000000006 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

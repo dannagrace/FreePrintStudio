@@ -196,7 +196,7 @@ check_contains "FreePrintStudio/ContentView.swift" "About FreePrint Studio" "App
 check_contains "FreePrintStudio/ContentView.swift" "Privacy Policy" "App must expose privacy policy text"
 check_contains "FreePrintStudio/ContentView.swift" "https://dannagrace.github.io/FreePrintStudio/privacy-policy.html" "About screen must link to the public privacy policy"
 check_contains "FreePrintStudio/ContentView.swift" "https://dannagrace.github.io/FreePrintStudio/support.html" "About screen must link to the public support page"
-check_contains "FreePrintStudio/ContentView.swift" "accessibilityLabel(\"Choose Image\")" "Choose Image control must have an explicit VoiceOver label"
+check_contains "FreePrintStudio/ContentView.swift" "selectedImage == nil ? \"Choose Image\" : \"Change Image\"" "Image picker control must expose the current action as its VoiceOver label"
 check_contains "FreePrintStudio/ContentView.swift" "accessibilityLabel(\"Print preview\")" "Print preview must have an explicit VoiceOver label"
 check_contains "FreePrintStudio/ContentView.swift" "Enter the target print width" "Width field must have a VoiceOver hint"
 check_contains "FreePrintStudio/ContentView.swift" "Enter the target print height" "Height field must have a VoiceOver hint"
@@ -496,6 +496,19 @@ check_contains "Scripts/validate_simulator_workflow.sh" "validate_pdf_export.sh"
 check_contains "Scripts/validate_simulator_workflow.sh" "FREEPRINTSTUDIO_UNIT=centimeter" "Simulator workflow validation must exercise unit switching"
 check_contains "Scripts/validate_simulator_workflow.sh" "validationErrorRedPixels" "Simulator workflow validation must reject validation error screenshots"
 check_contains "Scripts/verify_release.sh" "validate_simulator_workflow.sh" "Release verification must expose simulator workflow validation"
+check_file "Scripts/validate_photo_import.sh" "Photo import validation script is required"
+if [[ ! -x "Scripts/validate_photo_import.sh" ]]; then
+  printf 'FAIL: Photo import validation script must be executable (Scripts/validate_photo_import.sh)\n'
+  failures=$((failures + 1))
+fi
+check_file "FreePrintStudioUITests/PhotoImportUITests.swift" "Photo import UI test is required"
+check_contains "Scripts/validate_photo_import.sh" "simctl addmedia" "Photo import validation must seed the simulator photo library"
+check_contains "Scripts/validate_photo_import.sh" "FreePrintStudioUITests/PhotoImportUITests" "Photo import validation must run the dedicated UI test"
+check_contains "FreePrintStudioUITests/PhotoImportUITests.swift" "Choose Image" "Photo import UI test must exercise the real Choose Image control"
+check_contains "FreePrintStudioUITests/PhotoImportUITests.swift" "Change Image" "Photo import UI test must verify the app receives the selected photo"
+check_contains "FreePrintStudio.xcodeproj/project.pbxproj" "FreePrintStudioUITests" "Xcode project must include the UI test target"
+check_contains "FreePrintStudio.xcodeproj/xcshareddata/xcschemes/FreePrintStudio.xcscheme" "FreePrintStudioUITests.xctest" "Shared scheme must expose the photo import UI tests"
+check_contains "Scripts/verify_release.sh" "validate_photo_import.sh" "Release verification must expose photo import validation"
 check_file "Scripts/validate_print_sheet.sh" "Print sheet validation script is required"
 if [[ ! -x "Scripts/validate_print_sheet.sh" ]]; then
   printf 'FAIL: Print sheet validation script must be executable (Scripts/validate_print_sheet.sh)\n'
@@ -559,6 +572,8 @@ check_contains "README.md" "Scripts/verify_release.sh questionnaires" "README mu
 check_contains "README.md" "Fastlane metadata, App Privacy Details, and final review-submission lanes run the local App Store questionnaire validation" "README must document Fastlane questionnaire validation gates"
 check_contains "README.md" "Scripts/validate_simulator_workflow.sh" "README must document simulator workflow validation"
 check_contains "README.md" "Scripts/verify_release.sh simulator-workflow" "README must document the simulator workflow release command"
+check_contains "README.md" "Scripts/validate_photo_import.sh" "README must document photo import validation"
+check_contains "README.md" "Scripts/verify_release.sh photo-import" "README must document the photo import release command"
 check_contains "README.md" "Scripts/validate_accessibility_screenshots.sh" "README must document accessibility screenshot validation"
 check_contains "README.md" "Scripts/verify_release.sh accessibility" "README must document the accessibility screenshot release command"
 check_contains "README.md" "Scripts/validate_print_sheet.sh" "README must document print sheet validation"
@@ -582,6 +597,8 @@ check_contains "AppStore/release-checklist.md" "Scripts/validate_app_store_quest
 check_contains "AppStore/release-checklist.md" "Scripts/verify_release.sh questionnaires" "Release checklist must include the questionnaire release command"
 check_contains "AppStore/release-checklist.md" "Scripts/validate_simulator_workflow.sh" "Release checklist must include simulator workflow validation"
 check_contains "AppStore/release-checklist.md" "Scripts/verify_release.sh simulator-workflow" "Release checklist must include the simulator workflow release command"
+check_contains "AppStore/release-checklist.md" "Scripts/validate_photo_import.sh" "Release checklist must include photo import validation"
+check_contains "AppStore/release-checklist.md" "Scripts/verify_release.sh photo-import" "Release checklist must include the photo import release command"
 check_contains "AppStore/release-checklist.md" "Scripts/validate_accessibility_screenshots.sh" "Release checklist must include accessibility screenshot validation"
 check_contains "AppStore/release-checklist.md" "Scripts/verify_release.sh accessibility" "Release checklist must include the accessibility screenshot release command"
 check_contains "AppStore/release-checklist.md" "Scripts/validate_print_sheet.sh" "Release checklist must include print sheet validation"
