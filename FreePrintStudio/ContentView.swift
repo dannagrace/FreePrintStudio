@@ -242,7 +242,7 @@ struct ContentView: View {
             commandLabel("Export PDF", systemImage: "square.and.arrow.up")
         }
         .buttonStyle(.bordered)
-        .disabled(!isTargetSizeValid)
+        .disabled(!isOutputReady)
         .accessibilityLabel("Export PDF")
         .accessibilityHint("Create a PDF with the selected paper, size, and image placement.")
     }
@@ -254,7 +254,7 @@ struct ContentView: View {
             commandLabel("Print", systemImage: "printer")
         }
         .buttonStyle(.borderedProminent)
-        .disabled(!isTargetSizeValid)
+        .disabled(!isOutputReady)
         .accessibilityLabel("Print")
         .accessibilityHint("Open the system print sheet for the prepared PDF.")
     }
@@ -328,6 +328,10 @@ struct ContentView: View {
 
     private var isTargetSizeValid: Bool {
         targetValidation == .valid
+    }
+
+    private var isOutputReady: Bool {
+        selectedImage != nil && isTargetSizeValid
     }
 
     private var targetValidationMessage: String? {
