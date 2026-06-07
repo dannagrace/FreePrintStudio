@@ -37,7 +37,9 @@ Support URL: https://dannagrace.github.io/FreePrintStudio/support.html
 Support Contact: https://github.com/dannagrace/FreePrintStudio/issues
 
 ## Review Notes
-FreePrint Studio does not require an account or network service. To test:
+FreePrint Studio does not require an account or network service.
+
+To test:
 1. Choose an image from Photos.
 2. Select a paper preset and orientation.
 3. Enter a target width and height.

@@ -175,6 +175,31 @@ else
   block "Photo library usage description is missing or incomplete"
 fi
 
+printf '\n== App Review Information ==\n'
+if [[ -s "fastlane/metadata/review_information/notes.txt" ]] \
+  && grep -q "does not require an account" fastlane/metadata/review_information/notes.txt; then
+  ok "App Review notes prepared for Fastlane"
+else
+  block "App Review notes are missing from fastlane/metadata/review_information/notes.txt"
+fi
+
+missing_review_contact=()
+for env_name in \
+  APP_REVIEW_CONTACT_FIRST_NAME \
+  APP_REVIEW_CONTACT_LAST_NAME \
+  APP_REVIEW_CONTACT_PHONE \
+  APP_REVIEW_CONTACT_EMAIL; do
+  if [[ -z "${!env_name:-}" ]]; then
+    missing_review_contact+=("$env_name")
+  fi
+done
+
+if (( ${#missing_review_contact[@]} == 0 )); then
+  ok "App Review contact details configured through private environment variables"
+else
+  block "App Review contact details missing: ${missing_review_contact[*]}"
+fi
+
 printf '\n== Public Pages ==\n'
 check_public_page "Privacy policy" "https://dannagrace.github.io/FreePrintStudio/privacy-policy.html" "FreePrint Studio Privacy Policy"
 check_public_page "Support" "https://dannagrace.github.io/FreePrintStudio/support.html" "FreePrint Studio Support"

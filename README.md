@@ -95,6 +95,17 @@ Scripts/install_release_dependencies.sh
 Scripts/run_fastlane.sh ios metadata
 ```
 
+Before uploading metadata or submitting for review, set the private App Review contact values in your shell or untracked `Config/release.env`. Do not commit real personal contact details.
+
+```sh
+APP_REVIEW_CONTACT_FIRST_NAME=YOUR_FIRST_NAME
+APP_REVIEW_CONTACT_LAST_NAME=YOUR_LAST_NAME
+APP_REVIEW_CONTACT_PHONE=+1-555-0100
+APP_REVIEW_CONTACT_EMAIL=review-contact@example.com
+```
+
+Fastlane reads the reviewer test notes from `fastlane/metadata/review_information/notes.txt` and combines them with the private contact values above.
+
 Fastlane can also call the local gates and create the signed archive:
 
 ```sh

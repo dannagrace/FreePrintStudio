@@ -6,6 +6,7 @@ APP_VERSION = "1.0"
 PRIMARY_CATEGORY = "Graphics & Design"
 SECONDARY_CATEGORY = "Productivity"
 DEFAULT_EXPORT_PATH = File.join(PROJECT_ROOT, "build/AppStoreExport")
+REVIEW_INFORMATION_PATH = File.join(PROJECT_ROOT, "fastlane/metadata/review_information")
 
 def app_store_connect_credentials(required: false)
   api_key_json = ENV["APP_STORE_CONNECT_API_KEY_JSON"].to_s
@@ -48,6 +49,24 @@ def exported_ipa_path
   Dir[File.join(DEFAULT_EXPORT_PATH, "*.ipa")].sort.first
 end
 
+def review_information_options
+  info = {}
+  notes_path = File.join(REVIEW_INFORMATION_PATH, "notes.txt")
+  info[:notes] = File.read(notes_path) if File.file?(notes_path)
+
+  {
+    first_name: "APP_REVIEW_CONTACT_FIRST_NAME",
+    last_name: "APP_REVIEW_CONTACT_LAST_NAME",
+    phone_number: "APP_REVIEW_CONTACT_PHONE",
+    email_address: "APP_REVIEW_CONTACT_EMAIL"
+  }.each do |key, env_name|
+    value = ENV[env_name].to_s.strip
+    info[key] = value unless value.empty?
+  end
+
+  info
+end
+
 opt_out_usage
 default_platform(:ios)
 
@@ -73,6 +92,7 @@ platform :ios do
         app_version: APP_VERSION,
         primary_category: PRIMARY_CATEGORY,
         secondary_category: SECONDARY_CATEGORY,
+        app_review_information: review_information_options,
         metadata_path: File.join(PROJECT_ROOT, "fastlane/metadata"),
         screenshots_path: File.join(PROJECT_ROOT, "fastlane/screenshots"),
         skip_binary_upload: true,
