@@ -86,6 +86,7 @@ DEVELOPMENT_TEAM_ID=ABCDE12345 ALLOW_PROVISIONING_UPDATES=1 Scripts/archive_app_
 
 The archive script runs the local release gate first, then creates `build/FreePrintStudio.xcarchive` and exports an App Store Connect IPA under `build/AppStoreExport/`.
 `Config/release.env.example` lists the signing and App Store Connect variables used by the release scripts. Keep the filled file and any `AuthKey_*.p8` private key outside git.
+Release scripts automatically load `Config/release.env` when it exists; set `RELEASE_ENV_PATH` to load a different private env file.
 
 App Store Connect metadata is mirrored under `fastlane/`. Install Fastlane through the project Bundler path or Homebrew, then upload metadata and screenshots without submitting for review:
 
