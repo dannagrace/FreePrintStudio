@@ -331,6 +331,11 @@ run_review_preflight_validation() {
   Scripts/preflight_app_review_submission.sh
 }
 
+run_manual_verification_validation() {
+  printf '== Manual release verification evidence ==\n'
+  Scripts/validate_manual_release_verification.sh
+}
+
 run_all() {
   run_static_checks
   printf '\n'
@@ -420,8 +425,11 @@ case "${1:-all}" in
   review-preflight)
     run_review_preflight_validation
     ;;
+  manual-verification)
+    run_manual_verification_validation
+    ;;
   *)
-    printf 'Usage: %s [all|store-ready|static|core|plist|privacy|questionnaires|pdf|build|screenshots|accessibility|simulator-workflow|photo-import|print-sheet|submission-packet|archive-preflight|testflight-preflight|review-preflight]\n' "$0"
+    printf 'Usage: %s [all|store-ready|static|core|plist|privacy|questionnaires|pdf|build|screenshots|accessibility|simulator-workflow|photo-import|print-sheet|submission-packet|archive-preflight|testflight-preflight|review-preflight|manual-verification]\n' "$0"
     exit 1
     ;;
 esac

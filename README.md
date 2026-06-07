@@ -167,6 +167,13 @@ Scripts/verify_release.sh print-sheet
 Scripts/validate_print_sheet.sh
 ```
 
+Record and validate manual real-device, AirPrint, and TestFlight evidence before final App Review submission:
+
+```sh
+cp Config/manual-release-verification.env.example Config/manual-release-verification.env
+Scripts/validate_manual_release_verification.sh
+```
+
 Prepare a local App Store submission packet with metadata, questionnaire drafts, screenshots, checksums, readiness audit output, and next commands:
 
 ```sh

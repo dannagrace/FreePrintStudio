@@ -8,5 +8,6 @@ xcuserdata/
 *.xcuserstate
 *.p8
 Config/release.env
+Config/manual-release-verification.env
 fastlane/README.md
 fastlane/report.xml

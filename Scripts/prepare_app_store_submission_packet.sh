@@ -28,6 +28,7 @@ required_files=(
   "AppStore/accessibility-labels.md"
   "AppStore/export-compliance.md"
   "AppStore/release-checklist.md"
+  "Config/manual-release-verification.env.example"
   "FreePrintStudio/Resources/Info.plist"
   "FreePrintStudio/Resources/PrivacyInfo.xcprivacy"
   "FreePrintStudio/Resources/Assets.xcassets/AppIcon.appiconset/AppIcon.png"
@@ -171,6 +172,7 @@ EOF
 - `DEVELOPMENT_TEAM_ID`, an installed `Apple Distribution` certificate, and an App Store Connect provisioning profile for `com.dannagrace.FreePrintStudio`.
 - App Store Connect credentials through either `APP_STORE_CONNECT_API_KEY_JSON` or the `ASC_KEY_ID`, `ASC_ISSUER_ID`, and `ASC_KEY_PATH` triplet.
 - `FASTLANE_USER` if uploading App Privacy Details through the Fastlane Apple ID flow.
+- Manual release verification evidence in untracked `Config/manual-release-verification.env` after real iPhone, AirPrint, and TestFlight checks.
 
 ## Command Order
 
@@ -183,6 +185,7 @@ DEVELOPMENT_TEAM_ID=YOURTEAMID ALLOW_PROVISIONING_UPDATES=1 Scripts/archive_app_
 Scripts/preflight_testflight_upload.sh
 ASC_KEY_ID=XXXXXXXXXX ASC_ISSUER_ID=00000000-0000-0000-0000-000000000000 ASC_KEY_PATH=/secure/AuthKey_XXXXXXXXXX.p8 Scripts/run_fastlane.sh ios upload_testflight
 APP_STORE_BUILD_NUMBER=1 Scripts/run_fastlane.sh ios app_store_connect_state
+Scripts/validate_manual_release_verification.sh
 APP_STORE_BUILD_NUMBER=1 Scripts/preflight_app_review_submission.sh
 APP_STORE_BUILD_NUMBER=1 CONFIRM_SUBMIT_FOR_REVIEW=1 Scripts/run_fastlane.sh ios submit_review
 ```
@@ -233,6 +236,7 @@ cat >"$SUMMARY_PATH" <<EOF
 - App Privacy, age rating, accessibility, and export compliance questionnaire drafts.
 - Reviewed screenshots and Fastlane upload screenshots.
 - Public privacy and support page source files.
+- Manual release verification evidence template.
 - App icon, plist declarations, privacy manifest, Fastlane release files, and App Store export options.
 - \`screenshots.tsv\` with screenshot dimensions and sha256 checksums.
 - \`file-manifest.tsv\` with package file sizes and sha256 checksums.
@@ -250,6 +254,7 @@ DEVELOPMENT_TEAM_ID=YOURTEAMID ALLOW_PROVISIONING_UPDATES=1 Scripts/archive_app_
 Scripts/preflight_testflight_upload.sh
 ASC_KEY_ID=XXXXXXXXXX ASC_ISSUER_ID=00000000-0000-0000-0000-000000000000 ASC_KEY_PATH=/secure/AuthKey_XXXXXXXXXX.p8 Scripts/run_fastlane.sh ios upload_testflight
 APP_STORE_BUILD_NUMBER=1 Scripts/run_fastlane.sh ios app_store_connect_state
+Scripts/validate_manual_release_verification.sh
 APP_STORE_BUILD_NUMBER=1 Scripts/preflight_app_review_submission.sh
 APP_STORE_BUILD_NUMBER=1 CONFIRM_SUBMIT_FOR_REVIEW=1 Scripts/run_fastlane.sh ios submit_review
 \`\`\`

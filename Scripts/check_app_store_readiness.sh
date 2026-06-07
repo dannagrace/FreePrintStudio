@@ -235,6 +235,19 @@ else
   done </tmp/freeprintstudio-review-contact.log
 fi
 
+printf '\n== Manual Release Verification ==\n'
+if Scripts/validate_manual_release_verification.sh >/tmp/freeprintstudio-manual-release-verification.log 2>&1; then
+  ok "Manual real-device, AirPrint, and TestFlight verification evidence is recorded"
+else
+  while IFS= read -r line; do
+    case "$line" in
+      OK:*) ok "${line#OK: }" ;;
+      BLOCKED:*) block "${line#BLOCKED: }" ;;
+      *) printf '  %s\n' "$line" ;;
+    esac
+  done </tmp/freeprintstudio-manual-release-verification.log
+fi
+
 printf '\n== Public Pages ==\n'
 check_public_page "Privacy policy" "https://dannagrace.github.io/FreePrintStudio/privacy-policy.html" "FreePrint Studio Privacy Policy"
 check_public_page "Support" "https://dannagrace.github.io/FreePrintStudio/support.html" "FreePrint Studio Support"
