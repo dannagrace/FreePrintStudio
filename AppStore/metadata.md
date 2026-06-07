@@ -17,14 +17,14 @@ Choose a photo, pick a paper size, enter the printed width and height, then prev
 FreePrint Studio is designed for simple local workflows such as craft patterns, product labels, reference photos, layout checks, and one-off image prints. The app creates a correctly sized PDF and opens the system print sheet for AirPrint.
 
 ## Keywords
-print,size,pdf,photo,image,airprint,label,craft,template,inch,cm,mm
+print,size,pdf,photo,image,airprint,label,craft,template,inch,centimeters,millimeters
 
 ## Category
 Primary: Graphics & Design
 Secondary: Productivity
 
 ## Copyright
-Copyright 2026 dannagrace
+2026 dannagrace
 
 ## Version Release Notes
 Initial release of FreePrint Studio with exact-size image layout, PDF export, and AirPrint support.

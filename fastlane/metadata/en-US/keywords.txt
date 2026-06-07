@@ -1,1 +1,1 @@
-print,size,pdf,photo,image,airprint,label,craft,template,inch,cm,mm
+print,size,pdf,photo,image,airprint,label,craft,template,inch,centimeters,millimeters

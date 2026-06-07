@@ -174,6 +174,13 @@ check_contains "FreePrintStudio/ContentView.swift" "Enter the target print heigh
 check_contains "FreePrintStudio/ContentView.swift" "selectedImage != nil && isTargetSizeValid" "Export and print actions must require both a selected image and a valid target size"
 check_contains "FreePrintStudio/ContentView.swift" ".disabled(!isOutputReady)" "Export and print buttons must be disabled until output is ready"
 check_file "AppStore/metadata.md" "App Store metadata draft is required"
+check_file "Scripts/validate_app_store_metadata.sh" "App Store metadata limit validation script is required"
+if [[ -x "Scripts/validate_app_store_metadata.sh" ]]; then
+  Scripts/validate_app_store_metadata.sh || failures=$((failures + 1))
+else
+  printf 'FAIL: App Store metadata limit validation script must be executable (Scripts/validate_app_store_metadata.sh)\n'
+  failures=$((failures + 1))
+fi
 check_contains "AppStore/metadata.md" "Privacy Policy" "Metadata must include privacy policy copy"
 check_contains "AppStore/metadata.md" "Privacy Policy URL" "Metadata must include a privacy policy URL field"
 check_contains "AppStore/metadata.md" "Support URL" "Metadata must include a support URL field"
@@ -240,7 +247,7 @@ check_contains "fastlane/metadata/en-US/name.txt" "FreePrint Studio" "Fastlane m
 check_file "fastlane/metadata/en-US/description.txt" "Fastlane description metadata is required"
 check_contains "fastlane/metadata/en-US/description.txt" "exact-size" "Fastlane description must describe exact-size printing"
 check_file "fastlane/metadata/en-US/copyright.txt" "Fastlane copyright metadata is required"
-check_contains "fastlane/metadata/en-US/copyright.txt" "Copyright 2026" "Fastlane copyright metadata must name the release copyright year"
+check_contains "fastlane/metadata/en-US/copyright.txt" "2026 dannagrace" "Fastlane copyright metadata must name the release copyright year and owner"
 check_file "fastlane/metadata/en-US/release_notes.txt" "Fastlane release notes metadata is required"
 check_contains "fastlane/metadata/en-US/release_notes.txt" "Initial release" "Fastlane release notes must describe the initial release"
 check_file "fastlane/metadata/en-US/privacy_url.txt" "Fastlane privacy URL metadata is required"
@@ -270,7 +277,9 @@ check_file "Scripts/check_app_store_connect_credentials.sh" "App Store Connect c
 check_contains "Scripts/check_app_store_connect_credentials.sh" "APP_STORE_CONNECT_API_KEY_JSON" "Credential audit must support Fastlane API key JSON"
 check_contains "Scripts/check_app_store_connect_credentials.sh" "ASC_KEY_PATH" "Credential audit must support App Store Connect private key paths"
 check_contains "README.md" "Scripts/run_fastlane.sh ios upload_testflight" "README must document the TestFlight upload command"
+check_contains "README.md" "Scripts/validate_app_store_metadata.sh" "README must document App Store metadata limit validation"
 check_contains "AppStore/release-checklist.md" "Scripts/run_fastlane.sh ios upload_testflight" "Release checklist must include the TestFlight upload command"
+check_contains "AppStore/release-checklist.md" "Scripts/validate_app_store_metadata.sh" "Release checklist must include metadata limit validation"
 check_file ".github/workflows/release.yml" "GitHub Actions release gate workflow is required"
 check_contains ".github/workflows/release.yml" "Scripts/verify_release.sh" "Release workflow must run the local release gate"
 check_contains ".github/workflows/release.yml" "timeout-minutes: 10" "Slow release workflow steps must have command-level timeouts"

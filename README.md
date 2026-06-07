@@ -34,6 +34,12 @@ Run the local release gate before archiving:
 Scripts/verify_release.sh
 ```
 
+Validate App Store text metadata limits before uploading with Fastlane:
+
+```sh
+Scripts/validate_app_store_metadata.sh
+```
+
 Validate that the app renderer exports a PDF with the expected paper MediaBox:
 
 ```sh
