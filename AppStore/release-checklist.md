@@ -4,6 +4,7 @@
 
 - Run `Scripts/verify_release.sh`.
 - Run `Scripts/validate_app_store_metadata.sh`.
+- Run `Scripts/validate_app_privacy_details.sh`.
 - Run `Scripts/validate_pdf_export.sh` after print/PDF rendering changes.
 - Run `Scripts/check_app_store_readiness.sh`; fix every `BLOCKED` item before archiving.
 - Run `Scripts/capture_app_store_screenshots.sh` after UI changes and inspect `AppStore/Screenshots/iphone-main.jpg`.
@@ -25,6 +26,7 @@
 - Upload the signed archive or exported IPA to App Store Connect.
 - Add app name, subtitle, description, promotional text, keywords, categories, review notes, and support contact from `AppStore/metadata.md`; the reusable Fastlane copy lives under `fastlane/metadata/en-US`.
 - Optional automation: run `Scripts/install_release_dependencies.sh` or `brew install fastlane`, then `Scripts/run_fastlane.sh ios metadata` to upload App Store metadata and screenshots without submitting for review.
+- App Privacy automation: verify `AppStore/app_privacy_details.json`, then run `FASTLANE_USER=... CONFIRM_UPLOAD_APP_PRIVACY=1 Scripts/run_fastlane.sh ios privacy_details`.
 - Optional TestFlight automation: configure `ASC_KEY_ID`, `ASC_ISSUER_ID`, and `ASC_KEY_PATH`, then run `Scripts/run_fastlane.sh ios upload_testflight` to upload the exported IPA without external distribution.
 - Final review submission automation: after the uploaded build has processed and every listing field is final, run `APP_STORE_BUILD_NUMBER=... CONFIRM_SUBMIT_FOR_REVIEW=1 Scripts/run_fastlane.sh ios submit_review`.
 - Upload screenshots from `fastlane/screenshots/en-US` or through App Store Connect.

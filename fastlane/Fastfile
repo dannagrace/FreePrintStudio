@@ -7,6 +7,7 @@ PRIMARY_CATEGORY = "Graphics & Design"
 SECONDARY_CATEGORY = "Productivity"
 DEFAULT_EXPORT_PATH = File.join(PROJECT_ROOT, "build/AppStoreExport")
 REVIEW_INFORMATION_PATH = File.join(PROJECT_ROOT, "fastlane/metadata/review_information")
+APP_PRIVACY_DETAILS_PATH = File.join(PROJECT_ROOT, "AppStore/app_privacy_details.json")
 
 def app_store_connect_credentials(required: false)
   api_key_json = ENV["APP_STORE_CONNECT_API_KEY_JSON"].to_s
@@ -83,6 +84,15 @@ def confirm_submit_for_review!
   )
 end
 
+def confirm_upload_app_privacy!
+  return if ENV["CONFIRM_UPLOAD_APP_PRIVACY"].to_s == "1"
+
+  UI.user_error!(
+    "Set CONFIRM_UPLOAD_APP_PRIVACY=1 only after AppStore/app_privacy_details.json has been reviewed " \
+    "against the App Privacy answers."
+  )
+end
+
 opt_out_usage
 default_platform(:ios)
 
@@ -119,6 +129,29 @@ platform :ios do
         overwrite_screenshots: true
       )
     )
+  end
+
+  desc "Upload App Privacy Details to App Store Connect"
+  lane :privacy_details do
+    confirm_upload_app_privacy!
+
+    username = ENV["FASTLANE_USER"].to_s.strip
+    UI.user_error!("Set FASTLANE_USER to the Apple ID used for App Store Connect before uploading App Privacy Details") if username.empty?
+
+    options = {
+      username: username,
+      app_identifier: APP_IDENTIFIER,
+      json_path: APP_PRIVACY_DETAILS_PATH,
+      skip_publish: ENV["APP_PRIVACY_SKIP_PUBLISH"].to_s == "1"
+    }
+
+    team_id = ENV["FASTLANE_ITC_TEAM_ID"].to_s.strip
+    options[:team_id] = team_id unless team_id.empty?
+
+    team_name = ENV["FASTLANE_ITC_TEAM_NAME"].to_s.strip
+    options[:team_name] = team_name unless team_name.empty?
+
+    upload_app_privacy_details_to_app_store(options)
   end
 
   desc "Submit an already uploaded App Store Connect build for App Review"

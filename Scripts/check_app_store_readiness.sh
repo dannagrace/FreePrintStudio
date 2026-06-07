@@ -147,6 +147,13 @@ else
   block "App privacy answers are incomplete"
 fi
 
+if Scripts/validate_app_privacy_details.sh >/tmp/freeprintstudio-app-privacy-details.log 2>&1; then
+  ok "App Privacy Details JSON prepared for Fastlane upload"
+else
+  block "App Privacy Details JSON is incomplete"
+  sed 's/^/  /' /tmp/freeprintstudio-app-privacy-details.log
+fi
+
 if grep -q "Expected global age rating: 4+" AppStore/age-rating.md \
   && grep -q "User-generated content: None" AppStore/age-rating.md; then
   ok "Age rating answers prepared: expected 4+"
@@ -271,6 +278,12 @@ else
 fi
 
 printf '\n== App Store Connect ==\n'
+if [[ -n "${FASTLANE_USER:-}" ]]; then
+  ok "FASTLANE_USER configured for App Privacy Details upload"
+else
+  warn "FASTLANE_USER is not configured; automated App Privacy Details upload will be blocked"
+fi
+
 if Scripts/check_app_store_connect_credentials.sh >/tmp/freeprintstudio-asc-credentials.log 2>&1; then
   ok "Fastlane App Store Connect API credentials are configured"
 else

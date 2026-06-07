@@ -40,6 +40,12 @@ Validate App Store text metadata limits before uploading with Fastlane:
 Scripts/validate_app_store_metadata.sh
 ```
 
+Validate App Privacy Details before uploading them to App Store Connect:
+
+```sh
+Scripts/validate_app_privacy_details.sh
+```
+
 Validate that the app renderer exports a PDF with the expected paper MediaBox:
 
 ```sh
@@ -106,6 +112,14 @@ APP_REVIEW_CONTACT_EMAIL=review-contact@example.com
 ```
 
 Fastlane reads the reviewer test notes from `fastlane/metadata/review_information/notes.txt` and combines them with the private contact values above.
+
+App Privacy Details are represented by `AppStore/app_privacy_details.json`. After reviewing it against `AppStore/app-privacy.md`, upload and publish it to App Store Connect:
+
+```sh
+FASTLANE_USER=apple-id@example.com CONFIRM_UPLOAD_APP_PRIVACY=1 Scripts/run_fastlane.sh ios privacy_details
+```
+
+Set `APP_PRIVACY_SKIP_PUBLISH=1` to upload the App Privacy Details without publishing them.
 
 Fastlane can also call the local gates and create the signed archive:
 
