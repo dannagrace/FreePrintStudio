@@ -306,6 +306,11 @@ run_print_sheet_validation() {
   Scripts/validate_print_sheet.sh
 }
 
+run_submission_packet_generation() {
+  printf '== App Store submission packet ==\n'
+  Scripts/prepare_app_store_submission_packet.sh
+}
+
 run_all() {
   run_static_checks
   printf '\n'
@@ -362,8 +367,11 @@ case "${1:-all}" in
   print-sheet)
     run_print_sheet_validation
     ;;
+  submission-packet)
+    run_submission_packet_generation
+    ;;
   *)
-    printf 'Usage: %s [all|static|core|plist|privacy|questionnaires|pdf|build|screenshots|accessibility|simulator-workflow|print-sheet]\n' "$0"
+    printf 'Usage: %s [all|static|core|plist|privacy|questionnaires|pdf|build|screenshots|accessibility|simulator-workflow|print-sheet|submission-packet]\n' "$0"
     exit 1
     ;;
 esac

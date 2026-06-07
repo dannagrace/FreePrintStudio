@@ -144,6 +144,14 @@ Scripts/verify_release.sh print-sheet
 Scripts/validate_print_sheet.sh
 ```
 
+Prepare a local App Store submission packet with metadata, questionnaire drafts, screenshots, checksums, readiness audit output, and next commands:
+
+```sh
+Scripts/verify_release.sh submission-packet
+# Or directly:
+Scripts/prepare_app_store_submission_packet.sh
+```
+
 Release metadata, screenshot assets, and the remaining App Store Connect checklist live under `AppStore/`.
 
 Prepare a signed App Store archive after configuring an Apple Developer Team in Xcode:
