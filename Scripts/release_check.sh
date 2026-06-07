@@ -43,6 +43,19 @@ check_sips_property() {
   fi
 }
 
+check_plist_raw_value() {
+  local path="$1"
+  local key="$2"
+  local expected="$3"
+  local message="$4"
+  local actual
+  actual="$(plutil -extract "$key" raw -o - "$path" 2>/dev/null || true)"
+  if [[ "$actual" != "$expected" ]]; then
+    printf 'FAIL: %s (%s %s is %s, expected %s)\n' "$message" "$path" "$key" "${actual:-missing}" "$expected"
+    failures=$((failures + 1))
+  fi
+}
+
 check_icon_artwork() {
   local path="$1"
   if [[ ! -f "$path" ]]; then
@@ -175,6 +188,9 @@ check_contains "AppStore/age-rating.md" "User-generated content: None" "Age rati
 check_file "AppStore/accessibility-labels.md" "Accessibility Nutrition Label answers are required"
 check_contains "AppStore/accessibility-labels.md" "VoiceOver: Supported" "Accessibility answers must record VoiceOver support"
 check_contains "AppStore/accessibility-labels.md" "Larger Text: Supported" "Accessibility answers must record Larger Text support"
+check_file "AppStore/export-compliance.md" "Export compliance questionnaire answers are required"
+check_contains "AppStore/export-compliance.md" "Uses non-exempt encryption: No" "Export compliance answers must state no non-exempt encryption"
+check_contains "AppStore/export-compliance.md" "ITSAppUsesNonExemptEncryption" "Export compliance answers must reference the Info.plist declaration"
 check_file "docs/privacy-policy.html" "Publishable privacy policy page is required"
 check_contains "docs/privacy-policy.html" "FreePrint Studio Privacy Policy" "Privacy page must identify the app and policy"
 check_contains "docs/privacy-policy.html" "does not collect" "Privacy page must state no data collection"
@@ -239,6 +255,8 @@ check_file ".github/workflows/release.yml" "GitHub Actions release gate workflow
 check_contains ".github/workflows/release.yml" "Scripts/verify_release.sh" "Release workflow must run the local release gate"
 check_contains ".github/workflows/release.yml" "timeout-minutes: 10" "Slow release workflow steps must have command-level timeouts"
 check_contains "FreePrintStudio/Resources/Info.plist" "CFBundleDisplayName" "Info.plist must define display name"
+check_contains "FreePrintStudio/Resources/Info.plist" "ITSAppUsesNonExemptEncryption" "Info.plist must declare non-exempt encryption usage"
+check_plist_raw_value "FreePrintStudio/Resources/Info.plist" "ITSAppUsesNonExemptEncryption" "false" "Info.plist must declare no non-exempt encryption"
 check_contains "FreePrintStudio.xcodeproj/project.pbxproj" "MARKETING_VERSION = 1.0" "Marketing version must be set"
 check_contains "FreePrintStudio.xcodeproj/project.pbxproj" "CURRENT_PROJECT_VERSION = 1" "Build number must be set"
 

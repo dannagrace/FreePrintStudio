@@ -104,5 +104,6 @@ App Store Connect questionnaire drafts are stored in:
 - `AppStore/app-privacy.md`
 - `AppStore/age-rating.md`
 - `AppStore/accessibility-labels.md`
+- `AppStore/export-compliance.md`
 
 The privacy and support pages are in `docs/`. For the metadata URLs in `AppStore/metadata.md` to be public, enable GitHub Pages for this repository from the `docs` folder.

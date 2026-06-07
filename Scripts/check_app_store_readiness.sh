@@ -154,6 +154,14 @@ else
   block "Accessibility Nutrition Label draft is incomplete"
 fi
 
+export_compliance_value="$(plutil -extract ITSAppUsesNonExemptEncryption raw -o - FreePrintStudio/Resources/Info.plist 2>/dev/null || true)"
+if grep -q "Uses non-exempt encryption: No" AppStore/export-compliance.md \
+  && [[ "$export_compliance_value" == "false" ]]; then
+  ok "Export compliance answers prepared: no non-exempt encryption"
+else
+  block "Export compliance answers or Info.plist encryption declaration are incomplete"
+fi
+
 printf '\n== Public Pages ==\n'
 check_public_page "Privacy policy" "https://dannagrace.github.io/FreePrintStudio/privacy-policy.html" "FreePrint Studio Privacy Policy"
 check_public_page "Support" "https://dannagrace.github.io/FreePrintStudio/support.html" "FreePrint Studio Support"

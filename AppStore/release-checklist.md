@@ -29,6 +29,7 @@
 - Complete App Privacy using `AppStore/app-privacy.md`.
 - Complete age rating using `AppStore/age-rating.md`.
 - Complete Accessibility Nutrition Label fields using `AppStore/accessibility-labels.md` after validating the listed device checks.
+- Complete export compliance using `AppStore/export-compliance.md`; `Info.plist` declares `ITSAppUsesNonExemptEncryption` as false.
 - Upload final screenshots accepted by App Store Connect for every supported device family.
 - If iPad remains supported, validate the iPad UI on a real device or TestFlight and upload iPad screenshots.
 - Run TestFlight on at least one real device before submitting for review.
