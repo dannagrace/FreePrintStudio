@@ -401,6 +401,31 @@ check_contains "Scripts/capture_app_store_screenshot_set.sh" "iphone-fill.jpg" "
 check_contains "Scripts/capture_app_store_screenshot_set.sh" "iphone-stretch.jpg" "Screenshot set script must capture Stretch mode"
 check_contains "Scripts/capture_app_store_screenshots.sh" "Invalid FREEPRINTSTUDIO_PAPER" "Screenshot script must reject invalid paper overrides"
 check_contains "Scripts/capture_app_store_screenshots.sh" "Invalid FREEPRINTSTUDIO_FIT_MODE" "Screenshot script must reject invalid fit mode overrides"
+check_contains "Scripts/capture_app_store_screenshots.sh" "FREEPRINTSTUDIO_VALIDATE_OPTIONS_ONLY" "Screenshot script must support fast option-only validation"
+check_contains "Scripts/capture_app_store_screenshots.sh" "Screenshot capture options valid" "Screenshot script must report successful option-only validation"
+if [[ -x "Scripts/capture_app_store_screenshots.sh" ]]; then
+  if ! FREEPRINTSTUDIO_VALIDATE_OPTIONS_ONLY=1 \
+    FREEPRINTSTUDIO_PAPER=a4 \
+    FREEPRINTSTUDIO_ORIENTATION=landscape \
+    FREEPRINTSTUDIO_UNIT=centimeter \
+    FREEPRINTSTUDIO_FIT_MODE=stretch \
+    Scripts/capture_app_store_screenshots.sh >/tmp/freeprintstudio-screenshot-options-valid.log 2>&1; then
+    printf 'FAIL: Screenshot option-only validation must accept valid paper, orientation, unit, and fit mode overrides\n'
+    sed 's/^/  /' /tmp/freeprintstudio-screenshot-options-valid.log
+    failures=$((failures + 1))
+  fi
+
+  if FREEPRINTSTUDIO_VALIDATE_OPTIONS_ONLY=1 \
+    FREEPRINTSTUDIO_PAPER=tabloid \
+    Scripts/capture_app_store_screenshots.sh >/tmp/freeprintstudio-screenshot-options-invalid.log 2>&1; then
+    printf 'FAIL: Screenshot option-only validation must reject invalid paper overrides\n'
+    failures=$((failures + 1))
+  elif ! grep -q "Invalid FREEPRINTSTUDIO_PAPER" /tmp/freeprintstudio-screenshot-options-invalid.log; then
+    printf 'FAIL: Screenshot option-only validation must explain invalid paper overrides\n'
+    sed 's/^/  /' /tmp/freeprintstudio-screenshot-options-invalid.log
+    failures=$((failures + 1))
+  fi
+fi
 check_contains "Scripts/capture_app_store_screenshots.sh" "FREEPRINTSTUDIO_ORIENTATION" "Screenshot script must support reproducible paper orientation captures"
 check_contains "Scripts/capture_app_store_screenshots.sh" "FREEPRINTSTUDIO_UNIT" "Screenshot script must support reproducible measurement unit captures"
 check_contains "Scripts/capture_app_store_screenshots.sh" "FREEPRINTSTUDIO_APPEARANCE" "Screenshot script must support reproducible light/dark captures"
