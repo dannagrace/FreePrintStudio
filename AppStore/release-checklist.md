@@ -14,7 +14,7 @@
 - Run `Scripts/validate_pdf_export.sh` after print/PDF rendering changes; it validates Fit, Fill, and Stretch PDF output.
 - Run `Scripts/check_app_store_readiness.sh`; fix every `BLOCKED` item before archiving.
 - Run `Scripts/capture_app_store_screenshots.sh` after UI changes and inspect `AppStore/Screenshots/iphone-main.jpg`.
-- Run `Scripts/capture_app_store_screenshot_set.sh` after fit mode UI changes and inspect `iphone-fit.jpg`, `iphone-fill.jpg`, and `iphone-stretch.jpg`.
+- Run `Scripts/capture_app_store_screenshot_set.sh` after fit mode, paper, orientation, or unit UI changes and inspect `iphone-fit.jpg`, `iphone-fill.jpg`, `iphone-stretch.jpg`, and `iphone-metric-landscape.jpg`.
 - Run the iPad screenshot command from `README.md` and inspect `AppStore/Screenshots/ipad-main.jpg`.
 - Run the dark interface and Larger Text screenshot commands from `README.md` after visible UI changes.
 - Confirm the app opens, imports a photo, changes size units, exports PDF, and opens the print sheet on a simulator.

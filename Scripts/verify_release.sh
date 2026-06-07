@@ -10,6 +10,7 @@ SCREENSHOT_PATHS=(
   "AppStore/Screenshots/iphone-fit.jpg"
   "AppStore/Screenshots/iphone-fill.jpg"
   "AppStore/Screenshots/iphone-stretch.jpg"
+  "AppStore/Screenshots/iphone-metric-landscape.jpg"
   "AppStore/Screenshots/ipad-main.jpg"
 )
 
@@ -173,6 +174,9 @@ run_screenshot_checks() {
     sips -g pixelWidth -g pixelHeight -g hasAlpha "$screenshot_path"
     case "$screenshot_path" in
       *iphone-main.jpg)
+        check_screenshot_dimensions "$screenshot_path" "1260 x 2736,1290 x 2796,1320 x 2868"
+        ;;
+      *iphone-*.jpg)
         check_screenshot_dimensions "$screenshot_path" "1260 x 2736,1290 x 2796,1320 x 2868"
         ;;
       *ipad-main.jpg)

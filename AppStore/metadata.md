@@ -70,4 +70,5 @@ The main workflow uses native SwiftUI controls, labeled buttons, and system shee
 - iPhone: `AppStore/Screenshots/iphone-fit.jpg`, Fit mode preserving the full image.
 - iPhone: `AppStore/Screenshots/iphone-fill.jpg`, Fill mode cropping to cover the target area.
 - iPhone: `AppStore/Screenshots/iphone-stretch.jpg`, Stretch mode showing exact target-area scaling.
+- iPhone: `AppStore/Screenshots/iphone-metric-landscape.jpg`, A4 landscape setup using centimeter sizing.
 - iPad: `AppStore/Screenshots/ipad-main.jpg`, full editor layout on a 13-inch iPad simulator.

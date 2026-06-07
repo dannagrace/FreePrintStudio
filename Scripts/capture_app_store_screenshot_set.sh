@@ -29,4 +29,18 @@ capture_mode fit iphone-fit.jpg
 capture_mode fill iphone-fill.jpg
 capture_mode stretch iphone-stretch.jpg
 
+printf '== iPhone metric landscape screenshot ==\n'
+DERIVED_DATA_PATH="$DERIVED_DATA_PATH" \
+  FREEPRINTSTUDIO_PAPER=a4 \
+  FREEPRINTSTUDIO_ORIENTATION=landscape \
+  FREEPRINTSTUDIO_UNIT=centimeter \
+  FREEPRINTSTUDIO_TARGET_WIDTH=15 \
+  FREEPRINTSTUDIO_TARGET_HEIGHT=10 \
+  FREEPRINTSTUDIO_FIT_MODE=stretch \
+  SCREENSHOT_DELAY="$SCREENSHOT_DELAY" \
+  SCREENSHOT_PATH="$APPSTORE_SCREENSHOTS_DIR/iphone-metric-landscape.jpg" \
+  Scripts/capture_app_store_screenshots.sh
+
+cp "$APPSTORE_SCREENSHOTS_DIR/iphone-metric-landscape.jpg" "$FASTLANE_SCREENSHOTS_DIR/iphone-metric-landscape.jpg"
+
 printf '\nSynced screenshots to %s\n' "$FASTLANE_SCREENSHOTS_DIR"

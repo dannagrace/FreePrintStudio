@@ -106,7 +106,7 @@ Scripts/capture_app_store_screenshots.sh
 SIMULATOR_UDID=2E8A23AC-6267-44FB-94A7-49221C184C79 SCREENSHOT_PATH="$PWD/AppStore/Screenshots/ipad-main.jpg" Scripts/capture_app_store_screenshots.sh
 ```
 
-Generate the Fit, Fill, and Stretch iPhone screenshot set and sync it to Fastlane:
+Generate the Fit, Fill, Stretch, and metric landscape iPhone screenshot set and sync it to Fastlane:
 
 ```sh
 Scripts/capture_app_store_screenshot_set.sh

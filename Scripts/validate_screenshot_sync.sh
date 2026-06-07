@@ -11,6 +11,7 @@ expected_screenshots=(
   "iphone-fit.jpg"
   "iphone-fill.jpg"
   "iphone-stretch.jpg"
+  "iphone-metric-landscape.jpg"
   "ipad-main.jpg"
 )
 
