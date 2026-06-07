@@ -9,6 +9,7 @@ READINESS_LOG="$PACKET_DIR/readiness.txt"
 SCREENSHOT_MANIFEST="$PACKET_DIR/screenshots.tsv"
 FILE_MANIFEST="$PACKET_DIR/file-manifest.tsv"
 SUMMARY_PATH="$PACKET_DIR/SUMMARY.md"
+ACTION_ITEMS_PATH="$PACKET_DIR/ACTION_ITEMS.md"
 
 expected_screenshots=(
   "iphone-main.jpg"
@@ -123,6 +124,71 @@ write_file_manifest() {
   done < <(find "$PACKET_DIR" -type f | sort)
 }
 
+write_action_items() {
+  local blockers_path
+  local warnings_path
+  blockers_path="$(mktemp)"
+  warnings_path="$(mktemp)"
+
+  grep '^BLOCKED:' "$READINESS_LOG" >"$blockers_path" || true
+  grep '^WARN:' "$READINESS_LOG" >"$warnings_path" || true
+
+  cat >"$ACTION_ITEMS_PATH" <<EOF
+# FreePrint Studio Release Action Items
+
+- Generated At: $generated_at
+- Readiness Exit Code: $readiness_status
+- Readiness Blockers: $blocker_count
+- Readiness Warnings: $warning_count
+
+## Readiness Blockers
+
+EOF
+
+  if [[ -s "$blockers_path" ]]; then
+    sed 's/^BLOCKED: /- /' "$blockers_path" >>"$ACTION_ITEMS_PATH"
+  else
+    printf -- '- None. The local readiness audit has no blockers.\n' >>"$ACTION_ITEMS_PATH"
+  fi
+
+  cat >>"$ACTION_ITEMS_PATH" <<EOF
+
+## Readiness Warnings
+
+EOF
+
+  if [[ -s "$warnings_path" ]]; then
+    sed 's/^WARN: /- /' "$warnings_path" >>"$ACTION_ITEMS_PATH"
+  else
+    printf -- '- None. The local readiness audit has no warnings.\n' >>"$ACTION_ITEMS_PATH"
+  fi
+
+  cat >>"$ACTION_ITEMS_PATH" <<'EOF'
+
+## External Values To Provide
+
+- `APP_REVIEW_CONTACT_FIRST_NAME`, `APP_REVIEW_CONTACT_LAST_NAME`, `APP_REVIEW_CONTACT_PHONE`, and `APP_REVIEW_CONTACT_EMAIL` in an untracked `Config/release.env` or shell environment.
+- `DEVELOPMENT_TEAM_ID`, an installed `Apple Distribution` certificate, and an App Store Connect provisioning profile for `com.dannagrace.FreePrintStudio`.
+- App Store Connect credentials through either `APP_STORE_CONNECT_API_KEY_JSON` or the `ASC_KEY_ID`, `ASC_ISSUER_ID`, and `ASC_KEY_PATH` triplet.
+- `FASTLANE_USER` if uploading App Privacy Details through the Fastlane Apple ID flow.
+
+## Command Order
+
+```sh
+Scripts/verify_release.sh store-ready
+Scripts/check_app_store_readiness.sh
+DEVELOPMENT_TEAM_ID=YOURTEAMID ALLOW_PROVISIONING_UPDATES=1 Scripts/archive_app_store.sh
+ASC_KEY_ID=XXXXXXXXXX ASC_ISSUER_ID=00000000-0000-0000-0000-000000000000 ASC_KEY_PATH=/secure/AuthKey_XXXXXXXXXX.p8 Scripts/run_fastlane.sh ios upload_testflight
+APP_STORE_BUILD_NUMBER=1 Scripts/run_fastlane.sh ios app_store_connect_state
+APP_STORE_BUILD_NUMBER=1 CONFIRM_SUBMIT_FOR_REVIEW=1 Scripts/run_fastlane.sh ios submit_review
+```
+
+Keep `Config/release.env` and App Store Connect private keys out of git.
+EOF
+
+  rm -f "$blockers_path" "$warnings_path"
+}
+
 rm -rf "$PACKET_DIR"
 mkdir -p "$PACKET_DIR/files"
 
@@ -145,6 +211,7 @@ blocker_count="$(grep -c '^BLOCKED:' "$READINESS_LOG" || true)"
 warning_count="$(grep -c '^WARN:' "$READINESS_LOG" || true)"
 ok_count="$(grep -c '^OK:' "$READINESS_LOG" || true)"
 generated_at="$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
+write_action_items
 
 cat >"$SUMMARY_PATH" <<EOF
 # FreePrint Studio App Store Submission Packet
@@ -166,10 +233,12 @@ cat >"$SUMMARY_PATH" <<EOF
 - \`screenshots.tsv\` with screenshot dimensions and sha256 checksums.
 - \`file-manifest.tsv\` with package file sizes and sha256 checksums.
 - \`readiness.txt\` with the latest App Store readiness audit.
+- \`ACTION_ITEMS.md\` with external account, signing, and App Store Connect follow-up work.
 
 ## Next Commands
 
 \`\`\`sh
+Scripts/verify_release.sh store-ready
 Scripts/check_app_store_readiness.sh
 DEVELOPMENT_TEAM_ID=YOURTEAMID ALLOW_PROVISIONING_UPDATES=1 Scripts/archive_app_store.sh
 ASC_KEY_ID=XXXXXXXXXX ASC_ISSUER_ID=00000000-0000-0000-0000-000000000000 ASC_KEY_PATH=/secure/AuthKey_XXXXXXXXXX.p8 Scripts/run_fastlane.sh ios upload_testflight
