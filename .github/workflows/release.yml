@@ -41,3 +41,15 @@ jobs:
 
       - name: Screenshot asset checks
         run: Scripts/verify_release.sh screenshots
+
+      - name: App Store submission packet
+        timeout-minutes: 5
+        run: Scripts/verify_release.sh submission-packet
+
+      - name: Upload App Store submission packet
+        uses: actions/upload-artifact@v7
+        with:
+          name: freeprintstudio-app-store-submission-packet
+          path: build/AppStoreSubmissionPacket
+          if-no-files-found: error
+          retention-days: 30
