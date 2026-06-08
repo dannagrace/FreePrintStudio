@@ -444,6 +444,26 @@ check_contains "Scripts/print_release_input_status.sh" "CONFIRM_SUBMIT_FOR_REVIE
 check_contains "Scripts/print_release_input_status.sh" "git check-ignore" "Release input status must confirm private files stay ignored"
 check_contains "Scripts/print_release_input_status.sh" "--strict" "Release input status must offer a strict mode for handoff gating"
 check_contains "Scripts/print_release_input_status.sh" "does not print private values" "Release input status must explicitly avoid printing private values"
+release_input_status_external_dir="$(mktemp -d)"
+release_input_status_external_env="$release_input_status_external_dir/release.env"
+release_input_status_external_manual="$release_input_status_external_dir/manual-release-verification.env"
+release_input_status_external_log="$release_input_status_external_dir/status.log"
+: >"$release_input_status_external_env"
+: >"$release_input_status_external_manual"
+if RELEASE_ENV_PATH="$release_input_status_external_env" \
+  MANUAL_RELEASE_VERIFICATION_PATH="$release_input_status_external_manual" \
+  APP_STORE_BUILD_NUMBER=42 \
+  CONFIRM_SUBMIT_FOR_REVIEW=1 \
+  Scripts/print_release_input_status.sh >"$release_input_status_external_log" 2>&1; then
+  if grep -Eq 'fatal:|outside repository' "$release_input_status_external_log"; then
+    printf 'FAIL: Release input status must not print git fatal noise for private files outside the repository\n'
+    failures=$((failures + 1))
+  fi
+else
+  printf 'FAIL: Release input status must tolerate private release input file paths outside the repository\n'
+  failures=$((failures + 1))
+fi
+rm -rf "$release_input_status_external_dir"
 check_file "Scripts/validate_release_env.sh" "Release environment placeholder validation script is required"
 if [[ -x "Scripts/validate_release_env.sh" ]]; then
   Scripts/validate_release_env.sh || failures=$((failures + 1))

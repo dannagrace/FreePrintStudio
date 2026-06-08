@@ -87,8 +87,11 @@ relative_repo_path() {
 file_is_ignored() {
   local path="$1"
   local relative_path
+  if [[ "$path" != "$ROOT_DIR/"* ]]; then
+    return 1
+  fi
   relative_path="$(relative_repo_path "$path")"
-  git check-ignore -q "$relative_path"
+  git check-ignore -q "$relative_path" 2>/dev/null
 }
 
 setting_value() {
