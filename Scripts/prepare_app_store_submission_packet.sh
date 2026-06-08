@@ -27,6 +27,7 @@ required_files=(
   "AppStore/age-rating.md"
   "AppStore/accessibility-labels.md"
   "AppStore/export-compliance.md"
+  "AppStore/release-inputs-worksheet.md"
   "AppStore/release-checklist.md"
   "Config/manual-release-verification.env.example"
   "FreePrintStudio/Resources/Info.plist"
@@ -173,6 +174,7 @@ EOF
 - App Store Connect credentials through either `APP_STORE_CONNECT_API_KEY_JSON` or the `ASC_KEY_ID`, `ASC_ISSUER_ID`, and `ASC_KEY_PATH` triplet.
 - `FASTLANE_USER` if uploading App Privacy Details through the Fastlane Apple ID flow.
 - Manual release verification evidence in untracked `Config/manual-release-verification.env` after real iPhone, AirPrint, and TestFlight checks.
+- Follow `AppStore/release-inputs-worksheet.md` while filling private values; do not commit secrets or real contact details.
 
 ## Command Order
 
@@ -235,6 +237,7 @@ cat >"$SUMMARY_PATH" <<EOF
 
 - App Store metadata drafts and Fastlane metadata.
 - App Privacy, age rating, accessibility, and export compliance questionnaire drafts.
+- Release input worksheet for private Apple account, signing, and real-device evidence collection.
 - Reviewed screenshots and Fastlane upload screenshots.
 - Public privacy and support page source files.
 - Manual release verification evidence template.

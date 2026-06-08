@@ -331,6 +331,13 @@ check_file "Config/manual-release-verification.env.example" "Manual release veri
 check_contains "Config/manual-release-verification.env.example" "MANUAL_REAL_IPHONE_PHOTOS_IMPORT" "Manual verification template must include real iPhone Photos import evidence"
 check_contains "Config/manual-release-verification.env.example" "MANUAL_AIRPRINT_EXACT_SIZE" "Manual verification template must include AirPrint exact-size evidence"
 check_contains "Config/manual-release-verification.env.example" "MANUAL_TESTFLIGHT_INSTALL" "Manual verification template must include TestFlight install evidence"
+check_file "AppStore/release-inputs-worksheet.md" "Release input worksheet is required for private App Store handoff values"
+check_contains "AppStore/release-inputs-worksheet.md" "DEVELOPMENT_TEAM_ID" "Release input worksheet must cover Apple Developer Team ID"
+check_contains "AppStore/release-inputs-worksheet.md" "APP_REVIEW_CONTACT_EMAIL" "Release input worksheet must cover App Review contact values"
+check_contains "AppStore/release-inputs-worksheet.md" "ASC_KEY_ID" "Release input worksheet must cover App Store Connect API credentials"
+check_contains "AppStore/release-inputs-worksheet.md" "Apple Distribution" "Release input worksheet must cover distribution signing assets"
+check_contains "AppStore/release-inputs-worksheet.md" "MANUAL_AIRPRINT_EXACT_SIZE" "Release input worksheet must cover AirPrint exact-size evidence"
+check_contains "AppStore/release-inputs-worksheet.md" "same APP_STORE_BUILD_NUMBER" "Release input worksheet must require evidence for the selected App Store build"
 check_file "Scripts/validate_manual_release_verification.sh" "Manual release verification evidence validation script is required"
 if [[ ! -x "Scripts/validate_manual_release_verification.sh" ]]; then
   printf 'FAIL: Manual release verification script must be executable (Scripts/validate_manual_release_verification.sh)\n'
@@ -690,6 +697,7 @@ check_contains "README.md" "Scripts/bootstrap_release_inputs.sh" "README must do
 check_contains "README.md" "Scripts/check_code_signing_assets.sh" "README must document precise code signing asset validation"
 check_contains "README.md" "Scripts/validate_app_review_contact.sh" "README must document App Review contact validation"
 check_contains "README.md" "Scripts/validate_manual_release_verification.sh" "README must document manual release verification evidence validation"
+check_contains "README.md" "AppStore/release-inputs-worksheet.md" "README must reference the release input worksheet"
 check_contains "README.md" "same APP_STORE_BUILD_NUMBER" "README must document that manual TestFlight evidence must match the selected App Store build"
 check_contains "README.md" "Scripts/run_fastlane.sh ios submit_review" "README must document the guarded App Review submission command"
 check_contains "README.md" "APP_REVIEW_CONTACT_EMAIL" "README must document private App Review contact variables"
@@ -724,6 +732,7 @@ check_contains "AppStore/release-checklist.md" "Scripts/bootstrap_release_inputs
 check_contains "AppStore/release-checklist.md" "Scripts/check_code_signing_assets.sh" "Release checklist must include precise code signing asset validation"
 check_contains "AppStore/release-checklist.md" "Scripts/validate_app_review_contact.sh" "Release checklist must include App Review contact validation"
 check_contains "AppStore/release-checklist.md" "Scripts/validate_manual_release_verification.sh" "Release checklist must include manual release verification evidence validation"
+check_contains "AppStore/release-checklist.md" "AppStore/release-inputs-worksheet.md" "Release checklist must reference the release input worksheet"
 check_contains "AppStore/release-checklist.md" "same APP_STORE_BUILD_NUMBER" "Release checklist must require manual TestFlight evidence for the selected App Store build"
 check_contains "AppStore/release-checklist.md" "Scripts/run_fastlane.sh ios submit_review" "Release checklist must include the guarded App Review submission command"
 check_contains "AppStore/release-checklist.md" "APP_REVIEW_CONTACT_EMAIL" "Release checklist must include App Review contact configuration"
@@ -749,6 +758,7 @@ if [[ ! -x "Scripts/prepare_app_store_submission_packet.sh" ]]; then
   printf 'FAIL: App Store submission packet generator must be executable (Scripts/prepare_app_store_submission_packet.sh)\n'
   failures=$((failures + 1))
 fi
+check_contains "Scripts/prepare_app_store_submission_packet.sh" "AppStore/release-inputs-worksheet.md" "Submission packet generator must include the release input worksheet"
 check_contains "Scripts/prepare_app_store_submission_packet.sh" "AppStoreSubmissionPacket" "Submission packet generator must write a deterministic package directory"
 check_contains "Scripts/prepare_app_store_submission_packet.sh" "check_app_store_readiness.sh" "Submission packet generator must include the readiness audit"
 check_contains "Scripts/prepare_app_store_submission_packet.sh" 'readiness_status="$?"' "Submission packet generator must preserve the readiness audit exit code"

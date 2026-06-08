@@ -102,6 +102,8 @@ Scripts/bootstrap_release_env.sh
 Scripts/validate_release_env.sh
 ```
 
+Use `AppStore/release-inputs-worksheet.md` while collecting private Apple Developer signing values, App Review contact details, App Store Connect credentials, and manual real-device evidence. Keep filled values only in the git-ignored local files created by `Scripts/bootstrap_release_inputs.sh`.
+
 Validate that installed signing assets match the release bundle, Apple team, and App Store Connect export method:
 
 ```sh

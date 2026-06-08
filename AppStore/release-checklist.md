@@ -10,6 +10,7 @@
 - Run `Scripts/validate_privacy_surface.sh`.
 - Run `Scripts/verify_release.sh questionnaires`; it calls `Scripts/validate_app_store_questionnaires.sh` to validate age rating, App Privacy, accessibility label, and export compliance drafts against app declarations.
 - Run `Scripts/bootstrap_release_inputs.sh` before filling private Apple signing, App Review contact, App Store Connect, and manual verification evidence files.
+- Use `AppStore/release-inputs-worksheet.md` while collecting private Apple Developer signing values, App Review contact details, App Store Connect credentials, and real-device evidence.
 - Run `Scripts/bootstrap_release_env.sh` before filling private Apple signing, App Review contact, and App Store Connect values in `Config/release.env`.
 - Run `Scripts/validate_release_env.sh` after creating or editing `Config/release.env`.
 - Run `Scripts/check_code_signing_assets.sh` after installing certificates or provisioning profiles.
