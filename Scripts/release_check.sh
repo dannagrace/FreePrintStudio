@@ -567,6 +567,7 @@ check_contains "Scripts/validate_pdf_export.sh" "xcrun simctl bootstatus" "PDF e
 check_contains "Scripts/validate_pdf_export.sh" "XCODEBUILD_TIMEOUT_SECONDS" "PDF export validation must bound simulator build commands"
 check_contains "Scripts/validate_pdf_export.sh" "run_with_timeout \"\$SIMCTL_TIMEOUT_SECONDS\" xcrun simctl get_app_container" "PDF export validation must bound simulator container lookup"
 check_contains "Scripts/validate_pdf_export.sh" "launch_timeout" "PDF export validation must choose a bounded app launch wait"
+check_contains "Scripts/validate_pdf_export.sh" "launch_status" "PDF export validation must inspect exported PDFs after app launch timeouts"
 check_contains "Scripts/validate_pdf_export.sh" "xcrun simctl launch" "PDF export validation must exercise bounded app launch commands"
 check_file "Scripts/validate_simulator_workflow.sh" "Simulator workflow validation script is required"
 if [[ ! -x "Scripts/validate_simulator_workflow.sh" ]]; then

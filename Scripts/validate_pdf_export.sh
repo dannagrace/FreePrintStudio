@@ -13,7 +13,7 @@ TEMPORARY_SIMULATOR_BOOT_TIMEOUT_SECONDS="${FREEPRINTSTUDIO_TEMPORARY_SIMULATOR_
 TEMPORARY_SIMULATOR_INSTALL_TIMEOUT_SECONDS="${FREEPRINTSTUDIO_TEMPORARY_SIMULATOR_INSTALL_TIMEOUT_SECONDS:-120}"
 XCODEBUILD_TIMEOUT_SECONDS="${FREEPRINTSTUDIO_XCODEBUILD_TIMEOUT_SECONDS:-300}"
 APP_LAUNCH_TIMEOUT_SECONDS="${FREEPRINTSTUDIO_APP_LAUNCH_TIMEOUT_SECONDS:-30}"
-TEMPORARY_SIMULATOR_APP_LAUNCH_TIMEOUT_SECONDS="${FREEPRINTSTUDIO_TEMPORARY_SIMULATOR_APP_LAUNCH_TIMEOUT_SECONDS:-60}"
+TEMPORARY_SIMULATOR_APP_LAUNCH_TIMEOUT_SECONDS="${FREEPRINTSTUDIO_TEMPORARY_SIMULATOR_APP_LAUNCH_TIMEOUT_SECONDS:-180}"
 MAX_SIMULATOR_CANDIDATES="${FREEPRINTSTUDIO_MAX_SIMULATOR_CANDIDATES:-5}"
 TEMPORARY_SIMULATOR_UDID=""
 DEVICE=""
@@ -387,8 +387,12 @@ validate_pdf() {
   local target_width="$6"
   local target_height="$7"
   local app_pdf_path="$TEST_DIR/export-validation-$label.pdf"
+  local attempt
   local host_pdf_path
+  local launch_output
+  local launch_status
   local launch_timeout
+  local pdf_wait_attempts
   local expected_width_points
   local expected_height_points
   local portrait_width_points
@@ -459,7 +463,9 @@ validate_pdf() {
     launch_timeout="$TEMPORARY_SIMULATOR_APP_LAUNCH_TIMEOUT_SECONDS"
   fi
 
-  if ! run_with_timeout "$launch_timeout" xcrun simctl launch "$DEVICE" "$BUNDLE_ID" \
+  launch_output=""
+  launch_status=0
+  if launch_output="$(run_with_timeout "$launch_timeout" xcrun simctl launch "$DEVICE" "$BUNDLE_ID" \
     -FreePrintStudioTestImagePath "$TEST_DIR/sample-print-image.png" \
     -FreePrintStudioPaper "$paper" \
     -FreePrintStudioOrientation "$orientation" \
@@ -468,12 +474,22 @@ validate_pdf() {
     -FreePrintStudioTargetWidth "$target_width" \
     -FreePrintStudioTargetHeight "$target_height" \
     -FreePrintStudioAutoExportPDFPath "$app_pdf_path" \
-    >/tmp/freeprintstudio-pdf-validation-launch.log 2>&1; then
-    cat /tmp/freeprintstudio-pdf-validation-launch.log
-    exit 1
+    2>&1)"; then
+    launch_status=0
+  else
+    launch_status=$?
+    if [[ "$launch_status" -ne 124 ]]; then
+      printf '%s\n' "$launch_output"
+      exit 1
+    fi
   fi
 
-  for _ in {1..30}; do
+  pdf_wait_attempts=30
+  if [[ "$launch_status" -eq 124 ]] && is_temporary_simulator "$DEVICE"; then
+    pdf_wait_attempts=120
+  fi
+
+  for ((attempt = 1; attempt <= pdf_wait_attempts; attempt += 1)); do
     if [[ -s "$app_pdf_path" ]]; then
       break
     fi
@@ -481,6 +497,9 @@ validate_pdf() {
   done
 
   if [[ ! -s "$app_pdf_path" ]]; then
+    if [[ -n "$launch_output" ]]; then
+      printf '%s\n' "$launch_output"
+    fi
     printf 'Timed out waiting for exported PDF: %s\n' "$app_pdf_path"
     exit 1
   fi
