@@ -12,4 +12,5 @@ FREEPRINTSTUDIO_FIT_MODE=stretch \
 FREEPRINTSTUDIO_TARGET_WIDTH=6 \
 FREEPRINTSTUDIO_TARGET_HEIGHT=1 \
 PDF_EXPORT_PATH="${PDF_EXPORT_PATH:-/tmp/freeprintstudio-test-ruler-validation.pdf}" \
+PDF_VALIDATION_MANIFEST_PATH="${PDF_VALIDATION_MANIFEST_PATH:-/tmp/freeprintstudio-test-ruler-validation.tsv}" \
 Scripts/validate_pdf_export.sh

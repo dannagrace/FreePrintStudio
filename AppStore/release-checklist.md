@@ -27,7 +27,7 @@
 - Run the standalone iPad screenshot command from `README.md` only when refreshing or debugging the iPad screenshot in isolation.
 - Run `Scripts/verify_release.sh accessibility` after visible UI changes; it calls `Scripts/validate_accessibility_screenshots.sh` for dark interface and Larger Text screenshots.
 - Run `Scripts/verify_release.sh print-sheet` before submission; it calls `Scripts/validate_print_sheet.sh` to verify the simulator can open the system print sheet with a generated PDF.
-- Run `Scripts/verify_release.sh submission-packet` before handing off to App Store Connect; it calls `Scripts/prepare_app_store_submission_packet.sh` to package metadata, questionnaire drafts, screenshots, checksums, readiness audit output, and next commands under `build/AppStoreSubmissionPacket/`.
+- Run `Scripts/verify_release.sh submission-packet` before handing off to App Store Connect; it calls `Scripts/prepare_app_store_submission_packet.sh` to package metadata, questionnaire drafts, screenshots, PDF export validation evidence, checksums, readiness audit output, and next commands under `build/AppStoreSubmissionPacket/`.
 - Run `Scripts/validate_manual_release_verification.sh` after recording real iPhone, AirPrint, and TestFlight evidence in untracked `Config/manual-release-verification.env`.
 - Confirm real Photos import on a simulator when changing the Photos picker; the generated-image simulator workflow above covers app launch, unit switching, screenshot rendering, and PDF export.
 - Confirm the same flow on a real iPhone.

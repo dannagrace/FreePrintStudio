@@ -3,6 +3,7 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"
+export PDF_VALIDATION_MANIFEST_PATH="${PDF_VALIDATION_MANIFEST_PATH:-/tmp/freeprintstudio-pdf-export-validation.tsv}"
 
 LOG_PATH="/tmp/freeprintstudio-release-build.log"
 SCREENSHOT_PATHS=(
@@ -314,6 +315,12 @@ run_print_sheet_validation() {
 
 run_submission_packet_generation() {
   printf '== App Store submission packet ==\n'
+  if [[ ! -s "$PDF_VALIDATION_MANIFEST_PATH" ]] ||
+    ! grep -q $'^test-ruler-stretch\ttestRuler\tstretch\tletter\tportrait\tinch\t6\t1\t' "$PDF_VALIDATION_MANIFEST_PATH"; then
+    printf 'PDF validation manifest missing or incomplete; running PDF export validation first.\n'
+    run_pdf_export_validation
+    printf '\n'
+  fi
   Scripts/prepare_app_store_submission_packet.sh
 }
 

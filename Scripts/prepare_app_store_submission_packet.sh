@@ -7,6 +7,8 @@ cd "$ROOT_DIR"
 PACKET_DIR="${FREEPRINTSTUDIO_SUBMISSION_PACKET_DIR:-build/AppStoreSubmissionPacket}"
 READINESS_LOG="$PACKET_DIR/readiness.txt"
 SCREENSHOT_MANIFEST="$PACKET_DIR/screenshots.tsv"
+PDF_VALIDATION_MANIFEST_SOURCE="${PDF_VALIDATION_MANIFEST_PATH:-/tmp/freeprintstudio-pdf-export-validation.tsv}"
+PDF_VALIDATION_MANIFEST="$PACKET_DIR/pdf-export-validation.tsv"
 FILE_MANIFEST="$PACKET_DIR/file-manifest.tsv"
 SUMMARY_PATH="$PACKET_DIR/SUMMARY.md"
 ACTION_ITEMS_PATH="$PACKET_DIR/ACTION_ITEMS.md"
@@ -115,6 +117,20 @@ write_screenshot_manifest() {
   done
 }
 
+copy_pdf_validation_manifest() {
+  if [[ ! -s "$PDF_VALIDATION_MANIFEST_SOURCE" ]]; then
+    fail "PDF validation manifest is missing: $PDF_VALIDATION_MANIFEST_SOURCE. Run Scripts/verify_release.sh pdf first."
+    return
+  fi
+
+  if ! grep -q $'^test-ruler-stretch\ttestRuler\tstretch\tletter\tportrait\tinch\t6\t1\t' "$PDF_VALIDATION_MANIFEST_SOURCE"; then
+    fail "PDF validation manifest does not include Test Ruler exact-size evidence: test-ruler-stretch"
+    return
+  fi
+
+  cp "$PDF_VALIDATION_MANIFEST_SOURCE" "$PDF_VALIDATION_MANIFEST"
+}
+
 write_file_manifest() {
   local file_path
   local relative_path
@@ -217,6 +233,7 @@ for path in "${required_dirs[@]}"; do
 done
 
 write_screenshot_manifest
+copy_pdf_validation_manifest
 
 set +e
 Scripts/check_app_store_readiness.sh >"$READINESS_LOG" 2>&1
@@ -247,10 +264,12 @@ cat >"$SUMMARY_PATH" <<EOF
 - App Review guideline self-audit with evidence and open blockers.
 - Release input worksheet for private Apple account, signing, and real-device evidence collection.
 - Reviewed screenshots and Fastlane upload screenshots.
+- PDF export validation manifest, including Test Ruler exact-size evidence.
 - Public privacy and support page source files.
 - Manual release verification evidence template.
 - App icon, plist declarations, privacy manifest, Fastlane release files, and App Store export options.
 - \`screenshots.tsv\` with screenshot dimensions and sha256 checksums.
+- \`pdf-export-validation.tsv\` with PDF page, target, draw matrix, and sha256 evidence.
 - \`file-manifest.tsv\` with package file sizes and sha256 checksums.
 - \`readiness.txt\` with the latest App Store readiness audit.
 - \`ACTION_ITEMS.md\` with external account, signing, and App Store Connect follow-up work.

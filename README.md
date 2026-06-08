@@ -191,7 +191,7 @@ Scripts/validate_manual_release_verification.sh
 
 When validating the final App Review build, run the manual evidence check with the same APP_STORE_BUILD_NUMBER that will be submitted so the tested TestFlight build cannot drift from the selected App Store build.
 
-Prepare a local App Store submission packet with metadata, questionnaire drafts, screenshots, checksums, readiness audit output, and next commands:
+Prepare a local App Store submission packet with metadata, questionnaire drafts, screenshots, PDF export validation evidence, checksums, readiness audit output, and next commands:
 
 ```sh
 Scripts/verify_release.sh submission-packet

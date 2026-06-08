@@ -8,6 +8,7 @@ BUNDLE_ID="com.dannagrace.FreePrintStudio"
 DERIVED_DATA_PATH="${DERIVED_DATA_PATH:-/tmp/freeprintstudio-derived-data}"
 APP_PATH="$DERIVED_DATA_PATH/Build/Products/Debug-iphonesimulator/FreePrintStudio.app"
 SAMPLE_IMAGE="$ROOT_DIR/AppStore/Assets/sample-print-image.png"
+PDF_VALIDATION_MANIFEST_PATH="${PDF_VALIDATION_MANIFEST_PATH:-/tmp/freeprintstudio-pdf-export-validation.tsv}"
 SIMCTL_TIMEOUT_SECONDS="${FREEPRINTSTUDIO_SIMCTL_TIMEOUT_SECONDS:-30}"
 TEMPORARY_SIMULATOR_BOOT_TIMEOUT_SECONDS="${FREEPRINTSTUDIO_TEMPORARY_SIMULATOR_BOOT_TIMEOUT_SECONDS:-120}"
 TEMPORARY_SIMULATOR_INSTALL_TIMEOUT_SECONDS="${FREEPRINTSTUDIO_TEMPORARY_SIMULATOR_INSTALL_TIMEOUT_SECONDS:-120}"
@@ -391,6 +392,8 @@ CONTAINER="$(run_with_timeout "$SIMCTL_TIMEOUT_SECONDS" xcrun simctl get_app_con
 TEST_DIR="$CONTAINER/Documents/FreePrintStudioPDFValidation"
 mkdir -p "$TEST_DIR"
 cp "$SAMPLE_IMAGE" "$TEST_DIR/sample-print-image.png"
+mkdir -p "$(dirname "$PDF_VALIDATION_MANIFEST_PATH")"
+printf 'label\tcontent\tmode\tpaper\torientation\tunit\ttargetWidth\ttargetHeight\tpdfPath\tmediaBoxWidthPt\tmediaBoxHeightPt\tclipWidthPt\tclipHeightPt\tdrawWidthPt\tdrawHeightPt\tsha256\n' >"$PDF_VALIDATION_MANIFEST_PATH"
 
 host_pdf_path_for_label() {
   local label="$1"
@@ -560,7 +563,8 @@ validate_pdf() {
   mkdir -p "$(dirname "$host_pdf_path")"
   cp "$app_pdf_path" "$host_pdf_path"
 
-  python3 - "$host_pdf_path" "$expected_width_points" "$expected_height_points" "$mode" "$unit" "$target_width" "$target_height" <<'PY'
+  python3 - "$host_pdf_path" "$expected_width_points" "$expected_height_points" "$mode" "$unit" "$target_width" "$target_height" "$label" "$content" "$paper" "$orientation" "$PDF_VALIDATION_MANIFEST_PATH" <<'PY'
+import hashlib
 import re
 import sys
 import zlib
@@ -572,6 +576,11 @@ mode = sys.argv[4]
 unit = sys.argv[5]
 target_width_text = sys.argv[6]
 target_height_text = sys.argv[7]
+label = sys.argv[8]
+content_type = sys.argv[9]
+paper = sys.argv[10]
+orientation = sys.argv[11]
+manifest_path = sys.argv[12]
 data = open(path, "rb").read()
 
 if not data.startswith(b"%PDF-"):
@@ -649,6 +658,8 @@ if abs(clip_width - expected_target_width) > tolerance or abs(clip_height - expe
     )
 print(f"Image clip rectangle: {clip_width:.4f} x {clip_height:.4f} pt")
 
+draw_width_text = ""
+draw_height_text = ""
 if mode == "stretch":
     expected_draw_width = expected_target_width
     expected_draw_height = expected_target_height
@@ -667,7 +678,30 @@ if mode == "stretch":
             f"Unexpected stretch image draw size: {draw_width:.4f} x {draw_height:.4f}, "
             f"expected {expected_draw_width:.4f} x {expected_draw_height:.4f}"
         )
+    draw_width_text = f"{draw_width:.4f}"
+    draw_height_text = f"{draw_height:.4f}"
     print(f"Image draw matrix: {draw_width:.4f} x {draw_height:.4f} pt")
+
+row = [
+    label,
+    content_type,
+    mode,
+    paper,
+    orientation,
+    unit,
+    target_width_text,
+    target_height_text,
+    path,
+    f"{width:.4f}",
+    f"{height:.4f}",
+    f"{clip_width:.4f}",
+    f"{clip_height:.4f}",
+    draw_width_text,
+    draw_height_text,
+    hashlib.sha256(data).hexdigest(),
+]
+with open(manifest_path, "a", encoding="utf-8") as manifest:
+    manifest.write("\t".join(row) + "\n")
 
 print(f"Validated {mode} exported PDF: {path}")
 PY
