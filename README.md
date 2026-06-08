@@ -197,6 +197,8 @@ Release metadata, screenshot assets, and the remaining App Store Connect checkli
 
 Use `AppStore/commercial-configuration.md` for App Store Connect pricing, availability, monetization, and manual release settings. The MVP configuration is free, all App Store countries or regions, no in-app purchases, no subscriptions, no advertising, and manual release after approval.
 
+Use `AppStore/review-guideline-audit.md` as the App Review self-audit. It maps Apple review, privacy, commerce, metadata, SDK, and final-submission expectations to local evidence and remaining blockers.
+
 Prepare a signed App Store archive after configuring an Apple Developer Team in Xcode:
 
 ```sh

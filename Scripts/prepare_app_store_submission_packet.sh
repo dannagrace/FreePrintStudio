@@ -28,6 +28,7 @@ required_files=(
   "AppStore/accessibility-labels.md"
   "AppStore/export-compliance.md"
   "AppStore/commercial-configuration.md"
+  "AppStore/review-guideline-audit.md"
   "AppStore/release-inputs-worksheet.md"
   "AppStore/release-checklist.md"
   "Config/manual-release-verification.env.example"
@@ -175,6 +176,7 @@ EOF
 - App Store Connect credentials through either `APP_STORE_CONNECT_API_KEY_JSON` or the `ASC_KEY_ID`, `ASC_ISSUER_ID`, and `ASC_KEY_PATH` triplet.
 - `FASTLANE_USER` if uploading App Privacy Details through the Fastlane Apple ID flow.
 - Manual commercial configuration in App Store Connect from `AppStore/commercial-configuration.md`.
+- App Review self-audit evidence from `AppStore/review-guideline-audit.md`.
 - Manual release verification evidence in untracked `Config/manual-release-verification.env` after real iPhone, AirPrint, and TestFlight checks.
 - Follow `AppStore/release-inputs-worksheet.md` while filling private values; do not commit secrets or real contact details.
 
@@ -241,6 +243,7 @@ cat >"$SUMMARY_PATH" <<EOF
 - App Store metadata drafts and Fastlane metadata.
 - App Privacy, age rating, accessibility, and export compliance questionnaire drafts.
 - Commercial configuration draft for pricing, availability, monetization, and release behavior.
+- App Review guideline self-audit with evidence and open blockers.
 - Release input worksheet for private Apple account, signing, and real-device evidence collection.
 - Reviewed screenshots and Fastlane upload screenshots.
 - Public privacy and support page source files.
