@@ -97,6 +97,7 @@ Scripts/validate_photo_import.sh
 Validate that private release settings do not still contain copied placeholder values:
 
 ```sh
+Scripts/bootstrap_release_inputs.sh
 Scripts/bootstrap_release_env.sh
 Scripts/validate_release_env.sh
 ```
@@ -170,7 +171,7 @@ Scripts/validate_print_sheet.sh
 Record and validate manual real-device, AirPrint, and TestFlight evidence before final App Review submission:
 
 ```sh
-cp Config/manual-release-verification.env.example Config/manual-release-verification.env
+Scripts/bootstrap_release_inputs.sh
 Scripts/validate_manual_release_verification.sh
 ```
 
