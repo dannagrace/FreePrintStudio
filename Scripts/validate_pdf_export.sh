@@ -12,6 +12,8 @@ SIMCTL_TIMEOUT_SECONDS="${FREEPRINTSTUDIO_SIMCTL_TIMEOUT_SECONDS:-30}"
 XCODEBUILD_TIMEOUT_SECONDS="${FREEPRINTSTUDIO_XCODEBUILD_TIMEOUT_SECONDS:-300}"
 APP_LAUNCH_TIMEOUT_SECONDS="${FREEPRINTSTUDIO_APP_LAUNCH_TIMEOUT_SECONDS:-30}"
 MAX_SIMULATOR_CANDIDATES="${FREEPRINTSTUDIO_MAX_SIMULATOR_CANDIDATES:-5}"
+TEMPORARY_SIMULATOR_UDID=""
+DEVICE=""
 TEST_PAPER="${FREEPRINTSTUDIO_PAPER:-letter}"
 TEST_ORIENTATION="${FREEPRINTSTUDIO_ORIENTATION:-portrait}"
 TEST_UNIT="${FREEPRINTSTUDIO_UNIT:-inch}"
@@ -52,27 +54,48 @@ esac
 
 Scripts/generate_store_sample_image.py
 
+cleanup_temporary_simulator() {
+  if [[ -z "${TEMPORARY_SIMULATOR_UDID:-}" ]]; then
+    return
+  fi
+
+  run_with_timeout "$SIMCTL_TIMEOUT_SECONDS" xcrun simctl shutdown "$TEMPORARY_SIMULATOR_UDID" >/dev/null 2>&1 || true
+  run_with_timeout "$SIMCTL_TIMEOUT_SECONDS" xcrun simctl delete "$TEMPORARY_SIMULATOR_UDID" >/dev/null 2>&1 || true
+  TEMPORARY_SIMULATOR_UDID=""
+}
+
+trap cleanup_temporary_simulator EXIT
+
 candidate_simulators() {
   if [[ -n "${SIMULATOR_UDID:-}" ]]; then
     printf '%s\n' "$SIMULATOR_UDID"
     return
   fi
 
+  local booted_devices
+  local available_devices
   local device_pattern
   local fallback_device_name
   device_pattern="${FREEPRINTSTUDIO_IPHONE_DEVICE_PATTERN:-iPhone 17 Pro Max|iPhone Air|iPhone 16 Pro Max|iPhone 16 Plus|iPhone 15 Pro Max|iPhone 15 Plus|iPhone 14 Pro Max}"
   fallback_device_name="${FREEPRINTSTUDIO_DEVICE_FALLBACK_NAME:-iPhone}"
 
-  xcrun simctl list devices booted \
+  booted_devices="$(run_with_timeout "$SIMCTL_TIMEOUT_SECONDS" xcrun simctl list devices booted || true)"
+  available_devices="$(run_with_timeout "$SIMCTL_TIMEOUT_SECONDS" xcrun simctl list devices available || true)"
+
+  printf '%s\n' "$booted_devices" \
     | grep -E "$device_pattern" \
-    | sed -nE 's/.*\(([A-F0-9-]{36})\).*/\1/p'
-  xcrun simctl list devices available \
+    | sed -nE 's/.*\(([A-F0-9-]{36})\).*/\1/p' \
+    || true
+  printf '%s\n' "$available_devices" \
     | grep -E "$device_pattern" \
-    | sed -nE 's/.*\(([A-F0-9-]{36})\).*/\1/p'
-  xcrun simctl list devices booted \
-    | sed -nE "/$fallback_device_name/s/.*\\(([A-F0-9-]{36})\\).*/\\1/p"
-  xcrun simctl list devices available \
-    | sed -nE "/$fallback_device_name/s/.*\\(([A-F0-9-]{36})\\).*/\\1/p"
+    | sed -nE 's/.*\(([A-F0-9-]{36})\).*/\1/p' \
+    || true
+  printf '%s\n' "$booted_devices" \
+    | sed -nE "/$fallback_device_name/s/.*\\(([A-F0-9-]{36})\\).*/\\1/p" \
+    || true
+  printf '%s\n' "$available_devices" \
+    | sed -nE "/$fallback_device_name/s/.*\\(([A-F0-9-]{36})\\).*/\\1/p" \
+    || true
 }
 
 unique_candidate_simulators() {
@@ -82,6 +105,7 @@ unique_candidate_simulators() {
 boot_simulator() {
   local device="$1"
   local boot_command_output
+  local bootstatus_output
   if [[ "$device" != "booted" ]]; then
     boot_command_output="$(run_with_timeout "$SIMCTL_TIMEOUT_SECONDS" xcrun simctl boot "$device" 2>&1)" || {
       case "$boot_command_output" in
@@ -93,7 +117,13 @@ boot_simulator() {
           ;;
       esac
     }
-    run_with_timeout "$SIMCTL_TIMEOUT_SECONDS" xcrun simctl bootstatus "$device" -b >/dev/null
+    bootstatus_output="$(run_with_timeout "$SIMCTL_TIMEOUT_SECONDS" xcrun simctl bootstatus "$device" -b 2>&1)" || {
+      if run_with_timeout "$SIMCTL_TIMEOUT_SECONDS" xcrun simctl list devices booted | grep -q "$device"; then
+        return 0
+      fi
+      printf '%s\n' "$bootstatus_output"
+      return 1
+    }
   fi
 }
 
@@ -127,17 +157,132 @@ sys.exit(result.returncode)
 PY
 }
 
+preferred_simulator_device_type() {
+  if [[ -n "${FREEPRINTSTUDIO_SIMULATOR_DEVICE_TYPE:-}" ]]; then
+    printf '%s\n' "$FREEPRINTSTUDIO_SIMULATOR_DEVICE_TYPE"
+    return
+  fi
+
+  local device_pattern
+  local device_type
+  local device_types
+  device_pattern="${FREEPRINTSTUDIO_IPHONE_DEVICE_PATTERN:-iPhone 17 Pro Max|iPhone Air|iPhone 16 Pro Max|iPhone 16 Plus|iPhone 15 Pro Max|iPhone 15 Plus|iPhone 14 Pro Max}"
+  device_types="$(run_with_timeout "$SIMCTL_TIMEOUT_SECONDS" xcrun simctl list devicetypes 2>&1)" || {
+    printf '%s\n' "$device_types" >&2
+    return 1
+  }
+
+  device_type="$(printf '%s\n' "$device_types" \
+    | grep -E "$device_pattern" \
+    | sed -nE 's/.*\((com\.apple\.CoreSimulator\.SimDeviceType\.[^)]+)\).*/\1/p' \
+    | head -n 1 \
+    || true)"
+
+  if [[ -z "$device_type" ]]; then
+    device_type="$(printf '%s\n' "$device_types" \
+      | sed -nE 's/^iPhone .*\((com\.apple\.CoreSimulator\.SimDeviceType\.[^)]+)\).*/\1/p' \
+      | head -n 1 \
+      || true)"
+  fi
+
+  if [[ -z "$device_type" ]]; then
+    printf 'No iPhone simulator device type found for temporary PDF validation simulator.\n' >&2
+    return 1
+  fi
+
+  printf '%s\n' "$device_type"
+}
+
+preferred_simulator_runtime() {
+  if [[ -n "${FREEPRINTSTUDIO_SIMULATOR_RUNTIME:-}" ]]; then
+    printf '%s\n' "$FREEPRINTSTUDIO_SIMULATOR_RUNTIME"
+    return
+  fi
+
+  local runtime
+  local runtimes
+  runtimes="$(run_with_timeout "$SIMCTL_TIMEOUT_SECONDS" xcrun simctl list runtimes available 2>&1)" || {
+    printf '%s\n' "$runtimes" >&2
+    return 1
+  }
+
+  runtime="$(printf '%s\n' "$runtimes" \
+    | sed -nE 's/.*- (com\.apple\.CoreSimulator\.SimRuntime\.iOS[-A-Za-z0-9.]*)$/\1/p' \
+    | tail -n 1 \
+    || true)"
+
+  if [[ -z "$runtime" ]]; then
+    printf 'No available iOS simulator runtime found for temporary PDF validation simulator.\n' >&2
+    return 1
+  fi
+
+  printf '%s\n' "$runtime"
+}
+
+create_temporary_simulator() {
+  local create_output
+  local device_type
+  local runtime
+  local simulator_name
+
+  device_type="$(preferred_simulator_device_type)" || return 1
+  runtime="$(preferred_simulator_runtime)" || return 1
+  simulator_name="FreePrintStudio PDF Validation ${GITHUB_RUN_ID:-$$}"
+
+  printf 'Creating temporary simulator: %s (%s, %s)\n' "$simulator_name" "$device_type" "$runtime" >&2
+  create_output="$(run_with_timeout "$SIMCTL_TIMEOUT_SECONDS" xcrun simctl create "$simulator_name" "$device_type" "$runtime" 2>&1)" || {
+    printf '%s\n' "$create_output" >&2
+    return 1
+  }
+
+  TEMPORARY_SIMULATOR_UDID="$(printf '%s\n' "$create_output" | awk 'NF { value=$0 } END { print value }' | tr -d '\r')"
+  if [[ -z "$TEMPORARY_SIMULATOR_UDID" ]]; then
+    printf 'Temporary simulator creation did not return a UDID.\n' >&2
+    return 1
+  fi
+
+  printf 'Created temporary simulator: %s\n' "$TEMPORARY_SIMULATOR_UDID" >&2
+}
+
+prepare_simulator_candidate() {
+  local candidate="$1"
+  local boot_output
+  local install_output
+
+  printf 'Trying simulator: %s\n' "$candidate" >&2
+  boot_output=""
+  if ! boot_output="$(boot_simulator "$candidate" 2>&1)"; then
+    if [[ -n "$boot_output" ]]; then
+      printf '%s\n' "$boot_output" >&2
+    fi
+    printf 'Skipping simulator after boot failure: %s\n' "$candidate" >&2
+    return 1
+  fi
+
+  install_output=""
+  if install_output="$(run_with_timeout "$SIMCTL_TIMEOUT_SECONDS" xcrun simctl install "$candidate" "$APP_PATH" 2>&1)"; then
+    if [[ -n "$install_output" ]]; then
+      printf '%s\n' "$install_output" >&2
+    fi
+    DEVICE="$candidate"
+    return 0
+  fi
+
+  if [[ -n "$install_output" ]]; then
+    printf '%s\n' "$install_output" >&2
+  fi
+  printf 'Skipping simulator after install failure: %s\n' "$candidate" >&2
+  return 1
+}
+
 select_installed_simulator() {
   local candidate
   local candidates
   local attempted
-  local boot_output
-  local install_output
   attempted=0
   candidates="$(unique_candidate_simulators)"
   if [[ -z "$candidates" ]]; then
-    printf 'No available iPhone simulator found. Set SIMULATOR_UDID to a booted simulator UDID.\n' >&2
-    exit 1
+    printf 'No installed iPhone simulator candidate found.\n' >&2
   fi
 
   while IFS= read -r candidate; do
@@ -147,28 +292,24 @@ select_installed_simulator() {
       printf 'Reached simulator candidate attempt limit: %s\n' "$MAX_SIMULATOR_CANDIDATES" >&2
       break
     fi
-    printf 'Trying simulator: %s\n' "$candidate" >&2
-    boot_output=""
-    if ! boot_output="$(boot_simulator "$candidate" 2>&1)"; then
-      if [[ -n "$boot_output" ]]; then
-        printf '%s\n' "$boot_output" >&2
-      fi
-      printf 'Skipping simulator after boot failure: %s\n' "$candidate" >&2
-      continue
-    fi
-    install_output=""
-    if install_output="$(run_with_timeout "$SIMCTL_TIMEOUT_SECONDS" xcrun simctl install "$candidate" "$APP_PATH" 2>&1)"; then
-      if [[ -n "$install_output" ]]; then
-        printf '%s\n' "$install_output" >&2
-      fi
-      printf '%s\n' "$candidate"
+    if prepare_simulator_candidate "$candidate"; then
       return
     fi
-    if [[ -n "$install_output" ]]; then
-      printf '%s\n' "$install_output" >&2
-    fi
-    printf 'Skipping simulator after install failure: %s\n' "$candidate" >&2
   done <<<"$candidates"
+
+  if [[ -n "${SIMULATOR_UDID:-}" ]]; then
+    printf 'No simulator accepted the validation app install.\n' >&2
+    exit 1
+  fi
+
+  if ! create_temporary_simulator; then
+    printf 'No simulator accepted the validation app install, and temporary simulator creation failed.\n' >&2
+    exit 1
+  fi
+  candidate="$TEMPORARY_SIMULATOR_UDID"
+  if prepare_simulator_candidate "$candidate"; then
+    return
+  fi
 
   printf 'No simulator accepted the validation app install.\n' >&2
   exit 1
@@ -186,7 +327,11 @@ if ! run_with_timeout "$XCODEBUILD_TIMEOUT_SECONDS" \
   exit 1
 fi
 
-DEVICE="$(select_installed_simulator)"
+select_installed_simulator
+if [[ -z "$DEVICE" ]]; then
+  printf 'No simulator selected for PDF validation.\n' >&2
+  exit 1
+fi
 printf 'Using simulator: %s\n' "$DEVICE"
 
 CONTAINER="$(run_with_timeout "$SIMCTL_TIMEOUT_SECONDS" xcrun simctl get_app_container "$DEVICE" "$BUNDLE_ID" data)"

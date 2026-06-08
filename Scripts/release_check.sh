@@ -30,6 +30,21 @@ check_contains() {
   fi
 }
 
+check_not_contains() {
+  local path="$1"
+  local pattern="$2"
+  local message="$3"
+  if [[ ! -f "$path" ]]; then
+    printf 'FAIL: %s (%s missing)\n' "$message" "$path"
+    failures=$((failures + 1))
+    return
+  fi
+  if grep -q "$pattern" "$path"; then
+    printf 'FAIL: %s (%s still contains %s)\n' "$message" "$path" "$pattern"
+    failures=$((failures + 1))
+  fi
+}
+
 check_occurrences_at_least() {
   local path="$1"
   local pattern="$2"
@@ -536,6 +551,13 @@ check_contains "Scripts/validate_pdf_export.sh" "millimeter-a4-stretch" "PDF exp
 check_contains "Scripts/validate_pdf_export.sh" "4,5" "PDF export validation must cover localized decimal comma width input"
 check_contains "Scripts/validate_pdf_export.sh" "6,25" "PDF export validation must cover localized decimal comma height input"
 check_contains "Scripts/validate_pdf_export.sh" "MAX_SIMULATOR_CANDIDATES" "PDF export validation must limit simulator candidate attempts"
+check_contains "Scripts/validate_pdf_export.sh" "run_with_timeout \"\$SIMCTL_TIMEOUT_SECONDS\" xcrun simctl list devices booted" "PDF export validation must bound booted simulator discovery"
+check_contains "Scripts/validate_pdf_export.sh" "run_with_timeout \"\$SIMCTL_TIMEOUT_SECONDS\" xcrun simctl list devices available" "PDF export validation must bound available simulator discovery"
+check_contains "Scripts/validate_pdf_export.sh" "create_temporary_simulator" "PDF export validation must create a temporary simulator fallback"
+check_contains "Scripts/validate_pdf_export.sh" "xcrun simctl create" "PDF export validation must create a fresh simulator when installed devices fail"
+check_contains "Scripts/validate_pdf_export.sh" "cleanup_temporary_simulator" "PDF export validation must clean up temporary simulators"
+check_contains "Scripts/validate_pdf_export.sh" "xcrun simctl delete" "PDF export validation must delete temporary simulators after validation"
+check_not_contains "Scripts/validate_pdf_export.sh" 'DEVICE="$(select_installed_simulator)"' "PDF export validation must keep simulator selection in the parent shell for cleanup"
 check_contains "Scripts/validate_pdf_export.sh" "run_with_timeout \"\$SIMCTL_TIMEOUT_SECONDS\" xcrun simctl boot \"\$device\"" "PDF export validation must bound simulator boot commands"
 check_contains "Scripts/validate_pdf_export.sh" "run_with_timeout \"\$SIMCTL_TIMEOUT_SECONDS\" xcrun simctl bootstatus" "PDF export validation must bound simulator boot waits"
 check_contains "Scripts/validate_pdf_export.sh" "XCODEBUILD_TIMEOUT_SECONDS" "PDF export validation must bound simulator build commands"
