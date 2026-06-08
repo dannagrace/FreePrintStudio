@@ -429,6 +429,7 @@ check_contains "Scripts/bootstrap_release_inputs.sh" "Scripts/bootstrap_release_
 check_contains "Scripts/bootstrap_release_inputs.sh" "Config/manual-release-verification.env" "Combined private release input bootstrap must create the manual verification evidence file"
 check_contains "Scripts/bootstrap_release_inputs.sh" "git check-ignore" "Combined private release input bootstrap must verify private files stay ignored"
 check_contains "Scripts/bootstrap_release_inputs.sh" "chmod 600" "Combined private release input bootstrap must protect private release input files"
+check_contains "Scripts/bootstrap_release_inputs.sh" "APP_STORE_BUILD_NUMBER=<processed-build> Scripts/validate_manual_release_verification.sh" "Combined private release input bootstrap must validate manual evidence against the selected App Store build"
 check_file "Scripts/print_release_input_status.sh" "Redacted release input status script is required"
 if [[ ! -x "Scripts/print_release_input_status.sh" ]]; then
   printf 'FAIL: Redacted release input status script must be executable (Scripts/print_release_input_status.sh)\n'
@@ -444,6 +445,8 @@ check_contains "Scripts/print_release_input_status.sh" "CONFIRM_SUBMIT_FOR_REVIE
 check_contains "Scripts/print_release_input_status.sh" "git check-ignore" "Release input status must confirm private files stay ignored"
 check_contains "Scripts/print_release_input_status.sh" "--strict" "Release input status must offer a strict mode for handoff gating"
 check_contains "Scripts/print_release_input_status.sh" "does not print private values" "Release input status must explicitly avoid printing private values"
+check_contains "Scripts/print_release_input_status.sh" "APP_STORE_BUILD_NUMBER=%s Scripts/validate_manual_release_verification.sh" "Release input status next commands must validate manual evidence against the selected App Store build"
+check_contains "Scripts/print_release_input_status.sh" "<processed-build>" "Release input status must show a selected-build placeholder when APP_STORE_BUILD_NUMBER is missing"
 release_input_status_external_dir="$(mktemp -d)"
 release_input_status_external_env="$release_input_status_external_dir/release.env"
 release_input_status_external_manual="$release_input_status_external_dir/manual-release-verification.env"

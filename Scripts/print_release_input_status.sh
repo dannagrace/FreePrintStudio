@@ -291,9 +291,10 @@ if is_set "${APP_STORE_BUILD_NUMBER:-}" && is_set "${MANUAL_TESTFLIGHT_BUILD_NUM
 fi
 
 printf '\n== Next Commands ==\n'
+selected_app_store_build="${APP_STORE_BUILD_NUMBER:-<processed-build>}"
 printf 'Scripts/bootstrap_release_inputs.sh\n'
 printf 'Scripts/validate_release_env.sh\n'
-printf 'Scripts/validate_manual_release_verification.sh\n'
+printf 'APP_STORE_BUILD_NUMBER=%s Scripts/validate_manual_release_verification.sh\n' "$selected_app_store_build"
 printf 'Scripts/check_app_store_readiness.sh\n'
 
 printf '\nSummary: %d missing required release input item(s).\n' "$missing_count"
