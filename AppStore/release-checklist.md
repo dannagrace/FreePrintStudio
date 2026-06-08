@@ -31,7 +31,7 @@
 - Run `Scripts/validate_manual_release_verification.sh` after recording real iPhone, AirPrint, and TestFlight evidence in untracked `Config/manual-release-verification.env`.
 - Confirm real Photos import on a simulator when changing the Photos picker; the generated-image simulator workflow above covers app launch, unit switching, screenshot rendering, and PDF export.
 - Confirm the same flow on a real iPhone.
-- Confirm AirPrint output on a real printer or a production-equivalent print workflow.
+- Confirm AirPrint output on a real printer or a production-equivalent print workflow with the built-in Test Ruler.
 - Enable GitHub Pages from the repository `docs` folder and verify the privacy and support URLs in `AppStore/metadata.md`.
 
 ## App Store Connect
@@ -52,7 +52,7 @@
 - App Store Connect state preflight: after the build processes, run `APP_STORE_BUILD_NUMBER=... Scripts/run_fastlane.sh ios app_store_connect_state` to verify the app record, version, and selected build before review submission.
 - Commercial configuration: apply `AppStore/commercial-configuration.md` in App Store Connect before submission.
 - App Review self-audit: review `AppStore/review-guideline-audit.md` and resolve every open blocker before submission.
-- Manual release evidence: run `Scripts/bootstrap_release_inputs.sh`, record real-device verification in `Config/manual-release-verification.env`, then run `APP_STORE_BUILD_NUMBER=... Scripts/validate_manual_release_verification.sh` with the same APP_STORE_BUILD_NUMBER selected for App Review.
+- Manual release evidence: run `Scripts/bootstrap_release_inputs.sh`, record real-device verification in `Config/manual-release-verification.env`, and use the built-in Test Ruler for `MANUAL_AIRPRINT_EXACT_SIZE`, then run `APP_STORE_BUILD_NUMBER=... Scripts/validate_manual_release_verification.sh` with the same APP_STORE_BUILD_NUMBER selected for App Review.
 - App Review submission preflight: after every listing field is final and the selected build has processed, run `APP_STORE_BUILD_NUMBER=... Scripts/preflight_app_review_submission.sh`.
 - Final review submission automation: after the uploaded build has processed and every listing field is final, run `APP_STORE_BUILD_NUMBER=... CONFIRM_SUBMIT_FOR_REVIEW=1 Scripts/run_fastlane.sh ios submit_review`.
 - Upload screenshots from `fastlane/screenshots/en-US` or through App Store Connect.

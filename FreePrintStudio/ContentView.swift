@@ -127,12 +127,16 @@ struct ContentView: View {
             if usesAccessibilityLayout {
                 VStack(spacing: 12) {
                     chooseImageButton
+                    testRulerButton
                     centerButton(isDisabled: isTargetInvalid)
                 }
             } else {
-                HStack(spacing: 12) {
+                VStack(spacing: 12) {
                     chooseImageButton
-                    centerButton(isDisabled: isTargetInvalid)
+                    HStack(spacing: 12) {
+                        testRulerButton
+                        centerButton(isDisabled: isTargetInvalid)
+                    }
                 }
             }
 
@@ -202,6 +206,17 @@ struct ContentView: View {
         .buttonStyle(.borderedProminent)
         .accessibilityLabel(selectedImage == nil ? "Choose Image" : "Change Image")
         .accessibilityHint("Select or replace the image used for the print layout.")
+    }
+
+    private var testRulerButton: some View {
+        Button {
+            loadCalibrationGuide()
+        } label: {
+            commandLabel("Test Ruler", systemImage: "ruler")
+        }
+        .buttonStyle(.bordered)
+        .accessibilityLabel("Test Ruler")
+        .accessibilityHint("Load a built-in six inch calibration ruler for exact-size print checks.")
     }
 
     private func centerButton(isDisabled: Bool) -> some View {
@@ -302,6 +317,101 @@ struct ContentView: View {
             recenterImage()
         } catch {
             alertMessage = "Image loading failed: \(error.localizedDescription)"
+        }
+    }
+
+    private func loadCalibrationGuide() {
+        selectedPhoto = nil
+        selectedPaper = .letter
+        selectedOrientation = .portrait
+        if selectedUnit != .inch {
+            shouldPreserveMeasurementFieldsOnNextUnitChange = true
+        }
+        selectedUnit = .inch
+        selectedFitMode = .stretch
+        widthText = formatMeasurement(PrintSizing.calibrationGuideWidthInches)
+        heightText = formatMeasurement(PrintSizing.calibrationGuideHeightInches)
+        selectedImage = makeCalibrationGuideImage()
+        placement = PrintSizing.centeredPlacement(
+            targetSize: PrintSizing.calibrationGuideTargetSize,
+            on: PaperPreset.letter.size(orientation: .portrait)
+        )
+        exportedPDF = nil
+    }
+
+    private func makeCalibrationGuideImage() -> UIImage {
+        let pixelsPerInch = 300.0
+        let imageSize = CGSize(
+            width: PrintSizing.calibrationGuideWidthInches * pixelsPerInch,
+            height: PrintSizing.calibrationGuideHeightInches * pixelsPerInch
+        )
+        let renderer = UIGraphicsImageRenderer(size: imageSize)
+
+        return renderer.image { context in
+            let bounds = CGRect(origin: .zero, size: imageSize)
+            UIColor.white.setFill()
+            context.fill(bounds)
+
+            let lineColor = UIColor.black
+            let accentColor = UIColor(red: 0.0, green: 0.28, blue: 0.85, alpha: 1.0)
+            let baselineY = imageSize.height * 0.68
+            let tickCount = Int(PrintSizing.calibrationGuideWidthInches * 4)
+            let tickPath = UIBezierPath()
+            tickPath.lineWidth = 4
+
+            lineColor.setStroke()
+            tickPath.move(to: CGPoint(x: 0, y: baselineY))
+            tickPath.addLine(to: CGPoint(x: imageSize.width, y: baselineY))
+
+            for tick in 0...tickCount {
+                let ratio = CGFloat(tick) / CGFloat(tickCount)
+                let x = imageSize.width * ratio
+                let tickHeight: CGFloat
+                if tick % 4 == 0 {
+                    tickHeight = 132
+                } else if tick % 2 == 0 {
+                    tickHeight = 96
+                } else {
+                    tickHeight = 62
+                }
+                tickPath.move(to: CGPoint(x: x, y: baselineY))
+                tickPath.addLine(to: CGPoint(x: x, y: baselineY - tickHeight))
+            }
+            tickPath.stroke()
+
+            let titleAttributes: [NSAttributedString.Key: Any] = [
+                .font: UIFont.systemFont(ofSize: 42, weight: .semibold),
+                .foregroundColor: accentColor
+            ]
+            let subtitleAttributes: [NSAttributedString.Key: Any] = [
+                .font: UIFont.systemFont(ofSize: 24, weight: .regular),
+                .foregroundColor: UIColor.darkGray
+            ]
+            let numberAttributes: [NSAttributedString.Key: Any] = [
+                .font: UIFont.monospacedDigitSystemFont(ofSize: 34, weight: .medium),
+                .foregroundColor: lineColor
+            ]
+
+            "FreePrint Studio Test Ruler".draw(
+                at: CGPoint(x: 24, y: 22),
+                withAttributes: titleAttributes
+            )
+            "Print at Actual Size (100%) and compare the 0-6 inch marks.".draw(
+                at: CGPoint(x: 24, y: 76),
+                withAttributes: subtitleAttributes
+            )
+
+            for inch in 0...Int(PrintSizing.calibrationGuideWidthInches) {
+                let ratio = CGFloat(inch) / CGFloat(PrintSizing.calibrationGuideWidthInches)
+                let x = imageSize.width * ratio
+                let text = "\(inch)"
+                let size = text.size(withAttributes: numberAttributes)
+                let labelX = min(max(8, x - size.width / 2), imageSize.width - size.width - 8)
+                text.draw(
+                    at: CGPoint(x: labelX, y: baselineY + 18),
+                    withAttributes: numberAttributes
+                )
+            }
         }
     }
 

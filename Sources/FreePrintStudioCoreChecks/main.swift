@@ -28,6 +28,12 @@ check(abs(fourInchesAsCentimeters - 10.16) < 0.0001, "4 inches should be 10.16 c
 let sixInchesAsMillimeters = PrintSizing.convertMeasurement(6, from: .inch, to: .millimeter)
 check(abs(sixInchesAsMillimeters - 152.4) < 0.0001, "6 inches should be 152.4 mm")
 
+check(PrintSizing.calibrationGuideWidthInches == 6, "Calibration guide should be 6 inches wide")
+check(PrintSizing.calibrationGuideHeightInches == 1, "Calibration guide should be 1 inch tall")
+let calibrationGuideTarget = PrintSizing.calibrationGuideTargetSize
+check(calibrationGuideTarget.widthPoints == 432, "Calibration guide width should be 432 points")
+check(calibrationGuideTarget.heightPoints == 72, "Calibration guide height should be 72 points")
+
 check(PrintSizing.parseMeasurement("4.5") == 4.5, "Decimal point input should parse")
 check(PrintSizing.parseMeasurement(" 6,25 ") == 6.25, "Decimal comma input should parse")
 check(PrintSizing.parseMeasurement("4,5.6") == nil, "Mixed decimal separators should be rejected")

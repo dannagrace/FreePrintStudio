@@ -190,6 +190,12 @@ public enum TargetSizeValidation: Equatable, Sendable {
 
 public enum PrintSizing {
     public static let pointsPerInch: Double = 72
+    public static let calibrationGuideWidthInches: Double = 6
+    public static let calibrationGuideHeightInches: Double = 1
+    public static let calibrationGuideTargetSize = PrintSize(
+        widthPoints: calibrationGuideWidthInches * pointsPerInch,
+        heightPoints: calibrationGuideHeightInches * pointsPerInch
+    )
 
     public static func parseMeasurement(_ text: String) -> Double? {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)

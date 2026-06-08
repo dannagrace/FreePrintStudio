@@ -1,1 +1,1 @@
-Initial release of FreePrint Studio with exact-size image layout, PDF export, and AirPrint support.
+Initial release of FreePrint Studio with exact-size image layout, a built-in Test Ruler, PDF export, and AirPrint support.

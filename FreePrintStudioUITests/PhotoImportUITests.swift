@@ -25,6 +25,27 @@ final class PhotoImportUITests: XCTestCase {
         XCTAssertTrue(app.otherElements["Print preview"].exists || app.images.count > 0, "The print preview should remain visible after photo import.")
     }
 
+    func testTestRulerLoadsCalibrationGuide() throws {
+        let app = XCUIApplication()
+        app.launch()
+
+        let testRulerButton = app.buttons["Test Ruler"]
+        XCTAssertTrue(testRulerButton.waitForExistence(timeout: 15), "Test Ruler button should be visible.")
+        testRulerButton.tap()
+
+        XCTAssertTrue(app.buttons["Change Image"].waitForExistence(timeout: 5), "Test Ruler should load a generated image.")
+        XCTAssertTrue(app.buttons["Export PDF"].isEnabled, "Export PDF should be enabled after loading the Test Ruler.")
+        XCTAssertTrue(app.buttons["Print"].isEnabled, "Print should be enabled after loading the Test Ruler.")
+
+        let widthField = app.textFields["Width"]
+        let heightField = app.textFields["Height"]
+        XCTAssertTrue(widthField.waitForExistence(timeout: 5), "Width field should remain visible.")
+        XCTAssertTrue(heightField.waitForExistence(timeout: 5), "Height field should remain visible.")
+        XCTAssertTrue(String(describing: widthField.value ?? "").contains("6"), "Test Ruler width should be 6 inches.")
+        XCTAssertTrue(String(describing: heightField.value ?? "").contains("1"), "Test Ruler height should be 1 inch.")
+        XCTAssertTrue(app.otherElements["Print preview"].exists || app.images.count > 0, "The print preview should show the Test Ruler.")
+    }
+
     private func tapFirstPhoto(in app: XCUIApplication) {
         let pickerApps = photoPickerApplications(primaryApp: app)
         dismissPhotosAccessBannerIfPresent(in: pickerApps)

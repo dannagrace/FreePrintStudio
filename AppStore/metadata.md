@@ -14,7 +14,7 @@ FreePrint Studio helps you prepare exact-size image prints at a precise physical
 
 Choose a photo, pick a paper size, enter the printed width and height, then preview the result on a paper canvas before exporting or printing. You can switch between inches, centimeters, and millimeters, use portrait or landscape paper, and choose Fit, Fill, or Stretch placement depending on whether you want the full image preserved or the target area filled.
 
-FreePrint Studio is designed for simple local workflows such as craft patterns, product labels, reference photos, layout checks, and one-off image prints. The app creates a correctly sized PDF and opens the system print sheet for AirPrint.
+FreePrint Studio is designed for simple local workflows such as craft patterns, product labels, reference photos, layout checks, and one-off image prints. A built-in Test Ruler helps you verify printer scaling before exact-size work. The app creates a correctly sized PDF and opens the system print sheet for AirPrint.
 
 ## Keywords
 print,size,pdf,photo,image,airprint,label,craft,template,inch,centimeters,millimeters
@@ -27,7 +27,7 @@ Secondary: Productivity
 2026 dannagrace
 
 ## Version Release Notes
-Initial release of FreePrint Studio with exact-size image layout, PDF export, and AirPrint support.
+Initial release of FreePrint Studio with exact-size image layout, a built-in Test Ruler, PDF export, and AirPrint support.
 
 ## URLs
 Privacy Policy URL: https://dannagrace.github.io/FreePrintStudio/privacy-policy.html
@@ -41,10 +41,11 @@ FreePrint Studio does not require an account or network service.
 
 To test:
 1. Choose an image from Photos.
-2. Select a paper preset and orientation.
-3. Enter a target width and height.
-4. Switch Fit, Fill, and Stretch to verify preview behavior.
-5. Export PDF or open the system AirPrint sheet.
+2. Tap Test Ruler to load the built-in six inch calibration guide.
+3. Select a paper preset and orientation.
+4. Enter a target width and height.
+5. Switch Fit, Fill, and Stretch to verify preview behavior.
+6. Export PDF or open the system AirPrint sheet.
 
 The app processes selected images locally on device. It does not upload images, create accounts, use analytics, show ads, or track users.
 

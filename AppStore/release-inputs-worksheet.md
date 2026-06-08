@@ -85,7 +85,7 @@ AirPrint or production-equivalent print evidence:
 
 - `MANUAL_AIRPRINT_TEST_DATE`
 - `MANUAL_AIRPRINT_PRINTER`
-- `MANUAL_AIRPRINT_EXACT_SIZE=pass`
+- `MANUAL_AIRPRINT_EXACT_SIZE=pass`: print the built-in Test Ruler at Actual Size (100%) and compare the 0-6 inch marks.
 
 TestFlight evidence:
 

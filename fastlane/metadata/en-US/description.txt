@@ -2,4 +2,4 @@ FreePrint Studio helps you prepare exact-size image prints at a precise physical
 
 Choose a photo, pick a paper size, enter the printed width and height, then preview the result on a paper canvas before exporting or printing. You can switch between inches, centimeters, and millimeters, use portrait or landscape paper, and choose Fit, Fill, or Stretch placement depending on whether you want the full image preserved or the target area filled.
 
-FreePrint Studio is designed for simple local workflows such as craft patterns, product labels, reference photos, layout checks, and one-off image prints. The app creates a correctly sized PDF and opens the system print sheet for AirPrint.
+FreePrint Studio is designed for simple local workflows such as craft patterns, product labels, reference photos, layout checks, and one-off image prints. A built-in Test Ruler helps you verify printer scaling before exact-size work. The app creates a correctly sized PDF and opens the system print sheet for AirPrint.
