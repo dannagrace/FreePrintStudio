@@ -38,6 +38,17 @@ capture_mode() {
 }
 
 capture_main
+
+printf '== iPhone Test Ruler screenshot ==\n'
+DERIVED_DATA_PATH="$DERIVED_DATA_PATH" \
+  FREEPRINTSTUDIO_APPEARANCE=light \
+  FREEPRINTSTUDIO_SCREENSHOT_CONTENT=testRuler \
+  SCREENSHOT_DELAY="$SCREENSHOT_DELAY" \
+  SCREENSHOT_PATH="$APPSTORE_SCREENSHOTS_DIR/iphone-test-ruler.jpg" \
+  Scripts/capture_app_store_screenshots.sh
+
+cp "$APPSTORE_SCREENSHOTS_DIR/iphone-test-ruler.jpg" "$FASTLANE_SCREENSHOTS_DIR/iphone-test-ruler.jpg"
+
 capture_mode fit iphone-fit.jpg
 capture_mode fill iphone-fill.jpg
 capture_mode stretch iphone-stretch.jpg

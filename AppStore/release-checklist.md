@@ -22,7 +22,7 @@
 - Run `Scripts/verify_release.sh simulator-workflow`; it calls `Scripts/validate_simulator_workflow.sh` to launch the app in a simulator with a generated selected image, centimeter units, A4 landscape paper, a screenshot, and PDF export.
 - Run `Scripts/verify_release.sh photo-import`; it calls `Scripts/validate_photo_import.sh` to seed the simulator photo library, open the real Photos picker, choose an image, and verify export/print become available.
 - Run `Scripts/check_app_store_readiness.sh`; fix every `BLOCKED` item before archiving.
-- Run `Scripts/capture_app_store_screenshot_set.sh` after UI, fit mode, paper, orientation, unit, or iPad layout changes and inspect `iphone-main.jpg`, `iphone-fit.jpg`, `iphone-fill.jpg`, `iphone-stretch.jpg`, `iphone-metric-landscape.jpg`, and `ipad-main.jpg`.
+- Run `Scripts/capture_app_store_screenshot_set.sh` after UI, fit mode, paper, orientation, unit, or iPad layout changes and inspect `iphone-main.jpg`, `iphone-test-ruler.jpg`, `iphone-fit.jpg`, `iphone-fill.jpg`, `iphone-stretch.jpg`, `iphone-metric-landscape.jpg`, and `ipad-main.jpg`.
 - Run `Scripts/capture_app_store_screenshots.sh` only when refreshing or debugging one screenshot in isolation.
 - Run the standalone iPad screenshot command from `README.md` only when refreshing or debugging the iPad screenshot in isolation.
 - Run `Scripts/verify_release.sh accessibility` after visible UI changes; it calls `Scripts/validate_accessibility_screenshots.sh` for dark interface and Larger Text screenshots.

@@ -8,6 +8,7 @@ APPSTORE_SCREENSHOTS_DIR="AppStore/Screenshots"
 FASTLANE_SCREENSHOTS_DIR="fastlane/screenshots/en-US"
 expected_screenshots=(
   "iphone-main.jpg"
+  "iphone-test-ruler.jpg"
   "iphone-fit.jpg"
   "iphone-fill.jpg"
   "iphone-stretch.jpg"

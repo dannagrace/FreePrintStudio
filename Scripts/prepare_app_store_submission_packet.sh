@@ -13,6 +13,7 @@ ACTION_ITEMS_PATH="$PACKET_DIR/ACTION_ITEMS.md"
 
 expected_screenshots=(
   "iphone-main.jpg"
+  "iphone-test-ruler.jpg"
   "iphone-fit.jpg"
   "iphone-fill.jpg"
   "iphone-stretch.jpg"

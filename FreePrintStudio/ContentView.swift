@@ -557,6 +557,11 @@ struct ContentView: View {
     private func loadDebugImageIfRequested() {
         guard selectedImage == nil else { return }
         let arguments = ProcessInfo.processInfo.arguments
+        if arguments.contains("-FreePrintStudioUseTestRuler") {
+            loadCalibrationGuide()
+            return
+        }
+
         guard let imagePathIndex = arguments.firstIndex(of: "-FreePrintStudioTestImagePath"),
               arguments.indices.contains(imagePathIndex + 1) else {
             return

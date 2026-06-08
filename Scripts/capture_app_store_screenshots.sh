@@ -17,6 +17,7 @@ TEST_TARGET_WIDTH="${FREEPRINTSTUDIO_TARGET_WIDTH:-}"
 TEST_TARGET_HEIGHT="${FREEPRINTSTUDIO_TARGET_HEIGHT:-}"
 TEST_APPEARANCE="${FREEPRINTSTUDIO_APPEARANCE:-}"
 TEST_CONTENT_SIZE="${FREEPRINTSTUDIO_CONTENT_SIZE:-}"
+TEST_CONTENT="${FREEPRINTSTUDIO_SCREENSHOT_CONTENT:-image}"
 SCREENSHOT_DELAY="${SCREENSHOT_DELAY:-5}"
 SIMCTL_TIMEOUT_SECONDS="${FREEPRINTSTUDIO_SIMCTL_TIMEOUT_SECONDS:-30}"
 
@@ -31,6 +32,15 @@ validate_capture_options() {
         ;;
     esac
   fi
+
+  case "$TEST_CONTENT" in
+    image|testRuler)
+      ;;
+    *)
+      printf 'Invalid FREEPRINTSTUDIO_SCREENSHOT_CONTENT: %s. Use image or testRuler.\n' "$TEST_CONTENT"
+      exit 1
+      ;;
+  esac
 
   case "$TEST_PAPER" in
     letter|a4|fourBySix|fiveBySeven)
@@ -232,6 +242,10 @@ launch_args=(
   -FreePrintStudioUnit "$TEST_UNIT" \
   -FreePrintStudioFitMode "$TEST_FIT_MODE"
 )
+
+if [[ "$TEST_CONTENT" == "testRuler" ]]; then
+  launch_args+=(-FreePrintStudioUseTestRuler)
+fi
 
 if [[ -n "$TEST_TARGET_WIDTH" ]]; then
   launch_args+=(-FreePrintStudioTargetWidth "$TEST_TARGET_WIDTH")
