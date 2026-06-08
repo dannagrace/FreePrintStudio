@@ -32,6 +32,7 @@ jobs:
         timeout-minutes: 15
         env:
           FREEPRINTSTUDIO_MAX_SIMULATOR_CANDIDATES: 0
+          FREEPRINTSTUDIO_TEMPORARY_SIMULATOR_BOOT_TIMEOUT_SECONDS: 300
         run: Scripts/verify_release.sh pdf
 
       - name: Release iOS build

@@ -982,6 +982,7 @@ check_contains ".github/workflows/release.yml" "Scripts/verify_release.sh" "Rele
 check_contains ".github/workflows/release.yml" "timeout-minutes: 10" "Slow release workflow steps must have command-level timeouts"
 check_contains ".github/workflows/release.yml" "timeout-minutes: 15" "PDF export validation must have enough GitHub Actions timeout headroom"
 check_contains ".github/workflows/release.yml" "FREEPRINTSTUDIO_MAX_SIMULATOR_CANDIDATES: 0" "CI PDF export validation must use a fresh temporary simulator"
+check_contains ".github/workflows/release.yml" "FREEPRINTSTUDIO_TEMPORARY_SIMULATOR_BOOT_TIMEOUT_SECONDS: 300" "CI PDF export validation must allow enough first-boot time for temporary simulators"
 check_contains "FreePrintStudio/Resources/Info.plist" "CFBundleDisplayName" "Info.plist must define display name"
 check_contains "FreePrintStudio/Resources/Info.plist" "ITSAppUsesNonExemptEncryption" "Info.plist must declare non-exempt encryption usage"
 check_plist_raw_value "FreePrintStudio/Resources/Info.plist" "ITSAppUsesNonExemptEncryption" "false" "Info.plist must declare no non-exempt encryption"
