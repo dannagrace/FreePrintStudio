@@ -646,6 +646,7 @@ check_contains "AppStore/release-inputs-worksheet.md" "Scripts/validate_test_rul
 check_contains "Scripts/validate_pdf_export.sh" "MAX_SIMULATOR_CANDIDATES" "PDF export validation must limit simulator candidate attempts"
 check_contains "Scripts/validate_pdf_export.sh" "TEMPORARY_SIMULATOR_BOOT_TIMEOUT_SECONDS" "PDF export validation must allow fresh simulators enough first-boot time"
 check_contains "Scripts/validate_pdf_export.sh" "TEMPORARY_SIMULATOR_INSTALL_TIMEOUT_SECONDS" "PDF export validation must allow fresh simulators enough install time"
+check_contains "Scripts/validate_pdf_export.sh" 'TEMPORARY_SIMULATOR_INSTALL_TIMEOUT_SECONDS="${FREEPRINTSTUDIO_TEMPORARY_SIMULATOR_INSTALL_TIMEOUT_SECONDS:-240}"' "PDF export validation must allow enough CI time for first install on a temporary simulator"
 check_contains "Scripts/validate_pdf_export.sh" "TEMPORARY_SIMULATOR_APP_LAUNCH_TIMEOUT_SECONDS" "PDF export validation must allow fresh simulators enough first-launch time"
 check_contains "Scripts/validate_pdf_export.sh" "TEMPORARY_SIMULATOR_PDF_WAIT_ATTEMPTS" "PDF export validation must allow fresh simulators enough PDF write time"
 check_contains "Scripts/validate_pdf_export.sh" "run_with_timeout \"\$SIMCTL_TIMEOUT_SECONDS\" xcrun simctl list devices booted" "PDF export validation must bound booted simulator discovery"
