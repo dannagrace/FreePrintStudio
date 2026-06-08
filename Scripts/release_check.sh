@@ -552,6 +552,8 @@ check_contains "Scripts/validate_pdf_export.sh" "4,5" "PDF export validation mus
 check_contains "Scripts/validate_pdf_export.sh" "6,25" "PDF export validation must cover localized decimal comma height input"
 check_contains "Scripts/validate_pdf_export.sh" "MAX_SIMULATOR_CANDIDATES" "PDF export validation must limit simulator candidate attempts"
 check_contains "Scripts/validate_pdf_export.sh" "TEMPORARY_SIMULATOR_BOOT_TIMEOUT_SECONDS" "PDF export validation must allow fresh simulators enough first-boot time"
+check_contains "Scripts/validate_pdf_export.sh" "TEMPORARY_SIMULATOR_INSTALL_TIMEOUT_SECONDS" "PDF export validation must allow fresh simulators enough install time"
+check_contains "Scripts/validate_pdf_export.sh" "TEMPORARY_SIMULATOR_APP_LAUNCH_TIMEOUT_SECONDS" "PDF export validation must allow fresh simulators enough first-launch time"
 check_contains "Scripts/validate_pdf_export.sh" "run_with_timeout \"\$SIMCTL_TIMEOUT_SECONDS\" xcrun simctl list devices booted" "PDF export validation must bound booted simulator discovery"
 check_contains "Scripts/validate_pdf_export.sh" "run_with_timeout \"\$SIMCTL_TIMEOUT_SECONDS\" xcrun simctl list devices available" "PDF export validation must bound available simulator discovery"
 check_contains "Scripts/validate_pdf_export.sh" "create_temporary_simulator" "PDF export validation must create a temporary simulator fallback"
@@ -564,7 +566,8 @@ check_contains "Scripts/validate_pdf_export.sh" "bootstatus_timeout" "PDF export
 check_contains "Scripts/validate_pdf_export.sh" "xcrun simctl bootstatus" "PDF export validation must wait for simulator boot readiness"
 check_contains "Scripts/validate_pdf_export.sh" "XCODEBUILD_TIMEOUT_SECONDS" "PDF export validation must bound simulator build commands"
 check_contains "Scripts/validate_pdf_export.sh" "run_with_timeout \"\$SIMCTL_TIMEOUT_SECONDS\" xcrun simctl get_app_container" "PDF export validation must bound simulator container lookup"
-check_contains "Scripts/validate_pdf_export.sh" "run_with_timeout \"\$APP_LAUNCH_TIMEOUT_SECONDS\" xcrun simctl launch" "PDF export validation must bound app launch commands"
+check_contains "Scripts/validate_pdf_export.sh" "launch_timeout" "PDF export validation must choose a bounded app launch wait"
+check_contains "Scripts/validate_pdf_export.sh" "xcrun simctl launch" "PDF export validation must exercise bounded app launch commands"
 check_file "Scripts/validate_simulator_workflow.sh" "Simulator workflow validation script is required"
 if [[ ! -x "Scripts/validate_simulator_workflow.sh" ]]; then
   printf 'FAIL: Simulator workflow validation script must be executable (Scripts/validate_simulator_workflow.sh)\n'

@@ -10,8 +10,10 @@ APP_PATH="$DERIVED_DATA_PATH/Build/Products/Debug-iphonesimulator/FreePrintStudi
 SAMPLE_IMAGE="$ROOT_DIR/AppStore/Assets/sample-print-image.png"
 SIMCTL_TIMEOUT_SECONDS="${FREEPRINTSTUDIO_SIMCTL_TIMEOUT_SECONDS:-30}"
 TEMPORARY_SIMULATOR_BOOT_TIMEOUT_SECONDS="${FREEPRINTSTUDIO_TEMPORARY_SIMULATOR_BOOT_TIMEOUT_SECONDS:-120}"
+TEMPORARY_SIMULATOR_INSTALL_TIMEOUT_SECONDS="${FREEPRINTSTUDIO_TEMPORARY_SIMULATOR_INSTALL_TIMEOUT_SECONDS:-120}"
 XCODEBUILD_TIMEOUT_SECONDS="${FREEPRINTSTUDIO_XCODEBUILD_TIMEOUT_SECONDS:-300}"
 APP_LAUNCH_TIMEOUT_SECONDS="${FREEPRINTSTUDIO_APP_LAUNCH_TIMEOUT_SECONDS:-30}"
+TEMPORARY_SIMULATOR_APP_LAUNCH_TIMEOUT_SECONDS="${FREEPRINTSTUDIO_TEMPORARY_SIMULATOR_APP_LAUNCH_TIMEOUT_SECONDS:-60}"
 MAX_SIMULATOR_CANDIDATES="${FREEPRINTSTUDIO_MAX_SIMULATOR_CANDIDATES:-5}"
 TEMPORARY_SIMULATOR_UDID=""
 DEVICE=""
@@ -103,6 +105,11 @@ unique_candidate_simulators() {
   candidate_simulators | awk 'NF && !seen[$0]++'
 }
 
+is_temporary_simulator() {
+  local device="$1"
+  [[ -n "${TEMPORARY_SIMULATOR_UDID:-}" && "$device" == "$TEMPORARY_SIMULATOR_UDID" ]]
+}
+
 boot_simulator() {
   local device="$1"
   local boot_command_output
@@ -110,7 +117,7 @@ boot_simulator() {
   local bootstatus_output
   if [[ "$device" != "booted" ]]; then
     bootstatus_timeout="$SIMCTL_TIMEOUT_SECONDS"
-    if [[ -n "${TEMPORARY_SIMULATOR_UDID:-}" && "$device" == "$TEMPORARY_SIMULATOR_UDID" ]]; then
+    if is_temporary_simulator "$device"; then
       bootstatus_timeout="$TEMPORARY_SIMULATOR_BOOT_TIMEOUT_SECONDS"
     fi
 
@@ -255,6 +262,7 @@ create_temporary_simulator() {
 prepare_simulator_candidate() {
   local candidate="$1"
   local boot_output
+  local install_timeout
   local install_output
 
   printf 'Trying simulator: %s\n' "$candidate" >&2
@@ -267,8 +275,13 @@ prepare_simulator_candidate() {
     return 1
   fi
 
+  install_timeout="$SIMCTL_TIMEOUT_SECONDS"
+  if is_temporary_simulator "$candidate"; then
+    install_timeout="$TEMPORARY_SIMULATOR_INSTALL_TIMEOUT_SECONDS"
+  fi
+
   install_output=""
-  if install_output="$(run_with_timeout "$SIMCTL_TIMEOUT_SECONDS" xcrun simctl install "$candidate" "$APP_PATH" 2>&1)"; then
+  if install_output="$(run_with_timeout "$install_timeout" xcrun simctl install "$candidate" "$APP_PATH" 2>&1)"; then
     if [[ -n "$install_output" ]]; then
       printf '%s\n' "$install_output" >&2
     fi
@@ -375,6 +388,7 @@ validate_pdf() {
   local target_height="$7"
   local app_pdf_path="$TEST_DIR/export-validation-$label.pdf"
   local host_pdf_path
+  local launch_timeout
   local expected_width_points
   local expected_height_points
   local portrait_width_points
@@ -440,7 +454,12 @@ validate_pdf() {
   rm -f "$app_pdf_path" "$host_pdf_path"
 
   run_with_timeout "$SIMCTL_TIMEOUT_SECONDS" xcrun simctl terminate "$DEVICE" "$BUNDLE_ID" >/dev/null 2>&1 || true
-  if ! run_with_timeout "$APP_LAUNCH_TIMEOUT_SECONDS" xcrun simctl launch "$DEVICE" "$BUNDLE_ID" \
+  launch_timeout="$APP_LAUNCH_TIMEOUT_SECONDS"
+  if is_temporary_simulator "$DEVICE"; then
+    launch_timeout="$TEMPORARY_SIMULATOR_APP_LAUNCH_TIMEOUT_SECONDS"
+  fi
+
+  if ! run_with_timeout "$launch_timeout" xcrun simctl launch "$DEVICE" "$BUNDLE_ID" \
     -FreePrintStudioTestImagePath "$TEST_DIR/sample-print-image.png" \
     -FreePrintStudioPaper "$paper" \
     -FreePrintStudioOrientation "$orientation" \
