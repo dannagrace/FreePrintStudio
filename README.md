@@ -116,6 +116,12 @@ Print a redacted summary of private release input progress without exposing real
 Scripts/print_release_input_status.sh
 ```
 
+Generate a redacted signing readiness report before and after installing certificates or provisioning profiles:
+
+```sh
+Scripts/verify_release.sh signing-report
+```
+
 Validate that installed signing assets match the release bundle, Apple team, and App Store Connect export method:
 
 ```sh

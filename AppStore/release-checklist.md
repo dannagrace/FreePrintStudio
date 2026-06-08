@@ -14,6 +14,7 @@
 - Run `Scripts/print_release_input_status.sh` to view redacted progress for private release inputs without printing real values.
 - Run `Scripts/bootstrap_release_env.sh` before filling private Apple signing, App Review contact, and App Store Connect values in `Config/release.env`.
 - Run `Scripts/validate_release_env.sh` after creating or editing `Config/release.env`.
+- Run `Scripts/verify_release.sh signing-report` before and after installing signing assets to generate a redacted Team ID, certificate, and provisioning profile status report.
 - Run `Scripts/check_code_signing_assets.sh` after installing certificates or provisioning profiles.
 - Run `Scripts/verify_release.sh archive-preflight` before creating the signed App Store archive.
 - Run `Scripts/validate_app_store_export.sh` after creating a signed archive and App Store IPA.

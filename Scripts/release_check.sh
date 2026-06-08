@@ -724,6 +724,15 @@ check_contains "Scripts/check_code_signing_assets.sh" "Apple Distribution" "Code
 check_contains "Scripts/check_code_signing_assets.sh" "com.dannagrace.FreePrintStudio" "Code signing preflight must verify the release bundle id"
 check_contains "Scripts/check_code_signing_assets.sh" "app-store-connect" "Code signing preflight must verify App Store Connect export intent"
 check_contains "Scripts/check_code_signing_assets.sh" "ProvisionedDevices" "Code signing preflight must reject development or ad hoc provisioning profiles"
+check_file "Scripts/generate_signing_readiness_report.sh" "Signing readiness report generator is required"
+if [[ -f "Scripts/generate_signing_readiness_report.sh" && ! -x "Scripts/generate_signing_readiness_report.sh" ]]; then
+  printf 'FAIL: Signing readiness report generator must be executable (Scripts/generate_signing_readiness_report.sh)\n'
+  failures=$((failures + 1))
+fi
+check_contains "Scripts/generate_signing_readiness_report.sh" "signing-readiness-report.md" "Signing readiness report generator must use a deterministic output name"
+check_contains "Scripts/generate_signing_readiness_report.sh" "Apple Distribution" "Signing readiness report must summarize Apple Distribution identity state"
+check_contains "Scripts/generate_signing_readiness_report.sh" "ProvisionedDevices" "Signing readiness report must identify App Store provisioning profile requirements"
+check_contains "Scripts/generate_signing_readiness_report.sh" "redacted" "Signing readiness report must avoid printing private signing values"
 check_file "Scripts/validate_app_review_contact.sh" "App Review contact validation script is required"
 if [[ ! -x "Scripts/validate_app_review_contact.sh" ]]; then
   printf 'FAIL: App Review contact validation script must be executable (Scripts/validate_app_review_contact.sh)\n'
@@ -776,6 +785,7 @@ check_contains "README.md" "Scripts/validate_release_env.sh" "README must docume
 check_contains "README.md" "Scripts/bootstrap_release_env.sh" "README must document release environment bootstrap"
 check_contains "README.md" "Scripts/bootstrap_release_inputs.sh" "README must document combined release input bootstrap"
 check_contains "README.md" "Scripts/print_release_input_status.sh" "README must document the redacted release input status command"
+check_contains "README.md" "Scripts/verify_release.sh signing-report" "README must document the signing readiness report command"
 check_contains "README.md" "Scripts/check_code_signing_assets.sh" "README must document precise code signing asset validation"
 check_contains "README.md" "Scripts/validate_app_review_contact.sh" "README must document App Review contact validation"
 check_contains "README.md" "Scripts/validate_manual_release_verification.sh" "README must document manual release verification evidence validation"
@@ -814,6 +824,7 @@ check_contains "AppStore/release-checklist.md" "Scripts/validate_release_env.sh"
 check_contains "AppStore/release-checklist.md" "Scripts/bootstrap_release_env.sh" "Release checklist must include release environment bootstrap"
 check_contains "AppStore/release-checklist.md" "Scripts/bootstrap_release_inputs.sh" "Release checklist must include combined release input bootstrap"
 check_contains "AppStore/release-checklist.md" "Scripts/print_release_input_status.sh" "Release checklist must include redacted release input status"
+check_contains "AppStore/release-checklist.md" "Scripts/verify_release.sh signing-report" "Release checklist must include signing readiness report generation"
 check_contains "AppStore/release-checklist.md" "Scripts/check_code_signing_assets.sh" "Release checklist must include precise code signing asset validation"
 check_contains "AppStore/release-checklist.md" "Scripts/validate_app_review_contact.sh" "Release checklist must include App Review contact validation"
 check_contains "AppStore/release-checklist.md" "Scripts/validate_manual_release_verification.sh" "Release checklist must include manual release verification evidence validation"
@@ -877,6 +888,10 @@ check_contains "Scripts/prepare_app_store_submission_packet.sh" "manual-release-
 check_contains "Scripts/prepare_app_store_submission_packet.sh" "generate_manual_release_evidence_form.sh" "Submission packet generator must generate the manual release evidence form"
 check_contains "Scripts/prepare_app_store_submission_packet.sh" '\\`manual-release-evidence-form.md\\`' "Submission packet summary must reference the manual release evidence form"
 check_contains "Scripts/verify_release.sh" "manual-evidence-form" "Release verification must expose manual evidence form generation"
+check_contains "Scripts/prepare_app_store_submission_packet.sh" "signing-readiness-report.md" "Submission packet generator must include the signing readiness report"
+check_contains "Scripts/prepare_app_store_submission_packet.sh" "generate_signing_readiness_report.sh" "Submission packet generator must generate the signing readiness report"
+check_contains "Scripts/prepare_app_store_submission_packet.sh" '\\`signing-readiness-report.md\\`' "Submission packet summary must reference the signing readiness report"
+check_contains "Scripts/verify_release.sh" "signing-report" "Release verification must expose signing readiness report generation"
 check_contains "Scripts/prepare_app_store_submission_packet.sh" '\\`ACTION_ITEMS.md\\`' "Submission packet summary must reference action items"
 check_contains "Scripts/prepare_app_store_submission_packet.sh" '\\`screenshots.tsv\\`' "Submission packet summary must escape Markdown code spans inside the shell heredoc"
 check_contains "Scripts/prepare_app_store_submission_packet.sh" '\\`pdf-export-validation.tsv\\`' "Submission packet summary must escape PDF validation manifest code spans inside the shell heredoc"
