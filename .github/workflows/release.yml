@@ -30,6 +30,8 @@ jobs:
 
       - name: PDF export validation
         timeout-minutes: 15
+        env:
+          FREEPRINTSTUDIO_MAX_SIMULATOR_CANDIDATES: 0
         run: Scripts/verify_release.sh pdf
 
       - name: Release iOS build

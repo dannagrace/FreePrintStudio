@@ -9,6 +9,7 @@ DERIVED_DATA_PATH="${DERIVED_DATA_PATH:-/tmp/freeprintstudio-derived-data}"
 APP_PATH="$DERIVED_DATA_PATH/Build/Products/Debug-iphonesimulator/FreePrintStudio.app"
 SAMPLE_IMAGE="$ROOT_DIR/AppStore/Assets/sample-print-image.png"
 SIMCTL_TIMEOUT_SECONDS="${FREEPRINTSTUDIO_SIMCTL_TIMEOUT_SECONDS:-30}"
+TEMPORARY_SIMULATOR_BOOT_TIMEOUT_SECONDS="${FREEPRINTSTUDIO_TEMPORARY_SIMULATOR_BOOT_TIMEOUT_SECONDS:-120}"
 XCODEBUILD_TIMEOUT_SECONDS="${FREEPRINTSTUDIO_XCODEBUILD_TIMEOUT_SECONDS:-300}"
 APP_LAUNCH_TIMEOUT_SECONDS="${FREEPRINTSTUDIO_APP_LAUNCH_TIMEOUT_SECONDS:-30}"
 MAX_SIMULATOR_CANDIDATES="${FREEPRINTSTUDIO_MAX_SIMULATOR_CANDIDATES:-5}"
@@ -105,8 +106,14 @@ unique_candidate_simulators() {
 boot_simulator() {
   local device="$1"
   local boot_command_output
+  local bootstatus_timeout
   local bootstatus_output
   if [[ "$device" != "booted" ]]; then
+    bootstatus_timeout="$SIMCTL_TIMEOUT_SECONDS"
+    if [[ -n "${TEMPORARY_SIMULATOR_UDID:-}" && "$device" == "$TEMPORARY_SIMULATOR_UDID" ]]; then
+      bootstatus_timeout="$TEMPORARY_SIMULATOR_BOOT_TIMEOUT_SECONDS"
+    fi
+
     boot_command_output="$(run_with_timeout "$SIMCTL_TIMEOUT_SECONDS" xcrun simctl boot "$device" 2>&1)" || {
       case "$boot_command_output" in
         *"Unable to boot device in current state: Booted"*|*"Unable to boot device in current state: Booting"*)
@@ -117,7 +124,7 @@ boot_simulator() {
           ;;
       esac
     }
-    bootstatus_output="$(run_with_timeout "$SIMCTL_TIMEOUT_SECONDS" xcrun simctl bootstatus "$device" -b 2>&1)" || {
+    bootstatus_output="$(run_with_timeout "$bootstatus_timeout" xcrun simctl bootstatus "$device" -b 2>&1)" || {
       if run_with_timeout "$SIMCTL_TIMEOUT_SECONDS" xcrun simctl list devices booted | grep -q "$device"; then
         return 0
       fi
@@ -147,7 +154,8 @@ try:
     )
 except subprocess.TimeoutExpired as exc:
     if exc.stdout:
-        print(exc.stdout, end="")
+        output = exc.stdout.decode(errors="replace") if isinstance(exc.stdout, bytes) else exc.stdout
+        print(output, end="")
     print(f"{' '.join(command)} timed out after {timeout_text} seconds")
     sys.exit(124)
 
