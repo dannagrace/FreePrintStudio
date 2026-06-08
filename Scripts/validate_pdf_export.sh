@@ -11,6 +11,7 @@ SAMPLE_IMAGE="$ROOT_DIR/AppStore/Assets/sample-print-image.png"
 SIMCTL_TIMEOUT_SECONDS="${FREEPRINTSTUDIO_SIMCTL_TIMEOUT_SECONDS:-30}"
 XCODEBUILD_TIMEOUT_SECONDS="${FREEPRINTSTUDIO_XCODEBUILD_TIMEOUT_SECONDS:-300}"
 APP_LAUNCH_TIMEOUT_SECONDS="${FREEPRINTSTUDIO_APP_LAUNCH_TIMEOUT_SECONDS:-30}"
+MAX_SIMULATOR_CANDIDATES="${FREEPRINTSTUDIO_MAX_SIMULATOR_CANDIDATES:-5}"
 TEST_PAPER="${FREEPRINTSTUDIO_PAPER:-letter}"
 TEST_ORIENTATION="${FREEPRINTSTUDIO_ORIENTATION:-portrait}"
 TEST_UNIT="${FREEPRINTSTUDIO_UNIT:-inch}"
@@ -80,8 +81,18 @@ unique_candidate_simulators() {
 
 boot_simulator() {
   local device="$1"
+  local boot_command_output
   if [[ "$device" != "booted" ]]; then
-    xcrun simctl boot "$device" >/dev/null 2>&1 || true
+    boot_command_output="$(run_with_timeout "$SIMCTL_TIMEOUT_SECONDS" xcrun simctl boot "$device" 2>&1)" || {
+      case "$boot_command_output" in
+        *"Unable to boot device in current state: Booted"*|*"Unable to boot device in current state: Booting"*)
+          ;;
+        *)
+          printf '%s\n' "$boot_command_output"
+          return 1
+          ;;
+      esac
+    }
     run_with_timeout "$SIMCTL_TIMEOUT_SECONDS" xcrun simctl bootstatus "$device" -b >/dev/null
   fi
 }
@@ -119,8 +130,10 @@ PY
 select_installed_simulator() {
   local candidate
   local candidates
+  local attempted
   local boot_output
   local install_output
+  attempted=0
   candidates="$(unique_candidate_simulators)"
   if [[ -z "$candidates" ]]; then
     printf 'No available iPhone simulator found. Set SIMULATOR_UDID to a booted simulator UDID.\n' >&2
@@ -129,6 +142,11 @@ select_installed_simulator() {
 
   while IFS= read -r candidate; do
     [[ -n "$candidate" ]] || continue
+    attempted=$((attempted + 1))
+    if (( attempted > MAX_SIMULATOR_CANDIDATES )); then
+      printf 'Reached simulator candidate attempt limit: %s\n' "$MAX_SIMULATOR_CANDIDATES" >&2
+      break
+    fi
     printf 'Trying simulator: %s\n' "$candidate" >&2
     boot_output=""
     if ! boot_output="$(boot_simulator "$candidate" 2>&1)"; then

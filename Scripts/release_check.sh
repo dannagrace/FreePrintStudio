@@ -535,6 +535,8 @@ check_contains "Scripts/validate_pdf_export.sh" "centimeter-a4-stretch" "PDF exp
 check_contains "Scripts/validate_pdf_export.sh" "millimeter-a4-stretch" "PDF export validation must cover millimeter target sizes"
 check_contains "Scripts/validate_pdf_export.sh" "4,5" "PDF export validation must cover localized decimal comma width input"
 check_contains "Scripts/validate_pdf_export.sh" "6,25" "PDF export validation must cover localized decimal comma height input"
+check_contains "Scripts/validate_pdf_export.sh" "MAX_SIMULATOR_CANDIDATES" "PDF export validation must limit simulator candidate attempts"
+check_contains "Scripts/validate_pdf_export.sh" "run_with_timeout \"\$SIMCTL_TIMEOUT_SECONDS\" xcrun simctl boot \"\$device\"" "PDF export validation must bound simulator boot commands"
 check_contains "Scripts/validate_pdf_export.sh" "run_with_timeout \"\$SIMCTL_TIMEOUT_SECONDS\" xcrun simctl bootstatus" "PDF export validation must bound simulator boot waits"
 check_contains "Scripts/validate_pdf_export.sh" "XCODEBUILD_TIMEOUT_SECONDS" "PDF export validation must bound simulator build commands"
 check_contains "Scripts/validate_pdf_export.sh" "run_with_timeout \"\$SIMCTL_TIMEOUT_SECONDS\" xcrun simctl get_app_container" "PDF export validation must bound simulator container lookup"
