@@ -181,6 +181,7 @@ EOF
 ```sh
 Scripts/verify_release.sh store-ready
 Scripts/bootstrap_release_inputs.sh
+Scripts/print_release_input_status.sh
 Scripts/bootstrap_release_env.sh
 Scripts/check_app_store_readiness.sh
 Scripts/preflight_app_store_archive.sh
@@ -252,6 +253,7 @@ cat >"$SUMMARY_PATH" <<EOF
 \`\`\`sh
 Scripts/verify_release.sh store-ready
 Scripts/bootstrap_release_inputs.sh
+Scripts/print_release_input_status.sh
 Scripts/bootstrap_release_env.sh
 Scripts/check_app_store_readiness.sh
 Scripts/preflight_app_store_archive.sh

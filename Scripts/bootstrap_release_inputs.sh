@@ -95,6 +95,7 @@ copy_private_template \
 printf '\nNext required release inputs:\n'
 printf '  1. Fill real Apple signing, App Review contact, and App Store Connect values in %s\n' "$release_env_path"
 printf '  2. Record real iPhone, AirPrint, and TestFlight evidence in %s after testing\n' "$manual_evidence_path"
-printf '  3. Run Scripts/validate_release_env.sh\n'
-printf '  4. Run Scripts/validate_manual_release_verification.sh\n'
-printf '  5. Run Scripts/check_app_store_readiness.sh\n'
+printf '  3. Run Scripts/print_release_input_status.sh\n'
+printf '  4. Run Scripts/validate_release_env.sh\n'
+printf '  5. Run Scripts/validate_manual_release_verification.sh\n'
+printf '  6. Run Scripts/check_app_store_readiness.sh\n'

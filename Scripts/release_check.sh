@@ -24,7 +24,7 @@ check_contains() {
     failures=$((failures + 1))
     return
   fi
-  if ! grep -q "$pattern" "$path"; then
+  if ! grep -q -- "$pattern" "$path"; then
     printf 'FAIL: %s (%s missing %s)\n' "$message" "$path" "$pattern"
     failures=$((failures + 1))
   fi
@@ -39,7 +39,7 @@ check_not_contains() {
     failures=$((failures + 1))
     return
   fi
-  if grep -q "$pattern" "$path"; then
+  if grep -q -- "$pattern" "$path"; then
     printf 'FAIL: %s (%s still contains %s)\n' "$message" "$path" "$pattern"
     failures=$((failures + 1))
   fi
@@ -56,7 +56,7 @@ check_occurrences_at_least() {
     failures=$((failures + 1))
     return
   fi
-  count="$(grep -c "$pattern" "$path" || true)"
+  count="$(grep -c -- "$pattern" "$path" || true)"
   if (( count < minimum )); then
     printf 'FAIL: %s (%s has %s occurrence(s) of %s, expected at least %s)\n' \
       "$message" "$path" "$count" "$pattern" "$minimum"
@@ -372,6 +372,18 @@ check_contains "Scripts/bootstrap_release_inputs.sh" "Scripts/bootstrap_release_
 check_contains "Scripts/bootstrap_release_inputs.sh" "Config/manual-release-verification.env" "Combined private release input bootstrap must create the manual verification evidence file"
 check_contains "Scripts/bootstrap_release_inputs.sh" "git check-ignore" "Combined private release input bootstrap must verify private files stay ignored"
 check_contains "Scripts/bootstrap_release_inputs.sh" "chmod 600" "Combined private release input bootstrap must protect private release input files"
+check_file "Scripts/print_release_input_status.sh" "Redacted release input status script is required"
+if [[ ! -x "Scripts/print_release_input_status.sh" ]]; then
+  printf 'FAIL: Redacted release input status script must be executable (Scripts/print_release_input_status.sh)\n'
+  failures=$((failures + 1))
+fi
+check_contains "Scripts/print_release_input_status.sh" "APP_REVIEW_CONTACT_EMAIL" "Release input status must summarize App Review contact configuration"
+check_contains "Scripts/print_release_input_status.sh" "DEVELOPMENT_TEAM_ID" "Release input status must summarize Apple Developer Team configuration"
+check_contains "Scripts/print_release_input_status.sh" "ASC_KEY_ID" "Release input status must summarize App Store Connect API credentials"
+check_contains "Scripts/print_release_input_status.sh" "MANUAL_TESTFLIGHT_BUILD_NUMBER" "Release input status must summarize tested TestFlight build evidence"
+check_contains "Scripts/print_release_input_status.sh" "git check-ignore" "Release input status must confirm private files stay ignored"
+check_contains "Scripts/print_release_input_status.sh" "--strict" "Release input status must offer a strict mode for handoff gating"
+check_contains "Scripts/print_release_input_status.sh" "does not print private values" "Release input status must explicitly avoid printing private values"
 check_file "Scripts/validate_release_env.sh" "Release environment placeholder validation script is required"
 if [[ -x "Scripts/validate_release_env.sh" ]]; then
   Scripts/validate_release_env.sh || failures=$((failures + 1))
@@ -694,6 +706,7 @@ check_contains "README.md" "Scripts/validate_privacy_surface.sh" "README must do
 check_contains "README.md" "Scripts/validate_release_env.sh" "README must document release environment placeholder validation"
 check_contains "README.md" "Scripts/bootstrap_release_env.sh" "README must document release environment bootstrap"
 check_contains "README.md" "Scripts/bootstrap_release_inputs.sh" "README must document combined release input bootstrap"
+check_contains "README.md" "Scripts/print_release_input_status.sh" "README must document the redacted release input status command"
 check_contains "README.md" "Scripts/check_code_signing_assets.sh" "README must document precise code signing asset validation"
 check_contains "README.md" "Scripts/validate_app_review_contact.sh" "README must document App Review contact validation"
 check_contains "README.md" "Scripts/validate_manual_release_verification.sh" "README must document manual release verification evidence validation"
@@ -729,6 +742,7 @@ check_contains "AppStore/release-checklist.md" "Scripts/validate_privacy_surface
 check_contains "AppStore/release-checklist.md" "Scripts/validate_release_env.sh" "Release checklist must include release environment placeholder validation"
 check_contains "AppStore/release-checklist.md" "Scripts/bootstrap_release_env.sh" "Release checklist must include release environment bootstrap"
 check_contains "AppStore/release-checklist.md" "Scripts/bootstrap_release_inputs.sh" "Release checklist must include combined release input bootstrap"
+check_contains "AppStore/release-checklist.md" "Scripts/print_release_input_status.sh" "Release checklist must include redacted release input status"
 check_contains "AppStore/release-checklist.md" "Scripts/check_code_signing_assets.sh" "Release checklist must include precise code signing asset validation"
 check_contains "AppStore/release-checklist.md" "Scripts/validate_app_review_contact.sh" "Release checklist must include App Review contact validation"
 check_contains "AppStore/release-checklist.md" "Scripts/validate_manual_release_verification.sh" "Release checklist must include manual release verification evidence validation"
@@ -764,6 +778,7 @@ check_contains "Scripts/prepare_app_store_submission_packet.sh" "check_app_store
 check_contains "Scripts/prepare_app_store_submission_packet.sh" 'readiness_status="$?"' "Submission packet generator must preserve the readiness audit exit code"
 check_contains "Scripts/prepare_app_store_submission_packet.sh" "ACTION_ITEMS.md" "Submission packet generator must write actionable external release blockers"
 check_contains "Scripts/prepare_app_store_submission_packet.sh" "Scripts/bootstrap_release_inputs.sh" "Submission packet action items must include the combined release input bootstrap"
+check_contains "Scripts/prepare_app_store_submission_packet.sh" "Scripts/print_release_input_status.sh" "Submission packet action items must include the redacted release input status command"
 check_contains "Scripts/prepare_app_store_submission_packet.sh" "Scripts/bootstrap_release_env.sh" "Submission packet action items must include the release environment bootstrap"
 check_contains "Scripts/prepare_app_store_submission_packet.sh" "Scripts/preflight_app_store_archive.sh" "Submission packet action items must include the App Store archive preflight"
 check_contains "Scripts/prepare_app_store_submission_packet.sh" "Scripts/preflight_testflight_upload.sh" "Submission packet action items must include the TestFlight upload preflight"
