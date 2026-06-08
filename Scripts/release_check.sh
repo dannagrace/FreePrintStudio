@@ -733,6 +733,22 @@ check_contains "Scripts/generate_signing_readiness_report.sh" "signing-readiness
 check_contains "Scripts/generate_signing_readiness_report.sh" "Apple Distribution" "Signing readiness report must summarize Apple Distribution identity state"
 check_contains "Scripts/generate_signing_readiness_report.sh" "ProvisionedDevices" "Signing readiness report must identify App Store provisioning profile requirements"
 check_contains "Scripts/generate_signing_readiness_report.sh" "redacted" "Signing readiness report must avoid printing private signing values"
+check_file "Scripts/generate_app_store_connect_readiness_report.sh" "App Store Connect readiness report generator is required"
+if [[ -f "Scripts/generate_app_store_connect_readiness_report.sh" && ! -x "Scripts/generate_app_store_connect_readiness_report.sh" ]]; then
+  printf 'FAIL: App Store Connect readiness report generator must be executable (Scripts/generate_app_store_connect_readiness_report.sh)\n'
+  failures=$((failures + 1))
+fi
+check_contains "Scripts/generate_app_store_connect_readiness_report.sh" "app-store-connect-readiness-report.md" "App Store Connect readiness report generator must use a deterministic output name"
+check_contains "Scripts/generate_app_store_connect_readiness_report.sh" "APP_STORE_CONNECT_API_KEY_JSON" "App Store Connect readiness report must summarize API JSON credential state"
+check_contains "Scripts/generate_app_store_connect_readiness_report.sh" "ASC_KEY_ID" "App Store Connect readiness report must summarize API key ID state"
+check_contains "Scripts/generate_app_store_connect_readiness_report.sh" "ASC_ISSUER_ID" "App Store Connect readiness report must summarize issuer ID state"
+check_contains "Scripts/generate_app_store_connect_readiness_report.sh" "ASC_KEY_PATH" "App Store Connect readiness report must summarize private key file state"
+check_contains "Scripts/generate_app_store_connect_readiness_report.sh" "FASTLANE_USER" "App Store Connect readiness report must summarize Fastlane Apple ID state"
+check_contains "Scripts/generate_app_store_connect_readiness_report.sh" "Scripts/check_app_store_connect_credentials.sh" "App Store Connect readiness report must reference credential validation"
+check_contains "Scripts/generate_app_store_connect_readiness_report.sh" "Scripts/run_fastlane.sh ios app_store_connect_state" "App Store Connect readiness report must reference the account state preflight"
+check_contains "Scripts/generate_app_store_connect_readiness_report.sh" "Scripts/preflight_testflight_upload.sh" "App Store Connect readiness report must reference the TestFlight preflight"
+check_contains "Scripts/generate_app_store_connect_readiness_report.sh" "Scripts/preflight_app_review_submission.sh" "App Store Connect readiness report must reference the App Review preflight"
+check_contains "Scripts/generate_app_store_connect_readiness_report.sh" "redacted" "App Store Connect readiness report must avoid printing private credentials"
 check_file "Scripts/validate_app_review_contact.sh" "App Review contact validation script is required"
 if [[ ! -x "Scripts/validate_app_review_contact.sh" ]]; then
   printf 'FAIL: App Review contact validation script must be executable (Scripts/validate_app_review_contact.sh)\n'
@@ -786,6 +802,7 @@ check_contains "README.md" "Scripts/bootstrap_release_env.sh" "README must docum
 check_contains "README.md" "Scripts/bootstrap_release_inputs.sh" "README must document combined release input bootstrap"
 check_contains "README.md" "Scripts/print_release_input_status.sh" "README must document the redacted release input status command"
 check_contains "README.md" "Scripts/verify_release.sh signing-report" "README must document the signing readiness report command"
+check_contains "README.md" "Scripts/verify_release.sh asc-report" "README must document the App Store Connect readiness report command"
 check_contains "README.md" "Scripts/check_code_signing_assets.sh" "README must document precise code signing asset validation"
 check_contains "README.md" "Scripts/validate_app_review_contact.sh" "README must document App Review contact validation"
 check_contains "README.md" "Scripts/validate_manual_release_verification.sh" "README must document manual release verification evidence validation"
@@ -825,6 +842,7 @@ check_contains "AppStore/release-checklist.md" "Scripts/bootstrap_release_env.sh
 check_contains "AppStore/release-checklist.md" "Scripts/bootstrap_release_inputs.sh" "Release checklist must include combined release input bootstrap"
 check_contains "AppStore/release-checklist.md" "Scripts/print_release_input_status.sh" "Release checklist must include redacted release input status"
 check_contains "AppStore/release-checklist.md" "Scripts/verify_release.sh signing-report" "Release checklist must include signing readiness report generation"
+check_contains "AppStore/release-checklist.md" "Scripts/verify_release.sh asc-report" "Release checklist must include App Store Connect readiness report generation"
 check_contains "AppStore/release-checklist.md" "Scripts/check_code_signing_assets.sh" "Release checklist must include precise code signing asset validation"
 check_contains "AppStore/release-checklist.md" "Scripts/validate_app_review_contact.sh" "Release checklist must include App Review contact validation"
 check_contains "AppStore/release-checklist.md" "Scripts/validate_manual_release_verification.sh" "Release checklist must include manual release verification evidence validation"
@@ -892,6 +910,10 @@ check_contains "Scripts/prepare_app_store_submission_packet.sh" "signing-readine
 check_contains "Scripts/prepare_app_store_submission_packet.sh" "generate_signing_readiness_report.sh" "Submission packet generator must generate the signing readiness report"
 check_contains "Scripts/prepare_app_store_submission_packet.sh" '\\`signing-readiness-report.md\\`' "Submission packet summary must reference the signing readiness report"
 check_contains "Scripts/verify_release.sh" "signing-report" "Release verification must expose signing readiness report generation"
+check_contains "Scripts/prepare_app_store_submission_packet.sh" "app-store-connect-readiness-report.md" "Submission packet generator must include the App Store Connect readiness report"
+check_contains "Scripts/prepare_app_store_submission_packet.sh" "generate_app_store_connect_readiness_report.sh" "Submission packet generator must generate the App Store Connect readiness report"
+check_contains "Scripts/prepare_app_store_submission_packet.sh" '\\`app-store-connect-readiness-report.md\\`' "Submission packet summary must reference the App Store Connect readiness report"
+check_contains "Scripts/verify_release.sh" "asc-report" "Release verification must expose App Store Connect readiness report generation"
 check_contains "Scripts/prepare_app_store_submission_packet.sh" '\\`ACTION_ITEMS.md\\`' "Submission packet summary must reference action items"
 check_contains "Scripts/prepare_app_store_submission_packet.sh" '\\`screenshots.tsv\\`' "Submission packet summary must escape Markdown code spans inside the shell heredoc"
 check_contains "Scripts/prepare_app_store_submission_packet.sh" '\\`pdf-export-validation.tsv\\`' "Submission packet summary must escape PDF validation manifest code spans inside the shell heredoc"

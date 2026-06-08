@@ -122,6 +122,12 @@ Generate a redacted signing readiness report before and after installing certifi
 Scripts/verify_release.sh signing-report
 ```
 
+Generate a redacted App Store Connect readiness report before and after configuring API credentials, TestFlight upload, or review submission inputs:
+
+```sh
+Scripts/verify_release.sh asc-report
+```
+
 Validate that installed signing assets match the release bundle, Apple team, and App Store Connect export method:
 
 ```sh
@@ -198,7 +204,7 @@ Scripts/validate_manual_release_verification.sh
 
 When validating the final App Review build, run the manual evidence check with the same APP_STORE_BUILD_NUMBER that will be submitted so the tested TestFlight build cannot drift from the selected App Store build.
 
-Prepare a local App Store submission packet with metadata, questionnaire drafts, screenshots, PDF export validation evidence, the blank manual release evidence form, checksums, readiness audit output, and next commands:
+Prepare a local App Store submission packet with metadata, questionnaire drafts, screenshots, PDF export validation evidence, the blank manual release evidence form, redacted signing and App Store Connect readiness reports, checksums, readiness audit output, and next commands:
 
 ```sh
 Scripts/verify_release.sh submission-packet
