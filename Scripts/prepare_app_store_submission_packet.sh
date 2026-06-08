@@ -246,7 +246,7 @@ DEVELOPMENT_TEAM_ID=YOURTEAMID ALLOW_PROVISIONING_UPDATES=1 Scripts/archive_app_
 Scripts/preflight_testflight_upload.sh
 ASC_KEY_ID=XXXXXXXXXX ASC_ISSUER_ID=00000000-0000-0000-0000-000000000000 ASC_KEY_PATH=/secure/AuthKey_XXXXXXXXXX.p8 Scripts/run_fastlane.sh ios upload_testflight
 APP_STORE_BUILD_NUMBER=1 Scripts/run_fastlane.sh ios app_store_connect_state
-Scripts/validate_manual_release_verification.sh
+APP_STORE_BUILD_NUMBER=1 Scripts/validate_manual_release_verification.sh
 APP_STORE_BUILD_NUMBER=1 Scripts/preflight_app_review_submission.sh
 APP_STORE_BUILD_NUMBER=1 CONFIRM_SUBMIT_FOR_REVIEW=1 Scripts/run_fastlane.sh ios submit_review
 ```
@@ -347,7 +347,7 @@ DEVELOPMENT_TEAM_ID=YOURTEAMID ALLOW_PROVISIONING_UPDATES=1 Scripts/archive_app_
 Scripts/preflight_testflight_upload.sh
 ASC_KEY_ID=XXXXXXXXXX ASC_ISSUER_ID=00000000-0000-0000-0000-000000000000 ASC_KEY_PATH=/secure/AuthKey_XXXXXXXXXX.p8 Scripts/run_fastlane.sh ios upload_testflight
 APP_STORE_BUILD_NUMBER=1 Scripts/run_fastlane.sh ios app_store_connect_state
-Scripts/validate_manual_release_verification.sh
+APP_STORE_BUILD_NUMBER=1 Scripts/validate_manual_release_verification.sh
 APP_STORE_BUILD_NUMBER=1 Scripts/preflight_app_review_submission.sh
 APP_STORE_BUILD_NUMBER=1 CONFIRM_SUBMIT_FOR_REVIEW=1 Scripts/run_fastlane.sh ios submit_review
 \`\`\`

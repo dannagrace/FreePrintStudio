@@ -220,7 +220,7 @@ Record and validate manual real-device, AirPrint, and TestFlight evidence before
 ```sh
 Scripts/bootstrap_release_inputs.sh
 Scripts/verify_release.sh manual-evidence-form
-Scripts/validate_manual_release_verification.sh
+APP_STORE_BUILD_NUMBER=1 Scripts/validate_manual_release_verification.sh
 ```
 
 When validating the final App Review build, run the manual evidence check with the same APP_STORE_BUILD_NUMBER that will be submitted so the tested TestFlight build cannot drift from the selected App Store build.
