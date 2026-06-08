@@ -116,6 +116,12 @@ Print a redacted summary of private release input progress without exposing real
 Scripts/print_release_input_status.sh
 ```
 
+Generate a redacted App Review contact readiness report before and after setting reviewer contact fields:
+
+```sh
+Scripts/verify_release.sh contact-report
+```
+
 Generate a redacted manual release readiness report before and after recording real iPhone, AirPrint, and TestFlight evidence:
 
 ```sh
@@ -210,7 +216,7 @@ Scripts/validate_manual_release_verification.sh
 
 When validating the final App Review build, run the manual evidence check with the same APP_STORE_BUILD_NUMBER that will be submitted so the tested TestFlight build cannot drift from the selected App Store build.
 
-Prepare a local App Store submission packet with metadata, questionnaire drafts, screenshots, PDF export validation evidence, the blank manual release evidence form, redacted manual release, signing, and App Store Connect readiness reports, checksums, readiness audit output, and next commands:
+Prepare a local App Store submission packet with metadata, questionnaire drafts, screenshots, PDF export validation evidence, the blank manual release evidence form, redacted App Review contact, manual release, signing, and App Store Connect readiness reports, checksums, readiness audit output, and next commands:
 
 ```sh
 Scripts/verify_release.sh submission-packet

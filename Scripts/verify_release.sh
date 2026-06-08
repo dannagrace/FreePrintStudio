@@ -329,6 +329,11 @@ run_manual_evidence_form_generation() {
   Scripts/generate_manual_release_evidence_form.sh
 }
 
+run_contact_readiness_report_generation() {
+  printf '== App Review contact readiness report ==\n'
+  Scripts/generate_app_review_contact_readiness_report.sh
+}
+
 run_manual_readiness_report_generation() {
   printf '== Manual release readiness report ==\n'
   Scripts/generate_manual_release_readiness_report.sh
@@ -444,6 +449,9 @@ case "${1:-all}" in
   submission-packet)
     run_submission_packet_generation
     ;;
+  contact-report)
+    run_contact_readiness_report_generation
+    ;;
   manual-evidence-form)
     run_manual_evidence_form_generation
     ;;
@@ -469,7 +477,7 @@ case "${1:-all}" in
     run_manual_verification_validation
     ;;
   *)
-    printf 'Usage: %s [all|store-ready|static|core|plist|privacy|questionnaires|pdf|build|screenshots|accessibility|simulator-workflow|photo-import|print-sheet|submission-packet|manual-evidence-form|manual-report|signing-report|asc-report|archive-preflight|testflight-preflight|review-preflight|manual-verification]\n' "$0"
+    printf 'Usage: %s [all|store-ready|static|core|plist|privacy|questionnaires|pdf|build|screenshots|accessibility|simulator-workflow|photo-import|print-sheet|submission-packet|contact-report|manual-evidence-form|manual-report|signing-report|asc-report|archive-preflight|testflight-preflight|review-preflight|manual-verification]\n' "$0"
     exit 1
     ;;
 esac
