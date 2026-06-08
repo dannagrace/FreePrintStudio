@@ -238,8 +238,6 @@ run_questionnaire_validation() {
 run_pdf_export_validation() {
   printf '== PDF export validation ==\n'
   Scripts/validate_pdf_export.sh
-  printf '\n== Test Ruler PDF export validation ==\n'
-  Scripts/validate_test_ruler_pdf_export.sh
 }
 
 run_release_build() {

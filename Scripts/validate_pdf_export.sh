@@ -682,4 +682,5 @@ if [[ -z "${FREEPRINTSTUDIO_TARGET_WIDTH:-}" && -z "${FREEPRINTSTUDIO_TARGET_HEI
   validate_pdf "landscape-letter-stretch" "stretch" "letter" "landscape" "inch" "4" "6" "image"
   validate_pdf "centimeter-a4-stretch" "stretch" "a4" "portrait" "centimeter" "10" "15" "image"
   validate_pdf "millimeter-a4-stretch" "stretch" "a4" "portrait" "millimeter" "100" "150" "image"
+  validate_pdf "test-ruler-stretch" "stretch" "letter" "portrait" "inch" "6" "1" "testRuler"
 fi
