@@ -971,6 +971,23 @@ check_contains "Scripts/prepare_app_store_submission_packet.sh" "app-store-conne
 check_contains "Scripts/prepare_app_store_submission_packet.sh" "generate_app_store_connect_readiness_report.sh" "Submission packet generator must generate the App Store Connect readiness report"
 check_contains "Scripts/prepare_app_store_submission_packet.sh" '\\`app-store-connect-readiness-report.md\\`' "Submission packet summary must reference the App Store Connect readiness report"
 check_contains "Scripts/verify_release.sh" "asc-report" "Release verification must expose App Store Connect readiness report generation"
+check_file "Scripts/generate_app_review_submission_readiness_report.sh" "App Review submission readiness report generator is required"
+if [[ -f "Scripts/generate_app_review_submission_readiness_report.sh" && ! -x "Scripts/generate_app_review_submission_readiness_report.sh" ]]; then
+  printf 'FAIL: App Review submission readiness report generator must be executable (Scripts/generate_app_review_submission_readiness_report.sh)\n'
+  failures=$((failures + 1))
+fi
+check_contains "Scripts/generate_app_review_submission_readiness_report.sh" "app-review-submission-readiness-report.md" "App Review submission readiness report generator must use a deterministic output name"
+check_contains "Scripts/generate_app_review_submission_readiness_report.sh" "preflight_app_review_submission.sh" "App Review submission readiness report must reference the final preflight"
+check_contains "Scripts/generate_app_review_submission_readiness_report.sh" "validate_app_store_metadata.sh" "App Review submission readiness report must summarize metadata validation"
+check_contains "Scripts/generate_app_review_submission_readiness_report.sh" "validate_manual_release_verification.sh" "App Review submission readiness report must summarize manual release evidence"
+check_contains "Scripts/generate_app_review_submission_readiness_report.sh" "check_app_store_connect_state.sh" "App Review submission readiness report must summarize selected build state checks"
+check_contains "Scripts/generate_app_review_submission_readiness_report.sh" "redacted" "App Review submission readiness report must avoid printing private release values"
+check_contains "Scripts/prepare_app_store_submission_packet.sh" "app-review-submission-readiness-report.md" "Submission packet generator must include the App Review submission readiness report"
+check_contains "Scripts/prepare_app_store_submission_packet.sh" "generate_app_review_submission_readiness_report.sh" "Submission packet generator must generate the App Review submission readiness report"
+check_contains "Scripts/prepare_app_store_submission_packet.sh" '\\`app-review-submission-readiness-report.md\\`' "Submission packet summary must reference the App Review submission readiness report"
+check_contains "Scripts/verify_release.sh" "review-report" "Release verification must expose App Review submission readiness report generation"
+check_contains "README.md" "Scripts/verify_release.sh review-report" "README must document the App Review submission readiness report command"
+check_contains "AppStore/release-checklist.md" "Scripts/verify_release.sh review-report" "Release checklist must include App Review submission readiness report generation"
 check_contains "Scripts/prepare_app_store_submission_packet.sh" '\\`ACTION_ITEMS.md\\`' "Submission packet summary must reference action items"
 check_contains "Scripts/prepare_app_store_submission_packet.sh" '\\`screenshots.tsv\\`' "Submission packet summary must escape Markdown code spans inside the shell heredoc"
 check_contains "Scripts/prepare_app_store_submission_packet.sh" '\\`pdf-export-validation.tsv\\`' "Submission packet summary must escape PDF validation manifest code spans inside the shell heredoc"

@@ -349,6 +349,11 @@ run_app_store_connect_readiness_report_generation() {
   Scripts/generate_app_store_connect_readiness_report.sh
 }
 
+run_app_review_submission_readiness_report_generation() {
+  printf '== App Review submission readiness report ==\n'
+  Scripts/generate_app_review_submission_readiness_report.sh
+}
+
 run_archive_preflight_validation() {
   printf '== App Store archive preflight ==\n'
   Scripts/preflight_app_store_archive.sh
@@ -464,6 +469,9 @@ case "${1:-all}" in
   asc-report)
     run_app_store_connect_readiness_report_generation
     ;;
+  review-report)
+    run_app_review_submission_readiness_report_generation
+    ;;
   archive-preflight)
     run_archive_preflight_validation
     ;;
@@ -477,7 +485,7 @@ case "${1:-all}" in
     run_manual_verification_validation
     ;;
   *)
-    printf 'Usage: %s [all|store-ready|static|core|plist|privacy|questionnaires|pdf|build|screenshots|accessibility|simulator-workflow|photo-import|print-sheet|submission-packet|contact-report|manual-evidence-form|manual-report|signing-report|asc-report|archive-preflight|testflight-preflight|review-preflight|manual-verification]\n' "$0"
+    printf 'Usage: %s [all|store-ready|static|core|plist|privacy|questionnaires|pdf|build|screenshots|accessibility|simulator-workflow|photo-import|print-sheet|submission-packet|contact-report|manual-evidence-form|manual-report|signing-report|asc-report|review-report|archive-preflight|testflight-preflight|review-preflight|manual-verification]\n' "$0"
     exit 1
     ;;
 esac
