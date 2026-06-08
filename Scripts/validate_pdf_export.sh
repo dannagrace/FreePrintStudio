@@ -12,6 +12,7 @@ PDF_VALIDATION_MANIFEST_PATH="${PDF_VALIDATION_MANIFEST_PATH:-/tmp/freeprintstud
 SIMCTL_TIMEOUT_SECONDS="${FREEPRINTSTUDIO_SIMCTL_TIMEOUT_SECONDS:-30}"
 TEMPORARY_SIMULATOR_BOOT_TIMEOUT_SECONDS="${FREEPRINTSTUDIO_TEMPORARY_SIMULATOR_BOOT_TIMEOUT_SECONDS:-120}"
 TEMPORARY_SIMULATOR_INSTALL_TIMEOUT_SECONDS="${FREEPRINTSTUDIO_TEMPORARY_SIMULATOR_INSTALL_TIMEOUT_SECONDS:-240}"
+TEMPORARY_SIMULATOR_CONTAINER_TIMEOUT_SECONDS="${FREEPRINTSTUDIO_TEMPORARY_SIMULATOR_CONTAINER_TIMEOUT_SECONDS:-120}"
 XCODEBUILD_TIMEOUT_SECONDS="${FREEPRINTSTUDIO_XCODEBUILD_TIMEOUT_SECONDS:-300}"
 APP_LAUNCH_TIMEOUT_SECONDS="${FREEPRINTSTUDIO_APP_LAUNCH_TIMEOUT_SECONDS:-30}"
 TEMPORARY_SIMULATOR_APP_LAUNCH_TIMEOUT_SECONDS="${FREEPRINTSTUDIO_TEMPORARY_SIMULATOR_APP_LAUNCH_TIMEOUT_SECONDS:-180}"
@@ -389,7 +390,20 @@ if [[ -z "$DEVICE" ]]; then
 fi
 printf 'Using simulator: %s\n' "$DEVICE"
 
-CONTAINER="$(run_with_timeout "$SIMCTL_TIMEOUT_SECONDS" xcrun simctl get_app_container "$DEVICE" "$BUNDLE_ID" data)"
+container_timeout="$SIMCTL_TIMEOUT_SECONDS"
+if is_temporary_simulator "$DEVICE"; then
+  container_timeout="$TEMPORARY_SIMULATOR_CONTAINER_TIMEOUT_SECONDS"
+fi
+printf 'Resolving app data container on simulator %s with timeout %s seconds\n' "$DEVICE" "$container_timeout" >&2
+container_output=""
+if ! container_output="$(run_with_timeout "$container_timeout" xcrun simctl get_app_container "$DEVICE" "$BUNDLE_ID" data 2>&1)"; then
+  if [[ -n "$container_output" ]]; then
+    printf '%s\n' "$container_output" >&2
+  fi
+  printf 'Failed to resolve app data container for %s on simulator %s\n' "$BUNDLE_ID" "$DEVICE" >&2
+  exit 1
+fi
+CONTAINER="$container_output"
 TEST_DIR="$CONTAINER/Documents/FreePrintStudioPDFValidation"
 mkdir -p "$TEST_DIR"
 cp "$SAMPLE_IMAGE" "$TEST_DIR/sample-print-image.png"
