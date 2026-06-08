@@ -22,10 +22,18 @@ DEVICE=""
 TEST_PAPER="${FREEPRINTSTUDIO_PAPER:-letter}"
 TEST_ORIENTATION="${FREEPRINTSTUDIO_ORIENTATION:-portrait}"
 TEST_UNIT="${FREEPRINTSTUDIO_UNIT:-inch}"
-TEST_TARGET_WIDTH="${FREEPRINTSTUDIO_TARGET_WIDTH:-4}"
-TEST_TARGET_HEIGHT="${FREEPRINTSTUDIO_TARGET_HEIGHT:-6}"
+TEST_CONTENT="${FREEPRINTSTUDIO_PDF_CONTENT:-image}"
+if [[ "$TEST_CONTENT" == "testRuler" ]]; then
+  TEST_TARGET_WIDTH="${FREEPRINTSTUDIO_TARGET_WIDTH:-6}"
+  TEST_TARGET_HEIGHT="${FREEPRINTSTUDIO_TARGET_HEIGHT:-1}"
+else
+  TEST_TARGET_WIDTH="${FREEPRINTSTUDIO_TARGET_WIDTH:-4}"
+  TEST_TARGET_HEIGHT="${FREEPRINTSTUDIO_TARGET_HEIGHT:-6}"
+fi
 if [[ -n "${FREEPRINTSTUDIO_FIT_MODE:-}" ]]; then
   FIT_MODES=("$FREEPRINTSTUDIO_FIT_MODE")
+elif [[ "$TEST_CONTENT" == "testRuler" ]]; then
+  FIT_MODES=(stretch)
 else
   FIT_MODES=(fit fill stretch)
 fi
@@ -56,6 +64,28 @@ case "$TEST_UNIT" in
     exit 1
     ;;
 esac
+
+case "$TEST_CONTENT" in
+  image|testRuler)
+    ;;
+  *)
+    printf 'Unsupported FREEPRINTSTUDIO_PDF_CONTENT for PDF validation: %s\n' "$TEST_CONTENT"
+    exit 1
+    ;;
+esac
+
+if [[ "$TEST_CONTENT" == "testRuler" ]]; then
+  if [[ "$TEST_PAPER" != "letter" ||
+        "$TEST_ORIENTATION" != "portrait" ||
+        "$TEST_UNIT" != "inch" ||
+        "$TEST_TARGET_WIDTH" != "6" ||
+        "$TEST_TARGET_HEIGHT" != "1" ||
+        "${#FIT_MODES[@]}" -ne 1 ||
+        "${FIT_MODES[0]}" != "stretch" ]]; then
+    printf 'Test Ruler PDF validation must use letter portrait, stretch mode, and 6 x 1 inch target size.\n'
+    exit 1
+  fi
+fi
 
 Scripts/generate_store_sample_image.py
 
@@ -388,12 +418,14 @@ validate_pdf() {
   local unit="$5"
   local target_width="$6"
   local target_height="$7"
+  local content="$8"
   local app_pdf_path="$TEST_DIR/export-validation-$label.pdf"
   local attempt
   local host_pdf_path
   local launch_output
   local launch_status
   local launch_timeout
+  local launch_arguments
   local pdf_wait_attempts
   local expected_width_points
   local expected_height_points
@@ -406,6 +438,15 @@ validate_pdf() {
       ;;
     *)
       printf 'Unsupported FREEPRINTSTUDIO_FIT_MODE for PDF validation: %s\n' "$mode"
+      exit 1
+      ;;
+  esac
+
+  case "$content" in
+    image|testRuler)
+      ;;
+    *)
+      printf 'Unsupported PDF validation content for %s: %s\n' "$label" "$content"
       exit 1
       ;;
   esac
@@ -465,18 +506,28 @@ validate_pdf() {
     launch_timeout="$TEMPORARY_SIMULATOR_APP_LAUNCH_TIMEOUT_SECONDS"
   fi
 
+  launch_arguments=()
+  case "$content" in
+    image)
+      launch_arguments+=(-FreePrintStudioTestImagePath "$TEST_DIR/sample-print-image.png")
+      ;;
+    testRuler)
+      launch_arguments+=(-FreePrintStudioUseTestRuler)
+      ;;
+  esac
+  launch_arguments+=(
+    -FreePrintStudioPaper "$paper"
+    -FreePrintStudioOrientation "$orientation"
+    -FreePrintStudioUnit "$unit"
+    -FreePrintStudioFitMode "$mode"
+    -FreePrintStudioTargetWidth "$target_width"
+    -FreePrintStudioTargetHeight "$target_height"
+    -FreePrintStudioAutoExportPDFPath "$app_pdf_path"
+  )
+
   launch_output=""
   launch_status=0
-  if launch_output="$(run_with_timeout "$launch_timeout" xcrun simctl launch "$DEVICE" "$BUNDLE_ID" \
-    -FreePrintStudioTestImagePath "$TEST_DIR/sample-print-image.png" \
-    -FreePrintStudioPaper "$paper" \
-    -FreePrintStudioOrientation "$orientation" \
-    -FreePrintStudioUnit "$unit" \
-    -FreePrintStudioFitMode "$mode" \
-    -FreePrintStudioTargetWidth "$target_width" \
-    -FreePrintStudioTargetHeight "$target_height" \
-    -FreePrintStudioAutoExportPDFPath "$app_pdf_path" \
-    2>&1)"; then
+  if launch_output="$(run_with_timeout "$launch_timeout" xcrun simctl launch "$DEVICE" "$BUNDLE_ID" "${launch_arguments[@]}" 2>&1)"; then
     launch_status=0
   else
     launch_status=$?
@@ -623,12 +674,12 @@ PY
 }
 
 for mode in "${FIT_MODES[@]}"; do
-  validate_pdf "$mode" "$mode" "$TEST_PAPER" "$TEST_ORIENTATION" "$TEST_UNIT" "$TEST_TARGET_WIDTH" "$TEST_TARGET_HEIGHT"
+  validate_pdf "$mode" "$mode" "$TEST_PAPER" "$TEST_ORIENTATION" "$TEST_UNIT" "$TEST_TARGET_WIDTH" "$TEST_TARGET_HEIGHT" "$TEST_CONTENT"
 done
 
-if [[ -z "${FREEPRINTSTUDIO_TARGET_WIDTH:-}" && -z "${FREEPRINTSTUDIO_TARGET_HEIGHT:-}" && -z "${FREEPRINTSTUDIO_FIT_MODE:-}" && -z "${FREEPRINTSTUDIO_PAPER:-}" && -z "${FREEPRINTSTUDIO_ORIENTATION:-}" && -z "${FREEPRINTSTUDIO_UNIT:-}" ]]; then
-  validate_pdf "localized-decimal-stretch" "stretch" "letter" "portrait" "inch" "4,5" "6,25"
-  validate_pdf "landscape-letter-stretch" "stretch" "letter" "landscape" "inch" "4" "6"
-  validate_pdf "centimeter-a4-stretch" "stretch" "a4" "portrait" "centimeter" "10" "15"
-  validate_pdf "millimeter-a4-stretch" "stretch" "a4" "portrait" "millimeter" "100" "150"
+if [[ -z "${FREEPRINTSTUDIO_TARGET_WIDTH:-}" && -z "${FREEPRINTSTUDIO_TARGET_HEIGHT:-}" && -z "${FREEPRINTSTUDIO_FIT_MODE:-}" && -z "${FREEPRINTSTUDIO_PAPER:-}" && -z "${FREEPRINTSTUDIO_ORIENTATION:-}" && -z "${FREEPRINTSTUDIO_UNIT:-}" && -z "${FREEPRINTSTUDIO_PDF_CONTENT:-}" ]]; then
+  validate_pdf "localized-decimal-stretch" "stretch" "letter" "portrait" "inch" "4,5" "6,25" "image"
+  validate_pdf "landscape-letter-stretch" "stretch" "letter" "landscape" "inch" "4" "6" "image"
+  validate_pdf "centimeter-a4-stretch" "stretch" "a4" "portrait" "centimeter" "10" "15" "image"
+  validate_pdf "millimeter-a4-stretch" "stretch" "a4" "portrait" "millimeter" "100" "150" "image"
 fi

@@ -559,6 +559,8 @@ struct ContentView: View {
         let arguments = ProcessInfo.processInfo.arguments
         if arguments.contains("-FreePrintStudioUseTestRuler") {
             loadCalibrationGuide()
+            exportDebugPDFIfRequested(arguments: arguments)
+            openDebugPrintSheetIfRequested(arguments: arguments)
             return
         }
 
@@ -613,7 +615,7 @@ struct ContentView: View {
 
         selectedImage = image
         recenterImage()
-        exportDebugPDFIfRequested(arguments: arguments, image: image)
+        exportDebugPDFIfRequested(arguments: arguments)
         openDebugPrintSheetIfRequested(arguments: arguments)
     }
 
@@ -622,9 +624,13 @@ struct ContentView: View {
             arguments.firstIndex(of: "-FreePrintStudioTargetHeight") != nil
     }
 
-    private func exportDebugPDFIfRequested(arguments: [String], image: UIImage) {
+    private func exportDebugPDFIfRequested(arguments: [String]) {
         guard let exportPathIndex = arguments.firstIndex(of: "-FreePrintStudioAutoExportPDFPath"),
               arguments.indices.contains(exportPathIndex + 1) else {
+            return
+        }
+        guard let image = selectedImage else {
+            alertMessage = "Debug PDF export failed: no image is loaded."
             return
         }
 

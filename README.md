@@ -78,6 +78,12 @@ Validate that the app renderer exports PDFs with the expected paper MediaBox and
 Scripts/validate_pdf_export.sh
 ```
 
+Validate that the built-in Test Ruler exports as a 6 x 1 inch PDF target before using it for AirPrint evidence:
+
+```sh
+Scripts/validate_test_ruler_pdf_export.sh
+```
+
 Validate a simulator workflow with a generated selected image, centimeter units, landscape A4 paper, an app screenshot, and PDF export:
 
 ```sh

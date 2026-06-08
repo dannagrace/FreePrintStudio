@@ -624,6 +624,19 @@ check_contains "Scripts/validate_pdf_export.sh" "centimeter-a4-stretch" "PDF exp
 check_contains "Scripts/validate_pdf_export.sh" "millimeter-a4-stretch" "PDF export validation must cover millimeter target sizes"
 check_contains "Scripts/validate_pdf_export.sh" "4,5" "PDF export validation must cover localized decimal comma width input"
 check_contains "Scripts/validate_pdf_export.sh" "6,25" "PDF export validation must cover localized decimal comma height input"
+check_file "Scripts/validate_test_ruler_pdf_export.sh" "Test Ruler PDF export validation script is required"
+if [[ ! -x "Scripts/validate_test_ruler_pdf_export.sh" ]]; then
+  printf 'FAIL: Test Ruler PDF export validation script must be executable (Scripts/validate_test_ruler_pdf_export.sh)\n'
+  failures=$((failures + 1))
+fi
+check_contains "Scripts/validate_test_ruler_pdf_export.sh" "FREEPRINTSTUDIO_PDF_CONTENT=testRuler" "Test Ruler PDF validation must exercise the generated calibration guide"
+check_contains "Scripts/validate_test_ruler_pdf_export.sh" "FREEPRINTSTUDIO_TARGET_WIDTH=6" "Test Ruler PDF validation must require a 6 inch output width"
+check_contains "Scripts/validate_test_ruler_pdf_export.sh" "FREEPRINTSTUDIO_TARGET_HEIGHT=1" "Test Ruler PDF validation must require a 1 inch output height"
+check_contains "Scripts/validate_pdf_export.sh" "FREEPRINTSTUDIO_PDF_CONTENT" "PDF export validation must support generated Test Ruler content"
+check_contains "Scripts/validate_pdf_export.sh" "-FreePrintStudioUseTestRuler" "PDF export validation must launch the app with the built-in Test Ruler"
+check_contains "FreePrintStudio/ContentView.swift" "exportDebugPDFIfRequested(arguments: arguments)" "Debug Test Ruler launch must support automatic PDF export"
+check_contains "Scripts/verify_release.sh" "validate_test_ruler_pdf_export.sh" "Release verification must validate Test Ruler PDF export"
+check_contains "AppStore/release-inputs-worksheet.md" "Scripts/validate_test_ruler_pdf_export.sh" "Release worksheet must document the local Test Ruler PDF evidence command"
 check_contains "Scripts/validate_pdf_export.sh" "MAX_SIMULATOR_CANDIDATES" "PDF export validation must limit simulator candidate attempts"
 check_contains "Scripts/validate_pdf_export.sh" "TEMPORARY_SIMULATOR_BOOT_TIMEOUT_SECONDS" "PDF export validation must allow fresh simulators enough first-boot time"
 check_contains "Scripts/validate_pdf_export.sh" "TEMPORARY_SIMULATOR_INSTALL_TIMEOUT_SECONDS" "PDF export validation must allow fresh simulators enough install time"

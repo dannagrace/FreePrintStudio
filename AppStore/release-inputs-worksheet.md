@@ -87,6 +87,12 @@ AirPrint or production-equivalent print evidence:
 - `MANUAL_AIRPRINT_PRINTER`
 - `MANUAL_AIRPRINT_EXACT_SIZE=pass`: print the built-in Test Ruler at Actual Size (100%) and compare the 0-6 inch marks.
 
+Before recording AirPrint evidence, run the local Test Ruler PDF check to confirm the app-generated calibration guide exports at exactly 6 x 1 inch:
+
+```sh
+Scripts/validate_test_ruler_pdf_export.sh
+```
+
 TestFlight evidence:
 
 - `MANUAL_TESTFLIGHT_BUILD_NUMBER`
