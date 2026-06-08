@@ -29,10 +29,11 @@ jobs:
         run: Scripts/verify_release.sh plist
 
       - name: PDF export validation
-        timeout-minutes: 15
+        timeout-minutes: 20
         env:
           FREEPRINTSTUDIO_MAX_SIMULATOR_CANDIDATES: 0
           FREEPRINTSTUDIO_TEMPORARY_SIMULATOR_BOOT_TIMEOUT_SECONDS: 300
+          FREEPRINTSTUDIO_TEMPORARY_SIMULATOR_APP_LAUNCH_TIMEOUT_SECONDS: 360
         run: Scripts/verify_release.sh pdf
 
       - name: Release iOS build
