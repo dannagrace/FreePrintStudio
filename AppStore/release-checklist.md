@@ -27,7 +27,7 @@
 - Run the standalone iPad screenshot command from `README.md` only when refreshing or debugging the iPad screenshot in isolation.
 - Run `Scripts/verify_release.sh accessibility` after visible UI changes; it calls `Scripts/validate_accessibility_screenshots.sh` for dark interface and Larger Text screenshots.
 - Run `Scripts/verify_release.sh print-sheet` before submission; it calls `Scripts/validate_print_sheet.sh` to verify the simulator can open the system print sheet with a generated PDF.
-- Run `Scripts/verify_release.sh submission-packet` before handing off to App Store Connect; it calls `Scripts/prepare_app_store_submission_packet.sh` to package metadata, questionnaire drafts, screenshots, PDF export validation evidence, checksums, readiness audit output, and next commands under `build/AppStoreSubmissionPacket/`.
+- Run `Scripts/verify_release.sh submission-packet` before handing off to App Store Connect; it calls `Scripts/prepare_app_store_submission_packet.sh` to package metadata, questionnaire drafts, screenshots, PDF export validation evidence, a blank manual release evidence form, checksums, readiness audit output, and next commands under `build/AppStoreSubmissionPacket/`.
 - Run `Scripts/validate_manual_release_verification.sh` after recording real iPhone, AirPrint, and TestFlight evidence in untracked `Config/manual-release-verification.env`.
 - Confirm real Photos import on a simulator when changing the Photos picker; the generated-image simulator workflow above covers app launch, unit switching, screenshot rendering, and PDF export.
 - Confirm the same flow on a real iPhone.
@@ -52,7 +52,7 @@
 - App Store Connect state preflight: after the build processes, run `APP_STORE_BUILD_NUMBER=... Scripts/run_fastlane.sh ios app_store_connect_state` to verify the app record, version, and selected build before review submission.
 - Commercial configuration: apply `AppStore/commercial-configuration.md` in App Store Connect before submission.
 - App Review self-audit: review `AppStore/review-guideline-audit.md` and resolve every open blocker before submission.
-- Manual release evidence: run `Scripts/bootstrap_release_inputs.sh`, record real-device verification in `Config/manual-release-verification.env`, and use the built-in Test Ruler for `MANUAL_AIRPRINT_EXACT_SIZE`, then run `APP_STORE_BUILD_NUMBER=... Scripts/validate_manual_release_verification.sh` with the same APP_STORE_BUILD_NUMBER selected for App Review.
+- Manual release evidence: run `Scripts/bootstrap_release_inputs.sh` and `Scripts/verify_release.sh manual-evidence-form`, record real-device verification in `Config/manual-release-verification.env`, and use the built-in Test Ruler for `MANUAL_AIRPRINT_EXACT_SIZE`, then run `APP_STORE_BUILD_NUMBER=... Scripts/validate_manual_release_verification.sh` with the same APP_STORE_BUILD_NUMBER selected for App Review.
 - App Review submission preflight: after every listing field is final and the selected build has processed, run `APP_STORE_BUILD_NUMBER=... Scripts/preflight_app_review_submission.sh`.
 - Final review submission automation: after the uploaded build has processed and every listing field is final, run `APP_STORE_BUILD_NUMBER=... CONFIRM_SUBMIT_FOR_REVIEW=1 Scripts/run_fastlane.sh ios submit_review`.
 - Upload screenshots from `fastlane/screenshots/en-US` or through App Store Connect.

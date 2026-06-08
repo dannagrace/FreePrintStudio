@@ -862,6 +862,19 @@ check_contains "Scripts/prepare_app_store_submission_packet.sh" "Readiness Warni
 check_contains "Scripts/prepare_app_store_submission_packet.sh" "sha256" "Submission packet generator must record file checksums"
 check_contains "Scripts/prepare_app_store_submission_packet.sh" "pdf-export-validation.tsv" "Submission packet generator must include the PDF validation manifest"
 check_contains "Scripts/prepare_app_store_submission_packet.sh" "test-ruler-stretch" "Submission packet generator must require Test Ruler PDF validation evidence"
+check_file "Scripts/generate_manual_release_evidence_form.sh" "Manual release evidence form generator is required"
+if [[ -f "Scripts/generate_manual_release_evidence_form.sh" && ! -x "Scripts/generate_manual_release_evidence_form.sh" ]]; then
+  printf 'FAIL: Manual release evidence form generator must be executable (Scripts/generate_manual_release_evidence_form.sh)\n'
+  failures=$((failures + 1))
+fi
+check_contains "Scripts/generate_manual_release_evidence_form.sh" "MANUAL_REAL_IPHONE_PHOTOS_IMPORT" "Manual release evidence form must cover real iPhone Photos import evidence"
+check_contains "Scripts/generate_manual_release_evidence_form.sh" "MANUAL_REAL_IPHONE_PDF_EXPORT" "Manual release evidence form must cover real iPhone PDF export evidence"
+check_contains "Scripts/generate_manual_release_evidence_form.sh" "MANUAL_AIRPRINT_EXACT_SIZE" "Manual release evidence form must cover AirPrint exact-size evidence"
+check_contains "Scripts/generate_manual_release_evidence_form.sh" "MANUAL_TESTFLIGHT_PRINT_WORKFLOW" "Manual release evidence form must cover TestFlight print workflow evidence"
+check_contains "Scripts/prepare_app_store_submission_packet.sh" "manual-release-evidence-form.md" "Submission packet generator must include the manual release evidence form"
+check_contains "Scripts/prepare_app_store_submission_packet.sh" "generate_manual_release_evidence_form.sh" "Submission packet generator must generate the manual release evidence form"
+check_contains "Scripts/prepare_app_store_submission_packet.sh" '\\`manual-release-evidence-form.md\\`' "Submission packet summary must reference the manual release evidence form"
+check_contains "Scripts/verify_release.sh" "manual-evidence-form" "Release verification must expose manual evidence form generation"
 check_contains "Scripts/prepare_app_store_submission_packet.sh" '\\`ACTION_ITEMS.md\\`' "Submission packet summary must reference action items"
 check_contains "Scripts/prepare_app_store_submission_packet.sh" '\\`screenshots.tsv\\`' "Submission packet summary must escape Markdown code spans inside the shell heredoc"
 check_contains "Scripts/prepare_app_store_submission_packet.sh" '\\`pdf-export-validation.tsv\\`' "Submission packet summary must escape PDF validation manifest code spans inside the shell heredoc"
