@@ -10,6 +10,7 @@ SCREENSHOT_MANIFEST="$PACKET_DIR/screenshots.tsv"
 PDF_VALIDATION_MANIFEST_SOURCE="${PDF_VALIDATION_MANIFEST_PATH:-/tmp/freeprintstudio-pdf-export-validation.tsv}"
 PDF_VALIDATION_MANIFEST="$PACKET_DIR/pdf-export-validation.tsv"
 MANUAL_EVIDENCE_FORM="$PACKET_DIR/manual-release-evidence-form.md"
+MANUAL_READINESS_REPORT="$PACKET_DIR/manual-release-readiness-report.md"
 SIGNING_READINESS_REPORT="$PACKET_DIR/signing-readiness-report.md"
 APP_STORE_CONNECT_READINESS_REPORT="$PACKET_DIR/app-store-connect-readiness-report.md"
 FILE_MANIFEST="$PACKET_DIR/file-manifest.tsv"
@@ -138,6 +139,10 @@ write_manual_evidence_form() {
   Scripts/generate_manual_release_evidence_form.sh "$MANUAL_EVIDENCE_FORM" >/dev/null
 }
 
+write_manual_readiness_report() {
+  Scripts/generate_manual_release_readiness_report.sh "$MANUAL_READINESS_REPORT" >/dev/null
+}
+
 write_signing_readiness_report() {
   Scripts/generate_signing_readiness_report.sh "$SIGNING_READINESS_REPORT" >/dev/null
 }
@@ -219,6 +224,7 @@ Scripts/verify_release.sh store-ready
 Scripts/bootstrap_release_inputs.sh
 Scripts/print_release_input_status.sh
 Scripts/verify_release.sh manual-evidence-form
+Scripts/verify_release.sh manual-report
 Scripts/verify_release.sh signing-report
 Scripts/verify_release.sh asc-report
 Scripts/bootstrap_release_env.sh
@@ -253,6 +259,7 @@ done
 write_screenshot_manifest
 copy_pdf_validation_manifest
 write_manual_evidence_form
+write_manual_readiness_report
 write_signing_readiness_report
 write_app_store_connect_readiness_report
 
@@ -285,6 +292,7 @@ cat >"$SUMMARY_PATH" <<EOF
 - App Review guideline self-audit with evidence and open blockers.
 - Release input worksheet for private Apple account, signing, and real-device evidence collection.
 - Manual release evidence form for recording real iPhone, AirPrint, and TestFlight checks.
+- Redacted manual release readiness report for real iPhone, AirPrint, TestFlight, and selected-build evidence.
 - Redacted signing readiness report for Apple Developer Team, certificate, and provisioning profile state.
 - Redacted App Store Connect readiness report for credential mode, upload guards, build selection, and account-dependent checks.
 - Reviewed screenshots and Fastlane upload screenshots.
@@ -295,6 +303,7 @@ cat >"$SUMMARY_PATH" <<EOF
 - \`screenshots.tsv\` with screenshot dimensions and sha256 checksums.
 - \`pdf-export-validation.tsv\` with PDF page, target, draw matrix, and sha256 evidence.
 - \`manual-release-evidence-form.md\` with the blank manual verification record and env-field mapping.
+- \`manual-release-readiness-report.md\` with redacted manual evidence status, blocker counts, and next actions.
 - \`signing-readiness-report.md\` with redacted signing status, profile counts, and next actions.
 - \`app-store-connect-readiness-report.md\` with redacted App Store Connect credential status, upload guard state, and next actions.
 - \`file-manifest.tsv\` with package file sizes and sha256 checksums.
@@ -308,6 +317,7 @@ Scripts/verify_release.sh store-ready
 Scripts/bootstrap_release_inputs.sh
 Scripts/print_release_input_status.sh
 Scripts/verify_release.sh manual-evidence-form
+Scripts/verify_release.sh manual-report
 Scripts/verify_release.sh signing-report
 Scripts/verify_release.sh asc-report
 Scripts/bootstrap_release_env.sh

@@ -391,6 +391,27 @@ check_file "Scripts/load_release_env.sh" "Release environment loader script is r
 check_contains "Scripts/load_release_env.sh" "Config/release.env" "Release environment loader must read the untracked release.env file"
 check_contains "Scripts/load_release_env.sh" "not a valid shell env file" "Release environment loader must explain invalid release.env syntax"
 check_contains "Scripts/load_release_env.sh" "Quote values containing spaces" "Release environment loader must explain how to fix values containing spaces"
+release_env_loader_test_dir="$(mktemp -d)"
+release_env_loader_test_file="$release_env_loader_test_dir/release.env"
+printf '%s\n' \
+  'APP_STORE_BUILD_NUMBER=' \
+  'ASC_KEY_ID=file-key-id' \
+  >"$release_env_loader_test_file"
+if ! RELEASE_ENV_PATH="$release_env_loader_test_file" APP_STORE_BUILD_NUMBER=42 bash -c '
+  set -euo pipefail
+  cd "$1"
+  source Scripts/load_release_env.sh
+  if [[ "${APP_STORE_BUILD_NUMBER:-}" != "42" ]]; then
+    exit 1
+  fi
+  if [[ "${ASC_KEY_ID:-}" != "file-key-id" ]]; then
+    exit 1
+  fi
+' _ "$ROOT_DIR"; then
+  printf 'FAIL: Release environment loader must preserve non-empty inline values while loading missing values from release.env\n'
+  failures=$((failures + 1))
+fi
+rm -rf "$release_env_loader_test_dir"
 check_file "Scripts/bootstrap_release_env.sh" "Release environment bootstrap script is required"
 if [[ ! -x "Scripts/bootstrap_release_env.sh" ]]; then
   printf 'FAIL: Release environment bootstrap script must be executable (Scripts/bootstrap_release_env.sh)\n'
@@ -801,6 +822,7 @@ check_contains "README.md" "Scripts/validate_release_env.sh" "README must docume
 check_contains "README.md" "Scripts/bootstrap_release_env.sh" "README must document release environment bootstrap"
 check_contains "README.md" "Scripts/bootstrap_release_inputs.sh" "README must document combined release input bootstrap"
 check_contains "README.md" "Scripts/print_release_input_status.sh" "README must document the redacted release input status command"
+check_contains "README.md" "Scripts/verify_release.sh manual-report" "README must document the manual release readiness report command"
 check_contains "README.md" "Scripts/verify_release.sh signing-report" "README must document the signing readiness report command"
 check_contains "README.md" "Scripts/verify_release.sh asc-report" "README must document the App Store Connect readiness report command"
 check_contains "README.md" "Scripts/check_code_signing_assets.sh" "README must document precise code signing asset validation"
@@ -841,6 +863,7 @@ check_contains "AppStore/release-checklist.md" "Scripts/validate_release_env.sh"
 check_contains "AppStore/release-checklist.md" "Scripts/bootstrap_release_env.sh" "Release checklist must include release environment bootstrap"
 check_contains "AppStore/release-checklist.md" "Scripts/bootstrap_release_inputs.sh" "Release checklist must include combined release input bootstrap"
 check_contains "AppStore/release-checklist.md" "Scripts/print_release_input_status.sh" "Release checklist must include redacted release input status"
+check_contains "AppStore/release-checklist.md" "Scripts/verify_release.sh manual-report" "Release checklist must include manual release readiness report generation"
 check_contains "AppStore/release-checklist.md" "Scripts/verify_release.sh signing-report" "Release checklist must include signing readiness report generation"
 check_contains "AppStore/release-checklist.md" "Scripts/verify_release.sh asc-report" "Release checklist must include App Store Connect readiness report generation"
 check_contains "AppStore/release-checklist.md" "Scripts/check_code_signing_assets.sh" "Release checklist must include precise code signing asset validation"
@@ -902,10 +925,26 @@ check_contains "Scripts/generate_manual_release_evidence_form.sh" "MANUAL_REAL_I
 check_contains "Scripts/generate_manual_release_evidence_form.sh" "MANUAL_REAL_IPHONE_PDF_EXPORT" "Manual release evidence form must cover real iPhone PDF export evidence"
 check_contains "Scripts/generate_manual_release_evidence_form.sh" "MANUAL_AIRPRINT_EXACT_SIZE" "Manual release evidence form must cover AirPrint exact-size evidence"
 check_contains "Scripts/generate_manual_release_evidence_form.sh" "MANUAL_TESTFLIGHT_PRINT_WORKFLOW" "Manual release evidence form must cover TestFlight print workflow evidence"
+check_file "Scripts/generate_manual_release_readiness_report.sh" "Manual release readiness report generator is required"
+if [[ -f "Scripts/generate_manual_release_readiness_report.sh" && ! -x "Scripts/generate_manual_release_readiness_report.sh" ]]; then
+  printf 'FAIL: Manual release readiness report generator must be executable (Scripts/generate_manual_release_readiness_report.sh)\n'
+  failures=$((failures + 1))
+fi
+check_contains "Scripts/generate_manual_release_readiness_report.sh" "manual-release-readiness-report.md" "Manual release readiness report generator must use a deterministic output name"
+check_contains "Scripts/generate_manual_release_readiness_report.sh" "MANUAL_REAL_IPHONE_PHOTOS_IMPORT" "Manual release readiness report must summarize real iPhone Photos evidence"
+check_contains "Scripts/generate_manual_release_readiness_report.sh" "MANUAL_AIRPRINT_EXACT_SIZE" "Manual release readiness report must summarize AirPrint exact-size evidence"
+check_contains "Scripts/generate_manual_release_readiness_report.sh" "MANUAL_TESTFLIGHT_BUILD_NUMBER" "Manual release readiness report must summarize selected TestFlight build evidence"
+check_contains "Scripts/generate_manual_release_readiness_report.sh" "APP_STORE_BUILD_NUMBER" "Manual release readiness report must compare the selected App Store build"
+check_contains "Scripts/generate_manual_release_readiness_report.sh" "Scripts/validate_manual_release_verification.sh" "Manual release readiness report must reference the strict validator"
+check_contains "Scripts/generate_manual_release_readiness_report.sh" "redacted" "Manual release readiness report must avoid printing private manual evidence values"
 check_contains "Scripts/prepare_app_store_submission_packet.sh" "manual-release-evidence-form.md" "Submission packet generator must include the manual release evidence form"
 check_contains "Scripts/prepare_app_store_submission_packet.sh" "generate_manual_release_evidence_form.sh" "Submission packet generator must generate the manual release evidence form"
 check_contains "Scripts/prepare_app_store_submission_packet.sh" '\\`manual-release-evidence-form.md\\`' "Submission packet summary must reference the manual release evidence form"
 check_contains "Scripts/verify_release.sh" "manual-evidence-form" "Release verification must expose manual evidence form generation"
+check_contains "Scripts/prepare_app_store_submission_packet.sh" "manual-release-readiness-report.md" "Submission packet generator must include the manual release readiness report"
+check_contains "Scripts/prepare_app_store_submission_packet.sh" "generate_manual_release_readiness_report.sh" "Submission packet generator must generate the manual release readiness report"
+check_contains "Scripts/prepare_app_store_submission_packet.sh" '\\`manual-release-readiness-report.md\\`' "Submission packet summary must reference the manual release readiness report"
+check_contains "Scripts/verify_release.sh" "manual-report" "Release verification must expose manual release readiness report generation"
 check_contains "Scripts/prepare_app_store_submission_packet.sh" "signing-readiness-report.md" "Submission packet generator must include the signing readiness report"
 check_contains "Scripts/prepare_app_store_submission_packet.sh" "generate_signing_readiness_report.sh" "Submission packet generator must generate the signing readiness report"
 check_contains "Scripts/prepare_app_store_submission_packet.sh" '\\`signing-readiness-report.md\\`' "Submission packet summary must reference the signing readiness report"

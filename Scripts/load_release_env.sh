@@ -7,6 +7,37 @@ fi
 release_env_path="${RELEASE_ENV_PATH:-$ROOT_DIR/Config/release.env}"
 
 if [[ -f "$release_env_path" ]]; then
+  _freeprint_release_env_names=(
+    DEVELOPMENT_TEAM_ID
+    ALLOW_PROVISIONING_UPDATES
+    APP_REVIEW_CONTACT_FIRST_NAME
+    APP_REVIEW_CONTACT_LAST_NAME
+    APP_REVIEW_CONTACT_PHONE
+    APP_REVIEW_CONTACT_EMAIL
+    APP_STORE_CONNECT_API_KEY_JSON
+    ASC_KEY_ID
+    ASC_ISSUER_ID
+    ASC_KEY_PATH
+    FASTLANE_USER
+    FASTLANE_ITC_TEAM_ID
+    FASTLANE_ITC_TEAM_NAME
+    CONFIRM_UPLOAD_APP_PRIVACY
+    APP_PRIVACY_SKIP_PUBLISH
+    IPA_PATH
+    TESTFLIGHT_CHANGELOG
+    APP_STORE_BUILD_NUMBER
+    CONFIRM_SUBMIT_FOR_REVIEW
+  )
+  _freeprint_preserved_env_names=()
+  _freeprint_preserved_env_values=()
+  for _freeprint_env_name in "${_freeprint_release_env_names[@]}"; do
+    _freeprint_env_value="${!_freeprint_env_name-}"
+    if [[ -n "$_freeprint_env_value" ]]; then
+      _freeprint_preserved_env_names+=("$_freeprint_env_name")
+      _freeprint_preserved_env_values+=("$_freeprint_env_value")
+    fi
+  done
+
   _freeprint_restore_errexit=0
   _freeprint_restore_allexport=0
   _freeprint_source_log="${TMPDIR:-/tmp}/freeprintstudio-release-env-source.log"
@@ -30,6 +61,12 @@ if [[ -f "$release_env_path" ]]; then
     set -e
   fi
 
+  for ((_freeprint_env_index = 0; _freeprint_env_index < ${#_freeprint_preserved_env_names[@]}; _freeprint_env_index++)); do
+    printf -v "${_freeprint_preserved_env_names[$_freeprint_env_index]}" \
+      '%s' "${_freeprint_preserved_env_values[$_freeprint_env_index]}"
+    export "${_freeprint_preserved_env_names[$_freeprint_env_index]}"
+  done
+
   if [[ "$_freeprint_source_status" -ne 0 ]]; then
     printf 'BLOCKED: Release environment is not a valid shell env file: %s\n' "$release_env_path" >&2
     sed 's/^/  /' "$_freeprint_source_log" >&2
@@ -44,4 +81,10 @@ if [[ -f "$release_env_path" ]]; then
   unset _freeprint_restore_allexport
   unset _freeprint_source_log
   unset _freeprint_source_status
+  unset _freeprint_release_env_names
+  unset _freeprint_preserved_env_names
+  unset _freeprint_preserved_env_values
+  unset _freeprint_env_name
+  unset _freeprint_env_value
+  unset _freeprint_env_index
 fi
