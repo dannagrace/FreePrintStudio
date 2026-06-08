@@ -522,6 +522,7 @@ check_contains "fastlane/Fastfile" "secondary_category: SECONDARY_CATEGORY" "Fas
 check_contains "fastlane/Fastfile" "review_information_options" "Fastfile must prepare App Store review information"
 check_contains "fastlane/Fastfile" "APP_REVIEW_CONTACT_EMAIL" "Fastfile must support private App Review contact details"
 check_contains "fastlane/Fastfile" "Scripts/validate_app_review_contact.sh" "Fastfile must run App Review contact validation before upload or submission"
+check_contains "fastlane/Fastfile" "Scripts/validate_manual_release_verification.sh" "Fastfile must run manual release evidence validation before App Review submission"
 check_contains "fastlane/Fastfile" "Scripts/validate_app_store_questionnaires.sh" "Fastfile must run App Store questionnaire validation before upload or submission"
 check_occurrences_at_least "fastlane/Fastfile" "validate_app_review_contact!" 2 "Fastfile metadata and submit lanes must require App Review contact validation"
 check_occurrences_at_least "fastlane/Fastfile" "validate_app_store_questionnaires!" 4 "Fastfile upload and submit lanes must require App Store questionnaire validation"
@@ -534,6 +535,7 @@ if [[ -x "Scripts/validate_fastlane_release_lanes.sh" ]]; then
   Scripts/validate_fastlane_release_lanes.sh || failures=$((failures + 1))
 fi
 check_contains "Scripts/validate_fastlane_release_lanes.sh" "validate_app_review_contact!" "Fastlane lane validation must check App Review contact gates"
+check_contains "Scripts/validate_fastlane_release_lanes.sh" "validate_manual_release_verification!" "Fastlane lane validation must check manual release evidence gates"
 check_contains "Scripts/validate_fastlane_release_lanes.sh" "validate_app_store_questionnaires!" "Fastlane lane validation must check App Store questionnaire gates"
 check_contains "Scripts/validate_fastlane_release_lanes.sh" "verify_app_store_connect_state!" "Fastlane lane validation must check App Store Connect state preflight gates"
 check_contains "Scripts/validate_fastlane_release_lanes.sh" "add_id_info_tracks_install: false" "Fastlane lane validation must check IDFA submission information"
@@ -869,6 +871,7 @@ check_contains "README.md" "APP_STORE_BUILD_NUMBER=1 Scripts/validate_manual_rel
 check_contains "README.md" "AppStore/release-inputs-worksheet.md" "README must reference the release input worksheet"
 check_contains "README.md" "same APP_STORE_BUILD_NUMBER" "README must document that manual TestFlight evidence must match the selected App Store build"
 check_contains "README.md" "Scripts/run_fastlane.sh ios submit_review" "README must document the guarded App Review submission command"
+check_contains "README.md" "re-runs manual release evidence validation" "README must document that final App Review submission revalidates manual evidence"
 check_contains "README.md" "APP_REVIEW_CONTACT_EMAIL" "README must document private App Review contact variables"
 check_contains "README.md" "Scripts/validate_app_store_metadata.sh" "README must document App Store metadata limit validation"
 check_contains "README.md" "AppStore/commercial-configuration.md" "README must reference the App Store commercial configuration"
@@ -912,6 +915,7 @@ check_contains "AppStore/release-checklist.md" "Scripts/validate_manual_release_
 check_contains "AppStore/release-checklist.md" "AppStore/release-inputs-worksheet.md" "Release checklist must reference the release input worksheet"
 check_contains "AppStore/release-checklist.md" "same APP_STORE_BUILD_NUMBER" "Release checklist must require manual TestFlight evidence for the selected App Store build"
 check_contains "AppStore/release-checklist.md" "Scripts/run_fastlane.sh ios submit_review" "Release checklist must include the guarded App Review submission command"
+check_contains "AppStore/release-checklist.md" "re-runs manual release evidence validation" "Release checklist must document that final App Review submission revalidates manual evidence"
 check_contains "AppStore/release-checklist.md" "APP_REVIEW_CONTACT_EMAIL" "Release checklist must include App Review contact configuration"
 check_contains "AppStore/release-checklist.md" "Scripts/validate_app_store_metadata.sh" "Release checklist must include metadata limit validation"
 check_contains "AppStore/release-checklist.md" "AppStore/commercial-configuration.md" "Release checklist must reference commercial configuration"

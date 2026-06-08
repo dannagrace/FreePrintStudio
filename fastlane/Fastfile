@@ -117,6 +117,13 @@ def validate_app_review_contact!
   )
 end
 
+def validate_manual_release_verification!
+  run_release_script!(
+    "Scripts/validate_manual_release_verification.sh",
+    "Manual real-device, AirPrint, and TestFlight evidence must pass for the selected APP_STORE_BUILD_NUMBER before submitting for review."
+  )
+end
+
 def validate_app_store_export!
   run_release_script!(
     "Scripts/validate_app_store_export.sh",
@@ -245,6 +252,7 @@ platform :ios do
 
     build_number = ENV["APP_STORE_BUILD_NUMBER"].to_s.strip
     UI.user_error!("Set APP_STORE_BUILD_NUMBER to the processed App Store Connect build number before submitting for review") if build_number.empty?
+    validate_manual_release_verification!
     verify_app_store_connect_state!
 
     deliver(

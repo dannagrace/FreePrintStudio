@@ -84,6 +84,8 @@ if source:
         fail("Fastfile must call Scripts/validate_app_store_questionnaires.sh")
     if "Scripts/validate_app_store_export.sh" not in source:
         fail("Fastfile must call Scripts/validate_app_store_export.sh")
+    if "Scripts/validate_manual_release_verification.sh" not in source:
+        fail("Fastfile must call Scripts/validate_manual_release_verification.sh")
 
     metadata = lane_body(source, "metadata")
     if metadata:
@@ -115,6 +117,7 @@ if source:
         require_before("submit_review", submit_review, "validate_app_privacy_details!", "deliver(")
         require_before("submit_review", submit_review, "validate_app_store_questionnaires!", "deliver(")
         require_before("submit_review", submit_review, "validate_app_review_contact!", "deliver(")
+        require_before("submit_review", submit_review, "validate_manual_release_verification!", "deliver(")
         require_before("submit_review", submit_review, "verify_app_store_connect_state!", "deliver(")
         index_of(submit_review, "submission_information_options")
         if "submit_for_review: true" not in submit_review:

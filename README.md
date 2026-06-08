@@ -319,7 +319,7 @@ After the uploaded build is processed in App Store Connect and the store listing
 APP_STORE_BUILD_NUMBER=1 CONFIRM_SUBMIT_FOR_REVIEW=1 Scripts/run_fastlane.sh ios submit_review
 ```
 
-`submit_review` uses manual release (`automatic_release: false`) and submits only the explicit `APP_STORE_BUILD_NUMBER`.
+`submit_review` uses manual release (`automatic_release: false`) and submits only the explicit `APP_STORE_BUILD_NUMBER`. The `submit_review` lane re-runs manual release evidence validation before calling App Store Connect, so the recorded TestFlight evidence must still match the selected build at final submission time.
 
 App Store Connect questionnaire drafts are stored in:
 

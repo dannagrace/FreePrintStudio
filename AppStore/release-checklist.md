@@ -61,7 +61,7 @@
 - App Review self-audit: review `AppStore/review-guideline-audit.md` and resolve every open blocker before submission.
 - Manual release evidence: run `Scripts/bootstrap_release_inputs.sh` and `Scripts/verify_release.sh manual-evidence-form`, record real-device verification in `Config/manual-release-verification.env`, and use the built-in Test Ruler for `MANUAL_AIRPRINT_EXACT_SIZE`, then run `APP_STORE_BUILD_NUMBER=... Scripts/validate_manual_release_verification.sh` with the same APP_STORE_BUILD_NUMBER selected for App Review.
 - App Review submission preflight: after every listing field is final and the selected build has processed, run `APP_STORE_BUILD_NUMBER=... Scripts/preflight_app_review_submission.sh`.
-- Final review submission automation: after the uploaded build has processed and every listing field is final, run `APP_STORE_BUILD_NUMBER=... CONFIRM_SUBMIT_FOR_REVIEW=1 Scripts/run_fastlane.sh ios submit_review`.
+- Final review submission automation: after the uploaded build has processed and every listing field is final, run `APP_STORE_BUILD_NUMBER=... CONFIRM_SUBMIT_FOR_REVIEW=1 Scripts/run_fastlane.sh ios submit_review`; the `submit_review` lane re-runs manual release evidence validation before contacting App Store Connect.
 - Upload screenshots from `fastlane/screenshots/en-US` or through App Store Connect.
 - Host a public privacy policy page and add its URL in App Store Connect.
 - Enter App Privacy details as no data collected, no tracking, no third-party analytics, and no advertising SDKs.
