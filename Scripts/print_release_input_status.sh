@@ -216,6 +216,20 @@ else
   mark_optional "FASTLANE_USER is not configured; App Privacy Details upload may need manual entry"
 fi
 
+printf '\n== Final Submission Guards ==\n'
+if is_set "${APP_STORE_BUILD_NUMBER:-}"; then
+  mark_ok "APP_STORE_BUILD_NUMBER is configured for final App Review submission"
+else
+  mark_missing "APP_STORE_BUILD_NUMBER is missing; set it to the processed App Store Connect build before final App Review submission"
+fi
+
+confirm_submit_for_review="$(trimmed_value "${CONFIRM_SUBMIT_FOR_REVIEW:-}")"
+if [[ "$confirm_submit_for_review" == "1" ]]; then
+  mark_ok "CONFIRM_SUBMIT_FOR_REVIEW is set to 1 for guarded final App Review submission"
+else
+  mark_missing "CONFIRM_SUBMIT_FOR_REVIEW is not set to 1; set only after final preflight passes"
+fi
+
 printf '\n== Manual Release Evidence ==\n'
 manual_source_status=1
 if [[ -f "$manual_evidence_path" ]]; then

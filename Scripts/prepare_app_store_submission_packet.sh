@@ -232,7 +232,7 @@ EOF
 ```sh
 Scripts/verify_release.sh store-ready
 Scripts/bootstrap_release_inputs.sh
-Scripts/print_release_input_status.sh
+Scripts/print_release_input_status.sh --strict
 Scripts/verify_release.sh contact-report
 Scripts/verify_release.sh manual-evidence-form
 Scripts/verify_release.sh manual-report
@@ -333,7 +333,7 @@ cat >"$SUMMARY_PATH" <<EOF
 \`\`\`sh
 Scripts/verify_release.sh store-ready
 Scripts/bootstrap_release_inputs.sh
-Scripts/print_release_input_status.sh
+Scripts/print_release_input_status.sh --strict
 Scripts/verify_release.sh contact-report
 Scripts/verify_release.sh manual-evidence-form
 Scripts/verify_release.sh manual-report

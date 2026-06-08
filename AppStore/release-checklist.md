@@ -12,6 +12,7 @@
 - Run `Scripts/bootstrap_release_inputs.sh` before filling private Apple signing, App Review contact, App Store Connect, and manual verification evidence files.
 - Use `AppStore/release-inputs-worksheet.md` while collecting private Apple Developer signing values, App Review contact details, App Store Connect credentials, and real-device evidence.
 - Run `Scripts/print_release_input_status.sh` to view redacted progress for private release inputs without printing real values.
+- Run `Scripts/print_release_input_status.sh --strict` before release handoff so missing required inputs and final submission guards fail locally.
 - Run `Scripts/bootstrap_release_env.sh` before filling private Apple signing, App Review contact, and App Store Connect values in `Config/release.env`.
 - Run `Scripts/validate_release_env.sh` after creating or editing `Config/release.env`.
 - Run `Scripts/verify_release.sh contact-report` before and after setting App Review contact fields to generate a redacted reviewer contact status report.

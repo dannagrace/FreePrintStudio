@@ -106,7 +106,7 @@ Manual notes:
 
 \`\`\`sh
 Scripts/bootstrap_release_inputs.sh
-Scripts/print_release_input_status.sh
+Scripts/print_release_input_status.sh --strict
 APP_STORE_BUILD_NUMBER=<processed-build> Scripts/validate_manual_release_verification.sh
 APP_STORE_BUILD_NUMBER=<processed-build> Scripts/preflight_app_review_submission.sh
 \`\`\`

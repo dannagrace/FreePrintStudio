@@ -114,7 +114,10 @@ Print a redacted summary of private release input progress without exposing real
 
 ```sh
 Scripts/print_release_input_status.sh
+Scripts/print_release_input_status.sh --strict
 ```
+
+Use the strict form before release handoff so missing final submission guards fail locally.
 
 Generate a redacted App Review contact readiness report before and after setting reviewer contact fields:
 
