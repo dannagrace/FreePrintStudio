@@ -3,6 +3,7 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"
+source Scripts/load_release_env.sh
 
 EVIDENCE_PATH="${MANUAL_RELEASE_VERIFICATION_PATH:-$ROOT_DIR/Config/manual-release-verification.env}"
 MAX_AGE_DAYS="${MANUAL_RELEASE_VERIFICATION_MAX_AGE_DAYS:-45}"

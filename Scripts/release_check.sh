@@ -392,6 +392,41 @@ check_contains "Scripts/validate_manual_release_verification.sh" "MANUAL_AIRPRIN
 check_contains "Scripts/validate_manual_release_verification.sh" "MANUAL_TESTFLIGHT_INSTALL" "Manual verification script must require TestFlight install evidence"
 check_contains "Scripts/validate_manual_release_verification.sh" "MANUAL_TESTFLIGHT_BUILD_NUMBER" "Manual verification script must require the tested TestFlight build number"
 check_contains "Scripts/validate_manual_release_verification.sh" "APP_STORE_BUILD_NUMBER" "Manual verification script must compare tested TestFlight build with the selected App Store build"
+check_contains "Scripts/validate_manual_release_verification.sh" "source Scripts/load_release_env.sh" "Manual verification script must load release.env before comparing the selected App Store build"
+manual_release_selected_build_test_dir="$(mktemp -d)"
+manual_release_selected_build_env="$manual_release_selected_build_test_dir/release.env"
+manual_release_selected_build_evidence="$manual_release_selected_build_test_dir/manual-release-verification.env"
+manual_release_selected_build_log="$manual_release_selected_build_test_dir/manual-release-verification.log"
+today="$(date +%F)"
+printf '%s\n' 'APP_STORE_BUILD_NUMBER=42' >"$manual_release_selected_build_env"
+cat >"$manual_release_selected_build_evidence" <<EOF
+MANUAL_VERIFIER_NAME="Release Tester"
+MANUAL_REAL_IPHONE_MODEL="iPhone 15"
+MANUAL_REAL_IPHONE_IOS_VERSION="18.5"
+MANUAL_REAL_IPHONE_TEST_DATE="$today"
+MANUAL_REAL_IPHONE_PHOTOS_IMPORT="pass"
+MANUAL_REAL_IPHONE_PDF_EXPORT="pass"
+MANUAL_REAL_IPHONE_PRINT_SHEET="pass"
+MANUAL_AIRPRINT_TEST_DATE="$today"
+MANUAL_AIRPRINT_PRINTER="Production AirPrint validation"
+MANUAL_AIRPRINT_EXACT_SIZE="pass"
+MANUAL_TESTFLIGHT_BUILD_NUMBER="41"
+MANUAL_TESTFLIGHT_DEVICE="iPhone 15"
+MANUAL_TESTFLIGHT_TEST_DATE="$today"
+MANUAL_TESTFLIGHT_INSTALL="pass"
+MANUAL_TESTFLIGHT_PRINT_WORKFLOW="pass"
+EOF
+if env -u APP_STORE_BUILD_NUMBER \
+  RELEASE_ENV_PATH="$manual_release_selected_build_env" \
+  MANUAL_RELEASE_VERIFICATION_PATH="$manual_release_selected_build_evidence" \
+  Scripts/validate_manual_release_verification.sh >"$manual_release_selected_build_log" 2>&1; then
+  printf 'FAIL: Manual verification must compare TestFlight evidence with APP_STORE_BUILD_NUMBER loaded from release.env\n'
+  failures=$((failures + 1))
+elif ! grep -q 'does not match selected APP_STORE_BUILD_NUMBER 42' "$manual_release_selected_build_log"; then
+  printf 'FAIL: Manual verification mismatch should name the selected APP_STORE_BUILD_NUMBER loaded from release.env\n'
+  failures=$((failures + 1))
+fi
+rm -rf "$manual_release_selected_build_test_dir"
 check_contains "Scripts/check_app_store_readiness.sh" "validate_manual_release_verification.sh" "Readiness audit must validate manual release evidence"
 check_contains "Scripts/verify_release.sh" "manual-verification" "Release verification must expose manual release evidence validation"
 check_file "Scripts/load_release_env.sh" "Release environment loader script is required"
