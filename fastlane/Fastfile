@@ -1,3 +1,5 @@
+require "json"
+require "pathname"
 require "shellwords"
 
 PROJECT_ROOT = File.expand_path("..", __dir__)
@@ -13,7 +15,37 @@ def app_store_connect_credentials(required: false)
   api_key_json = ENV["APP_STORE_CONNECT_API_KEY_JSON"].to_s
   unless api_key_json.empty?
     UI.user_error!("APP_STORE_CONNECT_API_KEY_JSON does not exist: #{api_key_json}") if required && !File.file?(api_key_json)
-    return File.file?(api_key_json) ? { api_key_path: api_key_json } : {}
+    return {} unless File.file?(api_key_json)
+
+    api_key_json_path = Pathname.new(api_key_json).expand_path
+    payload = JSON.parse(File.read(api_key_json_path))
+    key_filepath = payload["key_filepath"].to_s.strip
+    if key_filepath.empty?
+      key_content = payload["key"].to_s
+      UI.user_error!("APP_STORE_CONNECT_API_KEY_JSON is missing key or key_filepath") if required && key_content.empty?
+      return {
+        api_key: app_store_connect_api_key(
+          key_id: payload.fetch("key_id"),
+          issuer_id: payload["issuer_id"],
+          key_content: key_content,
+          is_key_content_base64: payload["is_key_content_base64"] || false,
+          duration: payload["duration"] || 1200,
+          in_house: payload["in_house"] || false
+        )
+      }
+    end
+
+    raw_key_path = Pathname.new(key_filepath)
+    raw_key_path = api_key_json_path.dirname + raw_key_path unless raw_key_path.absolute?
+    {
+      api_key: app_store_connect_api_key(
+        key_id: payload.fetch("key_id"),
+        issuer_id: payload["issuer_id"],
+        key_filepath: raw_key_path.expand_path.to_s,
+        duration: payload["duration"] || 1200,
+        in_house: payload["in_house"] || false
+      )
+    }
   end
 
   key_id = ENV["ASC_KEY_ID"].to_s
