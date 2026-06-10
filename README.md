@@ -220,7 +220,7 @@ Record and validate manual real-device, AirPrint, and TestFlight evidence before
 ```sh
 Scripts/bootstrap_release_inputs.sh
 Scripts/verify_release.sh manual-evidence-form
-APP_STORE_BUILD_NUMBER=1 Scripts/validate_manual_release_verification.sh
+APP_STORE_BUILD_NUMBER=<processed-build> Scripts/validate_manual_release_verification.sh
 ```
 
 When validating the final App Review build, run the manual evidence check with the same APP_STORE_BUILD_NUMBER that will be submitted so the tested TestFlight build cannot drift from the selected App Store build.
@@ -302,13 +302,13 @@ If the exported IPA lives outside the default `build/AppStoreExport/` folder, pa
 After the build has processed in App Store Connect, verify the app record, version, and selected TestFlight build:
 
 ```sh
-APP_STORE_BUILD_NUMBER=1 Scripts/run_fastlane.sh ios app_store_connect_state
+APP_STORE_BUILD_NUMBER=<processed-build> Scripts/run_fastlane.sh ios app_store_connect_state
 ```
 
 Before submitting for App Review, run the final preflight without triggering submission:
 
 ```sh
-APP_STORE_BUILD_NUMBER=1 Scripts/preflight_app_review_submission.sh
+APP_STORE_BUILD_NUMBER=<processed-build> Scripts/preflight_app_review_submission.sh
 ```
 
 The preflight requires `MANUAL_TESTFLIGHT_BUILD_NUMBER` in `Config/manual-release-verification.env` to match the same APP_STORE_BUILD_NUMBER.
@@ -316,7 +316,7 @@ The preflight requires `MANUAL_TESTFLIGHT_BUILD_NUMBER` in `Config/manual-releas
 After the uploaded build is processed in App Store Connect and the store listing, privacy details, age rating, screenshots, and review contact details are final, submit the selected build for App Review:
 
 ```sh
-APP_STORE_BUILD_NUMBER=1 CONFIRM_SUBMIT_FOR_REVIEW=1 Scripts/run_fastlane.sh ios submit_review
+APP_STORE_BUILD_NUMBER=<processed-build> CONFIRM_SUBMIT_FOR_REVIEW=1 Scripts/run_fastlane.sh ios submit_review
 ```
 
 `submit_review` uses manual release (`automatic_release: false`) and submits only the explicit `APP_STORE_BUILD_NUMBER`. The `submit_review` lane re-runs manual release evidence validation before calling App Store Connect, so the recorded TestFlight evidence must still match the selected build at final submission time.

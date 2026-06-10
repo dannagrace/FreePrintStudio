@@ -104,10 +104,10 @@ TestFlight evidence:
 The TestFlight evidence must be for the same APP_STORE_BUILD_NUMBER selected for App Review. Validate with:
 
 ```sh
-APP_STORE_BUILD_NUMBER=1 Scripts/validate_manual_release_verification.sh
+APP_STORE_BUILD_NUMBER=<processed-build> Scripts/validate_manual_release_verification.sh
 ```
 
-Replace `1` with the processed build selected in App Store Connect.
+Replace `<processed-build>` with the processed build selected in App Store Connect.
 
 ## Final Submission Guards
 
@@ -119,13 +119,13 @@ Set these only after the signed build is uploaded, processed, and selected for A
 Run the final preflight before submission:
 
 ```sh
-APP_STORE_BUILD_NUMBER=1 Scripts/preflight_app_review_submission.sh
+APP_STORE_BUILD_NUMBER=<processed-build> Scripts/preflight_app_review_submission.sh
 ```
 
 Submit only after the preflight passes:
 
 ```sh
-APP_STORE_BUILD_NUMBER=1 CONFIRM_SUBMIT_FOR_REVIEW=1 Scripts/run_fastlane.sh ios submit_review
+APP_STORE_BUILD_NUMBER=<processed-build> CONFIRM_SUBMIT_FOR_REVIEW=1 Scripts/run_fastlane.sh ios submit_review
 ```
 
 ## Readiness Audit

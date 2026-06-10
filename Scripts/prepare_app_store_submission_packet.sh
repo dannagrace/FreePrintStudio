@@ -245,10 +245,10 @@ Scripts/preflight_app_store_archive.sh
 DEVELOPMENT_TEAM_ID=YOURTEAMID ALLOW_PROVISIONING_UPDATES=1 Scripts/archive_app_store.sh
 Scripts/preflight_testflight_upload.sh
 ASC_KEY_ID=XXXXXXXXXX ASC_ISSUER_ID=00000000-0000-0000-0000-000000000000 ASC_KEY_PATH=/secure/AuthKey_XXXXXXXXXX.p8 Scripts/run_fastlane.sh ios upload_testflight
-APP_STORE_BUILD_NUMBER=1 Scripts/run_fastlane.sh ios app_store_connect_state
-APP_STORE_BUILD_NUMBER=1 Scripts/validate_manual_release_verification.sh
-APP_STORE_BUILD_NUMBER=1 Scripts/preflight_app_review_submission.sh
-APP_STORE_BUILD_NUMBER=1 CONFIRM_SUBMIT_FOR_REVIEW=1 Scripts/run_fastlane.sh ios submit_review
+APP_STORE_BUILD_NUMBER=<processed-build> Scripts/run_fastlane.sh ios app_store_connect_state
+APP_STORE_BUILD_NUMBER=<processed-build> Scripts/validate_manual_release_verification.sh
+APP_STORE_BUILD_NUMBER=<processed-build> Scripts/preflight_app_review_submission.sh
+APP_STORE_BUILD_NUMBER=<processed-build> CONFIRM_SUBMIT_FOR_REVIEW=1 Scripts/run_fastlane.sh ios submit_review
 ```
 
 Keep `Config/release.env` and App Store Connect private keys out of git.
@@ -346,10 +346,10 @@ Scripts/preflight_app_store_archive.sh
 DEVELOPMENT_TEAM_ID=YOURTEAMID ALLOW_PROVISIONING_UPDATES=1 Scripts/archive_app_store.sh
 Scripts/preflight_testflight_upload.sh
 ASC_KEY_ID=XXXXXXXXXX ASC_ISSUER_ID=00000000-0000-0000-0000-000000000000 ASC_KEY_PATH=/secure/AuthKey_XXXXXXXXXX.p8 Scripts/run_fastlane.sh ios upload_testflight
-APP_STORE_BUILD_NUMBER=1 Scripts/run_fastlane.sh ios app_store_connect_state
-APP_STORE_BUILD_NUMBER=1 Scripts/validate_manual_release_verification.sh
-APP_STORE_BUILD_NUMBER=1 Scripts/preflight_app_review_submission.sh
-APP_STORE_BUILD_NUMBER=1 CONFIRM_SUBMIT_FOR_REVIEW=1 Scripts/run_fastlane.sh ios submit_review
+APP_STORE_BUILD_NUMBER=<processed-build> Scripts/run_fastlane.sh ios app_store_connect_state
+APP_STORE_BUILD_NUMBER=<processed-build> Scripts/validate_manual_release_verification.sh
+APP_STORE_BUILD_NUMBER=<processed-build> Scripts/preflight_app_review_submission.sh
+APP_STORE_BUILD_NUMBER=<processed-build> CONFIRM_SUBMIT_FOR_REVIEW=1 Scripts/run_fastlane.sh ios submit_review
 \`\`\`
 
 The readiness audit may contain blockers until Apple Developer signing assets, App Store Connect credentials, and the processed build are available.
