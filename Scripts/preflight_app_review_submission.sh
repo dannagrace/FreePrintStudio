@@ -53,4 +53,4 @@ if (( failures > 0 )); then
 fi
 
 printf 'App Review submission preflight passed.\n'
-printf 'Next: CONFIRM_SUBMIT_FOR_REVIEW=1 Scripts/run_fastlane.sh ios submit_review\n'
+printf 'Next: APP_STORE_BUILD_NUMBER=%s CONFIRM_SUBMIT_FOR_REVIEW=1 Scripts/run_fastlane.sh ios submit_review\n' "$APP_STORE_BUILD_NUMBER"

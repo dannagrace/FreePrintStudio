@@ -850,6 +850,7 @@ check_contains "Scripts/preflight_app_review_submission.sh" "Scripts/check_app_s
 check_contains "Scripts/preflight_app_review_submission.sh" "Scripts/check_app_store_connect_state.sh" "App Review preflight must require a processed selected build"
 check_contains "Scripts/preflight_app_review_submission.sh" "APP_STORE_BUILD_NUMBER" "App Review preflight must require an explicit selected build number"
 check_contains "Scripts/preflight_app_review_submission.sh" "App Review submission preflight passed" "App Review preflight must print a clear success message"
+check_contains "Scripts/preflight_app_review_submission.sh" "APP_STORE_BUILD_NUMBER=%s CONFIRM_SUBMIT_FOR_REVIEW=1 Scripts/run_fastlane.sh ios submit_review" "App Review preflight success command must submit the selected App Store build explicitly"
 check_contains "Scripts/verify_release.sh" "review-preflight" "Release verification must expose the App Review submission preflight command"
 check_contains "README.md" "Scripts/run_fastlane.sh ios upload_testflight" "README must document the TestFlight upload command"
 check_contains "README.md" "Scripts/preflight_testflight_upload.sh" "README must document the TestFlight upload preflight command"
