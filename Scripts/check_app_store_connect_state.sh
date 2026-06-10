@@ -136,12 +136,17 @@ end
 def api_token_from_env
   api_key_json = ENV.fetch("APP_STORE_CONNECT_API_KEY_JSON", "").strip
   unless api_key_json.empty?
-    payload = JSON.parse(File.read(api_key_json))
+    api_key_json_path = Pathname.new(api_key_json).expand_path
+    payload = JSON.parse(File.read(api_key_json_path))
     if payload["key_filepath"].to_s.strip.empty?
       return Spaceship::ConnectAPI::Token.from(hash: payload)
     end
 
-    key_path = Pathname.new(payload.fetch("key_filepath")).expand_path.to_s
+    raw_key_path = Pathname.new(payload.fetch("key_filepath"))
+    unless raw_key_path.absolute?
+      raw_key_path = api_key_json_path.dirname + raw_key_path
+    end
+    key_path = raw_key_path.expand_path.to_s
     return Spaceship::ConnectAPI::Token.create(
       key_id: payload.fetch("key_id"),
       issuer_id: payload["issuer_id"],

@@ -934,6 +934,7 @@ check_contains "Scripts/check_app_store_connect_state.sh" "Spaceship::ConnectAPI
 check_contains "Scripts/check_app_store_connect_state.sh" "Spaceship::ConnectAPI::Build.all" "App Store Connect state preflight must inspect TestFlight builds"
 check_contains "Scripts/check_app_store_connect_state.sh" "APP_STORE_BUILD_NUMBER" "App Store Connect state preflight must support a selected build number"
 check_contains "Scripts/check_app_store_connect_state.sh" "APP_STORE_CONNECT_SKIP_BUILD_CHECK" "App Store Connect state preflight must support app/version-only checks before TestFlight upload"
+check_contains "Scripts/check_app_store_connect_state.sh" "api_key_json_path.dirname" "App Store Connect state preflight must resolve API JSON relative key_filepath values from the JSON file directory"
 check_file "Scripts/preflight_testflight_upload.sh" "TestFlight upload preflight script is required"
 if [[ ! -x "Scripts/preflight_testflight_upload.sh" ]]; then
   printf 'FAIL: TestFlight upload preflight script must be executable (Scripts/preflight_testflight_upload.sh)\n'
