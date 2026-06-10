@@ -72,7 +72,7 @@ run_step status_privacy_surface "Scripts/validate_privacy_surface.sh" Scripts/va
 run_step status_app_privacy "Scripts/validate_app_privacy_details.sh" Scripts/validate_app_privacy_details.sh
 run_step status_questionnaires "Scripts/validate_app_store_questionnaires.sh" Scripts/validate_app_store_questionnaires.sh
 run_step status_review_contact "Scripts/validate_app_review_contact.sh" Scripts/validate_app_review_contact.sh
-run_step status_manual_evidence "APP_STORE_BUILD_NUMBER=<processed-build> Scripts/validate_manual_release_verification.sh" Scripts/validate_manual_release_verification.sh
+run_step status_manual_evidence "APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/validate_manual_release_verification.sh" Scripts/validate_manual_release_verification.sh
 run_step status_asc_credentials "Scripts/check_app_store_connect_credentials.sh" Scripts/check_app_store_connect_credentials.sh
 
 if [[ -n "${APP_STORE_BUILD_NUMBER:-}" ]]; then
@@ -86,7 +86,7 @@ else
 fi
 
 if [[ "$status_asc_credentials" == "Pass" && "$selected_build_ready" == "1" ]]; then
-  run_step status_asc_state "APP_STORE_BUILD_NUMBER=<processed-build> Scripts/check_app_store_connect_state.sh" Scripts/check_app_store_connect_state.sh
+  run_step status_asc_state "APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/check_app_store_connect_state.sh" Scripts/check_app_store_connect_state.sh
 else
   status_asc_state='Blocked; configure App Store Connect credentials and `APP_STORE_BUILD_NUMBER` before selected-build state can be checked'
   blocker_count=$((blocker_count + 1))
@@ -97,8 +97,8 @@ cat >"$output_path" <<EOF
 
 - Generated At: $generated_at
 - This report is redacted: it does not print App Review contact values, Apple IDs, App Store Connect key paths, private key contents, manual evidence values, or raw validator output.
-- Final preflight command: \`APP_STORE_BUILD_NUMBER=<processed-build> Scripts/preflight_app_review_submission.sh\`
-- Final submission command: \`APP_STORE_BUILD_NUMBER=<processed-build> CONFIRM_SUBMIT_FOR_REVIEW=1 Scripts/run_fastlane.sh ios submit_review\`
+- Final preflight command: \`APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/preflight_app_review_submission.sh\`
+- Final submission command: \`APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER CONFIRM_SUBMIT_FOR_REVIEW=1 Scripts/run_fastlane.sh ios submit_review\`
 
 ## Summary
 
@@ -123,7 +123,7 @@ cat >"$output_path" <<EOF
 | Check | Command | Status |
 | --- | --- | --- |
 | App Review contact | \`Scripts/validate_app_review_contact.sh\` | $status_review_contact |
-| Manual real-device, AirPrint, and TestFlight evidence | \`APP_STORE_BUILD_NUMBER=<processed-build> Scripts/validate_manual_release_verification.sh\` | $status_manual_evidence |
+| Manual real-device, AirPrint, and TestFlight evidence | \`APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/validate_manual_release_verification.sh\` | $status_manual_evidence |
 
 ## App Store Connect Checks
 
@@ -131,14 +131,14 @@ cat >"$output_path" <<EOF
 | --- | --- | --- |
 | API credentials | \`Scripts/check_app_store_connect_credentials.sh\` | $status_asc_credentials |
 | Selected processed build value | \`APP_STORE_BUILD_NUMBER\` | $status_selected_build |
-| App record, version, and selected build state | \`APP_STORE_BUILD_NUMBER=<processed-build> Scripts/check_app_store_connect_state.sh\` | $status_asc_state |
+| App record, version, and selected build state | \`APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/check_app_store_connect_state.sh\` | $status_asc_state |
 
 ## Required Next Actions
 
 - [ ] Resolve every blocking row above.
-- [ ] Run \`APP_STORE_BUILD_NUMBER=<processed-build> Scripts/preflight_app_review_submission.sh\`.
+- [ ] Run \`APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/preflight_app_review_submission.sh\`.
 - [ ] Submit only after the preflight passes and the selected processed build matches the TestFlight evidence build.
-- [ ] Run \`APP_STORE_BUILD_NUMBER=<processed-build> CONFIRM_SUBMIT_FOR_REVIEW=1 Scripts/run_fastlane.sh ios submit_review\` for the final guarded submission.
+- [ ] Run \`APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER CONFIRM_SUBMIT_FOR_REVIEW=1 Scripts/run_fastlane.sh ios submit_review\` for the final guarded submission.
 EOF
 
 printf 'App Review submission readiness report generated: %s\n' "$output_path"

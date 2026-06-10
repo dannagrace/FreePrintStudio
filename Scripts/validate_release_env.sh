@@ -32,6 +32,7 @@ PLACEHOLDER_VALUES=(
   "/secure/AuthKey_XXXXXXXXXX.p8"
   "123456789"
   "Your Team Name"
+  "PROCESSED_BUILD_NUMBER"
 )
 
 tracked_env_names=(

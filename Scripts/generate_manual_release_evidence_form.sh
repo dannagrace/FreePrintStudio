@@ -31,7 +31,7 @@ cat >"$output_path" <<EOF
 
 - Generated At: $generated_at
 - Fill Private Evidence In: \`Config/manual-release-verification.env\`
-- Validation Command: \`APP_STORE_BUILD_NUMBER=<processed-build> Scripts/validate_manual_release_verification.sh\`
+- Validation Command: \`APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/validate_manual_release_verification.sh\`
 - Status Command: \`Scripts/print_release_input_status.sh --strict\`
 
 Use this form while performing the final real-device checks. Do not write phone
@@ -107,8 +107,8 @@ Manual notes:
 \`\`\`sh
 Scripts/bootstrap_release_inputs.sh
 Scripts/print_release_input_status.sh --strict
-APP_STORE_BUILD_NUMBER=<processed-build> Scripts/validate_manual_release_verification.sh
-APP_STORE_BUILD_NUMBER=<processed-build> Scripts/preflight_app_review_submission.sh
+APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/validate_manual_release_verification.sh
+APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/preflight_app_review_submission.sh
 \`\`\`
 EOF
 

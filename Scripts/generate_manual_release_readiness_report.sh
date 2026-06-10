@@ -247,7 +247,7 @@ cat >"$output_path" <<EOF
 - Evidence file configured: $(if [[ "$evidence_file_exists" == "1" ]]; then printf 'Yes'; else printf 'No'; fi)
 - Evidence file parses as shell env: $(if [[ "$evidence_source_valid" == "1" ]]; then printf 'Yes'; else printf 'No or not checked'; fi)
 - Maximum evidence age: $max_age_days day(s)
-- Strict validation command: \`APP_STORE_BUILD_NUMBER=<processed-build> Scripts/validate_manual_release_verification.sh\`
+- Strict validation command: \`APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/validate_manual_release_verification.sh\`
 - Evidence form command: \`Scripts/verify_release.sh manual-evidence-form\`
 - Status command: \`Scripts/print_release_input_status.sh --strict\`
 
@@ -295,8 +295,8 @@ cat >"$output_path" <<EOF
 - [ ] Run \`Scripts/bootstrap_release_inputs.sh\` to create the git-ignored evidence file if it is missing.
 - [ ] Fill \`Config/manual-release-verification.env\` only after real iPhone, AirPrint, and TestFlight checks.
 - [ ] Set \`APP_STORE_BUILD_NUMBER\` to the processed build selected in App Store Connect.
-- [ ] Run \`APP_STORE_BUILD_NUMBER=<processed-build> Scripts/validate_manual_release_verification.sh\`.
-- [ ] Run \`APP_STORE_BUILD_NUMBER=<processed-build> Scripts/preflight_app_review_submission.sh\`.
+- [ ] Run \`APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/validate_manual_release_verification.sh\`.
+- [ ] Run \`APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/preflight_app_review_submission.sh\`.
 EOF
 
 printf 'Manual release readiness report generated: %s\n' "$output_path"

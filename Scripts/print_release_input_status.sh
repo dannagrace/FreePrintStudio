@@ -291,7 +291,7 @@ if is_set "${APP_STORE_BUILD_NUMBER:-}" && is_set "${MANUAL_TESTFLIGHT_BUILD_NUM
 fi
 
 printf '\n== Next Commands ==\n'
-selected_app_store_build="${APP_STORE_BUILD_NUMBER:-<processed-build>}"
+selected_app_store_build="${APP_STORE_BUILD_NUMBER:-PROCESSED_BUILD_NUMBER}"
 printf 'Scripts/bootstrap_release_inputs.sh\n'
 printf 'Scripts/validate_release_env.sh\n'
 printf 'APP_STORE_BUILD_NUMBER=%s Scripts/validate_manual_release_verification.sh\n' "$selected_app_store_build"

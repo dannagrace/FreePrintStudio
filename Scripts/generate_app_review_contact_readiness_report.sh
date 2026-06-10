@@ -186,7 +186,7 @@ cat >"$output_path" <<EOF
 - [ ] Fill \`APP_REVIEW_CONTACT_FIRST_NAME\`, \`APP_REVIEW_CONTACT_LAST_NAME\`, \`APP_REVIEW_CONTACT_PHONE\`, and \`APP_REVIEW_CONTACT_EMAIL\` in the git-ignored \`Config/release.env\` file or shell environment.
 - [ ] Run \`Scripts/validate_app_review_contact.sh\`.
 - [ ] Run \`Scripts/run_fastlane.sh ios metadata\` only after the strict contact validator passes if metadata upload is automated.
-- [ ] Run \`APP_STORE_BUILD_NUMBER=<processed-build> Scripts/preflight_app_review_submission.sh\` before final review submission.
+- [ ] Run \`APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/preflight_app_review_submission.sh\` before final review submission.
 EOF
 
 printf 'App Review contact readiness report generated: %s\n' "$output_path"

@@ -375,8 +375,9 @@ check_contains "AppStore/release-inputs-worksheet.md" "Apple Distribution" "Rele
 check_contains "AppStore/release-inputs-worksheet.md" "MANUAL_AIRPRINT_EXACT_SIZE" "Release input worksheet must cover AirPrint exact-size evidence"
 check_contains "AppStore/release-inputs-worksheet.md" "same APP_STORE_BUILD_NUMBER" "Release input worksheet must require evidence for the selected App Store build"
 check_not_contains "AppStore/release-inputs-worksheet.md" "APP_STORE_BUILD_NUMBER=1" "Release input worksheet must not hard-code a selected App Store build number"
-check_contains "AppStore/release-inputs-worksheet.md" "APP_STORE_BUILD_NUMBER=<processed-build> Scripts/validate_manual_release_verification.sh" "Release input worksheet must validate manual evidence against the selected App Store build"
-check_contains "AppStore/release-inputs-worksheet.md" "APP_STORE_BUILD_NUMBER=<processed-build> CONFIRM_SUBMIT_FOR_REVIEW=1 Scripts/run_fastlane.sh ios submit_review" "Release input worksheet must submit the selected App Store build"
+check_not_contains "AppStore/release-inputs-worksheet.md" "APP_STORE_BUILD_NUMBER=<" "Release input worksheet must use shell-safe selected build placeholders"
+check_contains "AppStore/release-inputs-worksheet.md" "APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/validate_manual_release_verification.sh" "Release input worksheet must validate manual evidence against the selected App Store build"
+check_contains "AppStore/release-inputs-worksheet.md" "APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER CONFIRM_SUBMIT_FOR_REVIEW=1 Scripts/run_fastlane.sh ios submit_review" "Release input worksheet must submit the selected App Store build"
 check_file "Scripts/validate_manual_release_verification.sh" "Manual release verification evidence validation script is required"
 if [[ ! -x "Scripts/validate_manual_release_verification.sh" ]]; then
   printf 'FAIL: Manual release verification script must be executable (Scripts/validate_manual_release_verification.sh)\n'
@@ -432,7 +433,8 @@ check_contains "Scripts/bootstrap_release_inputs.sh" "Scripts/bootstrap_release_
 check_contains "Scripts/bootstrap_release_inputs.sh" "Config/manual-release-verification.env" "Combined private release input bootstrap must create the manual verification evidence file"
 check_contains "Scripts/bootstrap_release_inputs.sh" "git check-ignore" "Combined private release input bootstrap must verify private files stay ignored"
 check_contains "Scripts/bootstrap_release_inputs.sh" "chmod 600" "Combined private release input bootstrap must protect private release input files"
-check_contains "Scripts/bootstrap_release_inputs.sh" "APP_STORE_BUILD_NUMBER=<processed-build> Scripts/validate_manual_release_verification.sh" "Combined private release input bootstrap must validate manual evidence against the selected App Store build"
+check_not_contains "Scripts/bootstrap_release_inputs.sh" "APP_STORE_BUILD_NUMBER=<" "Combined private release input bootstrap must use shell-safe selected build placeholders"
+check_contains "Scripts/bootstrap_release_inputs.sh" "APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/validate_manual_release_verification.sh" "Combined private release input bootstrap must validate manual evidence against the selected App Store build"
 check_file "Scripts/print_release_input_status.sh" "Redacted release input status script is required"
 if [[ ! -x "Scripts/print_release_input_status.sh" ]]; then
   printf 'FAIL: Redacted release input status script must be executable (Scripts/print_release_input_status.sh)\n'
@@ -449,7 +451,22 @@ check_contains "Scripts/print_release_input_status.sh" "git check-ignore" "Relea
 check_contains "Scripts/print_release_input_status.sh" "--strict" "Release input status must offer a strict mode for handoff gating"
 check_contains "Scripts/print_release_input_status.sh" "does not print private values" "Release input status must explicitly avoid printing private values"
 check_contains "Scripts/print_release_input_status.sh" "APP_STORE_BUILD_NUMBER=%s Scripts/validate_manual_release_verification.sh" "Release input status next commands must validate manual evidence against the selected App Store build"
-check_contains "Scripts/print_release_input_status.sh" "<processed-build>" "Release input status must show a selected-build placeholder when APP_STORE_BUILD_NUMBER is missing"
+check_not_contains "Scripts/print_release_input_status.sh" "APP_STORE_BUILD_NUMBER:-<" "Release input status must use a shell-safe selected-build placeholder when APP_STORE_BUILD_NUMBER is missing"
+check_contains "Scripts/print_release_input_status.sh" "PROCESSED_BUILD_NUMBER" "Release input status must show a selected-build placeholder when APP_STORE_BUILD_NUMBER is missing"
+for selected_build_handoff_path in \
+  README.md \
+  AppStore/release-inputs-worksheet.md \
+  Scripts/bootstrap_release_inputs.sh \
+  Scripts/print_release_input_status.sh \
+  Scripts/generate_app_store_connect_readiness_report.sh \
+  Scripts/generate_manual_release_readiness_report.sh \
+  Scripts/prepare_app_store_submission_packet.sh \
+  Scripts/generate_app_review_submission_readiness_report.sh \
+  Scripts/generate_manual_release_evidence_form.sh \
+  Scripts/generate_app_review_contact_readiness_report.sh
+do
+  check_not_contains "$selected_build_handoff_path" "APP_STORE_BUILD_NUMBER=<" "Release handoff commands must use shell-safe selected build placeholders"
+done
 release_input_status_external_dir="$(mktemp -d)"
 release_input_status_external_env="$release_input_status_external_dir/release.env"
 release_input_status_external_manual="$release_input_status_external_dir/manual-release-verification.env"
@@ -480,6 +497,18 @@ fi
 check_contains "Scripts/validate_release_env.sh" "PLACEHOLDER_VALUES" "Release environment validation must detect known placeholder values"
 check_contains "Scripts/validate_release_env.sh" "APP_REVIEW_CONTACT_EMAIL" "Release environment validation must check App Review contact placeholders"
 check_contains "Scripts/validate_release_env.sh" "FASTLANE_USER" "Release environment validation must check Fastlane Apple ID placeholders"
+check_contains "Scripts/validate_release_env.sh" "PROCESSED_BUILD_NUMBER" "Release environment validation must reject the selected-build placeholder"
+release_env_placeholder_test_dir="$(mktemp -d)"
+release_env_placeholder_test_file="$release_env_placeholder_test_dir/release.env"
+printf 'APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER\n' >"$release_env_placeholder_test_file"
+if RELEASE_ENV_PATH="$release_env_placeholder_test_file" Scripts/validate_release_env.sh >/tmp/freeprintstudio-placeholder-release-env.log 2>&1; then
+  printf 'FAIL: Release environment validation must reject PROCESSED_BUILD_NUMBER placeholder values\n'
+  failures=$((failures + 1))
+elif ! grep -q 'APP_STORE_BUILD_NUMBER still uses a placeholder value' /tmp/freeprintstudio-placeholder-release-env.log; then
+  printf 'FAIL: Release environment placeholder validation must identify APP_STORE_BUILD_NUMBER placeholder values\n'
+  failures=$((failures + 1))
+fi
+rm -rf "$release_env_placeholder_test_dir"
 check_contains "Scripts/check_app_store_readiness.sh" "source Scripts/load_release_env.sh" "Readiness audit must load Config/release.env"
 check_contains "Scripts/check_app_store_readiness.sh" "validate_release_env.sh" "Readiness audit must reject placeholder release environment values"
 check_contains "Scripts/check_app_store_connect_credentials.sh" "source Scripts/load_release_env.sh" "Credential audit must load Config/release.env"
@@ -875,8 +904,9 @@ check_contains "README.md" "Scripts/check_code_signing_assets.sh" "README must d
 check_contains "README.md" "Scripts/validate_app_review_contact.sh" "README must document App Review contact validation"
 check_contains "README.md" "Scripts/validate_manual_release_verification.sh" "README must document manual release verification evidence validation"
 check_not_contains "README.md" "APP_STORE_BUILD_NUMBER=1" "README must not hard-code a selected App Store build number in release handoff commands"
-check_contains "README.md" "APP_STORE_BUILD_NUMBER=<processed-build> Scripts/validate_manual_release_verification.sh" "README must show manual release evidence validation against the selected App Store build"
-check_contains "README.md" "APP_STORE_BUILD_NUMBER=<processed-build> CONFIRM_SUBMIT_FOR_REVIEW=1 Scripts/run_fastlane.sh ios submit_review" "README must show final submission against the selected App Store build"
+check_not_contains "README.md" "APP_STORE_BUILD_NUMBER=<" "README must use shell-safe selected build placeholders in release handoff commands"
+check_contains "README.md" "APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/validate_manual_release_verification.sh" "README must show manual release evidence validation against the selected App Store build"
+check_contains "README.md" "APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER CONFIRM_SUBMIT_FOR_REVIEW=1 Scripts/run_fastlane.sh ios submit_review" "README must show final submission against the selected App Store build"
 check_contains "README.md" "AppStore/release-inputs-worksheet.md" "README must reference the release input worksheet"
 check_contains "README.md" "same APP_STORE_BUILD_NUMBER" "README must document that manual TestFlight evidence must match the selected App Store build"
 check_contains "README.md" "Scripts/run_fastlane.sh ios submit_review" "README must document the guarded App Review submission command"
@@ -966,9 +996,10 @@ check_contains "Scripts/prepare_app_store_submission_packet.sh" "Scripts/preflig
 check_contains "Scripts/prepare_app_store_submission_packet.sh" "Scripts/preflight_app_review_submission.sh" "Submission packet action items must include the App Review submission preflight"
 check_contains "Scripts/prepare_app_store_submission_packet.sh" "Scripts/validate_manual_release_verification.sh" "Submission packet action items must include manual release verification evidence validation"
 check_not_contains "Scripts/prepare_app_store_submission_packet.sh" "APP_STORE_BUILD_NUMBER=1" "Submission packet command order must not hard-code a selected App Store build number"
-check_contains "Scripts/prepare_app_store_submission_packet.sh" "APP_STORE_BUILD_NUMBER=<processed-build> Scripts/run_fastlane.sh ios app_store_connect_state" "Submission packet command order must verify the selected App Store build"
-check_contains "Scripts/prepare_app_store_submission_packet.sh" "APP_STORE_BUILD_NUMBER=<processed-build> Scripts/validate_manual_release_verification.sh" "Submission packet command order must validate manual evidence against the selected App Store build"
-check_contains "Scripts/prepare_app_store_submission_packet.sh" "APP_STORE_BUILD_NUMBER=<processed-build> CONFIRM_SUBMIT_FOR_REVIEW=1 Scripts/run_fastlane.sh ios submit_review" "Submission packet command order must submit the selected App Store build"
+check_not_contains "Scripts/prepare_app_store_submission_packet.sh" "APP_STORE_BUILD_NUMBER=<" "Submission packet command order must use shell-safe selected build placeholders"
+check_contains "Scripts/prepare_app_store_submission_packet.sh" "APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/run_fastlane.sh ios app_store_connect_state" "Submission packet command order must verify the selected App Store build"
+check_contains "Scripts/prepare_app_store_submission_packet.sh" "APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/validate_manual_release_verification.sh" "Submission packet command order must validate manual evidence against the selected App Store build"
+check_contains "Scripts/prepare_app_store_submission_packet.sh" "APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER CONFIRM_SUBMIT_FOR_REVIEW=1 Scripts/run_fastlane.sh ios submit_review" "Submission packet command order must submit the selected App Store build"
 check_contains "Scripts/prepare_app_store_submission_packet.sh" "Readiness Blockers" "Submission packet action items must summarize readiness blockers"
 check_contains "Scripts/prepare_app_store_submission_packet.sh" "Readiness Warnings" "Submission packet action items must summarize readiness warnings"
 check_contains "Scripts/prepare_app_store_submission_packet.sh" "sha256" "Submission packet generator must record file checksums"

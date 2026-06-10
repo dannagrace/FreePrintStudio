@@ -167,9 +167,9 @@ cat >"$output_path" <<EOF
 | Check | Command | When To Run |
 | --- | --- | --- |
 | Credential syntax | \`Scripts/check_app_store_connect_credentials.sh\` | After configuring API JSON or API key triplet. |
-| App record, version, and selected build | \`APP_STORE_BUILD_NUMBER=<build> Scripts/run_fastlane.sh ios app_store_connect_state\` | After TestFlight processing completes. |
+| App record, version, and selected build | \`APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/run_fastlane.sh ios app_store_connect_state\` | After TestFlight processing completes. |
 | TestFlight upload preflight | \`Scripts/preflight_testflight_upload.sh\` | After signing and App Store Connect credentials are configured. |
-| App Review submission preflight | \`APP_STORE_BUILD_NUMBER=<build> Scripts/preflight_app_review_submission.sh\` | After listing fields, manual evidence, and selected build are final. |
+| App Review submission preflight | \`APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/preflight_app_review_submission.sh\` | After listing fields, manual evidence, and selected build are final. |
 
 ## Required Next Actions
 
