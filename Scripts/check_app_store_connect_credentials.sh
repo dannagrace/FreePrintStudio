@@ -20,11 +20,13 @@ if [[ -n "${APP_STORE_CONNECT_API_KEY_JSON:-}" ]]; then
   if [[ -f "$APP_STORE_CONNECT_API_KEY_JSON" ]]; then
     python3 - "$APP_STORE_CONNECT_API_KEY_JSON" <<'PY'
 import json
+from pathlib import Path
 import sys
 
 path = sys.argv[1]
 try:
-    payload = json.load(open(path, encoding="utf-8"))
+    json_path = Path(path)
+    payload = json.load(open(json_path, encoding="utf-8"))
 except Exception as exc:
     raise SystemExit(f"BLOCKED: APP_STORE_CONNECT_API_KEY_JSON is not valid JSON: {exc}")
 
@@ -33,6 +35,23 @@ missing = [name for name in ("key_id", "issuer_id") if not payload.get(name)]
 if missing or not required_any_key:
     fields = ", ".join(missing + ([] if required_any_key else ["key or key_filepath"]))
     raise SystemExit(f"BLOCKED: APP_STORE_CONNECT_API_KEY_JSON is missing {fields}")
+
+inline_key = str(payload.get("key", "")).strip()
+key_filepath = str(payload.get("key_filepath", "")).strip()
+if inline_key and "BEGIN PRIVATE KEY" not in inline_key:
+    raise SystemExit("BLOCKED: APP_STORE_CONNECT_API_KEY_JSON key does not look like an App Store Connect .p8 private key")
+if key_filepath:
+    key_path = Path(key_filepath).expanduser()
+    if not key_path.is_absolute():
+        key_path = (json_path.parent / key_path).resolve()
+    if not key_path.is_file():
+        raise SystemExit(f"BLOCKED: APP_STORE_CONNECT_API_KEY_JSON key_filepath does not exist: {key_path}")
+    try:
+        key_text = key_path.read_text(encoding="utf-8")
+    except Exception as exc:
+        raise SystemExit(f"BLOCKED: APP_STORE_CONNECT_API_KEY_JSON key_filepath is not readable: {exc}")
+    if "BEGIN PRIVATE KEY" not in key_text:
+        raise SystemExit("BLOCKED: APP_STORE_CONNECT_API_KEY_JSON key_filepath does not look like an App Store Connect .p8 private key")
 print("OK: Fastlane App Store Connect API JSON is present")
 PY
   else

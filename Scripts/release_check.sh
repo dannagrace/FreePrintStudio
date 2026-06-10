@@ -836,6 +836,43 @@ check_contains "Scripts/check_app_store_readiness.sh" "check_app_store_connect_s
 check_file "Scripts/check_app_store_connect_credentials.sh" "App Store Connect credential audit script is required"
 check_contains "Scripts/check_app_store_connect_credentials.sh" "APP_STORE_CONNECT_API_KEY_JSON" "Credential audit must support Fastlane API key JSON"
 check_contains "Scripts/check_app_store_connect_credentials.sh" "ASC_KEY_PATH" "Credential audit must support App Store Connect private key paths"
+app_store_connect_api_json_test_dir="$(mktemp -d)"
+app_store_connect_api_json_path="$app_store_connect_api_json_test_dir/fastlane-api-key.json"
+app_store_connect_api_json_log="$app_store_connect_api_json_test_dir/asc-credentials.log"
+app_store_connect_api_json_key_path="$app_store_connect_api_json_test_dir/AuthKey_KEYID12345.p8"
+cat >"$app_store_connect_api_json_path" <<EOF
+{
+  "key_id": "KEYID12345",
+  "issuer_id": "00000000-0000-0000-0000-000000000001",
+  "key_filepath": "$app_store_connect_api_json_test_dir/missing/AuthKey_KEYID12345.p8"
+}
+EOF
+if APP_STORE_CONNECT_API_KEY_JSON="$app_store_connect_api_json_path" \
+  Scripts/check_app_store_connect_credentials.sh >"$app_store_connect_api_json_log" 2>&1; then
+  printf 'FAIL: Credential audit must reject API JSON whose key_filepath does not exist\n'
+  failures=$((failures + 1))
+elif ! grep -q 'key_filepath does not exist' "$app_store_connect_api_json_log"; then
+  printf 'FAIL: Credential audit should identify a missing API JSON key_filepath\n'
+  failures=$((failures + 1))
+fi
+cat >"$app_store_connect_api_json_key_path" <<'EOF'
+-----BEGIN PRIVATE KEY-----
+release-check-placeholder
+-----END PRIVATE KEY-----
+EOF
+cat >"$app_store_connect_api_json_path" <<'EOF'
+{
+  "key_id": "KEYID12345",
+  "issuer_id": "00000000-0000-0000-0000-000000000001",
+  "key_filepath": "AuthKey_KEYID12345.p8"
+}
+EOF
+if ! APP_STORE_CONNECT_API_KEY_JSON="$app_store_connect_api_json_path" \
+  Scripts/check_app_store_connect_credentials.sh >"$app_store_connect_api_json_log" 2>&1; then
+  printf 'FAIL: Credential audit must accept API JSON with a readable relative key_filepath\n'
+  failures=$((failures + 1))
+fi
+rm -rf "$app_store_connect_api_json_test_dir"
 check_file "Scripts/check_code_signing_assets.sh" "Code signing asset preflight script is required"
 if [[ ! -x "Scripts/check_code_signing_assets.sh" ]]; then
   printf 'FAIL: Code signing asset preflight script must be executable (Scripts/check_code_signing_assets.sh)\n'
