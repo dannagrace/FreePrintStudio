@@ -245,7 +245,7 @@ Prepare a signed App Store archive after configuring an Apple Developer Team in 
 
 ```sh
 Scripts/preflight_app_store_archive.sh
-DEVELOPMENT_TEAM_ID=ABCDE12345 ALLOW_PROVISIONING_UPDATES=1 Scripts/archive_app_store.sh
+DEVELOPMENT_TEAM_ID=YOURTEAMID ALLOW_PROVISIONING_UPDATES=1 Scripts/archive_app_store.sh
 ```
 
 The archive script runs the local release gate first, then creates `build/FreePrintStudio.xcarchive` and exports an App Store Connect IPA under `build/AppStoreExport/`.

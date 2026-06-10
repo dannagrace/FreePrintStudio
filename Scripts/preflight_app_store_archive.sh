@@ -36,4 +36,4 @@ if (( failures > 0 )); then
 fi
 
 printf 'App Store archive preflight passed.\n'
-printf 'Next: DEVELOPMENT_TEAM_ID=<team-id> ALLOW_PROVISIONING_UPDATES=1 Scripts/archive_app_store.sh\n'
+printf 'Next: DEVELOPMENT_TEAM_ID=YOURTEAMID ALLOW_PROVISIONING_UPDATES=1 Scripts/archive_app_store.sh\n'

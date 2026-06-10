@@ -29,7 +29,7 @@ Missing Apple Developer Team ID.
 
 Set DEVELOPMENT_TEAM_ID and rerun, for example:
 
-  DEVELOPMENT_TEAM_ID=ABCDE12345 Scripts/archive_app_store.sh
+  DEVELOPMENT_TEAM_ID=YOURTEAMID ALLOW_PROVISIONING_UPDATES=1 Scripts/archive_app_store.sh
 
 The account must be enrolled in the Apple Developer Program and available to Xcode.
 EOF

@@ -129,7 +129,7 @@ Before submitting for review, all of the following must be true:
 - `Scripts/print_release_input_status.sh --strict` exits successfully.
 - `Scripts/check_app_store_readiness.sh` has zero `BLOCKED` lines.
 - `Scripts/preflight_app_store_archive.sh` passes.
-- `DEVELOPMENT_TEAM_ID=... ALLOW_PROVISIONING_UPDATES=1 Scripts/archive_app_store.sh` creates and validates the signed archive and exported IPA.
+- `DEVELOPMENT_TEAM_ID=YOURTEAMID ALLOW_PROVISIONING_UPDATES=1 Scripts/archive_app_store.sh` creates and validates the signed archive and exported IPA.
 - `Scripts/preflight_testflight_upload.sh` passes.
 - The selected build is uploaded, processed, and confirmed through `APP_STORE_BUILD_NUMBER=... Scripts/run_fastlane.sh ios app_store_connect_state`.
 - `APP_STORE_BUILD_NUMBER=... Scripts/validate_manual_release_verification.sh` passes with evidence from the same build.

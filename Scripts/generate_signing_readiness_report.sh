@@ -244,7 +244,7 @@ cat >"$output_path" <<EOF
 - [ ] Install an App Store Connect provisioning profile for \`com.dannagrace.FreePrintStudio\`; it must not contain \`ProvisionedDevices\`.
 - [ ] Run \`Scripts/check_code_signing_assets.sh\`.
 - [ ] Run \`Scripts/preflight_app_store_archive.sh\`.
-- [ ] Create the signed archive with \`DEVELOPMENT_TEAM_ID=<team-id> ALLOW_PROVISIONING_UPDATES=1 Scripts/archive_app_store.sh\`.
+- [ ] Create the signed archive with \`DEVELOPMENT_TEAM_ID=YOURTEAMID ALLOW_PROVISIONING_UPDATES=1 Scripts/archive_app_store.sh\`.
 EOF
 
 printf 'Signing readiness report generated: %s\n' "$output_path"
