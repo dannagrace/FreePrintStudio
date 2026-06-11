@@ -1784,11 +1784,14 @@ check_contains "Scripts/generate_app_review_submission_readiness_report.sh" "red
 selected_build_report_placeholder_test_dir="$(mktemp -d)"
 selected_build_asc_report="$selected_build_report_placeholder_test_dir/app-store-connect.md"
 selected_build_review_report="$selected_build_report_placeholder_test_dir/app-review.md"
+selected_build_review_lowercase_report="$selected_build_report_placeholder_test_dir/app-review-lowercase.md"
 selected_build_manual_report="$selected_build_report_placeholder_test_dir/manual.md"
 APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER \
   Scripts/generate_app_store_connect_readiness_report.sh "$selected_build_asc_report" >/dev/null
 APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER \
   Scripts/generate_app_review_submission_readiness_report.sh "$selected_build_review_report" >/dev/null
+APP_STORE_BUILD_NUMBER=todo \
+  Scripts/generate_app_review_submission_readiness_report.sh "$selected_build_review_lowercase_report" >/dev/null
 APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER \
   Scripts/generate_manual_release_readiness_report.sh "$selected_build_manual_report" >/dev/null
 if grep -q '\`APP_STORE_BUILD_NUMBER\` configured | Yes' "$selected_build_asc_report"; then
@@ -1805,6 +1808,14 @@ if grep -q 'Selected processed build value.*Configured' "$selected_build_review_
 fi
 if ! grep -q 'Selected processed build value.*placeholder' "$selected_build_review_report"; then
   printf 'FAIL: App Review submission readiness report must flag PROCESSED_BUILD_NUMBER as a selected-build placeholder\n'
+  failures=$((failures + 1))
+fi
+if grep -q 'Selected processed build value.*Configured' "$selected_build_review_lowercase_report"; then
+  printf 'FAIL: App Review submission readiness report must not mark lowercase todo as configured\n'
+  failures=$((failures + 1))
+fi
+if ! grep -q 'Selected processed build value.*placeholder' "$selected_build_review_lowercase_report"; then
+  printf 'FAIL: App Review submission readiness report must flag lowercase todo as a selected-build placeholder\n'
   failures=$((failures + 1))
 fi
 if grep -q 'selected build is redacted-MBER' "$selected_build_manual_report"; then
