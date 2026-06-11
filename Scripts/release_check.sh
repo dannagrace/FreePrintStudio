@@ -1371,6 +1371,41 @@ check_contains "Scripts/generate_app_review_submission_readiness_report.sh" "val
 check_contains "Scripts/generate_app_review_submission_readiness_report.sh" "check_app_store_connect_state.sh" "App Review submission readiness report must summarize selected build state checks"
 check_contains "Scripts/generate_app_review_submission_readiness_report.sh" "processed App Store Connect build number" "App Review submission readiness report must warn that selected-build placeholders must be replaced"
 check_contains "Scripts/generate_app_review_submission_readiness_report.sh" "redacted" "App Review submission readiness report must avoid printing private release values"
+selected_build_report_placeholder_test_dir="$(mktemp -d)"
+selected_build_asc_report="$selected_build_report_placeholder_test_dir/app-store-connect.md"
+selected_build_review_report="$selected_build_report_placeholder_test_dir/app-review.md"
+selected_build_manual_report="$selected_build_report_placeholder_test_dir/manual.md"
+APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER \
+  Scripts/generate_app_store_connect_readiness_report.sh "$selected_build_asc_report" >/dev/null
+APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER \
+  Scripts/generate_app_review_submission_readiness_report.sh "$selected_build_review_report" >/dev/null
+APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER \
+  Scripts/generate_manual_release_readiness_report.sh "$selected_build_manual_report" >/dev/null
+if grep -q '\`APP_STORE_BUILD_NUMBER\` configured | Yes' "$selected_build_asc_report"; then
+  printf 'FAIL: App Store Connect readiness report must not mark PROCESSED_BUILD_NUMBER as configured\n'
+  failures=$((failures + 1))
+fi
+if ! grep -q 'APP_STORE_BUILD_NUMBER.*placeholder' "$selected_build_asc_report"; then
+  printf 'FAIL: App Store Connect readiness report must flag PROCESSED_BUILD_NUMBER as a selected-build placeholder\n'
+  failures=$((failures + 1))
+fi
+if grep -q 'Selected processed build value.*Configured' "$selected_build_review_report"; then
+  printf 'FAIL: App Review submission readiness report must not mark PROCESSED_BUILD_NUMBER as configured\n'
+  failures=$((failures + 1))
+fi
+if ! grep -q 'Selected processed build value.*placeholder' "$selected_build_review_report"; then
+  printf 'FAIL: App Review submission readiness report must flag PROCESSED_BUILD_NUMBER as a selected-build placeholder\n'
+  failures=$((failures + 1))
+fi
+if grep -q 'selected build is redacted-MBER' "$selected_build_manual_report"; then
+  printf 'FAIL: Manual readiness report must not treat PROCESSED_BUILD_NUMBER as a redacted selected build\n'
+  failures=$((failures + 1))
+fi
+if ! grep -q 'Selected build matches evidence build.*placeholder' "$selected_build_manual_report"; then
+  printf 'FAIL: Manual readiness report must flag PROCESSED_BUILD_NUMBER as a selected-build placeholder\n'
+  failures=$((failures + 1))
+fi
+rm -rf "$selected_build_report_placeholder_test_dir"
 check_contains "Scripts/prepare_app_store_submission_packet.sh" "app-review-submission-readiness-report.md" "Submission packet generator must include the App Review submission readiness report"
 check_contains "Scripts/prepare_app_store_submission_packet.sh" "generate_app_review_submission_readiness_report.sh" "Submission packet generator must generate the App Review submission readiness report"
 check_contains "Scripts/prepare_app_store_submission_packet.sh" '\\`app-review-submission-readiness-report.md\\`' "Submission packet summary must reference the App Review submission readiness report"

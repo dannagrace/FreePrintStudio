@@ -60,6 +60,7 @@ looks_placeholder_like() {
   [[ "$value" == *TBD* ]] && return 0
   [[ "$value" == *example* ]] && return 0
   [[ "$value" == *placeholder* ]] && return 0
+  [[ "$value" == "PROCESSED_BUILD_NUMBER" ]] && return 0
   return 1
 }
 
@@ -176,9 +177,15 @@ build_match_status() {
   elif [[ -z "$selected_build" ]]; then
     record_warning
     status_result="Selected App Store build missing; TestFlight evidence build is $(mask_value "$tested_build")"
+  elif looks_placeholder_like "$selected_build"; then
+    record_failure
+    status_result='Selected App Store build still uses a placeholder'
   elif [[ -z "$tested_build" ]]; then
     record_failure
     status_result="TestFlight evidence build missing; selected build is $(mask_value "$selected_build")"
+  elif looks_placeholder_like "$tested_build"; then
+    record_failure
+    status_result='TestFlight evidence build still uses a placeholder'
   elif [[ "$selected_build" == "$tested_build" ]]; then
     record_ready
     status_result="Match ($(mask_value "$selected_build"))"

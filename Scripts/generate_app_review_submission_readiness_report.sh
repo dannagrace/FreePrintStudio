@@ -43,6 +43,18 @@ mask_value() {
   fi
 }
 
+looks_placeholder_like() {
+  local value="${1:-}"
+  [[ -z "$value" ]] && return 1
+  [[ "$value" == *YOUR* ]] && return 0
+  [[ "$value" == *TODO* ]] && return 0
+  [[ "$value" == *TBD* ]] && return 0
+  [[ "$value" == *example* ]] && return 0
+  [[ "$value" == *placeholder* ]] && return 0
+  [[ "$value" == "PROCESSED_BUILD_NUMBER" ]] && return 0
+  return 1
+}
+
 run_step() {
   local status_variable="$1"
   local command_text="$2"
@@ -76,9 +88,15 @@ run_step status_manual_evidence "APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER S
 run_step status_asc_credentials "Scripts/check_app_store_connect_credentials.sh" Scripts/check_app_store_connect_credentials.sh
 
 if [[ -n "${APP_STORE_BUILD_NUMBER:-}" ]]; then
-  status_selected_build="Configured ($(mask_value "$APP_STORE_BUILD_NUMBER"))"
-  ready_count=$((ready_count + 1))
-  selected_build_ready=1
+  if looks_placeholder_like "$APP_STORE_BUILD_NUMBER"; then
+    status_selected_build='Blocked; `APP_STORE_BUILD_NUMBER` still uses a placeholder'
+    blocker_count=$((blocker_count + 1))
+    selected_build_ready=0
+  else
+    status_selected_build="Configured ($(mask_value "$APP_STORE_BUILD_NUMBER"))"
+    ready_count=$((ready_count + 1))
+    selected_build_ready=1
+  fi
 else
   status_selected_build='Blocked; set `APP_STORE_BUILD_NUMBER` to the processed App Store Connect build'
   blocker_count=$((blocker_count + 1))

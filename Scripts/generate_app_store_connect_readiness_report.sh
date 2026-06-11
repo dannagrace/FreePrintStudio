@@ -39,6 +39,18 @@ mask_value() {
   fi
 }
 
+looks_placeholder_like() {
+  local value="${1:-}"
+  [[ -z "$value" ]] && return 1
+  [[ "$value" == *YOUR* ]] && return 0
+  [[ "$value" == *TODO* ]] && return 0
+  [[ "$value" == *TBD* ]] && return 0
+  [[ "$value" == *example* ]] && return 0
+  [[ "$value" == *placeholder* ]] && return 0
+  [[ "$value" == "PROCESSED_BUILD_NUMBER" ]] && return 0
+  return 1
+}
+
 status_from_bool() {
   local ready="$1"
   local ok_text="$2"
@@ -117,8 +129,13 @@ fi
 fastlane_user_configured=0
 [[ -n "${FASTLANE_USER:-}" ]] && fastlane_user_configured=1
 
-build_number_configured=0
-[[ -n "${APP_STORE_BUILD_NUMBER:-}" ]] && build_number_configured=1
+if [[ -z "${APP_STORE_BUILD_NUMBER:-}" ]]; then
+  build_number_status="No"
+elif looks_placeholder_like "${APP_STORE_BUILD_NUMBER:-}"; then
+  build_number_status="Blocked; APP_STORE_BUILD_NUMBER still uses a placeholder"
+else
+  build_number_status="Yes ($(mask_value "${APP_STORE_BUILD_NUMBER:-}"))"
+fi
 
 privacy_upload_confirmed=0
 [[ "${CONFIRM_UPLOAD_APP_PRIVACY:-}" == "1" ]] && privacy_upload_confirmed=1
@@ -158,7 +175,7 @@ cat >"$output_path" <<EOF
 | Item | Status |
 | --- | --- |
 | \`FASTLANE_USER\` configured | $(status_from_bool "$fastlane_user_configured" "Yes ($(mask_value "${FASTLANE_USER:-}"))" "No") |
-| \`APP_STORE_BUILD_NUMBER\` configured | $(status_from_bool "$build_number_configured" "Yes ($(mask_value "${APP_STORE_BUILD_NUMBER:-}"))" "No") |
+| \`APP_STORE_BUILD_NUMBER\` configured | $build_number_status |
 | \`CONFIRM_UPLOAD_APP_PRIVACY=1\` | $(status_from_bool "$privacy_upload_confirmed" "Yes" "No") |
 | \`CONFIRM_SUBMIT_FOR_REVIEW=1\` | $(status_from_bool "$submit_review_confirmed" "Yes" "No") |
 
