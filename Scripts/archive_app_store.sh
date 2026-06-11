@@ -13,6 +13,40 @@ EXPORT_OPTIONS_PLIST="${EXPORT_OPTIONS_PLIST:-$ROOT_DIR/Config/ExportOptions-App
 ARCHIVE_LOG="${ARCHIVE_LOG:-/tmp/freeprintstudio-archive.log}"
 EXPORT_LOG="${EXPORT_LOG:-/tmp/freeprintstudio-export.log}"
 
+safe_output_path() {
+  local label="$1"
+  local requested_path="$2"
+
+  python3 - "$ROOT_DIR" "$label" "$requested_path" <<'PY'
+import sys
+from pathlib import Path
+
+root = Path(sys.argv[1]).resolve()
+label = sys.argv[2]
+raw_path = Path(sys.argv[3]).expanduser()
+candidate = raw_path if raw_path.is_absolute() else root / raw_path
+build_dir = (root / "build").resolve()
+
+resolved = candidate.resolve(strict=False)
+if resolved == build_dir or build_dir not in resolved.parents:
+    print(
+        f"Refusing to use {label} path outside build/: {candidate}; outputs must stay inside build/",
+        file=sys.stderr,
+    )
+    raise SystemExit(1)
+
+print(resolved)
+PY
+}
+
+safe_remove() {
+  local path="$1"
+  local checked_path
+
+  checked_path="$(safe_output_path "archive cleanup" "$path")"
+  rm -rf "$checked_path"
+}
+
 project_team_id() {
   xcodebuild \
     -project FreePrintStudio.xcodeproj \
@@ -42,10 +76,14 @@ if [[ ! -f "$EXPORT_OPTIONS_PLIST" ]]; then
   exit 1
 fi
 
+mkdir -p "$ROOT_DIR/build"
+ARCHIVE_PATH="$(safe_output_path "archive" "$ARCHIVE_PATH")"
+EXPORT_PATH="$(safe_output_path "export" "$EXPORT_PATH")"
+
 Scripts/preflight_app_store_archive.sh
 
 mkdir -p "$(dirname "$ARCHIVE_PATH")" "$EXPORT_PATH"
-rm -rf "$ARCHIVE_PATH"
+safe_remove "$ARCHIVE_PATH"
 
 provisioning_args=()
 if [[ "${ALLOW_PROVISIONING_UPDATES:-0}" == "1" ]]; then
@@ -65,7 +103,7 @@ xcodebuild \
 tail -n 20 "$ARCHIVE_LOG"
 
 printf '\n== Export ==\n'
-rm -rf "$EXPORT_PATH"
+safe_remove "$EXPORT_PATH"
 mkdir -p "$EXPORT_PATH"
 xcodebuild \
   -exportArchive \
