@@ -142,6 +142,13 @@ def validate_app_store_questionnaires!
   )
 end
 
+def validate_release_env!
+  run_release_script!(
+    "Scripts/validate_release_env.sh",
+    "Release environment validation failed. Replace placeholder values in private release inputs before continuing."
+  )
+end
+
 def validate_app_review_contact!
   run_release_script!(
     "Scripts/validate_app_review_contact.sh",
@@ -224,6 +231,7 @@ platform :ios do
 
   desc "Upload App Store Connect metadata and screenshots without submitting"
   lane :metadata do
+    validate_release_env!
     validate_app_store_metadata!
     validate_screenshot_sync!
     validate_app_store_questionnaires!
@@ -250,12 +258,14 @@ platform :ios do
 
   desc "Verify App Store Connect app record, version, and processed TestFlight build"
   lane :app_store_connect_state do
+    validate_release_env!
     sh(Shellwords.escape(File.join(PROJECT_ROOT, "Scripts/check_app_store_connect_state.sh")))
   end
 
   desc "Upload App Privacy Details to App Store Connect"
   lane :privacy_details do
     confirm_upload_app_privacy!
+    validate_release_env!
     validate_privacy_surface!
     validate_app_privacy_details!
     validate_app_store_questionnaires!
@@ -282,6 +292,7 @@ platform :ios do
   desc "Submit an already uploaded App Store Connect build for App Review"
   lane :submit_review do
     confirm_submit_for_review!
+    validate_release_env!
     validate_app_store_metadata!
     validate_screenshot_sync!
     validate_privacy_surface!
@@ -316,6 +327,7 @@ platform :ios do
 
   desc "Create a signed App Store archive after signing is configured"
   lane :archive do
+    validate_release_env!
     team_id = ENV["DEVELOPMENT_TEAM_ID"]
     UI.user_error!("Set DEVELOPMENT_TEAM_ID before running ios archive") if team_id.to_s.empty?
 
@@ -330,6 +342,7 @@ platform :ios do
 
   desc "Upload the signed App Store IPA to TestFlight without external distribution"
   lane :upload_testflight do
+    validate_release_env!
     credential_options = app_store_connect_credentials(required: true)
     ipa_path = exported_ipa_path
 

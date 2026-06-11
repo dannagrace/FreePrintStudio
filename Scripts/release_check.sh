@@ -643,6 +643,7 @@ check_contains "fastlane/Fastfile" "primary_category: PRIMARY_CATEGORY" "Fastfil
 check_contains "fastlane/Fastfile" "secondary_category: SECONDARY_CATEGORY" "Fastfile metadata lane must set the secondary App Store category"
 check_contains "fastlane/Fastfile" "review_information_options" "Fastfile must prepare App Store review information"
 check_contains "fastlane/Fastfile" "APP_REVIEW_CONTACT_EMAIL" "Fastfile must support private App Review contact details"
+check_contains "fastlane/Fastfile" "Scripts/validate_release_env.sh" "Fastfile must reject placeholder release inputs before App Store Connect operations"
 check_contains "fastlane/Fastfile" "Scripts/validate_app_review_contact.sh" "Fastfile must run App Review contact validation before upload or submission"
 check_contains "fastlane/Fastfile" "Scripts/validate_manual_release_verification.sh" "Fastfile must run manual release evidence validation before App Review submission"
 check_contains "fastlane/Fastfile" "Scripts/validate_app_store_questionnaires.sh" "Fastfile must run App Store questionnaire validation before upload or submission"
@@ -656,6 +657,7 @@ fi
 if [[ -x "Scripts/validate_fastlane_release_lanes.sh" ]]; then
   Scripts/validate_fastlane_release_lanes.sh || failures=$((failures + 1))
 fi
+check_contains "Scripts/validate_fastlane_release_lanes.sh" "validate_release_env!" "Fastlane lane validation must check release environment placeholder gates"
 check_contains "Scripts/validate_fastlane_release_lanes.sh" "validate_app_review_contact!" "Fastlane lane validation must check App Review contact gates"
 check_contains "Scripts/validate_fastlane_release_lanes.sh" "validate_manual_release_verification!" "Fastlane lane validation must check manual release evidence gates"
 check_contains "Scripts/validate_fastlane_release_lanes.sh" "validate_app_store_questionnaires!" "Fastlane lane validation must check App Store questionnaire gates"

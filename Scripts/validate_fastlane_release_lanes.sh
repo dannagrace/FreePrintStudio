@@ -82,6 +82,8 @@ if source:
         fail("Fastfile must call Scripts/validate_privacy_surface.sh")
     if "Scripts/validate_app_store_questionnaires.sh" not in source:
         fail("Fastfile must call Scripts/validate_app_store_questionnaires.sh")
+    if "Scripts/validate_release_env.sh" not in source:
+        fail("Fastfile must call Scripts/validate_release_env.sh")
     if "Scripts/validate_app_store_export.sh" not in source:
         fail("Fastfile must call Scripts/validate_app_store_export.sh")
     if "Scripts/validate_manual_release_verification.sh" not in source:
@@ -91,6 +93,7 @@ if source:
 
     metadata = lane_body(source, "metadata")
     if metadata:
+        require_before("metadata", metadata, "validate_release_env!", "deliver(")
         require_before("metadata", metadata, "validate_app_store_metadata!", "deliver(")
         require_before("metadata", metadata, "validate_screenshot_sync!", "deliver(")
         require_before("metadata", metadata, "validate_app_store_questionnaires!", "deliver(")
@@ -104,6 +107,7 @@ if source:
     privacy_details = lane_body(source, "privacy_details")
     if privacy_details:
         require_before("privacy_details", privacy_details, "confirm_upload_app_privacy!", "upload_app_privacy_details_to_app_store")
+        require_before("privacy_details", privacy_details, "validate_release_env!", "upload_app_privacy_details_to_app_store")
         require_before("privacy_details", privacy_details, "validate_privacy_surface!", "upload_app_privacy_details_to_app_store")
         require_before("privacy_details", privacy_details, "validate_app_privacy_details!", "upload_app_privacy_details_to_app_store")
         require_before("privacy_details", privacy_details, "validate_app_store_questionnaires!", "upload_app_privacy_details_to_app_store")
@@ -113,6 +117,7 @@ if source:
     submit_review = lane_body(source, "submit_review")
     if submit_review:
         require_before("submit_review", submit_review, "confirm_submit_for_review!", "deliver(")
+        require_before("submit_review", submit_review, "validate_release_env!", "deliver(")
         require_before("submit_review", submit_review, "validate_app_store_metadata!", "deliver(")
         require_before("submit_review", submit_review, "validate_screenshot_sync!", "deliver(")
         require_before("submit_review", submit_review, "validate_privacy_surface!", "deliver(")
@@ -150,6 +155,7 @@ if source:
 
     upload_testflight = lane_body(source, "upload_testflight")
     if upload_testflight:
+        require_before("upload_testflight", upload_testflight, "validate_release_env!", "upload_to_testflight(")
         require_before("upload_testflight", upload_testflight, "validate_app_store_export!", "upload_to_testflight(")
         require_before("upload_testflight", upload_testflight, "preflight_testflight_upload!", "upload_to_testflight(")
         if 'ENV["IPA_PATH"] = ipa_path' not in upload_testflight:
@@ -162,6 +168,14 @@ if source:
         ):
             if required not in upload_testflight:
                 fail(f"lane :upload_testflight must include {required}")
+
+    app_store_connect_state = lane_body(source, "app_store_connect_state")
+    if app_store_connect_state:
+        require_before("app_store_connect_state", app_store_connect_state, "validate_release_env!", "Scripts/check_app_store_connect_state.sh")
+
+    archive = lane_body(source, "archive")
+    if archive:
+        require_before("archive", archive, "validate_release_env!", "Scripts/archive_app_store.sh")
 
 if failures:
     for failure in failures:
