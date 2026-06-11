@@ -297,6 +297,7 @@ Fastlane reads the reviewer test notes from `fastlane/metadata/review_informatio
 App Privacy Details are represented by `AppStore/app_privacy_details.json`. After reviewing it against `AppStore/app-privacy.md`, upload and publish it to App Store Connect:
 
 ```sh
+FASTLANE_USER=apple-id@example.com CONFIRM_UPLOAD_APP_PRIVACY=1 Scripts/preflight_app_privacy_upload.sh
 FASTLANE_USER=apple-id@example.com CONFIRM_UPLOAD_APP_PRIVACY=1 Scripts/run_fastlane.sh ios privacy_details
 ```
 

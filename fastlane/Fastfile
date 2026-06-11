@@ -184,6 +184,13 @@ def preflight_metadata_upload!
   )
 end
 
+def preflight_app_privacy_upload!
+  run_release_script!(
+    "Scripts/preflight_app_privacy_upload.sh",
+    "App Privacy Details upload preflight failed."
+  )
+end
+
 def verify_app_store_connect_state!
   run_release_script!(
     "Scripts/check_app_store_connect_state.sh",
@@ -273,6 +280,7 @@ platform :ios do
 
   desc "Upload App Privacy Details to App Store Connect"
   lane :privacy_details do
+    preflight_app_privacy_upload!
     confirm_upload_app_privacy!
     username = ENV["FASTLANE_USER"].to_s.strip
     UI.user_error!("Set FASTLANE_USER to the Apple ID used for App Store Connect before uploading App Privacy Details") if username.empty?

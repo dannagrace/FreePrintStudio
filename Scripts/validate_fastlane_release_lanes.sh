@@ -92,6 +92,8 @@ if source:
         fail("Fastfile must call Scripts/preflight_testflight_upload.sh")
     if "Scripts/preflight_metadata_upload.sh" not in source:
         fail("Fastfile must call Scripts/preflight_metadata_upload.sh")
+    if "Scripts/preflight_app_privacy_upload.sh" not in source:
+        fail("Fastfile must call Scripts/preflight_app_privacy_upload.sh")
 
     metadata = lane_body(source, "metadata")
     if metadata:
@@ -111,6 +113,7 @@ if source:
 
     privacy_details = lane_body(source, "privacy_details")
     if privacy_details:
+        require_before("privacy_details", privacy_details, "preflight_app_privacy_upload!", "upload_app_privacy_details_to_app_store")
         require_before("privacy_details", privacy_details, "confirm_upload_app_privacy!", "upload_app_privacy_details_to_app_store")
         require_before("privacy_details", privacy_details, 'username = ENV["FASTLANE_USER"].to_s.strip', "validate_release_env!")
         require_before("privacy_details", privacy_details, "Set FASTLANE_USER to the Apple ID used for App Store Connect before uploading App Privacy Details", "validate_release_env!")
