@@ -158,6 +158,7 @@ if source:
         require_before("upload_testflight", upload_testflight, "validate_release_env!", "upload_to_testflight(")
         require_before("upload_testflight", upload_testflight, "validate_app_store_export!", "upload_to_testflight(")
         require_before("upload_testflight", upload_testflight, "preflight_testflight_upload!", "upload_to_testflight(")
+        require_before("upload_testflight", upload_testflight, "preflight_testflight_upload!", "app_store_connect_credentials(required: true)")
         if 'ENV["IPA_PATH"] = ipa_path' not in upload_testflight:
             fail("lane :upload_testflight must pass the selected IPA_PATH into export validation")
         for required in (

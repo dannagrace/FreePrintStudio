@@ -343,7 +343,6 @@ platform :ios do
   desc "Upload the signed App Store IPA to TestFlight without external distribution"
   lane :upload_testflight do
     validate_release_env!
-    credential_options = app_store_connect_credentials(required: true)
     ipa_path = exported_ipa_path
 
     unless ipa_path && File.file?(ipa_path)
@@ -366,6 +365,7 @@ platform :ios do
     ENV["IPA_PATH"] = ipa_path
     validate_app_store_export!
     preflight_testflight_upload!
+    credential_options = app_store_connect_credentials(required: true)
 
     upload_to_testflight(
       credential_options.merge(
