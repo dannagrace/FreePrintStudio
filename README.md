@@ -34,7 +34,7 @@ Run the local release gate before archiving:
 Scripts/verify_release.sh
 ```
 
-Run the full local store-ready gate before handing the project to App Store Connect. This runs the default release gate plus simulator workflow, real Photos import, accessibility screenshots, print sheet validation, and submission packet generation:
+Run the full local store-ready gate before handing the project to App Store Connect. This runs the default release gate plus simulator workflow, real Photos import, review UI validation, accessibility screenshots, print sheet validation, and submission packet generation:
 
 ```sh
 Scripts/verify_release.sh store-ready
@@ -98,6 +98,14 @@ Validate that the real Photos picker can import an image from the simulator phot
 Scripts/verify_release.sh photo-import
 # Or directly:
 Scripts/validate_photo_import.sh
+```
+
+Validate that the App Review-facing About screen exposes the privacy policy, support URL, and app version without running the full Photos picker workflow:
+
+```sh
+Scripts/verify_release.sh review-ui
+# Or directly:
+Scripts/validate_review_ui.sh
 ```
 
 Validate that private release settings do not still contain copied placeholder values:
@@ -175,7 +183,7 @@ Validate the private App Review contact fields before metadata upload or review 
 Scripts/validate_app_review_contact.sh
 ```
 
-GitHub Actions runs `Scripts/verify_release.sh` on pushes to `main` and pull requests.
+GitHub Actions runs the release gates on pushes to `main` and pull requests, including `Scripts/verify_release.sh review-ui` for App Review-facing UI information.
 
 Audit App Store readiness, including public URLs, screenshots, Xcode, and signing state:
 

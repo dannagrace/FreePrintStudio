@@ -308,6 +308,11 @@ run_photo_import_validation() {
   Scripts/validate_photo_import.sh
 }
 
+run_review_ui_validation() {
+  printf '== Review UI validation ==\n'
+  Scripts/validate_review_ui.sh
+}
+
 run_print_sheet_validation() {
   printf '== Print sheet validation ==\n'
   Scripts/validate_print_sheet.sh
@@ -400,6 +405,8 @@ run_store_ready_validation() {
   printf '\n'
   run_photo_import_validation
   printf '\n'
+  run_review_ui_validation
+  printf '\n'
   run_accessibility_screenshot_validation
   printf '\n'
   run_print_sheet_validation
@@ -448,6 +455,9 @@ case "${1:-all}" in
   photo-import)
     run_photo_import_validation
     ;;
+  review-ui)
+    run_review_ui_validation
+    ;;
   print-sheet)
     run_print_sheet_validation
     ;;
@@ -485,7 +495,7 @@ case "${1:-all}" in
     run_manual_verification_validation
     ;;
   *)
-    printf 'Usage: %s [all|store-ready|static|core|plist|privacy|questionnaires|pdf|build|screenshots|accessibility|simulator-workflow|photo-import|print-sheet|submission-packet|contact-report|manual-evidence-form|manual-report|signing-report|asc-report|review-report|archive-preflight|testflight-preflight|review-preflight|manual-verification]\n' "$0"
+    printf 'Usage: %s [all|store-ready|static|core|plist|privacy|questionnaires|pdf|build|screenshots|accessibility|simulator-workflow|photo-import|review-ui|print-sheet|submission-packet|contact-report|manual-evidence-form|manual-report|signing-report|asc-report|review-report|archive-preflight|testflight-preflight|review-preflight|manual-verification]\n' "$0"
     exit 1
     ;;
 esac

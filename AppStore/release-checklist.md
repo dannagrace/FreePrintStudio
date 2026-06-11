@@ -3,7 +3,7 @@
 ## Local gates
 
 - Run `Scripts/verify_release.sh`.
-- Run `Scripts/verify_release.sh store-ready` before handing the project to App Store Connect; it runs the default release gate plus simulator workflow, real Photos import, accessibility screenshots, print sheet validation, and submission packet generation.
+- Run `Scripts/verify_release.sh store-ready` before handing the project to App Store Connect; it runs the default release gate plus simulator workflow, real Photos import, review UI validation, accessibility screenshots, print sheet validation, and submission packet generation.
 - Run `Scripts/validate_app_store_metadata.sh`.
 - Run `Scripts/validate_app_privacy_details.sh`.
 - Run `Scripts/validate_app_icon_set.sh`.
@@ -27,6 +27,7 @@
 - Run `Scripts/validate_pdf_export.sh` after print/PDF rendering changes; it validates Fit, Fill, and Stretch PDF output.
 - Run `Scripts/verify_release.sh simulator-workflow`; it calls `Scripts/validate_simulator_workflow.sh` to launch the app in a simulator with a generated selected image, centimeter units, A4 landscape paper, a screenshot, and PDF export.
 - Run `Scripts/verify_release.sh photo-import`; it calls `Scripts/validate_photo_import.sh` to seed the simulator photo library, open the real Photos picker, choose an image, verify export/print become available, and verify About screen privacy/support/version review information remains reachable.
+- Run `Scripts/verify_release.sh review-ui`; it calls `Scripts/validate_review_ui.sh` to verify the App Review-facing About screen privacy policy, support URL, and app version without the full Photos picker workflow.
 - Run `Scripts/check_app_store_readiness.sh`; fix every `BLOCKED` item before archiving.
 - Run `Scripts/capture_app_store_screenshot_set.sh` after UI, fit mode, paper, orientation, unit, or iPad layout changes and inspect `iphone-main.jpg`, `iphone-test-ruler.jpg`, `iphone-fit.jpg`, `iphone-fill.jpg`, `iphone-stretch.jpg`, `iphone-metric-landscape.jpg`, and `ipad-main.jpg`.
 - Run `Scripts/capture_app_store_screenshots.sh` only when refreshing or debugging one screenshot in isolation.
