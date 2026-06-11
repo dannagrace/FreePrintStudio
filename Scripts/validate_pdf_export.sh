@@ -16,6 +16,8 @@ TEMPORARY_SIMULATOR_CONTAINER_TIMEOUT_SECONDS="${FREEPRINTSTUDIO_TEMPORARY_SIMUL
 XCODEBUILD_TIMEOUT_SECONDS="${FREEPRINTSTUDIO_XCODEBUILD_TIMEOUT_SECONDS:-300}"
 APP_LAUNCH_TIMEOUT_SECONDS="${FREEPRINTSTUDIO_APP_LAUNCH_TIMEOUT_SECONDS:-30}"
 TEMPORARY_SIMULATOR_APP_LAUNCH_TIMEOUT_SECONDS="${FREEPRINTSTUDIO_TEMPORARY_SIMULATOR_APP_LAUNCH_TIMEOUT_SECONDS:-180}"
+APP_LAUNCH_ATTEMPTS="${FREEPRINTSTUDIO_APP_LAUNCH_ATTEMPTS:-1}"
+TEMPORARY_SIMULATOR_APP_LAUNCH_ATTEMPTS="${FREEPRINTSTUDIO_TEMPORARY_SIMULATOR_APP_LAUNCH_ATTEMPTS:-2}"
 PDF_WAIT_ATTEMPTS="${FREEPRINTSTUDIO_PDF_WAIT_ATTEMPTS:-30}"
 TEMPORARY_SIMULATOR_PDF_WAIT_ATTEMPTS="${FREEPRINTSTUDIO_TEMPORARY_SIMULATOR_PDF_WAIT_ATTEMPTS:-120}"
 MAX_SIMULATOR_CANDIDATES="${FREEPRINTSTUDIO_MAX_SIMULATOR_CANDIDATES:-5}"
@@ -440,6 +442,8 @@ validate_pdf() {
   local app_pdf_path="$TEST_DIR/export-validation-$label.pdf"
   local attempt
   local host_pdf_path
+  local launch_attempt
+  local launch_attempts
   local launch_output
   local launch_status
   local launch_timeout
@@ -516,12 +520,13 @@ validate_pdf() {
       ;;
   esac
 
-  rm -f "$app_pdf_path" "$host_pdf_path"
-
-  run_with_timeout "$SIMCTL_TIMEOUT_SECONDS" xcrun simctl terminate "$DEVICE" "$BUNDLE_ID" >/dev/null 2>&1 || true
   launch_timeout="$APP_LAUNCH_TIMEOUT_SECONDS"
+  launch_attempts="$APP_LAUNCH_ATTEMPTS"
+  pdf_wait_attempts="$PDF_WAIT_ATTEMPTS"
   if is_temporary_simulator "$DEVICE"; then
     launch_timeout="$TEMPORARY_SIMULATOR_APP_LAUNCH_TIMEOUT_SECONDS"
+    launch_attempts="$TEMPORARY_SIMULATOR_APP_LAUNCH_ATTEMPTS"
+    pdf_wait_attempts="$TEMPORARY_SIMULATOR_PDF_WAIT_ATTEMPTS"
   fi
 
   launch_arguments=()
@@ -543,34 +548,49 @@ validate_pdf() {
     -FreePrintStudioAutoExportPDFPath "$app_pdf_path"
   )
 
-  launch_output=""
-  launch_status=0
-  if launch_output="$(run_with_timeout "$launch_timeout" xcrun simctl launch --terminate-running-process "$DEVICE" "$BUNDLE_ID" "${launch_arguments[@]}" 2>&1)"; then
-    launch_status=0
-  else
-    launch_status=$?
-    if [[ "$launch_status" -ne 124 ]]; then
-      printf '%s\n' "$launch_output"
-      exit 1
+  rm -f "$app_pdf_path" "$host_pdf_path"
+  for ((launch_attempt = 1; launch_attempt <= launch_attempts; launch_attempt += 1)); do
+    if (( launch_attempt > 1 )); then
+      printf 'Retrying PDF export launch for %s (attempt %s/%s)\n' "$label" "$launch_attempt" "$launch_attempts" >&2
     fi
-  fi
 
-  pdf_wait_attempts="$PDF_WAIT_ATTEMPTS"
-  if is_temporary_simulator "$DEVICE"; then
-    pdf_wait_attempts="$TEMPORARY_SIMULATOR_PDF_WAIT_ATTEMPTS"
-  fi
+    rm -f "$app_pdf_path"
+    run_with_timeout "$SIMCTL_TIMEOUT_SECONDS" xcrun simctl terminate "$DEVICE" "$BUNDLE_ID" >/dev/null 2>&1 || true
 
-  for ((attempt = 1; attempt <= pdf_wait_attempts; attempt += 1)); do
+    launch_output=""
+    launch_status=0
+    if launch_output="$(run_with_timeout "$launch_timeout" xcrun simctl launch --terminate-running-process "$DEVICE" "$BUNDLE_ID" "${launch_arguments[@]}" 2>&1)"; then
+      launch_status=0
+    else
+      launch_status=$?
+      if [[ "$launch_status" -ne 124 ]]; then
+        printf '%s\n' "$launch_output"
+        exit 1
+      fi
+    fi
+
+    for ((attempt = 1; attempt <= pdf_wait_attempts; attempt += 1)); do
+      if [[ -s "$app_pdf_path" ]]; then
+        break
+      fi
+      sleep 0.5
+    done
+
     if [[ -s "$app_pdf_path" ]]; then
       break
     fi
-    sleep 0.5
-  done
 
-  if [[ ! -s "$app_pdf_path" ]]; then
     if [[ -n "$launch_output" ]]; then
       printf '%s\n' "$launch_output"
     fi
+
+    if (( launch_attempt < launch_attempts )); then
+      printf 'PDF export launch attempt %s/%s for %s did not produce PDF: %s\n' \
+        "$launch_attempt" "$launch_attempts" "$label" "$app_pdf_path" >&2
+    fi
+  done
+
+  if [[ ! -s "$app_pdf_path" ]]; then
     printf 'Timed out waiting for exported PDF: %s\n' "$app_pdf_path"
     exit 1
   fi
