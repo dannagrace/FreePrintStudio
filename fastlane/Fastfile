@@ -163,6 +163,13 @@ def validate_app_store_export!
   )
 end
 
+def preflight_testflight_upload!
+  run_release_script!(
+    "Scripts/preflight_testflight_upload.sh",
+    "TestFlight upload preflight failed."
+  )
+end
+
 def verify_app_store_connect_state!
   run_release_script!(
     "Scripts/check_app_store_connect_state.sh",
@@ -345,6 +352,7 @@ platform :ios do
     UI.user_error!("No exported IPA found under #{DEFAULT_EXPORT_PATH}; set IPA_PATH explicitly.") unless ipa_path && File.file?(ipa_path)
     ENV["IPA_PATH"] = ipa_path
     validate_app_store_export!
+    preflight_testflight_upload!
 
     upload_to_testflight(
       credential_options.merge(
