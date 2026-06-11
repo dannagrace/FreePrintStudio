@@ -31,6 +31,7 @@ looks_placeholder_like() {
   [[ "$value" == *TBD* ]] && return 0
   [[ "$value" == *example* ]] && return 0
   [[ "$value" == *placeholder* ]] && return 0
+  [[ "$value" == "PROCESSED_BUILD_NUMBER" ]] && return 0
   return 1
 }
 
@@ -155,7 +156,13 @@ fi
 
 validate_required_evidence_values
 
-if [[ -n "${APP_STORE_BUILD_NUMBER:-}" && -n "${MANUAL_TESTFLIGHT_BUILD_NUMBER:-}" ]]; then
+if [[ -n "${APP_STORE_BUILD_NUMBER:-}" ]] && looks_placeholder_like "$APP_STORE_BUILD_NUMBER"; then
+  block "Selected App Store build still looks like a placeholder (APP_STORE_BUILD_NUMBER=$APP_STORE_BUILD_NUMBER)"
+fi
+
+if [[ -n "${APP_STORE_BUILD_NUMBER:-}" && -n "${MANUAL_TESTFLIGHT_BUILD_NUMBER:-}" ]] \
+  && ! looks_placeholder_like "$APP_STORE_BUILD_NUMBER" \
+  && ! looks_placeholder_like "$MANUAL_TESTFLIGHT_BUILD_NUMBER"; then
   if [[ "$MANUAL_TESTFLIGHT_BUILD_NUMBER" == "$APP_STORE_BUILD_NUMBER" ]]; then
     ok "TestFlight build matches selected App Store build $APP_STORE_BUILD_NUMBER"
   else
