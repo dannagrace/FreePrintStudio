@@ -235,6 +235,8 @@ EOF
 
 ## Command Order
 
+Replace `PROCESSED_BUILD_NUMBER` with the processed App Store Connect build number before running the selected-build commands below. The local release validators intentionally reject `PROCESSED_BUILD_NUMBER` so the placeholder cannot reach App Store Connect.
+
 ```sh
 Scripts/verify_release.sh store-ready
 Scripts/bootstrap_release_inputs.sh
@@ -436,6 +438,8 @@ cat >"$SUMMARY_PATH" <<EOF
 - \`ACTION_ITEMS.md\` with external account, signing, and App Store Connect follow-up work.
 
 ## Next Commands
+
+Replace \`PROCESSED_BUILD_NUMBER\` with the processed App Store Connect build number before running the selected-build commands below. The local release validators intentionally reject \`PROCESSED_BUILD_NUMBER\` so the placeholder cannot reach App Store Connect.
 
 \`\`\`sh
 Scripts/verify_release.sh store-ready

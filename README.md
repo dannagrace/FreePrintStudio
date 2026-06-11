@@ -231,6 +231,8 @@ Scripts/verify_release.sh manual-evidence-form
 APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/validate_manual_release_verification.sh
 ```
 
+`PROCESSED_BUILD_NUMBER` is a placeholder; replace it with the processed build number selected in App Store Connect before running these commands. The release environment validator intentionally rejects this placeholder so it cannot be submitted accidentally.
+
 When validating the final App Review build, run the manual evidence check with the same APP_STORE_BUILD_NUMBER that will be submitted so the tested TestFlight build cannot drift from the selected App Store build.
 
 Prepare a local App Store submission packet with metadata, questionnaire drafts, screenshots, PDF export validation evidence, the blank manual release evidence form, redacted App Review contact, manual release, signing, App Store Connect, and App Review submission readiness reports, checksums, readiness audit output, and next commands:
@@ -334,6 +336,8 @@ After the uploaded build is processed in App Store Connect and the store listing
 ```sh
 APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER CONFIRM_SUBMIT_FOR_REVIEW=1 Scripts/run_fastlane.sh ios submit_review
 ```
+
+Replace `PROCESSED_BUILD_NUMBER` before running the App Store Connect state, App Review preflight, or final submission commands; leaving it in place is expected to fail locally.
 
 `submit_review` uses manual release (`automatic_release: false`) and submits only the explicit `APP_STORE_BUILD_NUMBER`. The `submit_review` lane re-runs manual release evidence validation before calling App Store Connect, so the recorded TestFlight evidence must still match the selected build at final submission time.
 

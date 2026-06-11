@@ -59,6 +59,7 @@
 - TestFlight upload preflight: after creating the signed export and configuring App Store Connect API credentials, run `Scripts/preflight_testflight_upload.sh`.
 - Optional TestFlight automation: configure `ASC_KEY_ID`, `ASC_ISSUER_ID`, and `ASC_KEY_PATH`, then run `Scripts/run_fastlane.sh ios upload_testflight` to upload the exported IPA without external distribution.
 - App Store Connect state preflight: after the build processes, run `APP_STORE_BUILD_NUMBER=... Scripts/run_fastlane.sh ios app_store_connect_state` to verify the app record, version, and selected build before review submission.
+- Replace any `PROCESSED_BUILD_NUMBER` placeholder in generated handoff commands with the processed App Store Connect build number before running them; the local release validators intentionally reject that placeholder.
 - Commercial configuration: apply `AppStore/commercial-configuration.md` in App Store Connect before submission.
 - App Review self-audit: review `AppStore/review-guideline-audit.md` and resolve every open blocker before submission.
 - Manual release evidence: run `Scripts/bootstrap_release_inputs.sh` and `Scripts/verify_release.sh manual-evidence-form`, record real-device verification in `Config/manual-release-verification.env`, and use the built-in Test Ruler for `MANUAL_AIRPRINT_EXACT_SIZE`, then run `APP_STORE_BUILD_NUMBER=... Scripts/validate_manual_release_verification.sh` with the same APP_STORE_BUILD_NUMBER selected for App Review.
