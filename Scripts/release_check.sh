@@ -1287,7 +1287,8 @@ cat >"$app_store_connect_api_json_path" <<EOF
   "key_filepath": "$app_store_connect_api_json_test_dir/missing/AuthKey_KEYID12345.p8"
 }
 EOF
-if APP_STORE_CONNECT_API_KEY_JSON="$app_store_connect_api_json_path" \
+if RELEASE_ENV_PATH="$app_store_connect_api_json_test_dir/missing-release.env" \
+  APP_STORE_CONNECT_API_KEY_JSON="$app_store_connect_api_json_path" \
   Scripts/check_app_store_connect_credentials.sh >"$app_store_connect_api_json_log" 2>&1; then
   printf 'FAIL: Credential audit must reject API JSON whose key_filepath does not exist\n'
   failures=$((failures + 1))
@@ -1302,12 +1303,51 @@ release-check-placeholder
 EOF
 cat >"$app_store_connect_api_json_path" <<'EOF'
 {
+  "key_id": "short",
+  "issuer_id": "not-a-uuid",
+  "key_filepath": "AuthKey_KEYID12345.p8"
+}
+EOF
+if RELEASE_ENV_PATH="$app_store_connect_api_json_test_dir/missing-release.env" \
+  APP_STORE_CONNECT_API_KEY_JSON="$app_store_connect_api_json_path" \
+  Scripts/check_app_store_connect_credentials.sh >"$app_store_connect_api_json_log" 2>&1; then
+  printf 'FAIL: Credential audit must reject malformed API JSON key_id and issuer_id values\n'
+  failures=$((failures + 1))
+elif ! grep -q 'key_id must be a 10-character App Store Connect API key id' "$app_store_connect_api_json_log" \
+  || ! grep -q 'issuer_id must be an App Store Connect issuer UUID' "$app_store_connect_api_json_log"; then
+  printf 'FAIL: Credential audit malformed API JSON failure should identify both key_id and issuer_id format issues\n'
+  failures=$((failures + 1))
+fi
+app_store_connect_triplet_key_path="$app_store_connect_api_json_test_dir/AuthKey_TRIPLET123.p8"
+cat >"$app_store_connect_triplet_key_path" <<'EOF'
+-----BEGIN PRIVATE KEY-----
+release-check-placeholder
+-----END PRIVATE KEY-----
+EOF
+if RELEASE_ENV_PATH="$app_store_connect_api_json_test_dir/missing-release.env" \
+  ASC_KEY_ID=short ASC_ISSUER_ID=not-a-uuid ASC_KEY_PATH="$app_store_connect_triplet_key_path" \
+  Scripts/check_app_store_connect_credentials.sh >"$app_store_connect_api_json_log" 2>&1; then
+  printf 'FAIL: Credential audit must reject malformed ASC_KEY_ID and ASC_ISSUER_ID values\n'
+  failures=$((failures + 1))
+elif ! grep -q 'ASC_KEY_ID must be a 10-character App Store Connect API key id' "$app_store_connect_api_json_log" \
+  || ! grep -q 'ASC_ISSUER_ID must be an App Store Connect issuer UUID' "$app_store_connect_api_json_log"; then
+  printf 'FAIL: Credential audit malformed triplet failure should identify both ASC_KEY_ID and ASC_ISSUER_ID format issues\n'
+  failures=$((failures + 1))
+fi
+cat >"$app_store_connect_api_json_key_path" <<'EOF'
+-----BEGIN PRIVATE KEY-----
+release-check-placeholder
+-----END PRIVATE KEY-----
+EOF
+cat >"$app_store_connect_api_json_path" <<'EOF'
+{
   "key_id": "KEYID12345",
   "issuer_id": "00000000-0000-0000-0000-000000000001",
   "key_filepath": "AuthKey_KEYID12345.p8"
 }
 EOF
-if ! APP_STORE_CONNECT_API_KEY_JSON="$app_store_connect_api_json_path" \
+if ! RELEASE_ENV_PATH="$app_store_connect_api_json_test_dir/missing-release.env" \
+  APP_STORE_CONNECT_API_KEY_JSON="$app_store_connect_api_json_path" \
   Scripts/check_app_store_connect_credentials.sh >"$app_store_connect_api_json_log" 2>&1; then
   printf 'FAIL: Credential audit must accept API JSON with a readable relative key_filepath\n'
   failures=$((failures + 1))
