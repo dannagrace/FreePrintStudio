@@ -764,6 +764,7 @@ private struct AboutView: View {
             List {
                 Section("About FreePrint Studio") {
                     Text("FreePrint Studio prepares selected images for exact-size PDF export and AirPrint. Images stay on this device during the print workflow.")
+                        .accessibilityIdentifier("about-summary")
                 }
 
                 Section("Privacy Policy") {
@@ -772,12 +773,14 @@ private struct AboutView: View {
                     Link(destination: privacyPolicyURL) {
                         Label("Open Privacy Policy", systemImage: "safari")
                     }
+                    .accessibilityIdentifier("privacy-policy-link")
                 }
 
                 Section("Support") {
                     Link(destination: supportURL) {
                         Label("Open Support", systemImage: "questionmark.circle")
                     }
+                    .accessibilityIdentifier("support-link")
                 }
 
                 Section("Version") {
@@ -786,6 +789,7 @@ private struct AboutView: View {
                         Spacer()
                         Text(appVersion)
                             .foregroundStyle(.secondary)
+                            .accessibilityIdentifier("app-version-value")
                     }
                 }
             }

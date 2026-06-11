@@ -46,6 +46,21 @@ final class PhotoImportUITests: XCTestCase {
         XCTAssertTrue(app.otherElements["Print preview"].exists || app.images.count > 0, "The print preview should show the Test Ruler.")
     }
 
+    func testAboutScreenShowsReviewAndSupportInformation() throws {
+        let app = XCUIApplication()
+        app.launch()
+
+        let aboutButton = app.buttons["About FreePrint Studio"]
+        XCTAssertTrue(aboutButton.waitForExistence(timeout: 15), "About button should be reachable from the main screen.")
+        aboutButton.tap()
+
+        XCTAssertTrue(app.navigationBars["About"].waitForExistence(timeout: 5), "About screen should open as a sheet.")
+        XCTAssertTrue(app.descendants(matching: .any)["about-summary"].waitForExistence(timeout: 5), "About screen should summarize the app for App Review.")
+        XCTAssertTrue(app.descendants(matching: .any)["privacy-policy-link"].waitForExistence(timeout: 5), "Privacy Policy link should be stable and reachable.")
+        XCTAssertTrue(app.descendants(matching: .any)["support-link"].waitForExistence(timeout: 5), "Support link should be stable and reachable.")
+        XCTAssertTrue(app.descendants(matching: .any)["app-version-value"].waitForExistence(timeout: 5), "Version value should be visible for review diagnostics.")
+    }
+
     private func tapFirstPhoto(in app: XCUIApplication) {
         let pickerApps = photoPickerApplications(primaryApp: app)
         dismissPhotosAccessBannerIfPresent(in: pickerApps)

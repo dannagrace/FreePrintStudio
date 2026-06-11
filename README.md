@@ -92,7 +92,7 @@ Scripts/verify_release.sh simulator-workflow
 Scripts/validate_simulator_workflow.sh
 ```
 
-Validate that the real Photos picker can import an image from the simulator photo library and enable the export/print workflow:
+Validate that the real Photos picker can import an image from the simulator photo library, enable the export/print workflow, and keep About screen review/support information reachable:
 
 ```sh
 Scripts/verify_release.sh photo-import
