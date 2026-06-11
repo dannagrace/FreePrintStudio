@@ -1561,6 +1561,19 @@ check_contains "Scripts/preflight_app_review_submission.sh" "APP_STORE_BUILD_NUM
 check_contains "Scripts/preflight_app_review_submission.sh" "PROCESSED_BUILD_NUMBER placeholder" "App Review preflight must reject the selected-build placeholder"
 check_contains "Scripts/preflight_app_review_submission.sh" "App Review submission preflight passed" "App Review preflight must print a clear success message"
 check_contains "Scripts/preflight_app_review_submission.sh" "APP_STORE_BUILD_NUMBER=%s CONFIRM_SUBMIT_FOR_REVIEW=1 Scripts/run_fastlane.sh ios submit_review" "App Review preflight success command must submit the selected App Store build explicitly"
+review_preflight_placeholder_test_dir="$(mktemp -d)"
+review_preflight_placeholder_output="$review_preflight_placeholder_test_dir/preflight.txt"
+APP_STORE_BUILD_NUMBER=todo \
+  Scripts/preflight_app_review_submission.sh >"$review_preflight_placeholder_output" 2>&1 || true
+if grep -q 'OK: APP_STORE_BUILD_NUMBER is set to todo' "$review_preflight_placeholder_output"; then
+  printf 'FAIL: App Review preflight must not mark lowercase todo selected build as OK\n'
+  failures=$((failures + 1))
+fi
+if ! grep -q 'BLOCKED: APP_STORE_BUILD_NUMBER still looks like a placeholder' "$review_preflight_placeholder_output"; then
+  printf 'FAIL: App Review preflight must flag lowercase todo selected build as a placeholder\n'
+  failures=$((failures + 1))
+fi
+rm -rf "$review_preflight_placeholder_test_dir"
 check_contains "Scripts/verify_release.sh" "review-preflight" "Release verification must expose the App Review submission preflight command"
 check_contains "README.md" "Scripts/run_fastlane.sh ios upload_testflight" "README must document the TestFlight upload command"
 check_contains "README.md" "Scripts/preflight_testflight_upload.sh" "README must document the TestFlight upload preflight command"

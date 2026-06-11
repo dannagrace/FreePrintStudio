@@ -7,6 +7,22 @@ source Scripts/load_release_env.sh
 
 failures=0
 
+looks_placeholder_like() {
+  local value="${1:-}"
+  local lower_value
+  [[ -z "$value" ]] && return 1
+  lower_value="$(printf '%s' "$value" | tr '[:upper:]' '[:lower:]')"
+
+  [[ "$value" == *YOUR* ]] && return 0
+  [[ "$value" == *YOUR_* ]] && return 0
+  [[ "$lower_value" == *todo* ]] && return 0
+  [[ "$lower_value" == *tbd* ]] && return 0
+  [[ "$lower_value" == *example* ]] && return 0
+  [[ "$lower_value" == *placeholder* ]] && return 0
+  [[ "$value" == "PROCESSED_BUILD_NUMBER" ]] && return 0
+  return 1
+}
+
 run_step() {
   local title="$1"
   shift
@@ -31,6 +47,9 @@ run_build_number_step() {
     failures=$((failures + 1))
   elif [[ "$APP_STORE_BUILD_NUMBER" == "PROCESSED_BUILD_NUMBER" ]]; then
     printf 'BLOCKED: APP_STORE_BUILD_NUMBER still uses the PROCESSED_BUILD_NUMBER placeholder.\n'
+    failures=$((failures + 1))
+  elif looks_placeholder_like "$APP_STORE_BUILD_NUMBER"; then
+    printf 'BLOCKED: APP_STORE_BUILD_NUMBER still looks like a placeholder; set it to the processed App Store Connect build number.\n'
     failures=$((failures + 1))
   else
     printf 'OK: APP_STORE_BUILD_NUMBER is set to %s\n' "$APP_STORE_BUILD_NUMBER"
