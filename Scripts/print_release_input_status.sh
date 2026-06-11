@@ -51,6 +51,30 @@ is_set() {
   [[ -n "$value" ]]
 }
 
+looks_like_placeholder() {
+  local value
+  value="$(trimmed_value "${1:-}")"
+
+  [[ -z "$value" ]] && return 1
+
+  case "$value" in
+    YOURTEAMID|YOUR_FIRST_NAME|YOUR_LAST_NAME|+1-555-0100|review-contact@example.com|\
+    apple-id@example.com|XXXXXXXXXX|00000000-0000-0000-0000-000000000000|\
+    /absolute/path/to/AuthKey_XXXXXXXXXX.p8|/absolute/path/to/fastlane-api-key.json|\
+    /absolute/path/to/FreePrintStudio.ipa|/secure/AuthKey_XXXXXXXXXX.p8|\
+    123456789|"Your Team Name"|PROCESSED_BUILD_NUMBER)
+      return 0
+      ;;
+  esac
+
+  [[ "$value" == *"YOUR_"* ]] && return 0
+  [[ "$value" == *"XXXXXXXXXX"* ]] && return 0
+  [[ "$value" == *"example.com"* ]] && return 0
+  [[ "$value" == /absolute/path/* ]] && return 0
+
+  return 1
+}
+
 mark_missing() {
   printf 'MISSING: %s\n' "$1"
   missing_count=$((missing_count + 1))
@@ -232,7 +256,11 @@ fi
 
 printf '\n== Final Submission Guards ==\n'
 if is_set "${APP_STORE_BUILD_NUMBER:-}"; then
-  mark_ok "APP_STORE_BUILD_NUMBER is configured for final App Review submission"
+  if looks_like_placeholder "${APP_STORE_BUILD_NUMBER:-}"; then
+    mark_missing "APP_STORE_BUILD_NUMBER still uses a placeholder value; replace PROCESSED_BUILD_NUMBER with the processed App Store Connect build before final App Review submission"
+  else
+    mark_ok "APP_STORE_BUILD_NUMBER is configured for final App Review submission"
+  fi
 else
   mark_missing "APP_STORE_BUILD_NUMBER is missing; set it to the processed App Store Connect build before final App Review submission"
 fi
@@ -294,7 +322,9 @@ fi
 status_count "Manual real-device, AirPrint, and TestFlight evidence ready" "$manual_ready" 15
 
 if is_set "${APP_STORE_BUILD_NUMBER:-}" && is_set "${MANUAL_TESTFLIGHT_BUILD_NUMBER:-}"; then
-  if [[ "$APP_STORE_BUILD_NUMBER" == "$MANUAL_TESTFLIGHT_BUILD_NUMBER" ]]; then
+  if looks_like_placeholder "${APP_STORE_BUILD_NUMBER:-}" || looks_like_placeholder "${MANUAL_TESTFLIGHT_BUILD_NUMBER:-}"; then
+    mark_missing "APP_STORE_BUILD_NUMBER or MANUAL_TESTFLIGHT_BUILD_NUMBER still uses a placeholder value"
+  elif [[ "$APP_STORE_BUILD_NUMBER" == "$MANUAL_TESTFLIGHT_BUILD_NUMBER" ]]; then
     mark_ok "MANUAL_TESTFLIGHT_BUILD_NUMBER matches selected APP_STORE_BUILD_NUMBER"
   else
     mark_missing "MANUAL_TESTFLIGHT_BUILD_NUMBER does not match selected APP_STORE_BUILD_NUMBER"

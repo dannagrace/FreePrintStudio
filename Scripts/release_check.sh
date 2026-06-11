@@ -544,6 +544,25 @@ check_contains "Scripts/print_release_input_status.sh" "Scripts/check_app_store_
 check_contains "Scripts/print_release_input_status.sh" "APP_STORE_BUILD_NUMBER=%s Scripts/validate_manual_release_verification.sh" "Release input status next commands must validate manual evidence against the selected App Store build"
 check_not_contains "Scripts/print_release_input_status.sh" "APP_STORE_BUILD_NUMBER:-<" "Release input status must use a shell-safe selected-build placeholder when APP_STORE_BUILD_NUMBER is missing"
 check_contains "Scripts/print_release_input_status.sh" "PROCESSED_BUILD_NUMBER" "Release input status must show a selected-build placeholder when APP_STORE_BUILD_NUMBER is missing"
+release_input_placeholder_build_test_dir="$(mktemp -d)"
+release_input_placeholder_build_env="$release_input_placeholder_build_test_dir/release.env"
+release_input_placeholder_build_manual="$release_input_placeholder_build_test_dir/manual-release-verification.env"
+release_input_placeholder_build_log="$release_input_placeholder_build_test_dir/release-input-status.log"
+printf '%s\n' 'APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER' >"$release_input_placeholder_build_env"
+printf '%s\n' '# intentionally blank manual evidence for release input status test' >"$release_input_placeholder_build_manual"
+if ! RELEASE_ENV_PATH="$release_input_placeholder_build_env" \
+  MANUAL_RELEASE_VERIFICATION_PATH="$release_input_placeholder_build_manual" \
+  Scripts/print_release_input_status.sh >"$release_input_placeholder_build_log" 2>&1; then
+  printf 'FAIL: Release input status should print redacted placeholder-build status without crashing\n'
+  failures=$((failures + 1))
+elif ! grep -q 'APP_STORE_BUILD_NUMBER still uses a placeholder value' "$release_input_placeholder_build_log"; then
+  printf 'FAIL: Release input status must flag PROCESSED_BUILD_NUMBER as a selected-build placeholder\n'
+  failures=$((failures + 1))
+elif grep -q 'OK: APP_STORE_BUILD_NUMBER is configured for final App Review submission' "$release_input_placeholder_build_log"; then
+  printf 'FAIL: Release input status must not mark a selected-build placeholder as configured\n'
+  failures=$((failures + 1))
+fi
+rm -rf "$release_input_placeholder_build_test_dir"
 for selected_build_handoff_path in \
   README.md \
   AppStore/release-inputs-worksheet.md \
