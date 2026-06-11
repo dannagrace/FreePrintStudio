@@ -51,6 +51,9 @@ jobs:
         timeout-minutes: 5
         run: Scripts/verify_release.sh submission-packet
 
+      - name: Validate App Store submission packet
+        run: Scripts/verify_release.sh submission-packet-check
+
       - name: Upload App Store submission packet
         uses: actions/upload-artifact@v7
         with:

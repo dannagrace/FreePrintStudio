@@ -1190,6 +1190,7 @@ fi
 check_contains "Scripts/prepare_app_store_submission_packet.sh" "sha256" "Submission packet generator must record file checksums"
 check_contains "Scripts/prepare_app_store_submission_packet.sh" "pdf-export-validation.tsv" "Submission packet generator must include the PDF validation manifest"
 check_contains "Scripts/prepare_app_store_submission_packet.sh" "test-ruler-stretch" "Submission packet generator must require Test Ruler PDF validation evidence"
+check_contains "Scripts/prepare_app_store_submission_packet.sh" "\\[generated-pdf\\]" "Submission packet generator must redact local PDF evidence paths"
 check_file "Scripts/generate_manual_release_evidence_form.sh" "Manual release evidence form generator is required"
 if [[ -f "Scripts/generate_manual_release_evidence_form.sh" && ! -x "Scripts/generate_manual_release_evidence_form.sh" ]]; then
   printf 'FAIL: Manual release evidence form generator must be executable (Scripts/generate_manual_release_evidence_form.sh)\n'
@@ -1255,6 +1256,24 @@ check_contains "Scripts/prepare_app_store_submission_packet.sh" '\\`file-manifes
 check_contains "Scripts/prepare_app_store_submission_packet.sh" '\\`readiness.txt\\`' "Submission packet summary must escape readiness log code spans inside the shell heredoc"
 check_contains "Scripts/prepare_app_store_submission_packet.sh" '\\`external-readiness-actions.tsv\\`' "Submission packet summary must reference the external readiness actions manifest"
 check_contains "Scripts/verify_release.sh" "prepare_app_store_submission_packet.sh" "Release verification must expose submission packet generation"
+check_file "Scripts/validate_app_store_submission_packet.sh" "App Store submission packet validator is required"
+if [[ -f "Scripts/validate_app_store_submission_packet.sh" && ! -x "Scripts/validate_app_store_submission_packet.sh" ]]; then
+  printf 'FAIL: App Store submission packet validator must be executable (Scripts/validate_app_store_submission_packet.sh)\n'
+  failures=$((failures + 1))
+fi
+check_contains "Scripts/validate_app_store_submission_packet.sh" "ACTION_ITEMS.md" "Submission packet validator must require action items"
+check_contains "Scripts/validate_app_store_submission_packet.sh" "external-readiness-actions.tsv" "Submission packet validator must require external readiness actions"
+check_contains "Scripts/validate_app_store_submission_packet.sh" "file-manifest.tsv" "Submission packet validator must require the file manifest"
+check_contains "Scripts/validate_app_store_submission_packet.sh" "pdf-export-validation.tsv" "Submission packet validator must require PDF validation evidence"
+check_contains "Scripts/validate_app_store_submission_packet.sh" "screenshots.tsv" "Submission packet validator must require screenshot evidence"
+check_contains "Scripts/validate_app_store_submission_packet.sh" "test-ruler-stretch" "Submission packet validator must require Test Ruler PDF evidence"
+check_contains "Scripts/validate_app_store_submission_packet.sh" "Manual Verification" "Submission packet validator must require manual verification tracking"
+check_contains "Scripts/validate_app_store_submission_packet.sh" "/Users/" "Submission packet validator must reject leaked absolute local paths"
+check_contains "Scripts/verify_release.sh" "validate_app_store_submission_packet.sh" "Release verification must expose submission packet validation"
+check_contains "Scripts/verify_release.sh" "submission-packet-check" "Release verification must provide a submission-packet-check command"
+check_contains ".github/workflows/release.yml" "Scripts/verify_release.sh submission-packet-check" "Release workflow must validate the generated App Store submission packet before upload"
+check_contains "README.md" "Scripts/verify_release.sh submission-packet-check" "README must document the submission packet validation command"
+check_contains "AppStore/release-checklist.md" "Scripts/verify_release.sh submission-packet-check" "Release checklist must include submission packet validation"
 check_file ".github/workflows/release.yml" "GitHub Actions release gate workflow is required"
 check_contains ".github/workflows/release.yml" "Scripts/verify_release.sh" "Release workflow must run the local release gate"
 check_contains ".github/workflows/release.yml" "timeout-minutes: 10" "Slow release workflow steps must have command-level timeouts"

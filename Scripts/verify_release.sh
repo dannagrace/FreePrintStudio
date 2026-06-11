@@ -329,6 +329,11 @@ run_submission_packet_generation() {
   Scripts/prepare_app_store_submission_packet.sh
 }
 
+run_submission_packet_validation() {
+  printf '== App Store submission packet validation ==\n'
+  Scripts/validate_app_store_submission_packet.sh
+}
+
 run_manual_evidence_form_generation() {
   printf '== Manual release evidence form ==\n'
   Scripts/generate_manual_release_evidence_form.sh
@@ -412,6 +417,8 @@ run_store_ready_validation() {
   run_print_sheet_validation
   printf '\n'
   run_submission_packet_generation
+  printf '\n'
+  run_submission_packet_validation
   printf '\nLocal store-ready verification passed.\n'
 }
 
@@ -464,6 +471,9 @@ case "${1:-all}" in
   submission-packet)
     run_submission_packet_generation
     ;;
+  submission-packet-check)
+    run_submission_packet_validation
+    ;;
   contact-report)
     run_contact_readiness_report_generation
     ;;
@@ -495,7 +505,7 @@ case "${1:-all}" in
     run_manual_verification_validation
     ;;
   *)
-    printf 'Usage: %s [all|store-ready|static|core|plist|privacy|questionnaires|pdf|build|screenshots|accessibility|simulator-workflow|photo-import|review-ui|print-sheet|submission-packet|contact-report|manual-evidence-form|manual-report|signing-report|asc-report|review-report|archive-preflight|testflight-preflight|review-preflight|manual-verification]\n' "$0"
+    printf 'Usage: %s [all|store-ready|static|core|plist|privacy|questionnaires|pdf|build|screenshots|accessibility|simulator-workflow|photo-import|review-ui|print-sheet|submission-packet|submission-packet-check|contact-report|manual-evidence-form|manual-report|signing-report|asc-report|review-report|archive-preflight|testflight-preflight|review-preflight|manual-verification]\n' "$0"
     exit 1
     ;;
 esac

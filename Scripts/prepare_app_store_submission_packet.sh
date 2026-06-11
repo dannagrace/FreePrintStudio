@@ -135,7 +135,8 @@ copy_pdf_validation_manifest() {
     return
   fi
 
-  cp "$PDF_VALIDATION_MANIFEST_SOURCE" "$PDF_VALIDATION_MANIFEST"
+  awk -F '\t' 'BEGIN { OFS = "\t" } NR == 1 { print; next } { $9 = "[generated-pdf]"; print }' \
+    "$PDF_VALIDATION_MANIFEST_SOURCE" >"$PDF_VALIDATION_MANIFEST"
 }
 
 write_manual_evidence_form() {
