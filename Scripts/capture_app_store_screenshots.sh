@@ -20,6 +20,8 @@ TEST_CONTENT_SIZE="${FREEPRINTSTUDIO_CONTENT_SIZE:-}"
 TEST_CONTENT="${FREEPRINTSTUDIO_SCREENSHOT_CONTENT:-image}"
 SCREENSHOT_DELAY="${SCREENSHOT_DELAY:-5}"
 SIMCTL_TIMEOUT_SECONDS="${FREEPRINTSTUDIO_SIMCTL_TIMEOUT_SECONDS:-30}"
+BOOTSTATUS_TIMEOUT_SECONDS="${FREEPRINTSTUDIO_SCREENSHOT_BOOTSTATUS_TIMEOUT_SECONDS:-180}"
+XCODEBUILD_TIMEOUT_SECONDS="${FREEPRINTSTUDIO_SCREENSHOT_XCODEBUILD_TIMEOUT_SECONDS:-300}"
 
 validate_capture_options() {
   if [[ -n "$TEST_APPEARANCE" ]]; then
@@ -96,16 +98,20 @@ candidate_simulators() {
     return
   fi
 
-  xcrun simctl list devices booted \
+  run_with_timeout "$SIMCTL_TIMEOUT_SECONDS" xcrun simctl list devices booted \
     | grep -E "$DEVICE_PATTERN" \
-    | sed -nE 's/.*\(([A-F0-9-]{36})\).*/\1/p'
-  xcrun simctl list devices available \
+    | sed -nE 's/.*\(([A-F0-9-]{36})\).*/\1/p' \
+    || true
+  run_with_timeout "$SIMCTL_TIMEOUT_SECONDS" xcrun simctl list devices available \
     | grep -E "$DEVICE_PATTERN" \
-    | sed -nE 's/.*\(([A-F0-9-]{36})\).*/\1/p'
-  xcrun simctl list devices booted \
-    | sed -nE "/$FALLBACK_DEVICE_NAME/s/.*\\(([A-F0-9-]{36})\\).*/\\1/p"
-  xcrun simctl list devices available \
-    | sed -nE "/$FALLBACK_DEVICE_NAME/s/.*\\(([A-F0-9-]{36})\\).*/\\1/p"
+    | sed -nE 's/.*\(([A-F0-9-]{36})\).*/\1/p' \
+    || true
+  run_with_timeout "$SIMCTL_TIMEOUT_SECONDS" xcrun simctl list devices booted \
+    | sed -nE "/$FALLBACK_DEVICE_NAME/s/.*\\(([A-F0-9-]{36})\\).*/\\1/p" \
+    || true
+  run_with_timeout "$SIMCTL_TIMEOUT_SECONDS" xcrun simctl list devices available \
+    | sed -nE "/$FALLBACK_DEVICE_NAME/s/.*\\(([A-F0-9-]{36})\\).*/\\1/p" \
+    || true
 }
 
 unique_candidate_simulators() {
@@ -115,8 +121,8 @@ unique_candidate_simulators() {
 boot_simulator() {
   local device="$1"
   if [[ "$device" != "booted" ]]; then
-    xcrun simctl boot "$device" >/dev/null 2>&1 || true
-    xcrun simctl bootstatus "$device" -b >/dev/null
+    run_with_timeout "$SIMCTL_TIMEOUT_SECONDS" xcrun simctl boot "$device" >/dev/null 2>&1 || true
+    run_with_timeout "$BOOTSTATUS_TIMEOUT_SECONDS" xcrun simctl bootstatus "$device" -b >/dev/null
   fi
 }
 
@@ -141,7 +147,7 @@ try:
 except subprocess.TimeoutExpired as exc:
     if exc.stdout:
         print(exc.stdout, end="")
-    print(f"{' '.join(command)} timed out after {timeout_text} seconds")
+    print(f"Screenshot capture command timed out after {timeout_text} seconds: {' '.join(command)}")
     sys.exit(124)
 
 if result.stdout:
@@ -191,10 +197,10 @@ restore_simulator_ui() {
     return
   fi
   if [[ -n "$ORIGINAL_APPEARANCE" && "$ORIGINAL_APPEARANCE" != "unsupported" && "$ORIGINAL_APPEARANCE" != "unknown" ]]; then
-    xcrun simctl ui "$DEVICE" appearance "$ORIGINAL_APPEARANCE" >/dev/null 2>&1 || true
+    run_with_timeout "$SIMCTL_TIMEOUT_SECONDS" xcrun simctl ui "$DEVICE" appearance "$ORIGINAL_APPEARANCE" >/dev/null 2>&1 || true
   fi
   if [[ -n "$ORIGINAL_CONTENT_SIZE" && "$ORIGINAL_CONTENT_SIZE" != "unsupported" && "$ORIGINAL_CONTENT_SIZE" != "unknown" ]]; then
-    xcrun simctl ui "$DEVICE" content_size "$ORIGINAL_CONTENT_SIZE" >/dev/null 2>&1 || true
+    run_with_timeout "$SIMCTL_TIMEOUT_SECONDS" xcrun simctl ui "$DEVICE" content_size "$ORIGINAL_CONTENT_SIZE" >/dev/null 2>&1 || true
   fi
 }
 
@@ -204,7 +210,7 @@ Scripts/generate_store_sample_image.py
 
 mkdir -p "$(dirname "$SCREENSHOT_PATH")"
 
-xcodebuild \
+run_with_timeout "$XCODEBUILD_TIMEOUT_SECONDS" xcodebuild \
   -project FreePrintStudio.xcodeproj \
   -scheme FreePrintStudio \
   -destination 'generic/platform=iOS Simulator' \
@@ -216,25 +222,25 @@ DEVICE="$(select_installed_simulator)"
 printf 'Using simulator: %s\n' "$DEVICE"
 
 if [[ -n "$TEST_APPEARANCE" || -n "$TEST_CONTENT_SIZE" ]]; then
-  ORIGINAL_APPEARANCE="$(xcrun simctl ui "$DEVICE" appearance 2>/dev/null || true)"
-  ORIGINAL_CONTENT_SIZE="$(xcrun simctl ui "$DEVICE" content_size 2>/dev/null || true)"
+  ORIGINAL_APPEARANCE="$(run_with_timeout "$SIMCTL_TIMEOUT_SECONDS" xcrun simctl ui "$DEVICE" appearance 2>/dev/null || true)"
+  ORIGINAL_CONTENT_SIZE="$(run_with_timeout "$SIMCTL_TIMEOUT_SECONDS" xcrun simctl ui "$DEVICE" content_size 2>/dev/null || true)"
   RESTORE_SIMULATOR_UI=1
 fi
 
 if [[ -n "$TEST_APPEARANCE" ]]; then
-  xcrun simctl ui "$DEVICE" appearance "$TEST_APPEARANCE"
+  run_with_timeout "$SIMCTL_TIMEOUT_SECONDS" xcrun simctl ui "$DEVICE" appearance "$TEST_APPEARANCE"
 fi
 
 if [[ -n "$TEST_CONTENT_SIZE" ]]; then
-  xcrun simctl ui "$DEVICE" content_size "$TEST_CONTENT_SIZE"
+  run_with_timeout "$SIMCTL_TIMEOUT_SECONDS" xcrun simctl ui "$DEVICE" content_size "$TEST_CONTENT_SIZE"
 fi
 
-CONTAINER="$(xcrun simctl get_app_container "$DEVICE" "$BUNDLE_ID" data)"
+CONTAINER="$(run_with_timeout "$SIMCTL_TIMEOUT_SECONDS" xcrun simctl get_app_container "$DEVICE" "$BUNDLE_ID" data)"
 TEST_DIR="$CONTAINER/Documents/FreePrintStudioScreenshot"
 mkdir -p "$TEST_DIR"
 cp "$SAMPLE_IMAGE" "$TEST_DIR/sample-print-image.png"
 
-xcrun simctl terminate "$DEVICE" "$BUNDLE_ID" >/dev/null 2>&1 || true
+run_with_timeout "$SIMCTL_TIMEOUT_SECONDS" xcrun simctl terminate "$DEVICE" "$BUNDLE_ID" >/dev/null 2>&1 || true
 launch_args=(
   -FreePrintStudioTestImagePath "$TEST_DIR/sample-print-image.png" \
   -FreePrintStudioPaper "$TEST_PAPER" \
@@ -255,8 +261,8 @@ if [[ -n "$TEST_TARGET_HEIGHT" ]]; then
   launch_args+=(-FreePrintStudioTargetHeight "$TEST_TARGET_HEIGHT")
 fi
 
-xcrun simctl launch "$DEVICE" "$BUNDLE_ID" "${launch_args[@]}" >/tmp/freeprintstudio-screenshot-launch.log
+run_with_timeout "$SIMCTL_TIMEOUT_SECONDS" xcrun simctl launch "$DEVICE" "$BUNDLE_ID" "${launch_args[@]}" >/tmp/freeprintstudio-screenshot-launch.log
 
 sleep "$SCREENSHOT_DELAY"
-xcrun simctl io "$DEVICE" screenshot --type=jpeg "$SCREENSHOT_PATH" >/tmp/freeprintstudio-screenshot-capture.log
+run_with_timeout "$SIMCTL_TIMEOUT_SECONDS" xcrun simctl io "$DEVICE" screenshot --type=jpeg "$SCREENSHOT_PATH" >/tmp/freeprintstudio-screenshot-capture.log
 printf 'Wrote %s\n' "$SCREENSHOT_PATH"

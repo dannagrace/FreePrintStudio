@@ -780,6 +780,16 @@ check_contains "Scripts/capture_app_store_screenshots.sh" "FREEPRINTSTUDIO_ORIEN
 check_contains "Scripts/capture_app_store_screenshots.sh" "FREEPRINTSTUDIO_UNIT" "Screenshot script must support reproducible measurement unit captures"
 check_contains "Scripts/capture_app_store_screenshots.sh" "FREEPRINTSTUDIO_APPEARANCE" "Screenshot script must support reproducible light/dark captures"
 check_contains "Scripts/capture_app_store_screenshots.sh" "FREEPRINTSTUDIO_CONTENT_SIZE" "Screenshot script must support reproducible Larger Text captures"
+check_contains "Scripts/capture_app_store_screenshots.sh" 'XCODEBUILD_TIMEOUT_SECONDS="${FREEPRINTSTUDIO_SCREENSHOT_XCODEBUILD_TIMEOUT_SECONDS:-300}"' "Screenshot capture must bound simulator build time"
+check_contains "Scripts/capture_app_store_screenshots.sh" 'BOOTSTATUS_TIMEOUT_SECONDS="${FREEPRINTSTUDIO_SCREENSHOT_BOOTSTATUS_TIMEOUT_SECONDS:-180}"' "Screenshot capture must bound simulator bootstatus"
+check_contains "Scripts/capture_app_store_screenshots.sh" "Screenshot capture command timed out" "Screenshot capture must report timeout failures clearly"
+check_contains "Scripts/capture_app_store_screenshots.sh" "run_with_timeout \"\$SIMCTL_TIMEOUT_SECONDS\" xcrun simctl list devices booted" "Screenshot capture must bound booted simulator discovery"
+check_contains "Scripts/capture_app_store_screenshots.sh" "run_with_timeout \"\$SIMCTL_TIMEOUT_SECONDS\" xcrun simctl list devices available" "Screenshot capture must bound available simulator discovery"
+check_contains "Scripts/capture_app_store_screenshots.sh" "run_with_timeout \"\$SIMCTL_TIMEOUT_SECONDS\" xcrun simctl boot \"\$device\"" "Screenshot capture must bound simulator boot commands"
+check_contains "Scripts/capture_app_store_screenshots.sh" "run_with_timeout \"\$BOOTSTATUS_TIMEOUT_SECONDS\" xcrun simctl bootstatus \"\$device\" -b" "Screenshot capture must bound simulator bootstatus commands"
+check_contains "Scripts/capture_app_store_screenshots.sh" "run_with_timeout \"\$XCODEBUILD_TIMEOUT_SECONDS\" xcodebuild" "Screenshot capture must bound xcodebuild"
+check_contains "Scripts/capture_app_store_screenshots.sh" "run_with_timeout \"\$SIMCTL_TIMEOUT_SECONDS\" xcrun simctl ui \"\$DEVICE\" appearance" "Screenshot capture must bound simulator appearance commands"
+check_contains "Scripts/capture_app_store_screenshots.sh" "run_with_timeout \"\$SIMCTL_TIMEOUT_SECONDS\" xcrun simctl ui \"\$DEVICE\" content_size" "Screenshot capture must bound simulator content-size commands"
 check_file "Scripts/validate_accessibility_screenshots.sh" "Accessibility screenshot validation script is required"
 if [[ ! -x "Scripts/validate_accessibility_screenshots.sh" ]]; then
   printf 'FAIL: Accessibility screenshot validation script must be executable (Scripts/validate_accessibility_screenshots.sh)\n'
