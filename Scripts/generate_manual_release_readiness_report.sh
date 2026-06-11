@@ -93,6 +93,25 @@ value_status() {
   fi
 }
 
+ios_version_status() {
+  local name="$1"
+  local value
+  value="$(value_for "$name")"
+  if [[ -z "$value" ]]; then
+    record_failure
+    status_result='Missing; expected numeric iOS version'
+  elif looks_placeholder_like "$value"; then
+    record_failure
+    status_result='Placeholder-like'
+  elif [[ "$value" =~ ^([iI][oO][sS][[:space:]]*)?[0-9]+(\.[0-9]+){0,2}$ ]]; then
+    record_ready
+    status_result='Recorded; numeric iOS version'
+  else
+    record_failure
+    status_result='Invalid; expected numeric iOS version'
+  fi
+}
+
 pass_status() {
   local name="$1"
   local value
@@ -282,7 +301,7 @@ value_status MANUAL_VERIFIER_NAME
 status_verifier_name="$status_result"
 value_status MANUAL_REAL_IPHONE_MODEL
 status_iphone_model="$status_result"
-value_status MANUAL_REAL_IPHONE_IOS_VERSION
+ios_version_status MANUAL_REAL_IPHONE_IOS_VERSION
 status_iphone_ios_version="$status_result"
 date_status MANUAL_REAL_IPHONE_TEST_DATE
 status_iphone_test_date="$status_result"

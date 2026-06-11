@@ -72,6 +72,23 @@ require_physical_device_value() {
   fi
 }
 
+require_ios_version() {
+  local name="$1"
+  local label="$2"
+  local value
+  value="$(value_for "$name")"
+
+  if [[ -z "$value" ]]; then
+    block "$label is missing ($name)"
+  elif looks_placeholder_like "$value"; then
+    block "$label still looks like a placeholder ($name)"
+  elif [[ "$value" =~ ^([iI][oO][sS][[:space:]]*)?[0-9]+(\.[0-9]+){0,2}$ ]]; then
+    ok "$label recorded"
+  else
+    block "$label must be a numeric iOS version ($name), for example 18.5 or iOS 18.5"
+  fi
+}
+
 require_pass() {
   local name="$1"
   local label="$2"
@@ -206,7 +223,7 @@ validate_required_evidence_values() {
   require_value MANUAL_VERIFIER_NAME "Manual verifier"
 
   require_physical_device_value MANUAL_REAL_IPHONE_MODEL "Real iPhone model"
-  require_value MANUAL_REAL_IPHONE_IOS_VERSION "Real iPhone iOS version"
+  require_ios_version MANUAL_REAL_IPHONE_IOS_VERSION "Real iPhone iOS version"
   require_recent_date MANUAL_REAL_IPHONE_TEST_DATE "Real iPhone verification"
   require_pass MANUAL_REAL_IPHONE_PHOTOS_IMPORT "Real iPhone Photos import"
   require_pass MANUAL_REAL_IPHONE_PDF_EXPORT "Real iPhone PDF export"

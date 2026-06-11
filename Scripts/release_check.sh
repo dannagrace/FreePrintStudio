@@ -470,6 +470,38 @@ elif ! grep -q 'AirPrint ruler target length is missing (MANUAL_AIRPRINT_RULER_T
   failures=$((failures + 1))
 fi
 rm -rf "$manual_release_airprint_measurement_test_dir"
+manual_release_ios_version_test_dir="$(mktemp -d)"
+manual_release_ios_version_evidence="$manual_release_ios_version_test_dir/manual-release-verification.env"
+manual_release_ios_version_log="$manual_release_ios_version_test_dir/manual-release-verification-ios-version.log"
+cat >"$manual_release_ios_version_evidence" <<EOF
+MANUAL_VERIFIER_NAME="Release Tester"
+MANUAL_REAL_IPHONE_MODEL="iPhone 15"
+MANUAL_REAL_IPHONE_IOS_VERSION="latest-iOS"
+MANUAL_REAL_IPHONE_TEST_DATE="$today"
+MANUAL_REAL_IPHONE_PHOTOS_IMPORT="pass"
+MANUAL_REAL_IPHONE_PDF_EXPORT="pass"
+MANUAL_REAL_IPHONE_PRINT_SHEET="pass"
+MANUAL_AIRPRINT_TEST_DATE="$today"
+MANUAL_AIRPRINT_PRINTER="Office AirPrint Printer"
+MANUAL_AIRPRINT_EXACT_SIZE="pass"
+MANUAL_AIRPRINT_RULER_TARGET_INCHES="6"
+MANUAL_AIRPRINT_RULER_MEASURED_INCHES="6.00"
+MANUAL_TESTFLIGHT_BUILD_NUMBER="42"
+MANUAL_TESTFLIGHT_DEVICE="iPhone 15"
+MANUAL_TESTFLIGHT_TEST_DATE="$today"
+MANUAL_TESTFLIGHT_INSTALL="pass"
+MANUAL_TESTFLIGHT_PRINT_WORKFLOW="pass"
+EOF
+if APP_STORE_BUILD_NUMBER=42 \
+  MANUAL_RELEASE_VERIFICATION_PATH="$manual_release_ios_version_evidence" \
+  Scripts/validate_manual_release_verification.sh >"$manual_release_ios_version_log" 2>&1; then
+  printf 'FAIL: Manual verification must reject non-numeric real iPhone iOS version evidence\n'
+  failures=$((failures + 1))
+elif ! grep -q 'Real iPhone iOS version must be a numeric iOS version' "$manual_release_ios_version_log"; then
+  printf 'FAIL: Manual verification iOS-version failure should identify the malformed iOS version field\n'
+  failures=$((failures + 1))
+fi
+rm -rf "$manual_release_ios_version_test_dir"
 manual_release_airprint_tolerance_test_dir="$(mktemp -d)"
 manual_release_airprint_tolerance_evidence="$manual_release_airprint_tolerance_test_dir/manual-release-verification.env"
 manual_release_airprint_tolerance_log="$manual_release_airprint_tolerance_test_dir/manual-release-verification-airprint-tolerance.log"
@@ -1661,6 +1693,7 @@ check_contains "Scripts/generate_manual_release_evidence_form.sh" "MANUAL_REAL_I
 check_contains "Scripts/generate_manual_release_evidence_form.sh" "MANUAL_AIRPRINT_EXACT_SIZE" "Manual release evidence form must cover AirPrint exact-size evidence"
 check_contains "Scripts/generate_manual_release_evidence_form.sh" "MANUAL_AIRPRINT_RULER_MEASURED_INCHES" "Manual release evidence form must cover AirPrint measured ruler evidence"
 check_contains "Scripts/generate_manual_release_evidence_form.sh" "MANUAL_TESTFLIGHT_PRINT_WORKFLOW" "Manual release evidence form must cover TestFlight print workflow evidence"
+check_contains "Scripts/generate_manual_release_evidence_form.sh" "Numeric iOS version" "Manual release evidence form must require a traceable numeric iOS version"
 check_contains "Scripts/generate_manual_release_evidence_form.sh" "processed App Store Connect build number" "Manual release evidence form must warn that selected-build placeholders must be replaced"
 check_file "Scripts/generate_manual_release_readiness_report.sh" "Manual release readiness report generator is required"
 if [[ -f "Scripts/generate_manual_release_readiness_report.sh" && ! -x "Scripts/generate_manual_release_readiness_report.sh" ]]; then
@@ -1674,6 +1707,7 @@ check_contains "Scripts/generate_manual_release_readiness_report.sh" "MANUAL_AIR
 check_contains "Scripts/generate_manual_release_readiness_report.sh" "MANUAL_TESTFLIGHT_BUILD_NUMBER" "Manual release readiness report must summarize selected TestFlight build evidence"
 check_contains "Scripts/generate_manual_release_readiness_report.sh" "APP_STORE_BUILD_NUMBER" "Manual release readiness report must compare the selected App Store build"
 check_contains "Scripts/generate_manual_release_readiness_report.sh" "Scripts/validate_manual_release_verification.sh" "Manual release readiness report must reference the strict validator"
+check_contains "Scripts/generate_manual_release_readiness_report.sh" "ios_version_status" "Manual release readiness report must validate real iPhone iOS version format"
 check_contains "Scripts/generate_manual_release_readiness_report.sh" "processed App Store Connect build number" "Manual release readiness report must warn that selected-build placeholders must be replaced"
 check_contains "Scripts/generate_manual_release_readiness_report.sh" "redacted" "Manual release readiness report must avoid printing private manual evidence values"
 check_contains "Scripts/prepare_app_store_submission_packet.sh" "manual-release-evidence-form.md" "Submission packet generator must include the manual release evidence form"
@@ -1745,6 +1779,40 @@ if ! grep -q 'Selected build matches evidence build.*placeholder' "$selected_bui
   failures=$((failures + 1))
 fi
 rm -rf "$selected_build_report_placeholder_test_dir"
+manual_report_ios_version_test_dir="$(mktemp -d)"
+manual_report_ios_version_evidence="$manual_report_ios_version_test_dir/manual-release-verification.env"
+manual_report_ios_version_report="$manual_report_ios_version_test_dir/manual-release-readiness-report.md"
+today="$(date +%F)"
+cat >"$manual_report_ios_version_evidence" <<EOF
+MANUAL_VERIFIER_NAME="Release Tester"
+MANUAL_REAL_IPHONE_MODEL="iPhone 15"
+MANUAL_REAL_IPHONE_IOS_VERSION="latest-iOS"
+MANUAL_REAL_IPHONE_TEST_DATE="$today"
+MANUAL_REAL_IPHONE_PHOTOS_IMPORT="pass"
+MANUAL_REAL_IPHONE_PDF_EXPORT="pass"
+MANUAL_REAL_IPHONE_PRINT_SHEET="pass"
+MANUAL_AIRPRINT_TEST_DATE="$today"
+MANUAL_AIRPRINT_PRINTER="Production AirPrint validation"
+MANUAL_AIRPRINT_EXACT_SIZE="pass"
+MANUAL_AIRPRINT_RULER_TARGET_INCHES="6"
+MANUAL_AIRPRINT_RULER_MEASURED_INCHES="6.00"
+MANUAL_TESTFLIGHT_BUILD_NUMBER="42"
+MANUAL_TESTFLIGHT_DEVICE="iPhone 15"
+MANUAL_TESTFLIGHT_TEST_DATE="$today"
+MANUAL_TESTFLIGHT_INSTALL="pass"
+MANUAL_TESTFLIGHT_PRINT_WORKFLOW="pass"
+EOF
+MANUAL_RELEASE_VERIFICATION_PATH="$manual_report_ios_version_evidence" \
+  Scripts/generate_manual_release_readiness_report.sh "$manual_report_ios_version_report" >/dev/null
+if grep -q 'iOS version.*Recorded; value redacted' "$manual_report_ios_version_report"; then
+  printf 'FAIL: Manual readiness report must not mark a malformed iOS version as recorded\n'
+  failures=$((failures + 1))
+fi
+if ! grep -q 'iOS version.*Invalid; expected numeric iOS version' "$manual_report_ios_version_report"; then
+  printf 'FAIL: Manual readiness report must identify malformed iOS version evidence\n'
+  failures=$((failures + 1))
+fi
+rm -rf "$manual_report_ios_version_test_dir"
 check_contains "Scripts/prepare_app_store_submission_packet.sh" "app-review-submission-readiness-report.md" "Submission packet generator must include the App Review submission readiness report"
 check_contains "Scripts/prepare_app_store_submission_packet.sh" "generate_app_review_submission_readiness_report.sh" "Submission packet generator must generate the App Review submission readiness report"
 check_contains "Scripts/prepare_app_store_submission_packet.sh" '\\`app-review-submission-readiness-report.md\\`' "Submission packet summary must reference the App Review submission readiness report"

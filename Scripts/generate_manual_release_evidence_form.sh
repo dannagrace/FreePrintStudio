@@ -57,7 +57,7 @@ Record these fields in \`Config/manual-release-verification.env\` after testing 
 | --- | --- | --- |
 | Verifier name or team | \`MANUAL_VERIFIER_NAME\` | Non-empty |
 | iPhone model | \`MANUAL_REAL_IPHONE_MODEL\` | Physical device model |
-| iOS version | \`MANUAL_REAL_IPHONE_IOS_VERSION\` | Non-empty |
+| iOS version | \`MANUAL_REAL_IPHONE_IOS_VERSION\` | Numeric iOS version, e.g. \`18.5\` or \`iOS 18.5\` |
 | Test date | \`MANUAL_REAL_IPHONE_TEST_DATE\` | \`YYYY-MM-DD\` |
 | Photos import succeeds | \`MANUAL_REAL_IPHONE_PHOTOS_IMPORT\` | \`pass\` |
 | Exact-size PDF export succeeds | \`MANUAL_REAL_IPHONE_PDF_EXPORT\` | \`pass\` |
