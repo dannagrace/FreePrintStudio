@@ -78,12 +78,14 @@ Record these fields after printing the built-in Test Ruler on a real printer or 
 | Test date | \`MANUAL_AIRPRINT_TEST_DATE\` | \`YYYY-MM-DD\` |
 | Printer or workflow name | \`MANUAL_AIRPRINT_PRINTER\` | Non-empty |
 | 0-6 inch ruler prints at exact size | \`MANUAL_AIRPRINT_EXACT_SIZE\` | \`pass\` |
+| Target ruler length | \`MANUAL_AIRPRINT_RULER_TARGET_INCHES\` | \`6\` |
+| Measured printed ruler length | \`MANUAL_AIRPRINT_RULER_MEASURED_INCHES\` | Decimal inches within 0.0625 of target |
 
 Manual notes:
 
 - [ ] Select the built-in Test Ruler.
 - [ ] Print at Actual Size or 100% scale.
-- [ ] Compare the printed 0-6 inch marks against a physical ruler.
+- [ ] Compare the printed 0-6 inch marks against a physical ruler and record the measured length in inches.
 
 ## TestFlight Evidence
 

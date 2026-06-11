@@ -93,6 +93,76 @@ require_pass() {
   esac
 }
 
+require_airprint_ruler_measurement() {
+  local target
+  local measured
+  local tolerance
+  local measurement_status
+  local missing=0
+  target="$(value_for MANUAL_AIRPRINT_RULER_TARGET_INCHES)"
+  measured="$(value_for MANUAL_AIRPRINT_RULER_MEASURED_INCHES)"
+  tolerance="${MANUAL_AIRPRINT_RULER_TOLERANCE_INCHES:-0.0625}"
+
+  if [[ -z "$target" ]]; then
+    block "AirPrint ruler target length is missing (MANUAL_AIRPRINT_RULER_TARGET_INCHES)"
+    missing=1
+  elif looks_placeholder_like "$target"; then
+    block "AirPrint ruler target length still looks like a placeholder (MANUAL_AIRPRINT_RULER_TARGET_INCHES)"
+    missing=1
+  fi
+
+  if [[ -z "$measured" ]]; then
+    block "AirPrint ruler measured length is missing (MANUAL_AIRPRINT_RULER_MEASURED_INCHES)"
+    missing=1
+  elif looks_placeholder_like "$measured"; then
+    block "AirPrint ruler measured length still looks like a placeholder (MANUAL_AIRPRINT_RULER_MEASURED_INCHES)"
+    missing=1
+  fi
+
+  if [[ "$missing" == "1" ]]; then
+    return
+  fi
+
+  if ! measurement_status="$(python3 - "$target" "$measured" "$tolerance" <<'PY'
+import math
+import sys
+
+target_raw, measured_raw, tolerance_raw = sys.argv[1:4]
+
+def parse_positive(label: str, value: str) -> float:
+    try:
+        parsed = float(value)
+    except ValueError:
+        raise ValueError(f"{label} must be a positive decimal inch value")
+    if not math.isfinite(parsed) or parsed <= 0:
+        raise ValueError(f"{label} must be a positive decimal inch value")
+    return parsed
+
+try:
+    target = parse_positive("AirPrint ruler target length", target_raw)
+    measured = parse_positive("AirPrint ruler measured length", measured_raw)
+    tolerance = parse_positive("AirPrint ruler measurement tolerance", tolerance_raw)
+except ValueError as exc:
+    print(str(exc))
+    raise SystemExit(1)
+
+delta = abs(target - measured)
+if delta > tolerance:
+    print(
+        "AirPrint measured ruler length differs from target by "
+        f"{delta:.4f} inch(es); maximum allowed is {tolerance:.4f}"
+    )
+    raise SystemExit(1)
+
+print(f"AirPrint ruler measurement is within {tolerance:.4f} inch(es) of target")
+PY
+)"; then
+    block "$measurement_status"
+  else
+    ok "$measurement_status"
+  fi
+}
+
 require_recent_date() {
   local name="$1"
   local label="$2"
@@ -145,6 +215,7 @@ validate_required_evidence_values() {
   require_recent_date MANUAL_AIRPRINT_TEST_DATE "AirPrint verification"
   require_value MANUAL_AIRPRINT_PRINTER "AirPrint printer or production-equivalent workflow"
   require_pass MANUAL_AIRPRINT_EXACT_SIZE "AirPrint exact-size output"
+  require_airprint_ruler_measurement
 
   require_value MANUAL_TESTFLIGHT_BUILD_NUMBER "TestFlight build number"
   require_physical_device_value MANUAL_TESTFLIGHT_DEVICE "TestFlight device"

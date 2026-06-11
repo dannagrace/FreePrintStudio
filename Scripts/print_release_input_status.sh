@@ -303,6 +303,8 @@ if [[ "$manual_source_status" -eq 0 ]]; then
     MANUAL_REAL_IPHONE_TEST_DATE \
     MANUAL_AIRPRINT_TEST_DATE \
     MANUAL_AIRPRINT_PRINTER \
+    MANUAL_AIRPRINT_RULER_TARGET_INCHES \
+    MANUAL_AIRPRINT_RULER_MEASURED_INCHES \
     MANUAL_TESTFLIGHT_BUILD_NUMBER \
     MANUAL_TESTFLIGHT_DEVICE \
     MANUAL_TESTFLIGHT_TEST_DATE
@@ -325,7 +327,7 @@ if [[ "$manual_source_status" -eq 0 ]]; then
     fi
   done
 fi
-status_count "Manual real-device, AirPrint, and TestFlight evidence ready" "$manual_ready" 15
+status_count "Manual real-device, AirPrint, and TestFlight evidence ready" "$manual_ready" 17
 
 if is_set "${APP_STORE_BUILD_NUMBER:-}" && is_set "${MANUAL_TESTFLIGHT_BUILD_NUMBER:-}"; then
   if looks_like_placeholder "${APP_STORE_BUILD_NUMBER:-}" || looks_like_placeholder "${MANUAL_TESTFLIGHT_BUILD_NUMBER:-}"; then

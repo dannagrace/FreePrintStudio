@@ -8,6 +8,7 @@ source Scripts/load_release_env.sh
 output_path="${1:-build/manual-release-readiness-report.md}"
 evidence_path="${MANUAL_RELEASE_VERIFICATION_PATH:-$ROOT_DIR/Config/manual-release-verification.env}"
 max_age_days="${MANUAL_RELEASE_VERIFICATION_MAX_AGE_DAYS:-45}"
+airprint_ruler_tolerance="${MANUAL_AIRPRINT_RULER_TOLERANCE_INCHES:-0.0625}"
 generated_at="$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
 
 usage() {
@@ -168,6 +169,70 @@ PY
   esac
 }
 
+airprint_measurement_status() {
+  local target="${MANUAL_AIRPRINT_RULER_TARGET_INCHES:-}"
+  local measured="${MANUAL_AIRPRINT_RULER_MEASURED_INCHES:-}"
+  local result
+
+  if [[ -z "$target" || -z "$measured" ]]; then
+    record_failure
+    status_result='Missing target or measured ruler length'
+    return
+  fi
+
+  if looks_placeholder_like "$target" || looks_placeholder_like "$measured"; then
+    record_failure
+    status_result='Placeholder-like target or measured ruler length'
+    return
+  fi
+
+  result="$(python3 - "$target" "$measured" "$airprint_ruler_tolerance" <<'PY'
+import math
+import sys
+
+target_raw, measured_raw, tolerance_raw = sys.argv[1:4]
+
+def parse_positive(value: str) -> float:
+    try:
+        parsed = float(value)
+    except ValueError:
+        raise ValueError
+    if not math.isfinite(parsed) or parsed <= 0:
+        raise ValueError
+    return parsed
+
+try:
+    target = parse_positive(target_raw)
+    measured = parse_positive(measured_raw)
+    tolerance = parse_positive(tolerance_raw)
+except ValueError:
+    print("invalid")
+    raise SystemExit(0)
+
+delta = abs(target - measured)
+if delta > tolerance:
+    print("outside")
+else:
+    print("within")
+PY
+)"
+
+  case "$result" in
+    within)
+      record_ready
+      status_result="Within ${airprint_ruler_tolerance} inch tolerance"
+      ;;
+    outside)
+      record_failure
+      status_result="Outside ${airprint_ruler_tolerance} inch tolerance"
+      ;;
+    *)
+      record_failure
+      status_result='Invalid decimal inch measurement'
+      ;;
+  esac
+}
+
 build_match_status() {
   local selected_build="${APP_STORE_BUILD_NUMBER:-}"
   local tested_build="${MANUAL_TESTFLIGHT_BUILD_NUMBER:-}"
@@ -233,6 +298,12 @@ value_status MANUAL_AIRPRINT_PRINTER
 status_airprint_printer="$status_result"
 pass_status MANUAL_AIRPRINT_EXACT_SIZE
 status_airprint_exact_size="$status_result"
+value_status MANUAL_AIRPRINT_RULER_TARGET_INCHES
+status_airprint_ruler_target="$status_result"
+value_status MANUAL_AIRPRINT_RULER_MEASURED_INCHES
+status_airprint_ruler_measured="$status_result"
+airprint_measurement_status
+status_airprint_ruler_measurement="$status_result"
 value_status MANUAL_TESTFLIGHT_BUILD_NUMBER
 status_testflight_build_number="$status_result"
 value_status MANUAL_TESTFLIGHT_DEVICE
@@ -286,6 +357,9 @@ cat >"$output_path" <<EOF
 | Test date | \`MANUAL_AIRPRINT_TEST_DATE\` | $status_airprint_test_date |
 | Printer or production-equivalent workflow | \`MANUAL_AIRPRINT_PRINTER\` | $status_airprint_printer |
 | 0-6 inch ruler prints at exact size | \`MANUAL_AIRPRINT_EXACT_SIZE\` | $status_airprint_exact_size |
+| Target ruler length | \`MANUAL_AIRPRINT_RULER_TARGET_INCHES\` | $status_airprint_ruler_target |
+| Measured printed ruler length | \`MANUAL_AIRPRINT_RULER_MEASURED_INCHES\` | $status_airprint_ruler_measured |
+| Target and measured length are within tolerance | \`MANUAL_AIRPRINT_RULER_TARGET_INCHES\` and \`MANUAL_AIRPRINT_RULER_MEASURED_INCHES\` | $status_airprint_ruler_measurement |
 
 ## TestFlight Evidence
 
