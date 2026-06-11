@@ -129,6 +129,22 @@ require_no_private_key_material() {
   fi
 }
 
+require_no_symlinks() {
+  local link_path
+  local relative_path
+  local symlinks=""
+
+  while IFS= read -r -d '' link_path; do
+    relative_path="${link_path#"$PACKET_DIR/"}"
+    symlinks+="$relative_path"$'\n'
+  done < <(find "$PACKET_DIR" -type l -print0)
+
+  if [[ -n "$symlinks" ]]; then
+    printf '%s' "$symlinks"
+    fail "Submission packet contains symlinks"
+  fi
+}
+
 if [[ ! -d "$PACKET_DIR" ]]; then
   printf 'FAIL: App Store submission packet directory is missing: %s\n' "$PACKET_DIR"
   exit 1
@@ -229,6 +245,7 @@ require_manifest_files_exist
 require_no_local_path_leaks
 require_no_forbidden_private_artifacts
 require_no_private_key_material
+require_no_symlinks
 
 if [[ "$failures" -gt 0 ]]; then
   printf '\nApp Store submission packet validation failed with %d issue(s).\n' "$failures"

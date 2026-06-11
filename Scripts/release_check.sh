@@ -1307,6 +1307,8 @@ check_contains "Scripts/validate_app_store_submission_packet.sh" "AuthKey_" "Sub
 check_contains "Scripts/validate_app_store_submission_packet.sh" "fastlane-api-key.json" "Submission packet validator must reject Fastlane API key JSON files"
 check_contains "Scripts/validate_app_store_submission_packet.sh" "require_no_private_key_material" "Submission packet validator must reject private key material embedded in packaged text"
 check_contains "Scripts/validate_app_store_submission_packet.sh" "BEGIN .*PRIVATE KEY" "Submission packet validator must scan for private key material"
+check_contains "Scripts/validate_app_store_submission_packet.sh" "require_no_symlinks" "Submission packet validator must reject symlinks before artifact upload"
+check_contains "Scripts/validate_app_store_submission_packet.sh" "find \"\$PACKET_DIR\" -type l" "Submission packet validator must scan for symlinks"
 check_contains "Scripts/verify_release.sh" "validate_app_store_submission_packet.sh" "Release verification must expose submission packet validation"
 check_contains "Scripts/verify_release.sh" "submission-packet-check" "Release verification must provide a submission-packet-check command"
 check_contains "Scripts/verify_release.sh" 'SCREENSHOT_COMMAND_TIMEOUT_SECONDS="${FREEPRINTSTUDIO_SCREENSHOT_COMMAND_TIMEOUT_SECONDS:-30}"' "Screenshot asset checks must bound per-command image metadata work"
