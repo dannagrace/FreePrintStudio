@@ -1120,6 +1120,9 @@ check_contains "Scripts/prepare_app_store_submission_packet.sh" "Readiness Block
 check_contains "Scripts/prepare_app_store_submission_packet.sh" "Readiness Warnings" "Submission packet action items must summarize readiness warnings"
 check_contains "Scripts/prepare_app_store_submission_packet.sh" "external-readiness-actions.tsv" "Submission packet must include a machine-readable external readiness actions manifest"
 check_contains "Scripts/prepare_app_store_submission_packet.sh" "write_external_readiness_actions" "Submission packet generator must write categorized external readiness actions"
+check_contains "Scripts/prepare_app_store_submission_packet.sh" "redact_external_action_item" "External readiness actions must redact local absolute paths from item text"
+check_contains "Scripts/prepare_app_store_submission_packet.sh" "\\[repo\\]/" "External readiness actions must replace repository absolute paths with a stable placeholder"
+check_contains "Scripts/prepare_app_store_submission_packet.sh" "\\[home\\]/" "External readiness actions must replace home-directory absolute paths with a stable placeholder"
 check_contains "Scripts/prepare_app_store_submission_packet.sh" $'category\tseverity\towner\titem\tnext_action' "External readiness actions manifest must include stable TSV headers"
 if ! python3 - <<'PY'
 from pathlib import Path

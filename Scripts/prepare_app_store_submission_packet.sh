@@ -262,6 +262,15 @@ tsv_escape() {
   printf '%s' "$1" | tr '\t\r\n' '   '
 }
 
+redact_external_action_item() {
+  local value="$1"
+  value="${value//$ROOT_DIR\//[repo]/}"
+  value="${value//$ROOT_DIR/[repo]}"
+  value="${value//$HOME\//[home]/}"
+  value="${value//$HOME/[home]}"
+  printf '%s' "$value"
+}
+
 external_action_fields() {
   local item="$1"
   local category="General"
@@ -298,6 +307,7 @@ write_external_readiness_actions() {
   local line
   local severity
   local item
+  local redacted_item
   local fields
   local category
   local owner
@@ -320,6 +330,7 @@ write_external_readiness_actions() {
     esac
 
     fields="$(external_action_fields "$item")"
+    redacted_item="$(redact_external_action_item "$item")"
     category="${fields%%$'\t'*}"
     fields="${fields#*$'\t'}"
     owner="${fields%%$'\t'*}"
@@ -328,7 +339,7 @@ write_external_readiness_actions() {
       "$(tsv_escape "$category")" \
       "$(tsv_escape "$severity")" \
       "$(tsv_escape "$owner")" \
-      "$(tsv_escape "$item")" \
+      "$(tsv_escape "$redacted_item")" \
       "$(tsv_escape "$next_action")" \
       >>"$EXTERNAL_READINESS_ACTIONS"
   done <"$READINESS_LOG"
