@@ -830,6 +830,7 @@ check_contains "Scripts/validate_pdf_export.sh" "run_with_timeout \"\$container_
 check_contains "Scripts/validate_pdf_export.sh" "launch_timeout" "PDF export validation must choose a bounded app launch wait"
 check_contains "Scripts/validate_pdf_export.sh" "launch_status" "PDF export validation must inspect exported PDFs after app launch timeouts"
 check_contains "Scripts/validate_pdf_export.sh" "xcrun simctl launch" "PDF export validation must exercise bounded app launch commands"
+check_contains "Scripts/validate_pdf_export.sh" "--terminate-running-process" "PDF export validation must force each scenario to relaunch with fresh arguments"
 check_file "Scripts/validate_simulator_workflow.sh" "Simulator workflow validation script is required"
 if [[ ! -x "Scripts/validate_simulator_workflow.sh" ]]; then
   printf 'FAIL: Simulator workflow validation script must be executable (Scripts/validate_simulator_workflow.sh)\n'

@@ -545,7 +545,7 @@ validate_pdf() {
 
   launch_output=""
   launch_status=0
-  if launch_output="$(run_with_timeout "$launch_timeout" xcrun simctl launch "$DEVICE" "$BUNDLE_ID" "${launch_arguments[@]}" 2>&1)"; then
+  if launch_output="$(run_with_timeout "$launch_timeout" xcrun simctl launch --terminate-running-process "$DEVICE" "$BUNDLE_ID" "${launch_arguments[@]}" 2>&1)"; then
     launch_status=0
   else
     launch_status=$?
