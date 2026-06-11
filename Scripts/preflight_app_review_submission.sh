@@ -29,12 +29,16 @@ run_build_number_step() {
   if [[ -z "${APP_STORE_BUILD_NUMBER:-}" ]]; then
     printf 'BLOCKED: APP_STORE_BUILD_NUMBER is missing; set it to the processed App Store Connect build number.\n'
     failures=$((failures + 1))
+  elif [[ "$APP_STORE_BUILD_NUMBER" == "PROCESSED_BUILD_NUMBER" ]]; then
+    printf 'BLOCKED: APP_STORE_BUILD_NUMBER still uses the PROCESSED_BUILD_NUMBER placeholder.\n'
+    failures=$((failures + 1))
   else
     printf 'OK: APP_STORE_BUILD_NUMBER is set to %s\n' "$APP_STORE_BUILD_NUMBER"
   fi
   printf '\n'
 }
 
+run_step "Private release environment" Scripts/validate_release_env.sh
 run_step "App Store metadata" Scripts/validate_app_store_metadata.sh
 run_step "Screenshot sync" Scripts/validate_screenshot_sync.sh
 run_step "Privacy surface" Scripts/validate_privacy_surface.sh
