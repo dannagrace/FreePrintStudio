@@ -6,6 +6,40 @@ cd "$ROOT_DIR"
 
 DERIVED_DATA_PATH="${DERIVED_DATA_PATH:-/tmp/freeprintstudio-review-ui-derived-data}"
 TEST_LOG_PATH="${FREEPRINTSTUDIO_REVIEW_UI_LOG_PATH:-/tmp/freeprintstudio-review-ui-test.log}"
+SIMCTL_TIMEOUT_SECONDS="${FREEPRINTSTUDIO_REVIEW_UI_SIMCTL_TIMEOUT_SECONDS:-30}"
+BOOTSTATUS_TIMEOUT_SECONDS="${FREEPRINTSTUDIO_REVIEW_UI_BOOTSTATUS_TIMEOUT_SECONDS:-180}"
+XCODEBUILD_TIMEOUT_SECONDS="${FREEPRINTSTUDIO_REVIEW_UI_XCODEBUILD_TIMEOUT_SECONDS:-480}"
+
+run_with_timeout() {
+  local timeout_seconds="$1"
+  shift
+
+  python3 - "$timeout_seconds" "$@" <<'PY'
+import subprocess
+import sys
+
+timeout_text = sys.argv[1]
+command = sys.argv[2:]
+try:
+    result = subprocess.run(
+        command,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+        timeout=float(timeout_text),
+    )
+except subprocess.TimeoutExpired as exc:
+    if exc.stdout:
+        output = exc.stdout.decode(errors="replace") if isinstance(exc.stdout, bytes) else exc.stdout
+        print(output, end="")
+    print(f"Review UI validation command timed out after {timeout_text} seconds: {' '.join(command)}")
+    sys.exit(124)
+
+if result.stdout:
+    print(result.stdout, end="")
+sys.exit(result.returncode)
+PY
+}
 
 candidate_simulators() {
   if [[ -n "${SIMULATOR_UDID:-}" ]]; then
@@ -15,19 +49,24 @@ candidate_simulators() {
 
   local device_pattern
   local fallback_device_name
+  local booted_devices
+  local available_devices
   device_pattern="${FREEPRINTSTUDIO_DEVICE_PATTERN:-iPhone 17 Pro Max|iPhone Air|iPhone 16 Pro Max|iPhone 16 Plus|iPhone 15 Pro Max|iPhone 15 Plus|iPhone 14 Pro Max}"
   fallback_device_name="${FREEPRINTSTUDIO_DEVICE_FALLBACK_NAME:-iPhone}"
 
-  xcrun simctl list devices booted \
+  booted_devices="$(run_with_timeout "$SIMCTL_TIMEOUT_SECONDS" xcrun simctl list devices booted || true)"
+  available_devices="$(run_with_timeout "$SIMCTL_TIMEOUT_SECONDS" xcrun simctl list devices available || true)"
+
+  printf '%s\n' "$booted_devices" \
     | grep -E "$device_pattern" \
-    | sed -nE 's/.*\(([A-F0-9-]{36})\).*/\1/p'
-  xcrun simctl list devices available \
+    | sed -nE 's/.*\(([A-F0-9-]{36})\).*/\1/p' || true
+  printf '%s\n' "$available_devices" \
     | grep -E "$device_pattern" \
-    | sed -nE 's/.*\(([A-F0-9-]{36})\).*/\1/p'
-  xcrun simctl list devices booted \
-    | sed -nE "/$fallback_device_name/s/.*\\(([A-F0-9-]{36})\\).*/\\1/p"
-  xcrun simctl list devices available \
-    | sed -nE "/$fallback_device_name/s/.*\\(([A-F0-9-]{36})\\).*/\\1/p"
+    | sed -nE 's/.*\(([A-F0-9-]{36})\).*/\1/p' || true
+  printf '%s\n' "$booted_devices" \
+    | sed -nE "/$fallback_device_name/s/.*\\(([A-F0-9-]{36})\\).*/\\1/p" || true
+  printf '%s\n' "$available_devices" \
+    | sed -nE "/$fallback_device_name/s/.*\\(([A-F0-9-]{36})\\).*/\\1/p" || true
 }
 
 unique_candidate_simulators() {
@@ -36,8 +75,8 @@ unique_candidate_simulators() {
 
 boot_simulator() {
   local device="$1"
-  xcrun simctl boot "$device" >/dev/null 2>&1 || true
-  xcrun simctl bootstatus "$device" -b >/dev/null
+  run_with_timeout "$SIMCTL_TIMEOUT_SECONDS" xcrun simctl boot "$device" >/dev/null 2>&1 || true
+  run_with_timeout "$BOOTSTATUS_TIMEOUT_SECONDS" xcrun simctl bootstatus "$device" -b >/dev/null
 }
 
 select_simulator() {
@@ -67,7 +106,8 @@ DEVICE="$(select_simulator)"
 printf 'Using simulator: %s\n' "$DEVICE"
 
 set +e
-xcodebuild \
+run_with_timeout "$XCODEBUILD_TIMEOUT_SECONDS" \
+  xcodebuild \
   -project FreePrintStudio.xcodeproj \
   -scheme FreePrintStudio \
   -destination "platform=iOS Simulator,id=$DEVICE" \
