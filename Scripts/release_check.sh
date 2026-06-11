@@ -1072,6 +1072,7 @@ check_contains "Scripts/preflight_app_review_submission.sh" "Scripts/validate_ap
 check_contains "Scripts/preflight_app_review_submission.sh" "Scripts/validate_app_review_contact.sh" "App Review preflight must validate App Review contact details"
 check_contains "Scripts/preflight_app_review_submission.sh" "Scripts/validate_manual_release_verification.sh" "App Review preflight must validate manual release evidence"
 check_contains "Scripts/preflight_app_review_submission.sh" "Scripts/check_app_store_connect_credentials.sh" "App Review preflight must validate App Store Connect credentials"
+check_contains "Scripts/preflight_app_review_submission.sh" "source Scripts/load_release_env.sh" "App Review preflight must load private release inputs before checking selected build and credentials"
 check_contains "Scripts/preflight_app_review_submission.sh" "Scripts/check_app_store_connect_state.sh" "App Review preflight must require a processed selected build"
 check_contains "Scripts/preflight_app_review_submission.sh" "APP_STORE_BUILD_NUMBER" "App Review preflight must require an explicit selected build number"
 check_contains "Scripts/preflight_app_review_submission.sh" "App Review submission preflight passed" "App Review preflight must print a clear success message"
