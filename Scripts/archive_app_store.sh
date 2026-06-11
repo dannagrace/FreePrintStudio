@@ -35,13 +35,14 @@ The account must be enrolled in the Apple Developer Program and available to Xco
 EOF
   exit 2
 fi
+export DEVELOPMENT_TEAM_ID="$TEAM_ID"
 
 if [[ ! -f "$EXPORT_OPTIONS_PLIST" ]]; then
   printf 'Missing export options plist: %s\n' "$EXPORT_OPTIONS_PLIST"
   exit 1
 fi
 
-Scripts/verify_release.sh
+Scripts/preflight_app_store_archive.sh
 
 mkdir -p "$(dirname "$ARCHIVE_PATH")" "$EXPORT_PATH"
 rm -rf "$ARCHIVE_PATH"

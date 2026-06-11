@@ -673,6 +673,20 @@ check_file "fastlane/screenshots/en-US/ipad-main.jpg" "Fastlane iPad screenshot 
 check_file "Scripts/archive_app_store.sh" "App Store archive script is required"
 check_contains "Scripts/archive_app_store.sh" "xcodebuild" "Archive script must use xcodebuild"
 check_contains "Scripts/archive_app_store.sh" "DEVELOPMENT_TEAM_ID" "Archive script must support an explicit Apple Developer Team ID"
+check_contains "Scripts/archive_app_store.sh" "Scripts/preflight_app_store_archive.sh" "Archive script must run the archive preflight before creating a signed archive"
+if ! python3 - <<'PY'
+from pathlib import Path
+
+source = Path("Scripts/archive_app_store.sh").read_text()
+preflight_index = source.find("Scripts/preflight_app_store_archive.sh")
+archive_index = source.find("archive >")
+if preflight_index == -1 or archive_index == -1 or preflight_index > archive_index:
+    raise SystemExit(1)
+PY
+then
+  printf 'FAIL: Archive script must run Scripts/preflight_app_store_archive.sh before xcodebuild archive\n'
+  failures=$((failures + 1))
+fi
 check_file "Scripts/preflight_app_store_archive.sh" "App Store archive preflight script is required"
 if [[ ! -x "Scripts/preflight_app_store_archive.sh" ]]; then
   printf 'FAIL: App Store archive preflight script must be executable (Scripts/preflight_app_store_archive.sh)\n'
