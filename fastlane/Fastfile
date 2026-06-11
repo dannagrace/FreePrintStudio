@@ -265,13 +265,13 @@ platform :ios do
   desc "Upload App Privacy Details to App Store Connect"
   lane :privacy_details do
     confirm_upload_app_privacy!
+    username = ENV["FASTLANE_USER"].to_s.strip
+    UI.user_error!("Set FASTLANE_USER to the Apple ID used for App Store Connect before uploading App Privacy Details") if username.empty?
+
     validate_release_env!
     validate_privacy_surface!
     validate_app_privacy_details!
     validate_app_store_questionnaires!
-
-    username = ENV["FASTLANE_USER"].to_s.strip
-    UI.user_error!("Set FASTLANE_USER to the Apple ID used for App Store Connect before uploading App Privacy Details") if username.empty?
 
     options = {
       username: username,

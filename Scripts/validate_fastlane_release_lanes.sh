@@ -107,6 +107,8 @@ if source:
     privacy_details = lane_body(source, "privacy_details")
     if privacy_details:
         require_before("privacy_details", privacy_details, "confirm_upload_app_privacy!", "upload_app_privacy_details_to_app_store")
+        require_before("privacy_details", privacy_details, 'username = ENV["FASTLANE_USER"].to_s.strip', "validate_release_env!")
+        require_before("privacy_details", privacy_details, "Set FASTLANE_USER to the Apple ID used for App Store Connect before uploading App Privacy Details", "validate_release_env!")
         require_before("privacy_details", privacy_details, "validate_release_env!", "upload_app_privacy_details_to_app_store")
         require_before("privacy_details", privacy_details, "validate_privacy_surface!", "upload_app_privacy_details_to_app_store")
         require_before("privacy_details", privacy_details, "validate_app_privacy_details!", "upload_app_privacy_details_to_app_store")
