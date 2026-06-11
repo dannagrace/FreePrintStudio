@@ -133,6 +133,10 @@ run_spaceship_ruby() {
 selected_build_number="${APP_STORE_BUILD_NUMBER:-}"
 skip_build_check="${APP_STORE_CONNECT_SKIP_BUILD_CHECK:-}"
 
+if [[ "$skip_build_check" != "1" && -z "$selected_build_number" ]]; then
+  block "APP_STORE_BUILD_NUMBER is missing; set it to the processed App Store Connect build number"
+fi
+
 if looks_like_placeholder_build "$selected_build_number"; then
   block "APP_STORE_BUILD_NUMBER still uses a placeholder value; replace it with the processed App Store Connect build number"
 fi

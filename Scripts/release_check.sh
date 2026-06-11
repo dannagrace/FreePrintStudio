@@ -1503,6 +1503,20 @@ check_contains "Scripts/check_app_store_connect_state.sh" "APP_STORE_BUILD_NUMBE
 check_contains "Scripts/check_app_store_connect_state.sh" "APP_STORE_CONNECT_SKIP_BUILD_CHECK" "App Store Connect state preflight must support app/version-only checks before TestFlight upload"
 check_contains "Scripts/check_app_store_connect_state.sh" "api_key_json_path.dirname" "App Store Connect state preflight must resolve API JSON relative key_filepath values from the JSON file directory"
 check_contains "Scripts/check_app_store_connect_state.sh" "APP_STORE_BUILD_NUMBER still uses a placeholder" "App Store Connect state preflight must reject selected-build placeholders before account queries"
+check_contains "Scripts/check_app_store_connect_state.sh" "APP_STORE_BUILD_NUMBER is missing" "App Store Connect state preflight must require a selected build before account queries"
+asc_state_missing_build_test_dir="$(mktemp -d)"
+asc_state_missing_build_env="$asc_state_missing_build_test_dir/release.env"
+asc_state_missing_build_log="$asc_state_missing_build_test_dir/app-store-connect-state-missing-build.log"
+: >"$asc_state_missing_build_env"
+if RELEASE_ENV_PATH="$asc_state_missing_build_env" \
+  Scripts/check_app_store_connect_state.sh >"$asc_state_missing_build_log" 2>&1; then
+  printf 'FAIL: App Store Connect state preflight must reject a missing APP_STORE_BUILD_NUMBER before querying account state\n'
+  failures=$((failures + 1))
+elif ! grep -q 'APP_STORE_BUILD_NUMBER is missing' "$asc_state_missing_build_log"; then
+  printf 'FAIL: App Store Connect state missing-build failure should identify APP_STORE_BUILD_NUMBER as missing\n'
+  failures=$((failures + 1))
+fi
+rm -rf "$asc_state_missing_build_test_dir"
 asc_state_placeholder_build_test_dir="$(mktemp -d)"
 asc_state_placeholder_build_env="$asc_state_placeholder_build_test_dir/release.env"
 asc_state_placeholder_build_log="$asc_state_placeholder_build_test_dir/app-store-connect-state-placeholder.log"
