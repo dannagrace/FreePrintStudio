@@ -198,7 +198,9 @@ write_action_items() {
 EOF
 
   if [[ -s "$blockers_path" ]]; then
-    sed 's/^BLOCKED: /- /' "$blockers_path" >>"$ACTION_ITEMS_PATH"
+    while IFS= read -r line; do
+      printf -- '- %s\n' "$(redact_external_action_item "${line#BLOCKED: }")" >>"$ACTION_ITEMS_PATH"
+    done <"$blockers_path"
   else
     printf -- '- None. The local readiness audit has no blockers.\n' >>"$ACTION_ITEMS_PATH"
   fi
@@ -210,7 +212,9 @@ EOF
 EOF
 
   if [[ -s "$warnings_path" ]]; then
-    sed 's/^WARN: /- /' "$warnings_path" >>"$ACTION_ITEMS_PATH"
+    while IFS= read -r line; do
+      printf -- '- %s\n' "$(redact_external_action_item "${line#WARN: }")" >>"$ACTION_ITEMS_PATH"
+    done <"$warnings_path"
   else
     printf -- '- None. The local readiness audit has no warnings.\n' >>"$ACTION_ITEMS_PATH"
   fi

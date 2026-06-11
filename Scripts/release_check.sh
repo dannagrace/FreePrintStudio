@@ -1145,6 +1145,8 @@ check_contains "Scripts/prepare_app_store_submission_packet.sh" "APP_STORE_BUILD
 check_contains "Scripts/prepare_app_store_submission_packet.sh" "APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER CONFIRM_SUBMIT_FOR_REVIEW=1 Scripts/run_fastlane.sh ios submit_review" "Submission packet command order must submit the selected App Store build"
 check_contains "Scripts/prepare_app_store_submission_packet.sh" "Readiness Blockers" "Submission packet action items must summarize readiness blockers"
 check_contains "Scripts/prepare_app_store_submission_packet.sh" "Readiness Warnings" "Submission packet action items must summarize readiness warnings"
+check_contains "Scripts/prepare_app_store_submission_packet.sh" 'redact_external_action_item "${line#BLOCKED: }"' "Submission packet action items must redact blocker paths"
+check_contains "Scripts/prepare_app_store_submission_packet.sh" 'redact_external_action_item "${line#WARN: }"' "Submission packet action items must redact warning paths"
 check_contains "Scripts/prepare_app_store_submission_packet.sh" "external-readiness-actions.tsv" "Submission packet must include a machine-readable external readiness actions manifest"
 check_contains "Scripts/prepare_app_store_submission_packet.sh" "write_external_readiness_actions" "Submission packet generator must write categorized external readiness actions"
 check_contains "Scripts/prepare_app_store_submission_packet.sh" "redact_external_action_item" "External readiness actions must redact local absolute paths from item text"
