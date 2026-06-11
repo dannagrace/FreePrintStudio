@@ -18,6 +18,7 @@ APP_REVIEW_SUBMISSION_READINESS_REPORT="$PACKET_DIR/app-review-submission-readin
 FILE_MANIFEST="$PACKET_DIR/file-manifest.tsv"
 SUMMARY_PATH="$PACKET_DIR/SUMMARY.md"
 ACTION_ITEMS_PATH="$PACKET_DIR/ACTION_ITEMS.md"
+EXTERNAL_READINESS_ACTIONS="$PACKET_DIR/external-readiness-actions.tsv"
 
 expected_screenshots=(
   "iphone-main.jpg"
@@ -257,6 +258,82 @@ EOF
   rm -f "$blockers_path" "$warnings_path"
 }
 
+tsv_escape() {
+  printf '%s' "$1" | tr '\t\r\n' '   '
+}
+
+external_action_fields() {
+  local item="$1"
+  local category="General"
+  local owner="Release owner"
+  local next_action="Review readiness.txt and resolve this item before App Review submission."
+
+  case "$item" in
+    *APP_REVIEW_CONTACT*|*"App Review contact"*)
+      category="App Review Contact"
+      owner="Release owner"
+      next_action="Fill App Review contact fields in untracked Config/release.env, then run Scripts/validate_app_review_contact.sh."
+      ;;
+    *FASTLANE_USER*|*ASC_*|*"App Store Connect"*|*"Fastlane App Store Connect"*|*"API credentials"*)
+      category="App Store Connect"
+      owner="App Store Connect account holder"
+      next_action="Configure App Store Connect credentials in untracked Config/release.env, then run Scripts/print_release_input_status.sh --strict and Scripts/check_app_store_readiness.sh."
+      ;;
+    *MANUAL_*|*"Manual "*|*"Real iPhone"*|*"AirPrint"*|*"TestFlight"*)
+      category="Manual Verification"
+      owner="QA/release owner"
+      next_action="Record real iPhone, AirPrint, and TestFlight evidence in untracked Config/manual-release-verification.env, then run APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/validate_manual_release_verification.sh."
+      ;;
+    *"Developer Team"*|*"Apple Distribution"*|*"provisioning profile"*|*"provisioning profiles"*|*"signing identity"*|*"signing assets"*)
+      category="Signing"
+      owner="Apple Developer account holder"
+      next_action="Install Apple Distribution signing assets and set DEVELOPMENT_TEAM_ID, then run Scripts/preflight_app_store_archive.sh."
+      ;;
+  esac
+
+  printf '%s\t%s\t%s\n' "$category" "$owner" "$next_action"
+}
+
+write_external_readiness_actions() {
+  local line
+  local severity
+  local item
+  local fields
+  local category
+  local owner
+  local next_action
+
+  printf 'category	severity	owner	item	next_action\n' >"$EXTERNAL_READINESS_ACTIONS"
+  while IFS= read -r line; do
+    case "$line" in
+      BLOCKED:*)
+        severity="blocker"
+        item="${line#BLOCKED: }"
+        ;;
+      WARN:*)
+        severity="warning"
+        item="${line#WARN: }"
+        ;;
+      *)
+        continue
+        ;;
+    esac
+
+    fields="$(external_action_fields "$item")"
+    category="${fields%%$'\t'*}"
+    fields="${fields#*$'\t'}"
+    owner="${fields%%$'\t'*}"
+    next_action="${fields#*$'\t'}"
+    printf '%s\t%s\t%s\t%s\t%s\n' \
+      "$(tsv_escape "$category")" \
+      "$(tsv_escape "$severity")" \
+      "$(tsv_escape "$owner")" \
+      "$(tsv_escape "$item")" \
+      "$(tsv_escape "$next_action")" \
+      >>"$EXTERNAL_READINESS_ACTIONS"
+  done <"$READINESS_LOG"
+}
+
 rm -rf "$PACKET_DIR"
 mkdir -p "$PACKET_DIR/files"
 
@@ -287,6 +364,7 @@ warning_count="$(grep -c '^WARN:' "$READINESS_LOG" || true)"
 ok_count="$(grep -c '^OK:' "$READINESS_LOG" || true)"
 generated_at="$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
 write_action_items
+write_external_readiness_actions
 
 cat >"$SUMMARY_PATH" <<EOF
 # FreePrint Studio App Store Submission Packet
@@ -324,6 +402,7 @@ cat >"$SUMMARY_PATH" <<EOF
 - \`signing-readiness-report.md\` with redacted signing status, profile counts, and next actions.
 - \`app-store-connect-readiness-report.md\` with redacted App Store Connect credential status, upload guard state, and next actions.
 - \`app-review-submission-readiness-report.md\` with redacted final App Review submission gate status and next actions.
+- \`external-readiness-actions.tsv\` with categorized external blockers and warnings for release tracking.
 - \`file-manifest.tsv\` with package file sizes and sha256 checksums.
 - \`readiness.txt\` with the latest App Store readiness audit.
 - \`ACTION_ITEMS.md\` with external account, signing, and App Store Connect follow-up work.

@@ -1118,6 +1118,22 @@ check_contains "Scripts/prepare_app_store_submission_packet.sh" "APP_STORE_BUILD
 check_contains "Scripts/prepare_app_store_submission_packet.sh" "APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER CONFIRM_SUBMIT_FOR_REVIEW=1 Scripts/run_fastlane.sh ios submit_review" "Submission packet command order must submit the selected App Store build"
 check_contains "Scripts/prepare_app_store_submission_packet.sh" "Readiness Blockers" "Submission packet action items must summarize readiness blockers"
 check_contains "Scripts/prepare_app_store_submission_packet.sh" "Readiness Warnings" "Submission packet action items must summarize readiness warnings"
+check_contains "Scripts/prepare_app_store_submission_packet.sh" "external-readiness-actions.tsv" "Submission packet must include a machine-readable external readiness actions manifest"
+check_contains "Scripts/prepare_app_store_submission_packet.sh" "write_external_readiness_actions" "Submission packet generator must write categorized external readiness actions"
+check_contains "Scripts/prepare_app_store_submission_packet.sh" $'category\tseverity\towner\titem\tnext_action' "External readiness actions manifest must include stable TSV headers"
+if ! python3 - <<'PY'
+from pathlib import Path
+
+source = Path("Scripts/prepare_app_store_submission_packet.sh").read_text()
+asc_index = source.find('*FASTLANE_USER*|*ASC_*|*"App Store Connect"*')
+manual_index = source.find('*MANUAL_*|*"Manual "*|*"Real iPhone"*')
+if asc_index == -1 or manual_index == -1 or asc_index > manual_index:
+    raise SystemExit(1)
+PY
+then
+  printf 'FAIL: External readiness actions must classify App Store Connect items before broad TestFlight manual evidence rules\n'
+  failures=$((failures + 1))
+fi
 check_contains "Scripts/prepare_app_store_submission_packet.sh" "sha256" "Submission packet generator must record file checksums"
 check_contains "Scripts/prepare_app_store_submission_packet.sh" "pdf-export-validation.tsv" "Submission packet generator must include the PDF validation manifest"
 check_contains "Scripts/prepare_app_store_submission_packet.sh" "test-ruler-stretch" "Submission packet generator must require Test Ruler PDF validation evidence"
@@ -1184,6 +1200,7 @@ check_contains "Scripts/prepare_app_store_submission_packet.sh" '\\`screenshots.
 check_contains "Scripts/prepare_app_store_submission_packet.sh" '\\`pdf-export-validation.tsv\\`' "Submission packet summary must escape PDF validation manifest code spans inside the shell heredoc"
 check_contains "Scripts/prepare_app_store_submission_packet.sh" '\\`file-manifest.tsv\\`' "Submission packet summary must escape file manifest code spans inside the shell heredoc"
 check_contains "Scripts/prepare_app_store_submission_packet.sh" '\\`readiness.txt\\`' "Submission packet summary must escape readiness log code spans inside the shell heredoc"
+check_contains "Scripts/prepare_app_store_submission_packet.sh" '\\`external-readiness-actions.tsv\\`' "Submission packet summary must reference the external readiness actions manifest"
 check_contains "Scripts/verify_release.sh" "prepare_app_store_submission_packet.sh" "Release verification must expose submission packet generation"
 check_file ".github/workflows/release.yml" "GitHub Actions release gate workflow is required"
 check_contains ".github/workflows/release.yml" "Scripts/verify_release.sh" "Release workflow must run the local release gate"
