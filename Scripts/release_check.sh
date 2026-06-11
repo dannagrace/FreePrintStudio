@@ -1052,6 +1052,7 @@ if [[ ! -x "Scripts/preflight_testflight_upload.sh" ]]; then
   failures=$((failures + 1))
 fi
 check_contains "Scripts/preflight_testflight_upload.sh" "Scripts/check_app_store_connect_credentials.sh" "TestFlight preflight must validate App Store Connect credentials"
+check_contains "Scripts/preflight_testflight_upload.sh" "source Scripts/load_release_env.sh" "TestFlight preflight must load private release inputs before checking credentials and exports"
 check_contains "Scripts/preflight_testflight_upload.sh" "Scripts/validate_app_store_export.sh" "TestFlight preflight must validate the signed IPA export"
 check_contains "Scripts/preflight_testflight_upload.sh" "APP_STORE_CONNECT_SKIP_BUILD_CHECK=1" "TestFlight preflight must verify the App Store Connect app/version before upload without requiring an existing build"
 check_contains "Scripts/preflight_testflight_upload.sh" "Scripts/check_app_store_connect_state.sh" "TestFlight preflight must query App Store Connect state"
