@@ -250,6 +250,7 @@ cat >"$output_path" <<EOF
 - Strict validation command: \`APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/validate_manual_release_verification.sh\`
 - Evidence form command: \`Scripts/verify_release.sh manual-evidence-form\`
 - Status command: \`Scripts/print_release_input_status.sh --strict\`
+- Selected build placeholder: replace \`PROCESSED_BUILD_NUMBER\` with the processed App Store Connect build number before running selected-build commands; local validators intentionally reject that placeholder.
 
 ## Summary
 

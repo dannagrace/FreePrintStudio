@@ -1249,6 +1249,7 @@ check_contains "Scripts/generate_manual_release_evidence_form.sh" "MANUAL_REAL_I
 check_contains "Scripts/generate_manual_release_evidence_form.sh" "MANUAL_REAL_IPHONE_PDF_EXPORT" "Manual release evidence form must cover real iPhone PDF export evidence"
 check_contains "Scripts/generate_manual_release_evidence_form.sh" "MANUAL_AIRPRINT_EXACT_SIZE" "Manual release evidence form must cover AirPrint exact-size evidence"
 check_contains "Scripts/generate_manual_release_evidence_form.sh" "MANUAL_TESTFLIGHT_PRINT_WORKFLOW" "Manual release evidence form must cover TestFlight print workflow evidence"
+check_contains "Scripts/generate_manual_release_evidence_form.sh" "processed App Store Connect build number" "Manual release evidence form must warn that selected-build placeholders must be replaced"
 check_file "Scripts/generate_manual_release_readiness_report.sh" "Manual release readiness report generator is required"
 if [[ -f "Scripts/generate_manual_release_readiness_report.sh" && ! -x "Scripts/generate_manual_release_readiness_report.sh" ]]; then
   printf 'FAIL: Manual release readiness report generator must be executable (Scripts/generate_manual_release_readiness_report.sh)\n'
@@ -1260,6 +1261,7 @@ check_contains "Scripts/generate_manual_release_readiness_report.sh" "MANUAL_AIR
 check_contains "Scripts/generate_manual_release_readiness_report.sh" "MANUAL_TESTFLIGHT_BUILD_NUMBER" "Manual release readiness report must summarize selected TestFlight build evidence"
 check_contains "Scripts/generate_manual_release_readiness_report.sh" "APP_STORE_BUILD_NUMBER" "Manual release readiness report must compare the selected App Store build"
 check_contains "Scripts/generate_manual_release_readiness_report.sh" "Scripts/validate_manual_release_verification.sh" "Manual release readiness report must reference the strict validator"
+check_contains "Scripts/generate_manual_release_readiness_report.sh" "processed App Store Connect build number" "Manual release readiness report must warn that selected-build placeholders must be replaced"
 check_contains "Scripts/generate_manual_release_readiness_report.sh" "redacted" "Manual release readiness report must avoid printing private manual evidence values"
 check_contains "Scripts/prepare_app_store_submission_packet.sh" "manual-release-evidence-form.md" "Submission packet generator must include the manual release evidence form"
 check_contains "Scripts/prepare_app_store_submission_packet.sh" "generate_manual_release_evidence_form.sh" "Submission packet generator must generate the manual release evidence form"
@@ -1273,6 +1275,7 @@ check_contains "Scripts/prepare_app_store_submission_packet.sh" "app-review-cont
 check_contains "Scripts/prepare_app_store_submission_packet.sh" "generate_app_review_contact_readiness_report.sh" "Submission packet generator must generate the App Review contact readiness report"
 check_contains "Scripts/prepare_app_store_submission_packet.sh" '\\`app-review-contact-readiness-report.md\\`' "Submission packet summary must reference the App Review contact readiness report"
 check_contains "Scripts/verify_release.sh" "contact-report" "Release verification must expose App Review contact readiness report generation"
+check_contains "Scripts/generate_app_review_contact_readiness_report.sh" "processed App Store Connect build number" "App Review contact readiness report must warn that selected-build placeholders must be replaced"
 check_contains "Scripts/prepare_app_store_submission_packet.sh" "signing-readiness-report.md" "Submission packet generator must include the signing readiness report"
 check_contains "Scripts/prepare_app_store_submission_packet.sh" "generate_signing_readiness_report.sh" "Submission packet generator must generate the signing readiness report"
 check_contains "Scripts/prepare_app_store_submission_packet.sh" '\\`signing-readiness-report.md\\`' "Submission packet summary must reference the signing readiness report"
@@ -1281,6 +1284,7 @@ check_contains "Scripts/prepare_app_store_submission_packet.sh" "app-store-conne
 check_contains "Scripts/prepare_app_store_submission_packet.sh" "generate_app_store_connect_readiness_report.sh" "Submission packet generator must generate the App Store Connect readiness report"
 check_contains "Scripts/prepare_app_store_submission_packet.sh" '\\`app-store-connect-readiness-report.md\\`' "Submission packet summary must reference the App Store Connect readiness report"
 check_contains "Scripts/verify_release.sh" "asc-report" "Release verification must expose App Store Connect readiness report generation"
+check_contains "Scripts/generate_app_store_connect_readiness_report.sh" "processed App Store Connect build number" "App Store Connect readiness report must warn that selected-build placeholders must be replaced"
 check_file "Scripts/generate_app_review_submission_readiness_report.sh" "App Review submission readiness report generator is required"
 if [[ -f "Scripts/generate_app_review_submission_readiness_report.sh" && ! -x "Scripts/generate_app_review_submission_readiness_report.sh" ]]; then
   printf 'FAIL: App Review submission readiness report generator must be executable (Scripts/generate_app_review_submission_readiness_report.sh)\n'
@@ -1291,6 +1295,7 @@ check_contains "Scripts/generate_app_review_submission_readiness_report.sh" "pre
 check_contains "Scripts/generate_app_review_submission_readiness_report.sh" "validate_app_store_metadata.sh" "App Review submission readiness report must summarize metadata validation"
 check_contains "Scripts/generate_app_review_submission_readiness_report.sh" "validate_manual_release_verification.sh" "App Review submission readiness report must summarize manual release evidence"
 check_contains "Scripts/generate_app_review_submission_readiness_report.sh" "check_app_store_connect_state.sh" "App Review submission readiness report must summarize selected build state checks"
+check_contains "Scripts/generate_app_review_submission_readiness_report.sh" "processed App Store Connect build number" "App Review submission readiness report must warn that selected-build placeholders must be replaced"
 check_contains "Scripts/generate_app_review_submission_readiness_report.sh" "redacted" "App Review submission readiness report must avoid printing private release values"
 check_contains "Scripts/prepare_app_store_submission_packet.sh" "app-review-submission-readiness-report.md" "Submission packet generator must include the App Review submission readiness report"
 check_contains "Scripts/prepare_app_store_submission_packet.sh" "generate_app_review_submission_readiness_report.sh" "Submission packet generator must generate the App Review submission readiness report"

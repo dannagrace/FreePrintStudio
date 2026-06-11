@@ -164,6 +164,8 @@ cat >"$output_path" <<EOF
 
 ## Account-Dependent Checks
 
+Replace \`PROCESSED_BUILD_NUMBER\` with the processed App Store Connect build number before running selected-build commands; local validators intentionally reject that placeholder.
+
 | Check | Command | When To Run |
 | --- | --- | --- |
 | Credential syntax | \`Scripts/check_app_store_connect_credentials.sh\` | After configuring API JSON or API key triplet. |

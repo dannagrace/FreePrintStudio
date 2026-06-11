@@ -99,6 +99,7 @@ cat >"$output_path" <<EOF
 - This report is redacted: it does not print App Review contact values, Apple IDs, App Store Connect key paths, private key contents, manual evidence values, or raw validator output.
 - Final preflight command: \`APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/preflight_app_review_submission.sh\`
 - Final submission command: \`APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER CONFIRM_SUBMIT_FOR_REVIEW=1 Scripts/run_fastlane.sh ios submit_review\`
+- Selected build placeholder: replace \`PROCESSED_BUILD_NUMBER\` with the processed App Store Connect build number before running selected-build commands; local validators intentionally reject that placeholder.
 
 ## Summary
 

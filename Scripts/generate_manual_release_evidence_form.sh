@@ -33,6 +33,7 @@ cat >"$output_path" <<EOF
 - Fill Private Evidence In: \`Config/manual-release-verification.env\`
 - Validation Command: \`APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/validate_manual_release_verification.sh\`
 - Status Command: \`Scripts/print_release_input_status.sh --strict\`
+- Selected build placeholder: replace \`PROCESSED_BUILD_NUMBER\` with the processed App Store Connect build number before running selected-build commands; local validators intentionally reject that placeholder.
 
 Use this form while performing the final real-device checks. Do not write phone
 numbers, personal contact details, Apple credentials, UDIDs, certificate files,
