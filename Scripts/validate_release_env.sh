@@ -33,6 +33,9 @@ PLACEHOLDER_VALUES=(
   "123456789"
   "Your Team Name"
   "PROCESSED_BUILD_NUMBER"
+  "TODO"
+  "TBD"
+  "PLACEHOLDER"
 )
 
 tracked_env_names=(
@@ -65,6 +68,10 @@ looks_like_placeholder() {
   [[ "$value" == *"YOUR_"* ]] && return 0
   [[ "$value" == *"XXXXXXXXXX"* ]] && return 0
   [[ "$value" == *"example.com"* ]] && return 0
+  [[ "$value" == *"TODO"* ]] && return 0
+  [[ "$value" == *"TBD"* ]] && return 0
+  [[ "$value" == *"placeholder"* ]] && return 0
+  [[ "$value" == *"PLACEHOLDER"* ]] && return 0
   [[ "$value" == /absolute/path/* ]] && return 0
 
   return 1

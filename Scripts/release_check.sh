@@ -664,6 +664,17 @@ elif ! grep -q 'APP_STORE_BUILD_NUMBER still uses a placeholder value' /tmp/free
   failures=$((failures + 1))
 fi
 rm -rf "$release_env_placeholder_test_dir"
+release_env_generic_placeholder_test_dir="$(mktemp -d)"
+release_env_generic_placeholder_test_file="$release_env_generic_placeholder_test_dir/release.env"
+printf 'APP_REVIEW_CONTACT_FIRST_NAME=TODO\n' >"$release_env_generic_placeholder_test_file"
+if RELEASE_ENV_PATH="$release_env_generic_placeholder_test_file" Scripts/validate_release_env.sh >/tmp/freeprintstudio-generic-placeholder-release-env.log 2>&1; then
+  printf 'FAIL: Release environment validation must reject generic TODO placeholder values\n'
+  failures=$((failures + 1))
+elif ! grep -q 'APP_REVIEW_CONTACT_FIRST_NAME still uses a placeholder value' /tmp/freeprintstudio-generic-placeholder-release-env.log; then
+  printf 'FAIL: Release environment placeholder validation must identify generic TODO placeholder values\n'
+  failures=$((failures + 1))
+fi
+rm -rf "$release_env_generic_placeholder_test_dir"
 check_contains "Scripts/check_app_store_readiness.sh" "source Scripts/load_release_env.sh" "Readiness audit must load Config/release.env"
 check_contains "Scripts/check_app_store_readiness.sh" "validate_release_env.sh" "Readiness audit must reject placeholder release environment values"
 check_contains "Scripts/check_app_store_connect_credentials.sh" "source Scripts/load_release_env.sh" "Credential audit must load Config/release.env"
