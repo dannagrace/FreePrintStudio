@@ -14,6 +14,32 @@ ok() {
   printf 'OK: %s\n' "$1"
 }
 
+PLACEHOLDER_BUILD_VALUES=(
+  "PROCESSED_BUILD_NUMBER"
+  "YOUR_BUILD_NUMBER"
+  "TODO"
+  "TBD"
+)
+
+looks_like_placeholder_build() {
+  local value="$1"
+  local placeholder
+
+  [[ -z "$value" ]] && return 1
+
+  for placeholder in "${PLACEHOLDER_BUILD_VALUES[@]}"; do
+    [[ "$value" == "$placeholder" ]] && return 0
+  done
+
+  [[ "$value" == *"YOUR_"* ]] && return 0
+  [[ "$value" == *"XXXXXXXXXX"* ]] && return 0
+  [[ "$value" == *"example.com"* ]] && return 0
+  [[ "$value" == *"placeholder"* ]] && return 0
+  [[ "$value" == *"PLACEHOLDER"* ]] && return 0
+
+  return 1
+}
+
 bundle_check() {
   local log_path="$1"
   python3 - "$log_path" <<'PY'
@@ -100,6 +126,13 @@ run_spaceship_ruby() {
   block "Unable to load Fastlane Spaceship Ruby libraries; run Scripts/install_release_dependencies.sh or brew install fastlane"
 }
 
+selected_build_number="${APP_STORE_BUILD_NUMBER:-}"
+skip_build_check="${APP_STORE_CONNECT_SKIP_BUILD_CHECK:-}"
+
+if looks_like_placeholder_build "$selected_build_number"; then
+  block "APP_STORE_BUILD_NUMBER still uses a placeholder value; replace it with the processed App Store Connect build number"
+fi
+
 Scripts/check_app_store_connect_credentials.sh >/tmp/freeprintstudio-asc-credentials.log 2>&1 || {
   sed 's/^/  /' /tmp/freeprintstudio-asc-credentials.log
   block "App Store Connect API credentials are not configured"
@@ -108,8 +141,6 @@ ok "App Store Connect API credentials are syntactically configured"
 
 app_identifier="${APP_IDENTIFIER:-$(setting_value PRODUCT_BUNDLE_IDENTIFIER)}"
 app_version="${APP_VERSION:-$(setting_value MARKETING_VERSION)}"
-selected_build_number="${APP_STORE_BUILD_NUMBER:-}"
-skip_build_check="${APP_STORE_CONNECT_SKIP_BUILD_CHECK:-}"
 
 [[ -n "$app_identifier" ]] || block "Could not determine PRODUCT_BUNDLE_IDENTIFIER from the Xcode project"
 [[ -n "$app_version" ]] || block "Could not determine MARKETING_VERSION from the Xcode project"

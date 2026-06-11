@@ -1123,6 +1123,20 @@ check_contains "Scripts/check_app_store_connect_state.sh" "Spaceship::ConnectAPI
 check_contains "Scripts/check_app_store_connect_state.sh" "APP_STORE_BUILD_NUMBER" "App Store Connect state preflight must support a selected build number"
 check_contains "Scripts/check_app_store_connect_state.sh" "APP_STORE_CONNECT_SKIP_BUILD_CHECK" "App Store Connect state preflight must support app/version-only checks before TestFlight upload"
 check_contains "Scripts/check_app_store_connect_state.sh" "api_key_json_path.dirname" "App Store Connect state preflight must resolve API JSON relative key_filepath values from the JSON file directory"
+check_contains "Scripts/check_app_store_connect_state.sh" "APP_STORE_BUILD_NUMBER still uses a placeholder" "App Store Connect state preflight must reject selected-build placeholders before account queries"
+asc_state_placeholder_build_test_dir="$(mktemp -d)"
+asc_state_placeholder_build_env="$asc_state_placeholder_build_test_dir/release.env"
+asc_state_placeholder_build_log="$asc_state_placeholder_build_test_dir/app-store-connect-state-placeholder.log"
+printf 'APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER\n' >"$asc_state_placeholder_build_env"
+if RELEASE_ENV_PATH="$asc_state_placeholder_build_env" \
+  Scripts/check_app_store_connect_state.sh >"$asc_state_placeholder_build_log" 2>&1; then
+  printf 'FAIL: App Store Connect state preflight must reject PROCESSED_BUILD_NUMBER before querying account state\n'
+  failures=$((failures + 1))
+elif ! grep -q 'APP_STORE_BUILD_NUMBER still uses a placeholder' "$asc_state_placeholder_build_log"; then
+  printf 'FAIL: App Store Connect state placeholder-build failure should identify APP_STORE_BUILD_NUMBER as a placeholder\n'
+  failures=$((failures + 1))
+fi
+rm -rf "$asc_state_placeholder_build_test_dir"
 check_file "Scripts/preflight_testflight_upload.sh" "TestFlight upload preflight script is required"
 if [[ ! -x "Scripts/preflight_testflight_upload.sh" ]]; then
   printf 'FAIL: TestFlight upload preflight script must be executable (Scripts/preflight_testflight_upload.sh)\n'
