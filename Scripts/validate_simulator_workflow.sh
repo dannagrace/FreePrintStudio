@@ -5,9 +5,52 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"
 
 WORKFLOW_DIR="${FREEPRINTSTUDIO_SIMULATOR_WORKFLOW_DIR:-/tmp/freeprintstudio-simulator-workflow}"
+SCREENSHOT_DELAY="${SCREENSHOT_DELAY:-5}"
+
+safe_output_dir() {
+  local label="$1"
+  local requested_path="$2"
+
+  python3 - "$ROOT_DIR" "$label" "$requested_path" <<'PY'
+import sys
+from pathlib import Path
+
+root = Path(sys.argv[1]).resolve()
+label = sys.argv[2]
+raw_path = Path(sys.argv[3]).expanduser()
+candidate = raw_path if raw_path.is_absolute() else root / raw_path
+resolved = candidate.resolve(strict=False)
+build_dir = (root / "build").resolve()
+tmp_dir = Path("/tmp").resolve()
+
+if resolved != build_dir and build_dir in resolved.parents:
+    print(resolved)
+    raise SystemExit(0)
+
+try:
+    relative_tmp_path = resolved.relative_to(tmp_dir)
+except ValueError:
+    relative_tmp_path = None
+
+if (
+    relative_tmp_path is not None
+    and relative_tmp_path.parts
+    and relative_tmp_path.parts[0].startswith("freeprintstudio-")
+):
+    print(resolved)
+    raise SystemExit(0)
+
+print(
+    f"Refusing to use {label} path outside build/ or /tmp/freeprintstudio-*: {candidate}",
+    file=sys.stderr,
+)
+raise SystemExit(1)
+PY
+}
+
+WORKFLOW_DIR="$(safe_output_dir "simulator workflow output" "$WORKFLOW_DIR")"
 SCREENSHOT_PATH="$WORKFLOW_DIR/workflow.jpg"
 PDF_PATH="$WORKFLOW_DIR/workflow.pdf"
-SCREENSHOT_DELAY="${SCREENSHOT_DELAY:-5}"
 
 rm -rf "$WORKFLOW_DIR"
 mkdir -p "$WORKFLOW_DIR"

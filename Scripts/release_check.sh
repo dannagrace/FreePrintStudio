@@ -797,6 +797,11 @@ if [[ ! -x "Scripts/validate_accessibility_screenshots.sh" ]]; then
 fi
 check_contains "Scripts/validate_accessibility_screenshots.sh" "FREEPRINTSTUDIO_APPEARANCE=dark" "Accessibility screenshot validation must capture dark mode"
 check_contains "Scripts/validate_accessibility_screenshots.sh" "FREEPRINTSTUDIO_CONTENT_SIZE=accessibility-extra-extra-large" "Accessibility screenshot validation must capture Larger Text"
+check_contains "Scripts/validate_accessibility_screenshots.sh" "safe_output_dir" "Accessibility screenshot validation must validate output directories before cleanup"
+check_contains "Scripts/validate_accessibility_screenshots.sh" "Refusing to use" "Accessibility screenshot validation must explain unsafe output directory overrides"
+check_contains "Scripts/validate_accessibility_screenshots.sh" "accessibility screenshot output" "Accessibility screenshot validation must identify unsafe output directory overrides"
+check_contains "Scripts/validate_accessibility_screenshots.sh" "/tmp/freeprintstudio-" "Accessibility screenshot validation must allow only namespaced temporary outputs"
+check_contains "Scripts/validate_accessibility_screenshots.sh" "build" "Accessibility screenshot validation must allow repository build outputs"
 check_contains "Scripts/verify_release.sh" "validate_accessibility_screenshots.sh" "Release verification must expose accessibility screenshot validation"
 check_file "Scripts/validate_screenshot_sync.sh" "Screenshot sync validation script is required"
 if [[ ! -x "Scripts/validate_screenshot_sync.sh" ]]; then
@@ -876,6 +881,11 @@ check_contains "Scripts/validate_simulator_workflow.sh" "validate_pdf_export.sh"
 check_contains "Scripts/validate_simulator_workflow.sh" "PDF_VALIDATION_MANIFEST_PATH" "Simulator workflow validation must not overwrite the release PDF manifest"
 check_contains "Scripts/validate_simulator_workflow.sh" "FREEPRINTSTUDIO_UNIT=centimeter" "Simulator workflow validation must exercise unit switching"
 check_contains "Scripts/validate_simulator_workflow.sh" "validationErrorRedPixels" "Simulator workflow validation must reject validation error screenshots"
+check_contains "Scripts/validate_simulator_workflow.sh" "safe_output_dir" "Simulator workflow validation must validate output directories before cleanup"
+check_contains "Scripts/validate_simulator_workflow.sh" "Refusing to use" "Simulator workflow validation must explain unsafe output directory overrides"
+check_contains "Scripts/validate_simulator_workflow.sh" "simulator workflow output" "Simulator workflow validation must identify unsafe output directory overrides"
+check_contains "Scripts/validate_simulator_workflow.sh" "/tmp/freeprintstudio-" "Simulator workflow validation must allow only namespaced temporary outputs"
+check_contains "Scripts/validate_simulator_workflow.sh" "build" "Simulator workflow validation must allow repository build outputs"
 check_contains "Scripts/verify_release.sh" "validate_simulator_workflow.sh" "Release verification must expose simulator workflow validation"
 check_file "Scripts/validate_photo_import.sh" "Photo import validation script is required"
 if [[ ! -x "Scripts/validate_photo_import.sh" ]]; then
