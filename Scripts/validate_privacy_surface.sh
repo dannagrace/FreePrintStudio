@@ -11,13 +11,60 @@ fail() {
   failures=$((failures + 1))
 }
 
+find_matches() {
+  local ignore_case="$1"
+  local pattern="$2"
+  shift 2
+
+  if command -v rg >/dev/null 2>&1; then
+    if [[ "$ignore_case" == "1" ]]; then
+      rg -n -i "$pattern" "$@" || true
+    else
+      rg -n "$pattern" "$@" || true
+    fi
+    return
+  fi
+
+  python3 - "$ignore_case" "$pattern" "$@" <<'PY'
+import os
+import re
+import sys
+
+ignore_case = sys.argv[1] == "1"
+pattern = sys.argv[2].replace("[[:space:]]", r"\s")
+paths = sys.argv[3:]
+flags = re.IGNORECASE if ignore_case else 0
+regex = re.compile(pattern, flags)
+ignored_dirs = {".git", ".build", "build", "DerivedData"}
+
+def iter_files(path):
+    if os.path.isdir(path):
+        for root, dirs, files in os.walk(path):
+            dirs[:] = [name for name in dirs if name not in ignored_dirs]
+            for name in files:
+                yield os.path.join(root, name)
+    elif os.path.isfile(path):
+        yield path
+
+for path in paths:
+    for file_path in iter_files(path):
+        try:
+            with open(file_path, "r", encoding="utf-8", errors="ignore") as handle:
+                for line_number, line in enumerate(handle, 1):
+                    if regex.search(line):
+                        print(f"{file_path}:{line_number}:{line.rstrip()}")
+        except OSError:
+            continue
+PY
+}
+
 check_no_matches() {
   local label="$1"
   local pattern="$2"
   shift 2
   local matches
 
-  matches="$(rg -n -i "$pattern" "$@" || true)"
+  matches="$(find_matches 1 "$pattern" "$@" || true)"
   if [[ -n "$matches" ]]; then
     fail "$label"
     printf '%s\n' "$matches" | sed 's/^/  /'
@@ -60,8 +107,10 @@ check_no_matches \
   '\b(analytics|Firebase|Crashlytics|GoogleAnalytics|Amplitude|Mixpanel|Segment|Sentry|AdMob|GAD[A-Za-z]*|Appsflyer|AppsFlyer|Adjust|Branch|Facebook|Meta|OneSignal|RevenueCat|SKAdNetwork|AdServices|AppTrackingTransparency|ATTrackingManager|IDFA|advertisingIdentifier)\b' \
   "${CONFIG_PATHS[@]}"
 
-if rg -n '\.package[[:space:]]*\(' Package.swift >/tmp/freeprintstudio-package-dependencies.log 2>&1; then
+package_dependency_matches="$(find_matches 0 '\.package[[:space:]]*\(' Package.swift || true)"
+if [[ -n "$package_dependency_matches" ]]; then
   fail "Package.swift must not add third-party package dependencies without updating privacy disclosures"
+  printf '%s\n' "$package_dependency_matches" >/tmp/freeprintstudio-package-dependencies.log
   sed 's/^/  /' /tmp/freeprintstudio-package-dependencies.log
 fi
 

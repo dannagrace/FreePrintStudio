@@ -297,6 +297,25 @@ else
 fi
 check_contains "Scripts/validate_privacy_surface.sh" "analytics" "Privacy surface validation must scan for analytics SDK references"
 check_contains "Scripts/validate_privacy_surface.sh" "URLSession" "Privacy surface validation must scan for direct network API usage"
+privacy_surface_no_rg_test_dir="$(mktemp -d)"
+privacy_surface_no_rg_bin="$privacy_surface_no_rg_test_dir/bin"
+privacy_surface_no_rg_log="$privacy_surface_no_rg_test_dir/privacy-surface.log"
+mkdir -p "$privacy_surface_no_rg_bin"
+ln -s /bin/bash "$privacy_surface_no_rg_bin/bash"
+ln -s /usr/bin/dirname "$privacy_surface_no_rg_bin/dirname"
+ln -s /usr/bin/python3 "$privacy_surface_no_rg_bin/python3"
+ln -s /usr/bin/plutil "$privacy_surface_no_rg_bin/plutil"
+ln -s /usr/bin/sed "$privacy_surface_no_rg_bin/sed"
+if ! PATH="$privacy_surface_no_rg_bin" bash Scripts/validate_privacy_surface.sh >"$privacy_surface_no_rg_log" 2>&1; then
+  printf 'FAIL: Privacy surface validation must pass without requiring ripgrep in PATH\n'
+  failures=$((failures + 1))
+  sed 's/^/  /' "$privacy_surface_no_rg_log"
+elif grep -q 'command not found' "$privacy_surface_no_rg_log"; then
+  printf 'FAIL: Privacy surface validation must not print command-not-found noise when ripgrep is unavailable\n'
+  failures=$((failures + 1))
+  sed 's/^/  /' "$privacy_surface_no_rg_log"
+fi
+rm -rf "$privacy_surface_no_rg_test_dir"
 check_contains "Scripts/verify_release.sh" "validate_privacy_surface.sh" "Release verification must run privacy surface validation"
 check_file "AppStore/age-rating.md" "Age rating questionnaire answers are required"
 check_contains "AppStore/age-rating.md" "Expected global age rating: 4+" "Age rating answers must record the expected 4+ rating"
