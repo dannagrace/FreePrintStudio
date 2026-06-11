@@ -1870,6 +1870,26 @@ if ! grep -q 'APP_STORE_BUILD_NUMBER.*placeholder' "$selected_build_asc_lowercas
   printf 'FAIL: App Store Connect readiness report must flag lowercase todo as a selected-build placeholder\n'
   failures=$((failures + 1))
 fi
+if ! python3 - "$selected_build_asc_report" <<'PY'
+from pathlib import Path
+import sys
+
+source = Path(sys.argv[1]).read_text()
+start = source.find("## Required Next Actions")
+if start == -1:
+    raise SystemExit(1)
+section = source[start:]
+required_commands = [
+    "APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/run_fastlane.sh ios app_store_connect_state",
+    "APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/preflight_app_review_submission.sh",
+]
+if not all(command in section for command in required_commands):
+    raise SystemExit(1)
+PY
+then
+  printf 'FAIL: App Store Connect readiness report required actions must include selected-build commands\n'
+  failures=$((failures + 1))
+fi
 if grep -q 'Selected processed build value.*Configured' "$selected_build_review_report"; then
   printf 'FAIL: App Review submission readiness report must not mark PROCESSED_BUILD_NUMBER as configured\n'
   failures=$((failures + 1))

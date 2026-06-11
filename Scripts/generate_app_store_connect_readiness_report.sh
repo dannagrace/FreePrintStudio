@@ -200,8 +200,8 @@ Replace \`PROCESSED_BUILD_NUMBER\` with the processed App Store Connect build nu
 - [ ] Create or verify the App Store Connect app record for \`com.dannagrace.FreePrintStudio\`.
 - [ ] Upload a signed IPA to TestFlight with \`Scripts/run_fastlane.sh ios upload_testflight\`.
 - [ ] Wait for the build to finish processing, then set \`APP_STORE_BUILD_NUMBER\`.
-- [ ] Run \`Scripts/run_fastlane.sh ios app_store_connect_state\`.
-- [ ] Run \`Scripts/preflight_app_review_submission.sh\` before final submission.
+- [ ] Run \`APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/run_fastlane.sh ios app_store_connect_state\`.
+- [ ] Run \`APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/preflight_app_review_submission.sh\` before final submission.
 EOF
 
 printf 'App Store Connect readiness report generated: %s\n' "$output_path"
