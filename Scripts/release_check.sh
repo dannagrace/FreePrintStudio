@@ -819,6 +819,29 @@ if grep -q "$release_input_status_invalid_asc_dir" "$release_input_status_invali
   failures=$((failures + 1))
 fi
 rm -rf "$release_input_status_invalid_asc_dir"
+release_input_status_invalid_format_dir="$(mktemp -d)"
+release_input_status_invalid_format_env="$release_input_status_invalid_format_dir/release.env"
+release_input_status_invalid_format_manual="$release_input_status_invalid_format_dir/manual-release-verification.env"
+release_input_status_invalid_format_log="$release_input_status_invalid_format_dir/status.log"
+cat >"$release_input_status_invalid_format_env" <<'EOF'
+DEVELOPMENT_TEAM_ID=too-short
+ASC_KEY_ID=short
+ASC_ISSUER_ID=not-a-uuid
+FASTLANE_ITC_TEAM_ID=team-name
+EOF
+: >"$release_input_status_invalid_format_manual"
+RELEASE_ENV_PATH="$release_input_status_invalid_format_env" \
+  MANUAL_RELEASE_VERIFICATION_PATH="$release_input_status_invalid_format_manual" \
+  Scripts/print_release_input_status.sh >"$release_input_status_invalid_format_log" 2>&1 || true
+if ! grep -q 'Release environment validation fails' "$release_input_status_invalid_format_log"; then
+  printf 'FAIL: Release input status must surface malformed release environment account identifiers\n'
+  failures=$((failures + 1))
+fi
+if grep -q 'OK: DEVELOPMENT_TEAM_ID or Xcode DEVELOPMENT_TEAM configured: 1/1' "$release_input_status_invalid_format_log"; then
+  printf 'FAIL: Release input status must not mark malformed DEVELOPMENT_TEAM_ID as configured\n'
+  failures=$((failures + 1))
+fi
+rm -rf "$release_input_status_invalid_format_dir"
 check_file "Scripts/validate_release_env.sh" "Release environment placeholder validation script is required"
 if [[ -x "Scripts/validate_release_env.sh" ]]; then
   Scripts/validate_release_env.sh || failures=$((failures + 1))
@@ -874,6 +897,25 @@ elif ! grep -q 'APP_REVIEW_CONTACT_EMAIL still uses a placeholder value' /tmp/fr
   failures=$((failures + 1))
 fi
 rm -rf "$release_env_example_domain_test_dir"
+release_env_invalid_format_test_dir="$(mktemp -d)"
+release_env_invalid_format_test_file="$release_env_invalid_format_test_dir/release.env"
+cat >"$release_env_invalid_format_test_file" <<'EOF'
+DEVELOPMENT_TEAM_ID=too-short
+ASC_KEY_ID=short
+ASC_ISSUER_ID=not-a-uuid
+FASTLANE_ITC_TEAM_ID=team-name
+EOF
+if RELEASE_ENV_PATH="$release_env_invalid_format_test_file" Scripts/validate_release_env.sh >/tmp/freeprintstudio-invalid-format-release-env.log 2>&1; then
+  printf 'FAIL: Release environment validation must reject malformed account identifiers\n'
+  failures=$((failures + 1))
+elif ! grep -q 'DEVELOPMENT_TEAM_ID must be a 10-character Apple Developer Team ID' /tmp/freeprintstudio-invalid-format-release-env.log \
+  || ! grep -q 'ASC_KEY_ID must be a 10-character App Store Connect API key id' /tmp/freeprintstudio-invalid-format-release-env.log \
+  || ! grep -q 'ASC_ISSUER_ID must be an App Store Connect issuer UUID' /tmp/freeprintstudio-invalid-format-release-env.log \
+  || ! grep -q 'FASTLANE_ITC_TEAM_ID must be numeric' /tmp/freeprintstudio-invalid-format-release-env.log; then
+  printf 'FAIL: Release environment invalid-format output must identify malformed account identifiers\n'
+  failures=$((failures + 1))
+fi
+rm -rf "$release_env_invalid_format_test_dir"
 check_contains "Scripts/check_app_store_readiness.sh" "source Scripts/load_release_env.sh" "Readiness audit must load Config/release.env"
 check_contains "Scripts/check_app_store_readiness.sh" "validate_release_env.sh" "Readiness audit must reject placeholder release environment values"
 check_contains "Scripts/check_app_store_connect_credentials.sh" "source Scripts/load_release_env.sh" "Credential audit must load Config/release.env"

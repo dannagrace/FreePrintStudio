@@ -79,12 +79,42 @@ looks_like_placeholder() {
   return 1
 }
 
+validate_format() {
+  local env_name="$1"
+  local pattern="$2"
+  local message="$3"
+  local value="${!env_name:-}"
+
+  [[ -z "$value" ]] && return
+
+  if [[ ! "$value" =~ $pattern ]]; then
+    block "$message"
+  fi
+}
+
 for env_name in "${tracked_env_names[@]}"; do
   value="${!env_name:-}"
   if looks_like_placeholder "$value"; then
     block "$env_name still uses a placeholder value"
   fi
 done
+
+validate_format \
+  DEVELOPMENT_TEAM_ID \
+  '^[A-Z0-9]{10}$' \
+  "DEVELOPMENT_TEAM_ID must be a 10-character Apple Developer Team ID"
+validate_format \
+  ASC_KEY_ID \
+  '^[A-Z0-9]{10}$' \
+  "ASC_KEY_ID must be a 10-character App Store Connect API key id"
+validate_format \
+  ASC_ISSUER_ID \
+  '^[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}$' \
+  "ASC_ISSUER_ID must be an App Store Connect issuer UUID"
+validate_format \
+  FASTLANE_ITC_TEAM_ID \
+  '^[0-9]+$' \
+  "FASTLANE_ITC_TEAM_ID must be numeric"
 
 if (( failures > 0 )); then
   printf '\nReplace placeholder values in Config/release.env or unset them until real account values are available.\n'

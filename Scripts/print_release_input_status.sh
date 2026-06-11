@@ -51,6 +51,12 @@ is_set() {
   [[ -n "$value" ]]
 }
 
+matches_format() {
+  local value="$1"
+  local pattern="$2"
+  [[ "$value" =~ $pattern ]]
+}
+
 looks_like_placeholder() {
   local value
   local lower_value
@@ -175,6 +181,11 @@ set -e
 if [[ "$release_source_status" -ne 0 ]]; then
   mark_missing "Config/release.env is not a valid shell env file"
   sed 's/^/  /' /tmp/freeprintstudio-release-input-status-env.log
+elif Scripts/validate_release_env.sh >/tmp/freeprintstudio-release-input-status-release-env.log 2>&1; then
+  mark_ok "Release environment validation passes"
+else
+  mark_missing "Release environment validation fails"
+  sed 's/^/  /' /tmp/freeprintstudio-release-input-status-release-env.log
 fi
 
 printf '\n== App Review Contact ==\n'
@@ -202,7 +213,8 @@ fi
 printf '\n== Signing Inputs ==\n'
 project_team_id="$(setting_value DEVELOPMENT_TEAM)"
 team_ready=0
-if is_set "${DEVELOPMENT_TEAM_ID:-}" || is_set "$project_team_id"; then
+if { is_set "${DEVELOPMENT_TEAM_ID:-}" && matches_format "$DEVELOPMENT_TEAM_ID" '^[A-Z0-9]{10}$'; } \
+  || { is_set "$project_team_id" && matches_format "$project_team_id" '^[A-Z0-9]{10}$'; }; then
   team_ready=1
 fi
 status_count "DEVELOPMENT_TEAM_ID or Xcode DEVELOPMENT_TEAM configured" "$team_ready" 1
