@@ -23,9 +23,11 @@ PLACEHOLDER_BUILD_VALUES=(
 
 looks_like_placeholder_build() {
   local value="$1"
+  local lower_value
   local placeholder
 
   [[ -z "$value" ]] && return 1
+  lower_value="$(printf '%s' "$value" | tr '[:upper:]' '[:lower:]')"
 
   for placeholder in "${PLACEHOLDER_BUILD_VALUES[@]}"; do
     [[ "$value" == "$placeholder" ]] && return 0
@@ -33,9 +35,11 @@ looks_like_placeholder_build() {
 
   [[ "$value" == *"YOUR_"* ]] && return 0
   [[ "$value" == *"XXXXXXXXXX"* ]] && return 0
-  [[ "$value" == *"example.com"* ]] && return 0
-  [[ "$value" == *"placeholder"* ]] && return 0
-  [[ "$value" == *"PLACEHOLDER"* ]] && return 0
+  [[ "$lower_value" == *"example.com"* ]] && return 0
+  [[ "$lower_value" == *@example.* ]] && return 0
+  [[ "$lower_value" == *"todo"* ]] && return 0
+  [[ "$lower_value" == *"tbd"* ]] && return 0
+  [[ "$lower_value" == *"placeholder"* ]] && return 0
 
   return 1
 }

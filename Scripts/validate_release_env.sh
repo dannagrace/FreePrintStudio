@@ -57,9 +57,11 @@ tracked_env_names=(
 
 looks_like_placeholder() {
   local value="$1"
+  local lower_value
   local placeholder
 
   [[ -z "$value" ]] && return 1
+  lower_value="$(printf '%s' "$value" | tr '[:upper:]' '[:lower:]')"
 
   for placeholder in "${PLACEHOLDER_VALUES[@]}"; do
     [[ "$value" == "$placeholder" ]] && return 0
@@ -67,12 +69,11 @@ looks_like_placeholder() {
 
   [[ "$value" == *"YOUR_"* ]] && return 0
   [[ "$value" == *"XXXXXXXXXX"* ]] && return 0
-  [[ "$value" == *"example.com"* ]] && return 0
-  [[ "$value" == *@example.* ]] && return 0
-  [[ "$value" == *"TODO"* ]] && return 0
-  [[ "$value" == *"TBD"* ]] && return 0
-  [[ "$value" == *"placeholder"* ]] && return 0
-  [[ "$value" == *"PLACEHOLDER"* ]] && return 0
+  [[ "$lower_value" == *"example.com"* ]] && return 0
+  [[ "$lower_value" == *@example.* ]] && return 0
+  [[ "$lower_value" == *"todo"* ]] && return 0
+  [[ "$lower_value" == *"tbd"* ]] && return 0
+  [[ "$lower_value" == *"placeholder"* ]] && return 0
   [[ "$value" == /absolute/path/* ]] && return 0
 
   return 1

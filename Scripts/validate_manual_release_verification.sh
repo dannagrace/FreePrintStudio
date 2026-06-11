@@ -25,12 +25,15 @@ value_for() {
 
 looks_placeholder_like() {
   local value="$1"
+  local lower_value
   [[ -z "$value" ]] && return 1
+  lower_value="$(printf '%s' "$value" | tr '[:upper:]' '[:lower:]')"
+
   [[ "$value" == *YOUR* ]] && return 0
-  [[ "$value" == *TODO* ]] && return 0
-  [[ "$value" == *TBD* ]] && return 0
-  [[ "$value" == *example* ]] && return 0
-  [[ "$value" == *placeholder* ]] && return 0
+  [[ "$lower_value" == *todo* ]] && return 0
+  [[ "$lower_value" == *tbd* ]] && return 0
+  [[ "$lower_value" == *example* ]] && return 0
+  [[ "$lower_value" == *placeholder* ]] && return 0
   [[ "$value" == "PROCESSED_BUILD_NUMBER" ]] && return 0
   return 1
 }

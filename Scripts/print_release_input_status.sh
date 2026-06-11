@@ -53,9 +53,11 @@ is_set() {
 
 looks_like_placeholder() {
   local value
+  local lower_value
   value="$(trimmed_value "${1:-}")"
 
   [[ -z "$value" ]] && return 1
+  lower_value="$(printf '%s' "$value" | tr '[:upper:]' '[:lower:]')"
 
   case "$value" in
     YOURTEAMID|YOUR_FIRST_NAME|YOUR_LAST_NAME|+1-555-0100|review-contact@example.com|\
@@ -69,12 +71,11 @@ looks_like_placeholder() {
 
   [[ "$value" == *"YOUR_"* ]] && return 0
   [[ "$value" == *"XXXXXXXXXX"* ]] && return 0
-  [[ "$value" == *"example.com"* ]] && return 0
-  [[ "$value" == *@example.* ]] && return 0
-  [[ "$value" == *"TODO"* ]] && return 0
-  [[ "$value" == *"TBD"* ]] && return 0
-  [[ "$value" == *"placeholder"* ]] && return 0
-  [[ "$value" == *"PLACEHOLDER"* ]] && return 0
+  [[ "$lower_value" == *"example.com"* ]] && return 0
+  [[ "$lower_value" == *@example.* ]] && return 0
+  [[ "$lower_value" == *"todo"* ]] && return 0
+  [[ "$lower_value" == *"tbd"* ]] && return 0
+  [[ "$lower_value" == *"placeholder"* ]] && return 0
   [[ "$value" == /absolute/path/* ]] && return 0
 
   return 1
