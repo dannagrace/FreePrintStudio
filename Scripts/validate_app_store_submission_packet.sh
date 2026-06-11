@@ -93,6 +93,42 @@ require_no_local_path_leaks() {
   fi
 }
 
+require_no_forbidden_private_artifacts() {
+  local file_path
+  local relative_path
+  local forbidden_paths=""
+
+  while IFS= read -r -d '' file_path; do
+    relative_path="${file_path#"$PACKET_DIR/"}"
+    # Block private inputs such as Config/release.env, AuthKey_*.p8, and fastlane-api-key.json.
+    case "$relative_path" in
+      release.env|*/release.env|manual-release-verification.env|*/manual-release-verification.env|\
+      AuthKey_*.p8|*/AuthKey_*.p8|*.p8|*.p12|*.mobileprovision|*.provisionprofile|*.ipa|*.xcarchive|*.xcarchive/*|\
+      fastlane-api-key.json|*/fastlane-api-key.json)
+        forbidden_paths+="$relative_path"$'\n'
+        ;;
+    esac
+  done < <(find "$PACKET_DIR" -type f -print0)
+
+  if [[ -n "$forbidden_paths" ]]; then
+    printf '%s' "$forbidden_paths"
+    fail "Submission packet contains forbidden private release artifacts"
+  fi
+}
+
+require_no_private_key_material() {
+  local leaked_keys
+  leaked_keys="$(
+    find "$PACKET_DIR" -type f -print0 \
+      | xargs -0 grep -nE -- 'BEGIN .*PRIVATE KEY' 2>/dev/null \
+      || true
+  )"
+  if [[ -n "$leaked_keys" ]]; then
+    printf '%s\n' "$leaked_keys"
+    fail "Submission packet contains embedded private key material"
+  fi
+}
+
 if [[ ! -d "$PACKET_DIR" ]]; then
   printf 'FAIL: App Store submission packet directory is missing: %s\n' "$PACKET_DIR"
   exit 1
@@ -191,6 +227,8 @@ done
 
 require_manifest_files_exist
 require_no_local_path_leaks
+require_no_forbidden_private_artifacts
+require_no_private_key_material
 
 if [[ "$failures" -gt 0 ]]; then
   printf '\nApp Store submission packet validation failed with %d issue(s).\n' "$failures"
