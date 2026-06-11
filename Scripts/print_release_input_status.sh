@@ -307,6 +307,8 @@ if [[ -f "$manual_evidence_path" ]]; then
 fi
 
 manual_ready=0
+manual_validation_ran=0
+manual_validation_passed=0
 if [[ "$manual_source_status" -eq 0 ]]; then
   for name in \
     MANUAL_VERIFIER_NAME \
@@ -338,8 +340,26 @@ if [[ "$manual_source_status" -eq 0 ]]; then
       manual_ready=$((manual_ready + 1))
     fi
   done
+
+  if [[ -f "$manual_evidence_path" ]]; then
+    manual_validation_ran=1
+    if Scripts/validate_manual_release_verification.sh >/tmp/freeprintstudio-release-input-status-manual-validation.log 2>&1; then
+      manual_validation_passed=1
+    fi
+  fi
 fi
-status_count "Manual real-device, AirPrint, and TestFlight evidence ready" "$manual_ready" 17
+if (( manual_ready == 17 )); then
+  if (( manual_validation_passed == 1 )); then
+    mark_ok "Manual real-device, AirPrint, and TestFlight evidence ready: 17/17"
+    mark_ok "Manual release evidence validation passes"
+  elif (( manual_validation_ran == 1 )); then
+    mark_missing "Manual release evidence validation fails"
+  else
+    mark_missing "Manual real-device, AirPrint, and TestFlight evidence ready: 17/17"
+  fi
+else
+  status_count "Manual real-device, AirPrint, and TestFlight evidence ready" "$manual_ready" 17
+fi
 
 if is_set "${APP_STORE_BUILD_NUMBER:-}" && is_set "${MANUAL_TESTFLIGHT_BUILD_NUMBER:-}"; then
   if looks_like_placeholder "${APP_STORE_BUILD_NUMBER:-}" || looks_like_placeholder "${MANUAL_TESTFLIGHT_BUILD_NUMBER:-}"; then

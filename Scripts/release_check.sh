@@ -825,6 +825,43 @@ else
   failures=$((failures + 1))
 fi
 rm -rf "$release_input_status_external_dir"
+release_input_status_manual_validation_dir="$(mktemp -d)"
+release_input_status_manual_validation_env="$release_input_status_manual_validation_dir/release.env"
+release_input_status_manual_validation_evidence="$release_input_status_manual_validation_dir/manual-release-verification.env"
+release_input_status_manual_validation_log="$release_input_status_manual_validation_dir/status.log"
+today="$(date +%F)"
+printf '%s\n' 'APP_STORE_BUILD_NUMBER=42' >"$release_input_status_manual_validation_env"
+cat >"$release_input_status_manual_validation_evidence" <<EOF
+MANUAL_VERIFIER_NAME="Release Tester"
+MANUAL_REAL_IPHONE_MODEL="iPhone 15"
+MANUAL_REAL_IPHONE_IOS_VERSION="latest-iOS"
+MANUAL_REAL_IPHONE_TEST_DATE="$today"
+MANUAL_REAL_IPHONE_PHOTOS_IMPORT="pass"
+MANUAL_REAL_IPHONE_PDF_EXPORT="pass"
+MANUAL_REAL_IPHONE_PRINT_SHEET="pass"
+MANUAL_AIRPRINT_TEST_DATE="$today"
+MANUAL_AIRPRINT_PRINTER="Production AirPrint validation"
+MANUAL_AIRPRINT_EXACT_SIZE="pass"
+MANUAL_AIRPRINT_RULER_TARGET_INCHES="6"
+MANUAL_AIRPRINT_RULER_MEASURED_INCHES="6.00"
+MANUAL_TESTFLIGHT_BUILD_NUMBER="42"
+MANUAL_TESTFLIGHT_DEVICE="iPhone 15"
+MANUAL_TESTFLIGHT_TEST_DATE="$today"
+MANUAL_TESTFLIGHT_INSTALL="pass"
+MANUAL_TESTFLIGHT_PRINT_WORKFLOW="pass"
+EOF
+RELEASE_ENV_PATH="$release_input_status_manual_validation_env" \
+  MANUAL_RELEASE_VERIFICATION_PATH="$release_input_status_manual_validation_evidence" \
+  Scripts/print_release_input_status.sh >"$release_input_status_manual_validation_log" 2>&1 || true
+if ! grep -q 'Manual release evidence validation fails' "$release_input_status_manual_validation_log"; then
+  printf 'FAIL: Release input status must surface strict manual evidence validation failures\n'
+  failures=$((failures + 1))
+fi
+if grep -q 'OK: Manual real-device, AirPrint, and TestFlight evidence ready: 17/17' "$release_input_status_manual_validation_log"; then
+  printf 'FAIL: Release input status must not mark manual evidence ready when strict validation fails\n'
+  failures=$((failures + 1))
+fi
+rm -rf "$release_input_status_manual_validation_dir"
 release_input_status_invalid_asc_dir="$(mktemp -d)"
 release_input_status_invalid_asc_env="$release_input_status_invalid_asc_dir/release.env"
 release_input_status_invalid_asc_manual="$release_input_status_invalid_asc_dir/manual-release-verification.env"
