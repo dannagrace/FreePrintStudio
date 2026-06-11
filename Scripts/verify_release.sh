@@ -408,6 +408,11 @@ run_testflight_preflight_validation() {
   Scripts/preflight_testflight_upload.sh
 }
 
+run_metadata_preflight_validation() {
+  printf '== Metadata upload preflight ==\n'
+  Scripts/preflight_metadata_upload.sh
+}
+
 run_review_preflight_validation() {
   printf '== App Review submission preflight ==\n'
   Scripts/preflight_app_review_submission.sh
@@ -529,6 +534,9 @@ case "${1:-all}" in
   archive-preflight)
     run_archive_preflight_validation
     ;;
+  metadata-preflight)
+    run_metadata_preflight_validation
+    ;;
   testflight-preflight)
     run_testflight_preflight_validation
     ;;
@@ -539,7 +547,7 @@ case "${1:-all}" in
     run_manual_verification_validation
     ;;
   *)
-    printf 'Usage: %s [all|store-ready|static|core|plist|privacy|questionnaires|pdf|build|screenshots|accessibility|simulator-workflow|photo-import|review-ui|print-sheet|submission-packet|submission-packet-check|contact-report|manual-evidence-form|manual-report|signing-report|asc-report|review-report|archive-preflight|testflight-preflight|review-preflight|manual-verification]\n' "$0"
+    printf 'Usage: %s [all|store-ready|static|core|plist|privacy|questionnaires|pdf|build|screenshots|accessibility|simulator-workflow|photo-import|review-ui|print-sheet|submission-packet|submission-packet-check|contact-report|manual-evidence-form|manual-report|signing-report|asc-report|review-report|archive-preflight|metadata-preflight|testflight-preflight|review-preflight|manual-verification]\n' "$0"
     exit 1
     ;;
 esac

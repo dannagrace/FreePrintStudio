@@ -90,9 +90,13 @@ if source:
         fail("Fastfile must call Scripts/validate_manual_release_verification.sh")
     if "Scripts/preflight_testflight_upload.sh" not in source:
         fail("Fastfile must call Scripts/preflight_testflight_upload.sh")
+    if "Scripts/preflight_metadata_upload.sh" not in source:
+        fail("Fastfile must call Scripts/preflight_metadata_upload.sh")
 
     metadata = lane_body(source, "metadata")
     if metadata:
+        require_before("metadata", metadata, "preflight_metadata_upload!", "deliver(")
+        require_before("metadata", metadata, "preflight_metadata_upload!", "app_store_connect_credentials(required: true)")
         require_before("metadata", metadata, "validate_release_env!", "deliver(")
         require_before("metadata", metadata, "validate_app_store_metadata!", "deliver(")
         require_before("metadata", metadata, "validate_screenshot_sync!", "deliver(")

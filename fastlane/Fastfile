@@ -177,6 +177,13 @@ def preflight_testflight_upload!
   )
 end
 
+def preflight_metadata_upload!
+  run_release_script!(
+    "Scripts/preflight_metadata_upload.sh",
+    "Metadata upload preflight failed."
+  )
+end
+
 def verify_app_store_connect_state!
   run_release_script!(
     "Scripts/check_app_store_connect_state.sh",
@@ -231,6 +238,7 @@ platform :ios do
 
   desc "Upload App Store Connect metadata and screenshots without submitting"
   lane :metadata do
+    preflight_metadata_upload!
     validate_release_env!
     validate_app_store_metadata!
     validate_screenshot_sync!

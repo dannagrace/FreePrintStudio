@@ -276,6 +276,7 @@ App Store Connect metadata is mirrored under `fastlane/`. Install Fastlane throu
 ```sh
 Scripts/install_release_dependencies.sh
 # Or: brew install fastlane
+Scripts/preflight_metadata_upload.sh
 ASC_KEY_ID=XXXXXXXXXX ASC_ISSUER_ID=00000000-0000-0000-0000-000000000000 ASC_KEY_PATH=/secure/AuthKey_XXXXXXXXXX.p8 Scripts/run_fastlane.sh ios metadata
 ```
 
