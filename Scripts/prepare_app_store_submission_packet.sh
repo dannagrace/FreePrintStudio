@@ -276,6 +276,17 @@ redact_external_action_item() {
   printf '%s' "$value"
 }
 
+redact_readiness_log() {
+  local source_path="$1"
+  local temp_path
+  local line
+  temp_path="$(mktemp)"
+  while IFS= read -r line; do
+    printf '%s\n' "$(redact_external_action_item "$line")"
+  done <"$source_path" >"$temp_path"
+  mv "$temp_path" "$source_path"
+}
+
 external_action_fields() {
   local item="$1"
   local category="General"
@@ -374,6 +385,7 @@ set +e
 Scripts/check_app_store_readiness.sh >"$READINESS_LOG" 2>&1
 readiness_status="$?"
 set -e
+redact_readiness_log "$READINESS_LOG"
 
 blocker_count="$(grep -c '^BLOCKED:' "$READINESS_LOG" || true)"
 warning_count="$(grep -c '^WARN:' "$READINESS_LOG" || true)"

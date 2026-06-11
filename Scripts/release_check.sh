@@ -1191,6 +1191,7 @@ check_contains "Scripts/prepare_app_store_submission_packet.sh" "sha256" "Submis
 check_contains "Scripts/prepare_app_store_submission_packet.sh" "pdf-export-validation.tsv" "Submission packet generator must include the PDF validation manifest"
 check_contains "Scripts/prepare_app_store_submission_packet.sh" "test-ruler-stretch" "Submission packet generator must require Test Ruler PDF validation evidence"
 check_contains "Scripts/prepare_app_store_submission_packet.sh" "\\[generated-pdf\\]" "Submission packet generator must redact local PDF evidence paths"
+check_contains "Scripts/prepare_app_store_submission_packet.sh" "redact_readiness_log" "Submission packet generator must redact readiness audit paths before packaging"
 check_file "Scripts/generate_manual_release_evidence_form.sh" "Manual release evidence form generator is required"
 if [[ -f "Scripts/generate_manual_release_evidence_form.sh" && ! -x "Scripts/generate_manual_release_evidence_form.sh" ]]; then
   printf 'FAIL: Manual release evidence form generator must be executable (Scripts/generate_manual_release_evidence_form.sh)\n'
