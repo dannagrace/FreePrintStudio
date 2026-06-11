@@ -53,6 +53,25 @@ require_value() {
   fi
 }
 
+require_physical_device_value() {
+  local name="$1"
+  local label="$2"
+  local value
+  local lower_value
+  value="$(value_for "$name")"
+  lower_value="$(printf '%s' "$value" | tr '[:upper:]' '[:lower:]')"
+
+  if [[ -z "$value" ]]; then
+    block "$label is missing ($name)"
+  elif looks_placeholder_like "$value"; then
+    block "$label still looks like a placeholder ($name)"
+  elif [[ "$lower_value" == *"simulator"* ]]; then
+    block "$label must be a physical device, not a simulator"
+  else
+    ok "$label recorded"
+  fi
+}
+
 require_pass() {
   local name="$1"
   local label="$2"
@@ -116,7 +135,7 @@ PY
 validate_required_evidence_values() {
   require_value MANUAL_VERIFIER_NAME "Manual verifier"
 
-  require_value MANUAL_REAL_IPHONE_MODEL "Real iPhone model"
+  require_physical_device_value MANUAL_REAL_IPHONE_MODEL "Real iPhone model"
   require_value MANUAL_REAL_IPHONE_IOS_VERSION "Real iPhone iOS version"
   require_recent_date MANUAL_REAL_IPHONE_TEST_DATE "Real iPhone verification"
   require_pass MANUAL_REAL_IPHONE_PHOTOS_IMPORT "Real iPhone Photos import"
@@ -128,7 +147,7 @@ validate_required_evidence_values() {
   require_pass MANUAL_AIRPRINT_EXACT_SIZE "AirPrint exact-size output"
 
   require_value MANUAL_TESTFLIGHT_BUILD_NUMBER "TestFlight build number"
-  require_value MANUAL_TESTFLIGHT_DEVICE "TestFlight device"
+  require_physical_device_value MANUAL_TESTFLIGHT_DEVICE "TestFlight device"
   require_recent_date MANUAL_TESTFLIGHT_TEST_DATE "TestFlight verification"
   require_pass MANUAL_TESTFLIGHT_INSTALL "TestFlight install"
   require_pass MANUAL_TESTFLIGHT_PRINT_WORKFLOW "TestFlight print workflow"

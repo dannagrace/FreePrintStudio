@@ -51,12 +51,12 @@ this tracked form. Record final pass/fail values only in the git-ignored
 
 ## Real iPhone Evidence
 
-Record these fields in \`Config/manual-release-verification.env\` after testing on a physical iPhone:
+Record these fields in \`Config/manual-release-verification.env\` after testing on a physical iPhone, not a Simulator:
 
 | Evidence | Env field | Required value |
 | --- | --- | --- |
 | Verifier name or team | \`MANUAL_VERIFIER_NAME\` | Non-empty |
-| iPhone model | \`MANUAL_REAL_IPHONE_MODEL\` | Non-empty |
+| iPhone model | \`MANUAL_REAL_IPHONE_MODEL\` | Physical device model |
 | iOS version | \`MANUAL_REAL_IPHONE_IOS_VERSION\` | Non-empty |
 | Test date | \`MANUAL_REAL_IPHONE_TEST_DATE\` | \`YYYY-MM-DD\` |
 | Photos import succeeds | \`MANUAL_REAL_IPHONE_PHOTOS_IMPORT\` | \`pass\` |
@@ -87,12 +87,12 @@ Manual notes:
 
 ## TestFlight Evidence
 
-Record these fields after installing the processed App Store build from TestFlight on a real device:
+Record these fields after installing the processed App Store build from TestFlight on a physical device:
 
 | Evidence | Env field | Required value |
 | --- | --- | --- |
 | TestFlight build number | \`MANUAL_TESTFLIGHT_BUILD_NUMBER\` | Same as \`APP_STORE_BUILD_NUMBER\` |
-| TestFlight device | \`MANUAL_TESTFLIGHT_DEVICE\` | Non-empty |
+| TestFlight device | \`MANUAL_TESTFLIGHT_DEVICE\` | Physical device model |
 | Test date | \`MANUAL_TESTFLIGHT_TEST_DATE\` | \`YYYY-MM-DD\` |
 | TestFlight install succeeds | \`MANUAL_TESTFLIGHT_INSTALL\` | \`pass\` |
 | Print workflow succeeds from TestFlight build | \`MANUAL_TESTFLIGHT_PRINT_WORKFLOW\` | \`pass\` |

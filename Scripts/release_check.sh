@@ -528,6 +528,37 @@ elif ! grep -q 'Manual verifier still looks like a placeholder' "$manual_release
   failures=$((failures + 1))
 fi
 rm -rf "$manual_release_lowercase_placeholder_test_dir"
+manual_release_simulator_device_test_dir="$(mktemp -d)"
+manual_release_simulator_device_evidence="$manual_release_simulator_device_test_dir/manual-release-verification.env"
+manual_release_simulator_device_log="$manual_release_simulator_device_test_dir/manual-release-verification-simulator-device.log"
+cat >"$manual_release_simulator_device_evidence" <<EOF
+MANUAL_VERIFIER_NAME="Release Tester"
+MANUAL_REAL_IPHONE_MODEL="iPhone 15 Simulator"
+MANUAL_REAL_IPHONE_IOS_VERSION="18.5"
+MANUAL_REAL_IPHONE_TEST_DATE="$today"
+MANUAL_REAL_IPHONE_PHOTOS_IMPORT="pass"
+MANUAL_REAL_IPHONE_PDF_EXPORT="pass"
+MANUAL_REAL_IPHONE_PRINT_SHEET="pass"
+MANUAL_AIRPRINT_TEST_DATE="$today"
+MANUAL_AIRPRINT_PRINTER="Production AirPrint validation"
+MANUAL_AIRPRINT_EXACT_SIZE="pass"
+MANUAL_TESTFLIGHT_BUILD_NUMBER="42"
+MANUAL_TESTFLIGHT_DEVICE="iPhone 15 Simulator"
+MANUAL_TESTFLIGHT_TEST_DATE="$today"
+MANUAL_TESTFLIGHT_INSTALL="pass"
+MANUAL_TESTFLIGHT_PRINT_WORKFLOW="pass"
+EOF
+if APP_STORE_BUILD_NUMBER=42 \
+  MANUAL_RELEASE_VERIFICATION_PATH="$manual_release_simulator_device_evidence" \
+  Scripts/validate_manual_release_verification.sh >"$manual_release_simulator_device_log" 2>&1; then
+  printf 'FAIL: Manual verification must reject simulator device evidence for real iPhone and TestFlight checks\n'
+  failures=$((failures + 1))
+elif ! grep -q 'Real iPhone model must be a physical device, not a simulator' "$manual_release_simulator_device_log" \
+  || ! grep -q 'TestFlight device must be a physical device, not a simulator' "$manual_release_simulator_device_log"; then
+  printf 'FAIL: Manual verification simulator-device failure should identify the real-device fields\n'
+  failures=$((failures + 1))
+fi
+rm -rf "$manual_release_simulator_device_test_dir"
 check_contains "Scripts/check_app_store_readiness.sh" "validate_manual_release_verification.sh" "Readiness audit must validate manual release evidence"
 check_contains "Scripts/verify_release.sh" "manual-verification" "Release verification must expose manual release evidence validation"
 check_file "Scripts/load_release_env.sh" "Release environment loader script is required"
