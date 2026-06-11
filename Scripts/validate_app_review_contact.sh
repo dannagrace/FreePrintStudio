@@ -62,6 +62,11 @@ if [[ -n "$phone" ]]; then
   if [[ ! "$digit_count" =~ ^[0-9]+$ ]] || (( digit_count < 7 || digit_count > 15 )); then
     block "APP_REVIEW_CONTACT_PHONE must contain 7 to 15 digits"
   fi
+
+  phone_digits="$(tr -cd '0-9' <<<"$phone")"
+  if [[ "$phone_digits" =~ ^1?55501[0-9]{2}$ ]]; then
+    block "APP_REVIEW_CONTACT_PHONE must not use a 555 placeholder number"
+  fi
 fi
 
 if Scripts/validate_release_env.sh >/tmp/freeprintstudio-review-contact-env.log 2>&1; then

@@ -1206,6 +1206,24 @@ fi
 check_contains "Scripts/validate_app_review_contact.sh" "APP_REVIEW_CONTACT_EMAIL" "App Review contact validation must check the email address"
 check_contains "Scripts/validate_app_review_contact.sh" "APP_REVIEW_CONTACT_PHONE" "App Review contact validation must check the phone number"
 check_contains "Scripts/validate_app_review_contact.sh" "email pattern" "App Review contact validation must document email format checks"
+app_review_contact_placeholder_phone_test_dir="$(mktemp -d)"
+app_review_contact_placeholder_phone_env="$app_review_contact_placeholder_phone_test_dir/release.env"
+app_review_contact_placeholder_phone_log="$app_review_contact_placeholder_phone_test_dir/app-review-contact.log"
+cat >"$app_review_contact_placeholder_phone_env" <<'EOF'
+APP_REVIEW_CONTACT_FIRST_NAME=Grace
+APP_REVIEW_CONTACT_LAST_NAME=Lee
+APP_REVIEW_CONTACT_PHONE=+1-555-0100
+APP_REVIEW_CONTACT_EMAIL=review@freeprintstudio.test
+EOF
+if RELEASE_ENV_PATH="$app_review_contact_placeholder_phone_env" \
+  Scripts/validate_app_review_contact.sh >"$app_review_contact_placeholder_phone_log" 2>&1; then
+  printf 'FAIL: App Review contact validation must reject 555 placeholder phone numbers\n'
+  failures=$((failures + 1))
+elif ! grep -q 'APP_REVIEW_CONTACT_PHONE must not use a 555 placeholder number' "$app_review_contact_placeholder_phone_log"; then
+  printf 'FAIL: App Review contact placeholder-phone failure should identify the 555 placeholder phone number\n'
+  failures=$((failures + 1))
+fi
+rm -rf "$app_review_contact_placeholder_phone_test_dir"
 check_file "Scripts/generate_app_review_contact_readiness_report.sh" "App Review contact readiness report generator is required"
 if [[ -f "Scripts/generate_app_review_contact_readiness_report.sh" && ! -x "Scripts/generate_app_review_contact_readiness_report.sh" ]]; then
   printf 'FAIL: App Review contact readiness report generator must be executable (Scripts/generate_app_review_contact_readiness_report.sh)\n'
