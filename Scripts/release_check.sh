@@ -1783,23 +1783,37 @@ check_contains "Scripts/generate_app_review_submission_readiness_report.sh" "pro
 check_contains "Scripts/generate_app_review_submission_readiness_report.sh" "redacted" "App Review submission readiness report must avoid printing private release values"
 selected_build_report_placeholder_test_dir="$(mktemp -d)"
 selected_build_asc_report="$selected_build_report_placeholder_test_dir/app-store-connect.md"
+selected_build_asc_lowercase_report="$selected_build_report_placeholder_test_dir/app-store-connect-lowercase.md"
 selected_build_review_report="$selected_build_report_placeholder_test_dir/app-review.md"
 selected_build_review_lowercase_report="$selected_build_report_placeholder_test_dir/app-review-lowercase.md"
 selected_build_manual_report="$selected_build_report_placeholder_test_dir/manual.md"
+selected_build_manual_lowercase_report="$selected_build_report_placeholder_test_dir/manual-lowercase.md"
 APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER \
   Scripts/generate_app_store_connect_readiness_report.sh "$selected_build_asc_report" >/dev/null
+APP_STORE_BUILD_NUMBER=todo \
+  Scripts/generate_app_store_connect_readiness_report.sh "$selected_build_asc_lowercase_report" >/dev/null
 APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER \
   Scripts/generate_app_review_submission_readiness_report.sh "$selected_build_review_report" >/dev/null
 APP_STORE_BUILD_NUMBER=todo \
   Scripts/generate_app_review_submission_readiness_report.sh "$selected_build_review_lowercase_report" >/dev/null
 APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER \
   Scripts/generate_manual_release_readiness_report.sh "$selected_build_manual_report" >/dev/null
+APP_STORE_BUILD_NUMBER=todo \
+  Scripts/generate_manual_release_readiness_report.sh "$selected_build_manual_lowercase_report" >/dev/null
 if grep -q '\`APP_STORE_BUILD_NUMBER\` configured | Yes' "$selected_build_asc_report"; then
   printf 'FAIL: App Store Connect readiness report must not mark PROCESSED_BUILD_NUMBER as configured\n'
   failures=$((failures + 1))
 fi
 if ! grep -q 'APP_STORE_BUILD_NUMBER.*placeholder' "$selected_build_asc_report"; then
   printf 'FAIL: App Store Connect readiness report must flag PROCESSED_BUILD_NUMBER as a selected-build placeholder\n'
+  failures=$((failures + 1))
+fi
+if grep -q '\`APP_STORE_BUILD_NUMBER\` configured | Yes' "$selected_build_asc_lowercase_report"; then
+  printf 'FAIL: App Store Connect readiness report must not mark lowercase todo as configured\n'
+  failures=$((failures + 1))
+fi
+if ! grep -q 'APP_STORE_BUILD_NUMBER.*placeholder' "$selected_build_asc_lowercase_report"; then
+  printf 'FAIL: App Store Connect readiness report must flag lowercase todo as a selected-build placeholder\n'
   failures=$((failures + 1))
 fi
 if grep -q 'Selected processed build value.*Configured' "$selected_build_review_report"; then
@@ -1824,6 +1838,14 @@ if grep -q 'selected build is redacted-MBER' "$selected_build_manual_report"; th
 fi
 if ! grep -q 'Selected build matches evidence build.*placeholder' "$selected_build_manual_report"; then
   printf 'FAIL: Manual readiness report must flag PROCESSED_BUILD_NUMBER as a selected-build placeholder\n'
+  failures=$((failures + 1))
+fi
+if grep -q 'Selected build matches evidence build.*selected build is redacted-todo' "$selected_build_manual_lowercase_report"; then
+  printf 'FAIL: Manual readiness report must not treat lowercase todo as a redacted selected build\n'
+  failures=$((failures + 1))
+fi
+if ! grep -q 'Selected build matches evidence build.*placeholder' "$selected_build_manual_lowercase_report"; then
+  printf 'FAIL: Manual readiness report must flag lowercase todo as a selected-build placeholder\n'
   failures=$((failures + 1))
 fi
 rm -rf "$selected_build_report_placeholder_test_dir"
