@@ -488,6 +488,7 @@ check_contains "Scripts/print_release_input_status.sh" "CONFIRM_SUBMIT_FOR_REVIE
 check_contains "Scripts/print_release_input_status.sh" "git check-ignore" "Release input status must confirm private files stay ignored"
 check_contains "Scripts/print_release_input_status.sh" "--strict" "Release input status must offer a strict mode for handoff gating"
 check_contains "Scripts/print_release_input_status.sh" "does not print private values" "Release input status must explicitly avoid printing private values"
+check_contains "Scripts/print_release_input_status.sh" "Scripts/check_app_store_connect_credentials.sh" "Release input status must run strict App Store Connect credential validation"
 check_contains "Scripts/print_release_input_status.sh" "APP_STORE_BUILD_NUMBER=%s Scripts/validate_manual_release_verification.sh" "Release input status next commands must validate manual evidence against the selected App Store build"
 check_not_contains "Scripts/print_release_input_status.sh" "APP_STORE_BUILD_NUMBER:-<" "Release input status must use a shell-safe selected-build placeholder when APP_STORE_BUILD_NUMBER is missing"
 check_contains "Scripts/print_release_input_status.sh" "PROCESSED_BUILD_NUMBER" "Release input status must show a selected-build placeholder when APP_STORE_BUILD_NUMBER is missing"
@@ -525,6 +526,32 @@ else
   failures=$((failures + 1))
 fi
 rm -rf "$release_input_status_external_dir"
+release_input_status_invalid_asc_dir="$(mktemp -d)"
+release_input_status_invalid_asc_env="$release_input_status_invalid_asc_dir/release.env"
+release_input_status_invalid_asc_manual="$release_input_status_invalid_asc_dir/manual-release-verification.env"
+release_input_status_invalid_asc_json="$release_input_status_invalid_asc_dir/fastlane-api-key.json"
+release_input_status_invalid_asc_log="$release_input_status_invalid_asc_dir/status.log"
+cat >"$release_input_status_invalid_asc_json" <<EOF
+{
+  "key_id": "KEYID12345",
+  "issuer_id": "00000000-0000-0000-0000-000000000001",
+  "key_filepath": "$release_input_status_invalid_asc_dir/missing/AuthKey_KEYID12345.p8"
+}
+EOF
+printf 'APP_STORE_CONNECT_API_KEY_JSON=%q\n' "$release_input_status_invalid_asc_json" >"$release_input_status_invalid_asc_env"
+: >"$release_input_status_invalid_asc_manual"
+RELEASE_ENV_PATH="$release_input_status_invalid_asc_env" \
+  MANUAL_RELEASE_VERIFICATION_PATH="$release_input_status_invalid_asc_manual" \
+  Scripts/print_release_input_status.sh >"$release_input_status_invalid_asc_log" 2>&1 || true
+if ! grep -q 'App Store Connect API credential validation fails' "$release_input_status_invalid_asc_log"; then
+  printf 'FAIL: Release input status must surface invalid App Store Connect API JSON key files\n'
+  failures=$((failures + 1))
+fi
+if grep -q "$release_input_status_invalid_asc_dir" "$release_input_status_invalid_asc_log"; then
+  printf 'FAIL: Release input status must not print private App Store Connect credential paths\n'
+  failures=$((failures + 1))
+fi
+rm -rf "$release_input_status_invalid_asc_dir"
 check_file "Scripts/validate_release_env.sh" "Release environment placeholder validation script is required"
 if [[ -x "Scripts/validate_release_env.sh" ]]; then
   Scripts/validate_release_env.sh || failures=$((failures + 1))

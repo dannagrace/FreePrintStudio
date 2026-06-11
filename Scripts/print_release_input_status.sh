@@ -193,9 +193,11 @@ else
 fi
 
 printf '\n== App Store Connect Inputs ==\n'
+asc_credentials_ready_for_validation=0
 if is_set "${APP_STORE_CONNECT_API_KEY_JSON:-}"; then
   if [[ -f "${APP_STORE_CONNECT_API_KEY_JSON:-}" ]]; then
     mark_ok "APP_STORE_CONNECT_API_KEY_JSON is configured"
+    asc_credentials_ready_for_validation=1
   else
     mark_missing "APP_STORE_CONNECT_API_KEY_JSON is set but the file is missing"
   fi
@@ -208,8 +210,17 @@ else
   done
   if (( asc_triplet_ready == 3 )) && [[ -f "${ASC_KEY_PATH:-}" ]]; then
     mark_ok "ASC_KEY_ID, ASC_ISSUER_ID, and ASC_KEY_PATH are configured"
+    asc_credentials_ready_for_validation=1
   else
     mark_missing "App Store Connect API credentials configured: $asc_triplet_ready/3"
+  fi
+fi
+
+if (( asc_credentials_ready_for_validation == 1 )); then
+  if Scripts/check_app_store_connect_credentials.sh >/tmp/freeprintstudio-release-input-status-asc.log 2>&1; then
+    mark_ok "App Store Connect API credential validation passes"
+  else
+    mark_missing "App Store Connect API credential validation fails"
   fi
 fi
 
