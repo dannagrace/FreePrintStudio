@@ -722,6 +722,7 @@ if [[ ! -x "Scripts/preflight_app_store_archive.sh" ]]; then
   failures=$((failures + 1))
 fi
 check_contains "Scripts/preflight_app_store_archive.sh" "Scripts/verify_release.sh" "Archive preflight must run the local release gate"
+check_contains "Scripts/preflight_app_store_archive.sh" "source Scripts/load_release_env.sh" "Archive preflight must load private release inputs before checking signing assets"
 check_contains "Scripts/preflight_app_store_archive.sh" "Scripts/validate_release_env.sh" "Archive preflight must validate private release env placeholders"
 check_contains "Scripts/preflight_app_store_archive.sh" "Scripts/validate_app_review_contact.sh" "Archive preflight must validate App Review contact details"
 check_contains "Scripts/preflight_app_store_archive.sh" "Scripts/check_code_signing_assets.sh" "Archive preflight must validate signing assets"
