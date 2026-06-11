@@ -292,6 +292,9 @@ platform :ios do
   desc "Submit an already uploaded App Store Connect build for App Review"
   lane :submit_review do
     confirm_submit_for_review!
+    build_number = ENV["APP_STORE_BUILD_NUMBER"].to_s.strip
+    UI.user_error!("Set APP_STORE_BUILD_NUMBER to the processed App Store Connect build number before submitting for review") if build_number.empty?
+
     validate_release_env!
     validate_app_store_metadata!
     validate_screenshot_sync!
@@ -299,9 +302,6 @@ platform :ios do
     validate_app_privacy_details!
     validate_app_store_questionnaires!
     validate_app_review_contact!
-
-    build_number = ENV["APP_STORE_BUILD_NUMBER"].to_s.strip
-    UI.user_error!("Set APP_STORE_BUILD_NUMBER to the processed App Store Connect build number before submitting for review") if build_number.empty?
     validate_manual_release_verification!
     verify_app_store_connect_state!
 

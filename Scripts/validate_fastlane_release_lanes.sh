@@ -117,6 +117,8 @@ if source:
     submit_review = lane_body(source, "submit_review")
     if submit_review:
         require_before("submit_review", submit_review, "confirm_submit_for_review!", "deliver(")
+        require_before("submit_review", submit_review, 'build_number = ENV["APP_STORE_BUILD_NUMBER"].to_s.strip', "validate_app_store_metadata!")
+        require_before("submit_review", submit_review, "Set APP_STORE_BUILD_NUMBER to the processed App Store Connect build number before submitting for review", "validate_app_store_metadata!")
         require_before("submit_review", submit_review, "validate_release_env!", "deliver(")
         require_before("submit_review", submit_review, "validate_app_store_metadata!", "deliver(")
         require_before("submit_review", submit_review, "validate_screenshot_sync!", "deliver(")
