@@ -154,6 +154,14 @@ if source:
         require_before("upload_testflight", upload_testflight, "preflight_testflight_upload!", "upload_to_testflight(")
         if 'ENV["IPA_PATH"] = ipa_path' not in upload_testflight:
             fail("lane :upload_testflight must pass the selected IPA_PATH into export validation")
+        for required in (
+            "ipa: ipa_path",
+            "skip_waiting_for_build_processing: true",
+            "distribute_external: false",
+            "notify_external_testers: false",
+        ):
+            if required not in upload_testflight:
+                fail(f"lane :upload_testflight must include {required}")
 
 if failures:
     for failure in failures:
