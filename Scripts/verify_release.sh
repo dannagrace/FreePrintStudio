@@ -6,6 +6,10 @@ cd "$ROOT_DIR"
 export PDF_VALIDATION_MANIFEST_PATH="${PDF_VALIDATION_MANIFEST_PATH:-/tmp/freeprintstudio-pdf-export-validation.tsv}"
 
 LOG_PATH="/tmp/freeprintstudio-release-build.log"
+SCREENSHOT_COMMAND_TIMEOUT_SECONDS="${FREEPRINTSTUDIO_SCREENSHOT_COMMAND_TIMEOUT_SECONDS:-30}"
+SCREENSHOT_SYNC_TIMEOUT_SECONDS="${FREEPRINTSTUDIO_SCREENSHOT_SYNC_TIMEOUT_SECONDS:-60}"
+SUBMISSION_PACKET_TIMEOUT_SECONDS="${FREEPRINTSTUDIO_SUBMISSION_PACKET_TIMEOUT_SECONDS:-240}"
+SUBMISSION_PACKET_VALIDATION_TIMEOUT_SECONDS="${FREEPRINTSTUDIO_SUBMISSION_PACKET_VALIDATION_TIMEOUT_SECONDS:-60}"
 SCREENSHOT_PATHS=(
   "AppStore/Screenshots/iphone-main.jpg"
   "AppStore/Screenshots/iphone-test-ruler.jpg"
@@ -16,6 +20,34 @@ SCREENSHOT_PATHS=(
   "AppStore/Screenshots/ipad-main.jpg"
 )
 
+run_with_timeout() {
+  local timeout_seconds="$1"
+  shift
+
+  python3 - "$timeout_seconds" "$@" <<'PY'
+import subprocess
+import sys
+
+timeout_text = sys.argv[1]
+command = sys.argv[2:]
+
+try:
+    completed = subprocess.run(
+        command,
+        timeout=float(timeout_text),
+        check=False,
+    )
+except subprocess.TimeoutExpired:
+    print(
+        f"Release verification command timed out after {timeout_text} seconds: {' '.join(command)}",
+        file=sys.stderr,
+    )
+    raise SystemExit(124)
+
+raise SystemExit(completed.returncode)
+PY
+}
+
 check_screenshot_not_blank() {
   local screenshot_path="$1"
   local temp_dir
@@ -23,7 +55,7 @@ check_screenshot_not_blank() {
   local result
   temp_dir="$(mktemp -d -t freeprintstudio-screenshot)"
   converted_png="$temp_dir/screenshot.png"
-  sips -s format png "$screenshot_path" --out "$converted_png" >/dev/null
+  run_with_timeout "$SCREENSHOT_COMMAND_TIMEOUT_SECONDS" sips -s format png "$screenshot_path" --out "$converted_png" >/dev/null
 
   result=0
   python3 - "$converted_png" <<'PY' || result=$?
@@ -109,10 +141,12 @@ PY
 check_screenshot_dimensions() {
   local screenshot_path="$1"
   local accepted_dimensions="$2"
+  local metadata_output
   local width
   local height
-  width="$(sips -g pixelWidth "$screenshot_path" | awk -F': ' '/pixelWidth/ { print $2 }')"
-  height="$(sips -g pixelHeight "$screenshot_path" | awk -F': ' '/pixelHeight/ { print $2 }')"
+  metadata_output="$(run_with_timeout "$SCREENSHOT_COMMAND_TIMEOUT_SECONDS" sips -g pixelWidth -g pixelHeight "$screenshot_path")"
+  width="$(awk -F': ' '/pixelWidth/ { print $2 }' <<<"$metadata_output")"
+  height="$(awk -F': ' '/pixelHeight/ { print $2 }' <<<"$metadata_output")"
 
   if ! grep -Eq "(^|,)$width x $height(,|$)" <<<"$accepted_dimensions"; then
     printf 'Invalid screenshot size for %s: %s x %s. Accepted: %s\n' \
@@ -128,7 +162,7 @@ check_screenshot_has_no_validation_error_red() {
   local result
   temp_dir="$(mktemp -d -t freeprintstudio-screenshot)"
   converted_png="$temp_dir/screenshot.png"
-  sips -s format png "$screenshot_path" --out "$converted_png" >/dev/null
+  run_with_timeout "$SCREENSHOT_COMMAND_TIMEOUT_SECONDS" sips -s format png "$screenshot_path" --out "$converted_png" >/dev/null
 
   result=0
   python3 - "$converted_png" <<'PY' || result=$?
@@ -271,7 +305,7 @@ run_screenshot_checks() {
       printf 'Missing screenshot: %s\n' "$screenshot_path"
       exit 1
     fi
-    sips -g pixelWidth -g pixelHeight -g hasAlpha "$screenshot_path"
+    run_with_timeout "$SCREENSHOT_COMMAND_TIMEOUT_SECONDS" sips -g pixelWidth -g pixelHeight -g hasAlpha "$screenshot_path"
     case "$screenshot_path" in
       *iphone-main.jpg)
         check_screenshot_dimensions "$screenshot_path" "1260 x 2736,1290 x 2796,1320 x 2868"
@@ -290,7 +324,7 @@ run_screenshot_checks() {
         ;;
     esac
   done
-  Scripts/validate_screenshot_sync.sh
+  run_with_timeout "$SCREENSHOT_SYNC_TIMEOUT_SECONDS" Scripts/validate_screenshot_sync.sh
 }
 
 run_accessibility_screenshot_validation() {
@@ -326,12 +360,12 @@ run_submission_packet_generation() {
     run_pdf_export_validation
     printf '\n'
   fi
-  Scripts/prepare_app_store_submission_packet.sh
+  run_with_timeout "$SUBMISSION_PACKET_TIMEOUT_SECONDS" Scripts/prepare_app_store_submission_packet.sh
 }
 
 run_submission_packet_validation() {
   printf '== App Store submission packet validation ==\n'
-  Scripts/validate_app_store_submission_packet.sh
+  run_with_timeout "$SUBMISSION_PACKET_VALIDATION_TIMEOUT_SECONDS" Scripts/validate_app_store_submission_packet.sh
 }
 
 run_manual_evidence_form_generation() {
