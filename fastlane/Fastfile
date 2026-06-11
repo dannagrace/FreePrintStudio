@@ -191,6 +191,13 @@ def preflight_app_privacy_upload!
   )
 end
 
+def preflight_app_store_archive!
+  run_release_script!(
+    "Scripts/preflight_app_store_archive.sh",
+    "App Store archive preflight failed."
+  )
+end
+
 def verify_app_store_connect_state!
   run_release_script!(
     "Scripts/check_app_store_connect_state.sh",
@@ -344,6 +351,7 @@ platform :ios do
 
   desc "Create a signed App Store archive after signing is configured"
   lane :archive do
+    preflight_app_store_archive!
     validate_release_env!
     team_id = ENV["DEVELOPMENT_TEAM_ID"]
     UI.user_error!("Set DEVELOPMENT_TEAM_ID before running ios archive") if team_id.to_s.empty?

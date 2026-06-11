@@ -94,6 +94,8 @@ if source:
         fail("Fastfile must call Scripts/preflight_metadata_upload.sh")
     if "Scripts/preflight_app_privacy_upload.sh" not in source:
         fail("Fastfile must call Scripts/preflight_app_privacy_upload.sh")
+    if "Scripts/preflight_app_store_archive.sh" not in source:
+        fail("Fastfile must call Scripts/preflight_app_store_archive.sh")
 
     metadata = lane_body(source, "metadata")
     if metadata:
@@ -188,6 +190,7 @@ if source:
 
     archive = lane_body(source, "archive")
     if archive:
+        require_before("archive", archive, "preflight_app_store_archive!", "Scripts/archive_app_store.sh")
         require_before("archive", archive, "validate_release_env!", "Scripts/archive_app_store.sh")
 
 if failures:
