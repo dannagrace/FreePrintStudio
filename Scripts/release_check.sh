@@ -1575,6 +1575,33 @@ check_contains "Scripts/preflight_app_review_submission.sh" "APP_STORE_BUILD_NUM
 check_contains "Scripts/preflight_app_review_submission.sh" "PROCESSED_BUILD_NUMBER placeholder" "App Review preflight must reject the selected-build placeholder"
 check_contains "Scripts/preflight_app_review_submission.sh" "App Review submission preflight passed" "App Review preflight must print a clear success message"
 check_contains "Scripts/preflight_app_review_submission.sh" "APP_STORE_BUILD_NUMBER=%s CONFIRM_SUBMIT_FOR_REVIEW=1 Scripts/run_fastlane.sh ios submit_review" "App Review preflight success command must submit the selected App Store build explicitly"
+if ! python3 - <<'PY'
+from pathlib import Path
+
+source = Path("Scripts/preflight_app_review_submission.sh").read_text()
+
+
+def line_index(pattern: str) -> int:
+    for index, line in enumerate(source.splitlines()):
+        if line.strip() == pattern:
+            return index
+    raise SystemExit(1)
+
+
+build_index = line_index("run_build_number_step")
+for later in (
+    'run_step "App Store metadata" Scripts/validate_app_store_metadata.sh',
+    'run_step "Manual release verification evidence" Scripts/validate_manual_release_verification.sh',
+    'run_step "App Store Connect credentials" Scripts/check_app_store_connect_credentials.sh',
+    'run_step "App Store Connect selected build" Scripts/check_app_store_connect_state.sh',
+):
+    if build_index > line_index(later):
+        raise SystemExit(1)
+PY
+then
+  printf 'FAIL: App Review preflight must validate APP_STORE_BUILD_NUMBER before heavy metadata, evidence, credential, or account-state checks\n'
+  failures=$((failures + 1))
+fi
 review_preflight_placeholder_test_dir="$(mktemp -d)"
 review_preflight_placeholder_output="$review_preflight_placeholder_test_dir/preflight.txt"
 APP_STORE_BUILD_NUMBER=todo \

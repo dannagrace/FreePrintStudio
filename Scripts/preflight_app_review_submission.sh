@@ -58,6 +58,7 @@ run_build_number_step() {
 }
 
 run_step "Private release environment" Scripts/validate_release_env.sh
+run_build_number_step
 run_step "App Store metadata" Scripts/validate_app_store_metadata.sh
 run_step "Screenshot sync" Scripts/validate_screenshot_sync.sh
 run_step "Privacy surface" Scripts/validate_privacy_surface.sh
@@ -66,7 +67,6 @@ run_step "App Store questionnaires" Scripts/validate_app_store_questionnaires.sh
 run_step "App Review contact" Scripts/validate_app_review_contact.sh
 run_step "Manual release verification evidence" Scripts/validate_manual_release_verification.sh
 run_step "App Store Connect credentials" Scripts/check_app_store_connect_credentials.sh
-run_build_number_step
 run_step "App Store Connect selected build" Scripts/check_app_store_connect_state.sh
 
 if (( failures > 0 )); then
