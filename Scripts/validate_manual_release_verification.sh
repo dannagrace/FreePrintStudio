@@ -109,9 +109,32 @@ PY
   fi
 }
 
+validate_required_evidence_values() {
+  require_value MANUAL_VERIFIER_NAME "Manual verifier"
+
+  require_value MANUAL_REAL_IPHONE_MODEL "Real iPhone model"
+  require_value MANUAL_REAL_IPHONE_IOS_VERSION "Real iPhone iOS version"
+  require_recent_date MANUAL_REAL_IPHONE_TEST_DATE "Real iPhone verification"
+  require_pass MANUAL_REAL_IPHONE_PHOTOS_IMPORT "Real iPhone Photos import"
+  require_pass MANUAL_REAL_IPHONE_PDF_EXPORT "Real iPhone PDF export"
+  require_pass MANUAL_REAL_IPHONE_PRINT_SHEET "Real iPhone print sheet"
+
+  require_recent_date MANUAL_AIRPRINT_TEST_DATE "AirPrint verification"
+  require_value MANUAL_AIRPRINT_PRINTER "AirPrint printer or production-equivalent workflow"
+  require_pass MANUAL_AIRPRINT_EXACT_SIZE "AirPrint exact-size output"
+
+  require_value MANUAL_TESTFLIGHT_BUILD_NUMBER "TestFlight build number"
+  require_value MANUAL_TESTFLIGHT_DEVICE "TestFlight device"
+  require_recent_date MANUAL_TESTFLIGHT_TEST_DATE "TestFlight verification"
+  require_pass MANUAL_TESTFLIGHT_INSTALL "TestFlight install"
+  require_pass MANUAL_TESTFLIGHT_PRINT_WORKFLOW "TestFlight print workflow"
+}
+
 if [[ ! -f "$EVIDENCE_PATH" ]]; then
   block "Manual release verification evidence file is missing: $EVIDENCE_PATH"
   printf '  Copy Config/manual-release-verification.env.example to Config/manual-release-verification.env after real-device testing.\n'
+  validate_required_evidence_values
+  printf '\nManual release verification evidence failed with %d issue(s).\n' "$failures"
   exit 1
 fi
 
@@ -130,24 +153,7 @@ if [[ "$source_status" -ne 0 ]]; then
   exit 1
 fi
 
-require_value MANUAL_VERIFIER_NAME "Manual verifier"
-
-require_value MANUAL_REAL_IPHONE_MODEL "Real iPhone model"
-require_value MANUAL_REAL_IPHONE_IOS_VERSION "Real iPhone iOS version"
-require_recent_date MANUAL_REAL_IPHONE_TEST_DATE "Real iPhone verification"
-require_pass MANUAL_REAL_IPHONE_PHOTOS_IMPORT "Real iPhone Photos import"
-require_pass MANUAL_REAL_IPHONE_PDF_EXPORT "Real iPhone PDF export"
-require_pass MANUAL_REAL_IPHONE_PRINT_SHEET "Real iPhone print sheet"
-
-require_recent_date MANUAL_AIRPRINT_TEST_DATE "AirPrint verification"
-require_value MANUAL_AIRPRINT_PRINTER "AirPrint printer or production-equivalent workflow"
-require_pass MANUAL_AIRPRINT_EXACT_SIZE "AirPrint exact-size output"
-
-require_value MANUAL_TESTFLIGHT_BUILD_NUMBER "TestFlight build number"
-require_value MANUAL_TESTFLIGHT_DEVICE "TestFlight device"
-require_recent_date MANUAL_TESTFLIGHT_TEST_DATE "TestFlight verification"
-require_pass MANUAL_TESTFLIGHT_INSTALL "TestFlight install"
-require_pass MANUAL_TESTFLIGHT_PRINT_WORKFLOW "TestFlight print workflow"
+validate_required_evidence_values
 
 if [[ -n "${APP_STORE_BUILD_NUMBER:-}" && -n "${MANUAL_TESTFLIGHT_BUILD_NUMBER:-}" ]]; then
   if [[ "$MANUAL_TESTFLIGHT_BUILD_NUMBER" == "$APP_STORE_BUILD_NUMBER" ]]; then

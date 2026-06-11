@@ -393,6 +393,18 @@ check_contains "Scripts/validate_manual_release_verification.sh" "MANUAL_TESTFLI
 check_contains "Scripts/validate_manual_release_verification.sh" "MANUAL_TESTFLIGHT_BUILD_NUMBER" "Manual verification script must require the tested TestFlight build number"
 check_contains "Scripts/validate_manual_release_verification.sh" "APP_STORE_BUILD_NUMBER" "Manual verification script must compare tested TestFlight build with the selected App Store build"
 check_contains "Scripts/validate_manual_release_verification.sh" "source Scripts/load_release_env.sh" "Manual verification script must load release.env before comparing the selected App Store build"
+manual_release_missing_evidence_test_dir="$(mktemp -d)"
+manual_release_missing_evidence_log="$manual_release_missing_evidence_test_dir/manual-release-verification-missing.log"
+if MANUAL_RELEASE_VERIFICATION_PATH="$manual_release_missing_evidence_test_dir/missing.env" \
+  Scripts/validate_manual_release_verification.sh >"$manual_release_missing_evidence_log" 2>&1; then
+  printf 'FAIL: Manual verification must reject a missing evidence file\n'
+  failures=$((failures + 1))
+elif ! grep -q 'MANUAL_REAL_IPHONE_PHOTOS_IMPORT' "$manual_release_missing_evidence_log" \
+  || ! grep -q 'MANUAL_TESTFLIGHT_PRINT_WORKFLOW' "$manual_release_missing_evidence_log"; then
+  printf 'FAIL: Manual verification missing-file output must list required manual evidence fields\n'
+  failures=$((failures + 1))
+fi
+rm -rf "$manual_release_missing_evidence_test_dir"
 manual_release_selected_build_test_dir="$(mktemp -d)"
 manual_release_selected_build_env="$manual_release_selected_build_test_dir/release.env"
 manual_release_selected_build_evidence="$manual_release_selected_build_test_dir/manual-release-verification.env"
