@@ -62,7 +62,7 @@ looks_like_placeholder() {
     apple-id@example.com|XXXXXXXXXX|00000000-0000-0000-0000-000000000000|\
     /absolute/path/to/AuthKey_XXXXXXXXXX.p8|/absolute/path/to/fastlane-api-key.json|\
     /absolute/path/to/FreePrintStudio.ipa|/secure/AuthKey_XXXXXXXXXX.p8|\
-    123456789|"Your Team Name"|PROCESSED_BUILD_NUMBER)
+    123456789|"Your Team Name"|PROCESSED_BUILD_NUMBER|TODO|TBD|PLACEHOLDER)
       return 0
       ;;
   esac
@@ -70,6 +70,11 @@ looks_like_placeholder() {
   [[ "$value" == *"YOUR_"* ]] && return 0
   [[ "$value" == *"XXXXXXXXXX"* ]] && return 0
   [[ "$value" == *"example.com"* ]] && return 0
+  [[ "$value" == *@example.* ]] && return 0
+  [[ "$value" == *"TODO"* ]] && return 0
+  [[ "$value" == *"TBD"* ]] && return 0
+  [[ "$value" == *"placeholder"* ]] && return 0
+  [[ "$value" == *"PLACEHOLDER"* ]] && return 0
   [[ "$value" == /absolute/path/* ]] && return 0
 
   return 1

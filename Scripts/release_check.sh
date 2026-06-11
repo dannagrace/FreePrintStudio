@@ -582,6 +582,25 @@ elif grep -q 'OK: APP_STORE_BUILD_NUMBER is configured for final App Review subm
   failures=$((failures + 1))
 fi
 rm -rf "$release_input_placeholder_build_test_dir"
+release_input_todo_build_test_dir="$(mktemp -d)"
+release_input_todo_build_env="$release_input_todo_build_test_dir/release.env"
+release_input_todo_build_manual="$release_input_todo_build_test_dir/manual-release-verification.env"
+release_input_todo_build_log="$release_input_todo_build_test_dir/release-input-status.log"
+printf '%s\n' 'APP_STORE_BUILD_NUMBER=TODO' >"$release_input_todo_build_env"
+printf '%s\n' '# intentionally blank manual evidence for release input status test' >"$release_input_todo_build_manual"
+if ! RELEASE_ENV_PATH="$release_input_todo_build_env" \
+  MANUAL_RELEASE_VERIFICATION_PATH="$release_input_todo_build_manual" \
+  Scripts/print_release_input_status.sh >"$release_input_todo_build_log" 2>&1; then
+  printf 'FAIL: Release input status should print redacted TODO-build status without crashing\n'
+  failures=$((failures + 1))
+elif ! grep -q 'APP_STORE_BUILD_NUMBER still uses a placeholder value' "$release_input_todo_build_log"; then
+  printf 'FAIL: Release input status must flag TODO as a selected-build placeholder\n'
+  failures=$((failures + 1))
+elif grep -q 'OK: APP_STORE_BUILD_NUMBER is configured for final App Review submission' "$release_input_todo_build_log"; then
+  printf 'FAIL: Release input status must not mark a TODO selected build as configured\n'
+  failures=$((failures + 1))
+fi
+rm -rf "$release_input_todo_build_test_dir"
 for selected_build_handoff_path in \
   README.md \
   AppStore/release-inputs-worksheet.md \
@@ -675,6 +694,17 @@ elif ! grep -q 'APP_REVIEW_CONTACT_FIRST_NAME still uses a placeholder value' /t
   failures=$((failures + 1))
 fi
 rm -rf "$release_env_generic_placeholder_test_dir"
+release_env_example_domain_test_dir="$(mktemp -d)"
+release_env_example_domain_test_file="$release_env_example_domain_test_dir/release.env"
+printf 'APP_REVIEW_CONTACT_EMAIL=review@example.org\n' >"$release_env_example_domain_test_file"
+if RELEASE_ENV_PATH="$release_env_example_domain_test_file" Scripts/validate_release_env.sh >/tmp/freeprintstudio-example-domain-release-env.log 2>&1; then
+  printf 'FAIL: Release environment validation must reject example-domain placeholder emails\n'
+  failures=$((failures + 1))
+elif ! grep -q 'APP_REVIEW_CONTACT_EMAIL still uses a placeholder value' /tmp/freeprintstudio-example-domain-release-env.log; then
+  printf 'FAIL: Release environment placeholder validation must identify example-domain email placeholders\n'
+  failures=$((failures + 1))
+fi
+rm -rf "$release_env_example_domain_test_dir"
 check_contains "Scripts/check_app_store_readiness.sh" "source Scripts/load_release_env.sh" "Readiness audit must load Config/release.env"
 check_contains "Scripts/check_app_store_readiness.sh" "validate_release_env.sh" "Readiness audit must reject placeholder release environment values"
 check_contains "Scripts/check_app_store_connect_credentials.sh" "source Scripts/load_release_env.sh" "Credential audit must load Config/release.env"

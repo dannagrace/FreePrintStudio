@@ -68,6 +68,7 @@ looks_like_placeholder() {
   [[ "$value" == *"YOUR_"* ]] && return 0
   [[ "$value" == *"XXXXXXXXXX"* ]] && return 0
   [[ "$value" == *"example.com"* ]] && return 0
+  [[ "$value" == *@example.* ]] && return 0
   [[ "$value" == *"TODO"* ]] && return 0
   [[ "$value" == *"TBD"* ]] && return 0
   [[ "$value" == *"placeholder"* ]] && return 0
