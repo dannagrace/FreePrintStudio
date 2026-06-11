@@ -236,9 +236,10 @@ platform :ios do
     validate_screenshot_sync!
     validate_app_store_questionnaires!
     validate_app_review_contact!
+    credential_options = app_store_connect_credentials(required: true)
 
     deliver(
-      app_store_connect_credentials(required: false).merge(
+      credential_options.merge(
         app_identifier: APP_IDENTIFIER,
         app_version: APP_VERSION,
         primary_category: PRIMARY_CATEGORY,

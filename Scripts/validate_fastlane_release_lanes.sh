@@ -98,6 +98,7 @@ if source:
         require_before("metadata", metadata, "validate_screenshot_sync!", "deliver(")
         require_before("metadata", metadata, "validate_app_store_questionnaires!", "deliver(")
         require_before("metadata", metadata, "validate_app_review_contact!", "deliver(")
+        require_before("metadata", metadata, "app_store_connect_credentials(required: true)", "deliver(")
         index_of(metadata, "review_information_options")
         if "submit_for_review: false" not in metadata:
             fail("lane :metadata must never submit for review")
