@@ -1245,6 +1245,7 @@ fi
 check_contains "Scripts/preflight_metadata_upload.sh" "Scripts/validate_release_env.sh" "Metadata upload preflight must validate private release inputs"
 check_contains "Scripts/preflight_metadata_upload.sh" "Scripts/validate_app_store_metadata.sh" "Metadata upload preflight must validate App Store metadata"
 check_contains "Scripts/preflight_metadata_upload.sh" "Scripts/validate_screenshot_sync.sh" "Metadata upload preflight must validate screenshot sync"
+check_contains "Scripts/preflight_metadata_upload.sh" "Scripts/validate_public_pages.sh" "Metadata upload preflight must validate public privacy and support pages"
 check_contains "Scripts/preflight_metadata_upload.sh" "Scripts/validate_app_store_questionnaires.sh" "Metadata upload preflight must validate App Store questionnaires"
 check_contains "Scripts/preflight_metadata_upload.sh" "Scripts/validate_app_review_contact.sh" "Metadata upload preflight must validate App Review contact"
 check_contains "Scripts/preflight_metadata_upload.sh" "Scripts/check_app_store_connect_credentials.sh" "Metadata upload preflight must validate App Store Connect credentials"
