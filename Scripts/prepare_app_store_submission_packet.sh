@@ -272,6 +272,10 @@ tsv_escape() {
 
 redact_external_action_item() {
   local value="$1"
+  local release_env_path="${RELEASE_ENV_PATH:-$ROOT_DIR/Config/release.env}"
+  local manual_evidence_path="${MANUAL_RELEASE_VERIFICATION_PATH:-$ROOT_DIR/Config/manual-release-verification.env}"
+  value="${value//$manual_evidence_path/[manual-evidence-env]}"
+  value="${value//$release_env_path/[release-env]}"
   value="${value//$ROOT_DIR\//[repo]/}"
   value="${value//$ROOT_DIR/[repo]}"
   value="${value//$HOME\//[home]/}"
@@ -338,6 +342,8 @@ external_action_field_for_item() {
     field="${BASH_REMATCH[1]}"
   elif [[ "$item" =~ (APP_STORE_CONNECT_API_KEY_JSON|ASC_[A-Z0-9_]+|FASTLANE_USER) ]]; then
     field="${BASH_REMATCH[1]}"
+  elif [[ "$item" == *"Manual release verification evidence file"* ]]; then
+    field="MANUAL_RELEASE_VERIFICATION_PATH"
   elif [[ "$item" == *"Developer Team"* ]]; then
     field="DEVELOPMENT_TEAM_ID"
   elif [[ "$item" == *"Apple Distribution"* || "$item" == *"signing identity"* ]]; then
