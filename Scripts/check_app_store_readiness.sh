@@ -308,10 +308,10 @@ fi
 if Scripts/check_app_store_connect_credentials.sh >/tmp/freeprintstudio-asc-credentials.log 2>&1; then
   ok "Fastlane App Store Connect API credentials are configured"
   app_store_connect_state_checked=1
-  if Scripts/check_app_store_connect_state.sh >/tmp/freeprintstudio-asc-state.log 2>&1; then
-    ok "App Store Connect app record, version, and processed build preflight passed"
+  if APP_STORE_CONNECT_SKIP_BUILD_CHECK=1 Scripts/check_app_store_connect_state.sh >/tmp/freeprintstudio-asc-state.log 2>&1; then
+    ok "App Store Connect app record and version preflight passed"
   else
-    block "App Store Connect app record, version, or processed build preflight failed"
+    block "App Store Connect app record or version preflight failed"
     sed 's/^/  /' /tmp/freeprintstudio-asc-state.log
   fi
 else
@@ -319,7 +319,7 @@ else
   sed 's/^BLOCKED:/missing:/; s/^/  /' /tmp/freeprintstudio-asc-credentials.log
 fi
 if (( app_store_connect_state_checked == 0 )); then
-  warn "App Store Connect app record and TestFlight status require account-specific verification after credentials are configured"
+  warn "App Store Connect app record and version require account-specific verification after credentials are configured; the selected TestFlight build is checked after upload"
 fi
 
 printf '\nSummary: %d blocker(s), %d warning(s).\n' "$failures" "$warnings"

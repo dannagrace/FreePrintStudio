@@ -1585,6 +1585,8 @@ check_contains "Scripts/check_app_store_readiness.sh" 'block "Fastlane App Store
 check_not_contains "Scripts/check_app_store_readiness.sh" 'warn "Fastlane App Store Connect API credentials are not configured' "Readiness audit must not downgrade missing App Store Connect API credentials to a warning"
 check_contains "Scripts/check_app_store_readiness.sh" "app_store_connect_state_checked" "Readiness audit must only warn about account-specific App Store Connect verification when it could not query account state"
 check_contains "Scripts/check_app_store_readiness.sh" "check_app_store_connect_state.sh" "Readiness audit must run the App Store Connect state preflight when credentials are available"
+check_contains "Scripts/check_app_store_readiness.sh" "APP_STORE_CONNECT_SKIP_BUILD_CHECK=1" "Archive readiness audit must not require a processed TestFlight build before the first App Store archive"
+check_contains "Scripts/check_app_store_readiness.sh" "App Store Connect app record and version preflight passed" "Archive readiness audit must describe the pre-upload App Store Connect check accurately"
 check_file "Scripts/check_app_store_connect_credentials.sh" "App Store Connect credential audit script is required"
 check_contains "Scripts/check_app_store_connect_credentials.sh" "APP_STORE_CONNECT_API_KEY_JSON" "Credential audit must support Fastlane API key JSON"
 check_contains "Scripts/check_app_store_connect_credentials.sh" "ASC_KEY_PATH" "Credential audit must support App Store Connect private key paths"
