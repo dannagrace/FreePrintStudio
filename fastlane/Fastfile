@@ -14,7 +14,7 @@ APP_PRIVACY_DETAILS_PATH = File.join(PROJECT_ROOT, "AppStore/app_privacy_details
 def app_store_connect_credentials(required: false)
   api_key_json = ENV["APP_STORE_CONNECT_API_KEY_JSON"].to_s
   unless api_key_json.empty?
-    UI.user_error!("APP_STORE_CONNECT_API_KEY_JSON does not exist: #{api_key_json}") if required && !File.file?(api_key_json)
+    UI.user_error!("APP_STORE_CONNECT_API_KEY_JSON does not exist at the configured path") if required && !File.file?(api_key_json)
     return {} unless File.file?(api_key_json)
 
     api_key_json_path = Pathname.new(api_key_json).expand_path
@@ -61,7 +61,7 @@ def app_store_connect_credentials(required: false)
     return {}
   end
 
-  UI.user_error!("ASC_KEY_PATH does not exist: #{key_path}") if required && !File.file?(key_path)
+  UI.user_error!("ASC_KEY_PATH does not exist at the configured path") if required && !File.file?(key_path)
   return {} unless File.file?(key_path)
 
   {
