@@ -1095,6 +1095,7 @@ check_contains "Scripts/preflight_app_privacy_upload.sh" "Scripts/validate_priva
 check_contains "Scripts/preflight_app_privacy_upload.sh" "Scripts/validate_app_privacy_details.sh" "App Privacy Details upload preflight must validate App Privacy Details JSON"
 check_contains "Scripts/preflight_app_privacy_upload.sh" "Scripts/validate_app_store_questionnaires.sh" "App Privacy Details upload preflight must validate App Store questionnaires"
 check_contains "Scripts/preflight_app_privacy_upload.sh" "Scripts/run_fastlane.sh ios privacy_details" "App Privacy Details upload preflight must print the privacy upload next command"
+check_not_contains "Scripts/preflight_app_privacy_upload.sh" 'printf '\''Next: FASTLANE_USER=%s' "App Privacy Details upload preflight must not print the real Fastlane Apple ID in the next command"
 check_contains "Scripts/verify_release.sh" "metadata-preflight" "Release verification must expose metadata upload preflight"
 check_contains "Scripts/verify_release.sh" "privacy-preflight" "Release verification must expose App Privacy Details upload preflight"
 check_contains "fastlane/Deliverfile" "project_root" "Deliverfile must use project-root absolute paths"

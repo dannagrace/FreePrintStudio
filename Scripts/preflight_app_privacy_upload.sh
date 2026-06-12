@@ -60,4 +60,5 @@ if (( failures > 0 )); then
 fi
 
 printf 'App Privacy Details upload preflight passed.\n'
-printf 'Next: FASTLANE_USER=%s CONFIRM_UPLOAD_APP_PRIVACY=1 Scripts/run_fastlane.sh ios privacy_details\n' "$FASTLANE_USER"
+printf 'Next: CONFIRM_UPLOAD_APP_PRIVACY=1 Scripts/run_fastlane.sh ios privacy_details\n'
+printf 'Run the command from an environment where FASTLANE_USER is already configured.\n'
