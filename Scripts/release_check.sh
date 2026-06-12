@@ -810,6 +810,28 @@ elif grep -Fq "$manual_release_loose_evidence" "$manual_release_loose_evidence_l
   failures=$((failures + 1))
 fi
 rm -rf "$manual_release_loose_evidence_test_dir"
+manual_release_invalid_evidence_test_dir="$(mktemp -d)"
+manual_release_invalid_evidence="$manual_release_invalid_evidence_test_dir/manual-release-verification.env"
+manual_release_invalid_evidence_log="$manual_release_invalid_evidence_test_dir/manual-release-verification-invalid.log"
+printf '%s\n' 'MANUAL_VERIFIER_NAME="Release Tester' >"$manual_release_invalid_evidence"
+chmod 600 "$manual_release_invalid_evidence"
+if APP_STORE_BUILD_NUMBER=42 \
+  RELEASE_ENV_PATH="$manual_release_invalid_evidence_test_dir/missing-release.env" \
+  MANUAL_RELEASE_VERIFICATION_PATH="$manual_release_invalid_evidence" \
+  Scripts/validate_manual_release_verification.sh >"$manual_release_invalid_evidence_log" 2>&1; then
+  printf 'FAIL: Manual verification must reject invalid manual evidence shell syntax\n'
+  failures=$((failures + 1))
+elif ! grep -q 'Manual release verification evidence is not a valid shell env file' "$manual_release_invalid_evidence_log"; then
+  printf 'FAIL: Manual verification invalid-syntax output should identify the manual evidence env file\n'
+  failures=$((failures + 1))
+elif ! grep -q 'Quote values that contain spaces' "$manual_release_invalid_evidence_log"; then
+  printf 'FAIL: Manual verification invalid-syntax output should include quoting guidance\n'
+  failures=$((failures + 1))
+elif grep -Fq "$manual_release_invalid_evidence" "$manual_release_invalid_evidence_log"; then
+  printf 'FAIL: Manual verification must not print the full invalid manual evidence path\n'
+  failures=$((failures + 1))
+fi
+rm -rf "$manual_release_invalid_evidence_test_dir"
 check_contains "Scripts/check_app_store_readiness.sh" "validate_manual_release_verification.sh" "Readiness audit must validate manual release evidence"
 check_contains "Scripts/verify_release.sh" "manual-verification" "Release verification must expose manual release evidence validation"
 check_file "Scripts/load_release_env.sh" "Release environment loader script is required"
@@ -856,6 +878,27 @@ elif ! grep -q 'chmod 600' "$release_env_loader_test_dir/loose-release-env.log";
   failures=$((failures + 1))
 elif grep -Fq "$release_env_loader_loose_file" "$release_env_loader_test_dir/loose-release-env.log"; then
   printf 'FAIL: Release environment loader must not print the full loose release.env path\n'
+  failures=$((failures + 1))
+fi
+release_env_loader_invalid_file="$release_env_loader_test_dir/invalid-release.env"
+release_env_loader_invalid_log="$release_env_loader_test_dir/invalid-release-env.log"
+printf '%s\n' 'APP_REVIEW_CONTACT_FIRST_NAME="Grace' >"$release_env_loader_invalid_file"
+chmod 600 "$release_env_loader_invalid_file"
+if RELEASE_ENV_PATH="$release_env_loader_invalid_file" bash -c '
+  set -euo pipefail
+  cd "$1"
+  source Scripts/load_release_env.sh
+' _ "$ROOT_DIR" >"$release_env_loader_invalid_log" 2>&1; then
+  printf 'FAIL: Release environment loader must reject invalid release.env shell syntax\n'
+  failures=$((failures + 1))
+elif ! grep -q 'Release environment is not a valid shell env file' "$release_env_loader_invalid_log"; then
+  printf 'FAIL: Release environment loader invalid-syntax output should identify release.env syntax errors\n'
+  failures=$((failures + 1))
+elif ! grep -q 'Quote values containing spaces' "$release_env_loader_invalid_log"; then
+  printf 'FAIL: Release environment loader invalid-syntax output should include quoting guidance\n'
+  failures=$((failures + 1))
+elif grep -Fq "$release_env_loader_invalid_file" "$release_env_loader_invalid_log"; then
+  printf 'FAIL: Release environment loader must not print the full invalid release.env path\n'
   failures=$((failures + 1))
 fi
 rm -rf "$release_env_loader_test_dir"

@@ -269,7 +269,7 @@ validate_required_evidence_values() {
 }
 
 if [[ ! -f "$EVIDENCE_PATH" ]]; then
-  block "Manual release verification evidence file is missing: $EVIDENCE_PATH"
+  block "Manual release verification evidence file is missing: Config/manual-release-verification.env"
   printf '  Copy Config/manual-release-verification.env.example to Config/manual-release-verification.env after real-device testing.\n'
   validate_required_evidence_values
   printf '\nManual release verification evidence failed with %d issue(s).\n' "$failures"
@@ -291,8 +291,11 @@ set +a
 set -e
 
 if [[ "$source_status" -ne 0 ]]; then
-  block "Manual release verification evidence is not a valid shell env file: $EVIDENCE_PATH"
-  sed 's/^/  /' /tmp/freeprintstudio-manual-evidence-source.log
+  block "Manual release verification evidence is not a valid shell env file"
+  while IFS= read -r source_line; do
+    source_line="${source_line//$EVIDENCE_PATH/[configured manual evidence]}"
+    printf '  %s\n' "$source_line"
+  done </tmp/freeprintstudio-manual-evidence-source.log
   printf '  Quote values that contain spaces, for example MANUAL_REAL_IPHONE_MODEL=\"iPhone 15 Pro\".\n'
   exit 1
 fi

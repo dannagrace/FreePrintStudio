@@ -94,8 +94,11 @@ PY
   done
 
   if [[ "$_freeprint_source_status" -ne 0 ]]; then
-    printf 'BLOCKED: Release environment is not a valid shell env file: %s\n' "$release_env_path" >&2
-    sed 's/^/  /' "$_freeprint_source_log" >&2
+    printf 'BLOCKED: Release environment is not a valid shell env file\n' >&2
+    while IFS= read -r _freeprint_source_line; do
+      _freeprint_source_line="${_freeprint_source_line//$release_env_path/[configured release.env]}"
+      printf '  %s\n' "$_freeprint_source_line" >&2
+    done <"$_freeprint_source_log"
     printf '  Quote values containing spaces, for example APP_REVIEW_CONTACT_FIRST_NAME="Grace Lee".\n' >&2
     if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
       return "$_freeprint_source_status"
@@ -107,6 +110,7 @@ PY
   unset _freeprint_restore_allexport
   unset _freeprint_source_log
   unset _freeprint_source_status
+  unset _freeprint_source_line
   unset _freeprint_release_env_names
   unset _freeprint_preserved_env_names
   unset _freeprint_preserved_env_values
