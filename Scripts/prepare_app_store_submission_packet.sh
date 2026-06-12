@@ -18,6 +18,7 @@ APP_STORE_CONNECT_STATE_REPORT="$PACKET_DIR/app-store-connect-state-report.md"
 APP_REVIEW_SUBMISSION_READINESS_REPORT="$PACKET_DIR/app-review-submission-readiness-report.md"
 PUBLIC_PAGES_READINESS_REPORT="$PACKET_DIR/public-pages-readiness-report.md"
 RELEASE_INPUT_STATUS="$PACKET_DIR/release-input-status.txt"
+SCREENSHOT_PRIVACY_METADATA_REPORT="$PACKET_DIR/screenshot-privacy-metadata-report.txt"
 RELEASE_PROVENANCE="$PACKET_DIR/release-provenance.tsv"
 FILE_MANIFEST="$PACKET_DIR/file-manifest.tsv"
 SUMMARY_PATH="$PACKET_DIR/SUMMARY.md"
@@ -174,6 +175,10 @@ write_app_review_submission_readiness_report() {
 
 write_public_pages_readiness_report() {
   Scripts/generate_public_pages_readiness_report.sh "$PUBLIC_PAGES_READINESS_REPORT" >/dev/null
+}
+
+write_screenshot_privacy_metadata_report() {
+  Scripts/validate_screenshot_privacy.sh >"$SCREENSHOT_PRIVACY_METADATA_REPORT" 2>&1
 }
 
 write_release_input_status() {
@@ -573,6 +578,7 @@ for path in "${required_dirs[@]}"; do
 done
 
 write_screenshot_manifest
+write_screenshot_privacy_metadata_report
 copy_pdf_validation_manifest
 write_manual_evidence_form
 write_manual_readiness_report
@@ -625,6 +631,7 @@ cat >"$SUMMARY_PATH" <<EOF
 - Redacted App Store Connect state report for selected-build remote state check output and exit code.
 - Redacted App Review submission readiness report for final metadata, policy, evidence, credential, and selected-build checks.
 - Public pages readiness report for privacy policy and support URL source files, deployed HTTP status, and expected App Store review text.
+- Screenshot privacy metadata validation report for reviewed and Fastlane upload screenshots.
 - Redacted release input status with field-level missing private input tracking.
 - Reviewed screenshots and Fastlane upload screenshots.
 - PDF export validation manifest, including Test Ruler exact-size evidence.
@@ -642,6 +649,7 @@ cat >"$SUMMARY_PATH" <<EOF
 - \`app-store-connect-state-report.md\` with redacted selected-build App Store Connect state check output and exit code.
 - \`app-review-submission-readiness-report.md\` with redacted final App Review submission gate status and next actions.
 - \`public-pages-readiness-report.md\` with public privacy/support page status, URLs, expected text, and next actions.
+- \`screenshot-privacy-metadata-report.txt\` with the reviewed and Fastlane screenshot privacy metadata validation output.
 - \`release-provenance.tsv\` with source commit, branch, sanitized remote, worktree status, and GitHub Actions run context when available.
 - \`release-input-status.txt\` with redacted private input readiness and missing field checklist.
 - \`external-readiness-actions.tsv\` with categorized external blockers, affected fields, target locations, validation commands, and warnings for release tracking.
