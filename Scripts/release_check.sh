@@ -1601,6 +1601,7 @@ cat >"$app_store_connect_api_json_path" <<EOF
   "key_filepath": "$app_store_connect_api_json_test_dir/missing/AuthKey_KEYID12345.p8"
 }
 EOF
+chmod 600 "$app_store_connect_api_json_path"
 if RELEASE_ENV_PATH="$app_store_connect_api_json_test_dir/missing-release.env" \
   APP_STORE_CONNECT_API_KEY_JSON="$app_store_connect_api_json_path" \
   Scripts/check_app_store_connect_credentials.sh >"$app_store_connect_api_json_log" 2>&1; then
@@ -1644,6 +1645,7 @@ cat >"$app_store_connect_api_json_key_path" <<'EOF'
 release-check-placeholder
 -----END PRIVATE KEY-----
 EOF
+chmod 600 "$app_store_connect_api_json_key_path"
 cat >"$app_store_connect_api_json_path" <<'EOF'
 {
   "key_id": "short",
@@ -1651,6 +1653,7 @@ cat >"$app_store_connect_api_json_path" <<'EOF'
   "key_filepath": "AuthKey_KEYID12345.p8"
 }
 EOF
+chmod 600 "$app_store_connect_api_json_path"
 if RELEASE_ENV_PATH="$app_store_connect_api_json_test_dir/missing-release.env" \
   APP_STORE_CONNECT_API_KEY_JSON="$app_store_connect_api_json_path" \
   Scripts/check_app_store_connect_credentials.sh >"$app_store_connect_api_json_log" 2>&1; then
@@ -1667,6 +1670,7 @@ cat >"$app_store_connect_triplet_key_path" <<'EOF'
 release-check-placeholder
 -----END PRIVATE KEY-----
 EOF
+chmod 600 "$app_store_connect_triplet_key_path"
 if RELEASE_ENV_PATH="$app_store_connect_api_json_test_dir/missing-release.env" \
   ASC_KEY_ID=short ASC_ISSUER_ID=not-a-uuid ASC_KEY_PATH="$app_store_connect_triplet_key_path" \
   Scripts/check_app_store_connect_credentials.sh >"$app_store_connect_api_json_log" 2>&1; then
@@ -1682,6 +1686,7 @@ cat >"$app_store_connect_api_json_key_path" <<'EOF'
 release-check-placeholder
 -----END PRIVATE KEY-----
 EOF
+chmod 600 "$app_store_connect_api_json_key_path"
 cat >"$app_store_connect_api_json_path" <<'EOF'
 {
   "key_id": "KEYID12345",
@@ -1689,10 +1694,60 @@ cat >"$app_store_connect_api_json_path" <<'EOF'
   "key_filepath": "AuthKey_KEYID12345.p8"
 }
 EOF
+chmod 600 "$app_store_connect_api_json_path"
 if ! RELEASE_ENV_PATH="$app_store_connect_api_json_test_dir/missing-release.env" \
   APP_STORE_CONNECT_API_KEY_JSON="$app_store_connect_api_json_path" \
   Scripts/check_app_store_connect_credentials.sh >"$app_store_connect_api_json_log" 2>&1; then
   printf 'FAIL: Credential audit must accept API JSON with a readable relative key_filepath\n'
+  failures=$((failures + 1))
+fi
+loose_app_store_connect_api_json_path="$app_store_connect_api_json_test_dir/loose-fastlane-api-key.json"
+cat >"$loose_app_store_connect_api_json_path" <<'EOF'
+{
+  "key_id": "KEYID12345",
+  "issuer_id": "00000000-0000-0000-0000-000000000001",
+  "key_filepath": "AuthKey_KEYID12345.p8"
+}
+EOF
+chmod 644 "$loose_app_store_connect_api_json_path"
+if RELEASE_ENV_PATH="$app_store_connect_api_json_test_dir/missing-release.env" \
+  APP_STORE_CONNECT_API_KEY_JSON="$loose_app_store_connect_api_json_path" \
+  Scripts/check_app_store_connect_credentials.sh >"$app_store_connect_api_json_log" 2>&1; then
+  printf 'FAIL: Credential audit must reject overly broad APP_STORE_CONNECT_API_KEY_JSON file permissions\n'
+  failures=$((failures + 1))
+elif ! grep -q 'APP_STORE_CONNECT_API_KEY_JSON permissions are too broad' "$app_store_connect_api_json_log"; then
+  printf 'FAIL: Credential audit should identify overly broad APP_STORE_CONNECT_API_KEY_JSON permissions\n'
+  failures=$((failures + 1))
+elif grep -Fq "$loose_app_store_connect_api_json_path" "$app_store_connect_api_json_log"; then
+  printf 'FAIL: Credential audit must not print the full overly broad APP_STORE_CONNECT_API_KEY_JSON path\n'
+  failures=$((failures + 1))
+fi
+chmod 600 "$loose_app_store_connect_api_json_path"
+chmod 644 "$app_store_connect_api_json_key_path"
+if RELEASE_ENV_PATH="$app_store_connect_api_json_test_dir/missing-release.env" \
+  APP_STORE_CONNECT_API_KEY_JSON="$loose_app_store_connect_api_json_path" \
+  Scripts/check_app_store_connect_credentials.sh >"$app_store_connect_api_json_log" 2>&1; then
+  printf 'FAIL: Credential audit must reject overly broad API JSON key_filepath permissions\n'
+  failures=$((failures + 1))
+elif ! grep -q 'APP_STORE_CONNECT_API_KEY_JSON key_filepath permissions are too broad' "$app_store_connect_api_json_log"; then
+  printf 'FAIL: Credential audit should identify overly broad API JSON key_filepath permissions\n'
+  failures=$((failures + 1))
+elif grep -Fq "$app_store_connect_api_json_key_path" "$app_store_connect_api_json_log"; then
+  printf 'FAIL: Credential audit must not print the full overly broad API JSON key_filepath\n'
+  failures=$((failures + 1))
+fi
+chmod 600 "$app_store_connect_api_json_key_path"
+chmod 644 "$app_store_connect_triplet_key_path"
+if RELEASE_ENV_PATH="$app_store_connect_api_json_test_dir/missing-release.env" \
+  ASC_KEY_ID=KEYID12345 ASC_ISSUER_ID=00000000-0000-0000-0000-000000000001 ASC_KEY_PATH="$app_store_connect_triplet_key_path" \
+  Scripts/check_app_store_connect_credentials.sh >"$app_store_connect_api_json_log" 2>&1; then
+  printf 'FAIL: Credential audit must reject overly broad ASC_KEY_PATH file permissions\n'
+  failures=$((failures + 1))
+elif ! grep -q 'ASC_KEY_PATH permissions are too broad' "$app_store_connect_api_json_log"; then
+  printf 'FAIL: Credential audit should identify overly broad ASC_KEY_PATH permissions\n'
+  failures=$((failures + 1))
+elif grep -Fq "$app_store_connect_triplet_key_path" "$app_store_connect_api_json_log"; then
+  printf 'FAIL: Credential audit must not print the full overly broad ASC_KEY_PATH path\n'
   failures=$((failures + 1))
 fi
 rm -rf "$app_store_connect_api_json_test_dir"

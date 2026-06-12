@@ -29,20 +29,57 @@ validate_format() {
   fi
 }
 
+validate_private_file_permissions() {
+  local path="$1"
+  local label="$2"
+
+  python3 - "$path" "$label" <<'PY'
+from pathlib import Path
+import stat
+import sys
+
+path = Path(sys.argv[1]).expanduser()
+label = sys.argv[2]
+
+try:
+    mode = path.stat().st_mode
+except Exception:
+    print(f"{label} permissions could not be checked")
+    raise SystemExit(1)
+
+if stat.S_IMODE(mode) & 0o077:
+    print(f"{label} permissions are too broad; run chmod 600 on the configured file")
+    raise SystemExit(1)
+PY
+}
+
 if [[ -n "${APP_STORE_CONNECT_API_KEY_JSON:-}" ]]; then
   if [[ -f "$APP_STORE_CONNECT_API_KEY_JSON" ]]; then
     python3 - "$APP_STORE_CONNECT_API_KEY_JSON" <<'PY'
 import json
 from pathlib import Path
 import re
+import stat
 import sys
 
 path = sys.argv[1]
+def require_private_file_permissions(label, file_path):
+    try:
+        mode = file_path.stat().st_mode
+    except Exception:
+        raise SystemExit(f"BLOCKED: {label} permissions could not be checked")
+    if stat.S_IMODE(mode) & 0o077:
+        raise SystemExit(f"BLOCKED: {label} permissions are too broad; run chmod 600 on the configured file")
+
 try:
     json_path = Path(path)
-    payload = json.load(open(json_path, encoding="utf-8"))
+    require_private_file_permissions("APP_STORE_CONNECT_API_KEY_JSON", json_path)
+    with open(json_path, encoding="utf-8") as json_file:
+        payload = json.load(json_file)
 except Exception as exc:
-    raise SystemExit(f"BLOCKED: APP_STORE_CONNECT_API_KEY_JSON is not valid JSON: {exc}")
+    if str(exc).startswith("BLOCKED:"):
+        raise
+    raise SystemExit(f"BLOCKED: APP_STORE_CONNECT_API_KEY_JSON is not valid JSON")
 
 required_any_key = "key" in payload or "key_filepath" in payload
 missing = [name for name in ("key_id", "issuer_id") if not payload.get(name)]
@@ -69,6 +106,7 @@ if key_filepath:
         key_path = (json_path.parent / key_path).resolve()
     if not key_path.is_file():
         raise SystemExit("BLOCKED: APP_STORE_CONNECT_API_KEY_JSON key_filepath does not exist at the configured path")
+    require_private_file_permissions("APP_STORE_CONNECT_API_KEY_JSON key_filepath", key_path)
     try:
         key_text = key_path.read_text(encoding="utf-8")
     except Exception:
@@ -105,6 +143,8 @@ else
     block "ASC_KEY_PATH is missing"
   elif [[ ! -f "$ASC_KEY_PATH" ]]; then
     block "ASC_KEY_PATH does not exist at the configured path"
+  elif ! permission_status="$(validate_private_file_permissions "$ASC_KEY_PATH" "ASC_KEY_PATH")"; then
+    block "$permission_status"
   elif ! grep -q "BEGIN PRIVATE KEY" "$ASC_KEY_PATH"; then
     block "ASC_KEY_PATH does not look like an App Store Connect .p8 private key"
   else
