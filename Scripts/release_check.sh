@@ -1323,6 +1323,7 @@ if [[ ! -x "Scripts/preflight_app_store_archive.sh" ]]; then
   failures=$((failures + 1))
 fi
 check_contains "Scripts/preflight_app_store_archive.sh" "Scripts/verify_release.sh" "Archive preflight must run the local release gate"
+check_contains "Scripts/preflight_app_store_archive.sh" "Scripts/verify_release.sh store-ready" "Archive preflight must run the full store-ready release gate before signing"
 check_contains "Scripts/preflight_app_store_archive.sh" "source Scripts/load_release_env.sh" "Archive preflight must load private release inputs before checking signing assets"
 check_contains "Scripts/preflight_app_store_archive.sh" "Scripts/validate_release_env.sh" "Archive preflight must validate private release env placeholders"
 check_contains "Scripts/preflight_app_store_archive.sh" "Scripts/validate_app_review_contact.sh" "Archive preflight must validate App Review contact details"
@@ -1938,6 +1939,7 @@ check_contains "README.md" "AppStore/review-guideline-audit.md" "README must ref
 check_contains "README.md" "Scripts/validate_app_icon_set.sh" "README must document app icon set validation"
 check_contains "README.md" "Scripts/validate_app_store_export.sh" "README must document App Store archive/export validation"
 check_contains "README.md" "Scripts/preflight_app_store_archive.sh" "README must document App Store archive preflight validation"
+check_contains "README.md" 'Scripts/verify_release.sh store-ready`' "README archive preflight docs must say it runs the full store-ready gate"
 check_contains "README.md" "Scripts/validate_app_store_questionnaires.sh" "README must document App Store questionnaire consistency validation"
 check_contains "README.md" "Scripts/verify_release.sh questionnaires" "README must document the questionnaire release command"
 check_contains "README.md" "Fastlane metadata, App Privacy Details, and final review-submission lanes run the local App Store questionnaire validation" "README must document Fastlane questionnaire validation gates"
@@ -1996,6 +1998,7 @@ check_contains "AppStore/release-checklist.md" "AppStore/review-guideline-audit.
 check_contains "AppStore/release-checklist.md" "Scripts/validate_app_icon_set.sh" "Release checklist must include app icon set validation"
 check_contains "AppStore/release-checklist.md" "Scripts/validate_app_store_export.sh" "Release checklist must include App Store archive/export validation"
 check_contains "AppStore/release-checklist.md" "Scripts/preflight_app_store_archive.sh" "Release checklist must include App Store archive preflight validation"
+check_contains "AppStore/release-checklist.md" 'Scripts/verify_release.sh store-ready`' "Release checklist archive preflight must say it runs the full store-ready gate"
 check_contains "AppStore/release-checklist.md" "Scripts/validate_app_store_questionnaires.sh" "Release checklist must include App Store questionnaire consistency validation"
 check_contains "AppStore/release-checklist.md" "Scripts/verify_release.sh questionnaires" "Release checklist must include the questionnaire release command"
 check_contains "AppStore/release-checklist.md" "Scripts/validate_simulator_workflow.sh" "Release checklist must include simulator workflow validation"

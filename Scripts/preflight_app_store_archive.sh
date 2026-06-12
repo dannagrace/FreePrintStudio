@@ -24,7 +24,7 @@ run_step() {
   printf '\n'
 }
 
-run_step "Local release gate" Scripts/verify_release.sh
+run_step "Local store-ready release gate" Scripts/verify_release.sh store-ready
 run_step "Private release environment" Scripts/validate_release_env.sh
 run_step "App Review contact" Scripts/validate_app_review_contact.sh
 run_step "Code signing assets" Scripts/check_code_signing_assets.sh
