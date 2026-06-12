@@ -43,6 +43,7 @@ required_files=(
   "AppStore/review-guideline-audit.md"
   "AppStore/release-inputs-worksheet.md"
   "AppStore/release-checklist.md"
+  "Config/release.env.example"
   "Config/manual-release-verification.env.example"
   "FreePrintStudio/Resources/Info.plist"
   "FreePrintStudio/Resources/PrivacyInfo.xcprivacy"
@@ -520,6 +521,7 @@ cat >"$SUMMARY_PATH" <<EOF
 - Commercial configuration draft for pricing, availability, monetization, and release behavior.
 - App Review guideline self-audit with evidence and open blockers.
 - Release input worksheet for private Apple account, signing, and real-device evidence collection.
+- Release environment template for private Apple signing, App Review contact, App Store Connect, and final submission guard inputs.
 - Manual release evidence form for recording real iPhone, AirPrint, and TestFlight checks.
 - Redacted App Review contact readiness report for required reviewer contact fields.
 - Redacted manual release readiness report for real iPhone, AirPrint, TestFlight, and selected-build evidence.
@@ -535,6 +537,7 @@ cat >"$SUMMARY_PATH" <<EOF
 - App icon, plist declarations, privacy manifest, Fastlane release files, and App Store export options.
 - \`screenshots.tsv\` with screenshot dimensions and sha256 checksums.
 - \`pdf-export-validation.tsv\` with PDF page, target, draw matrix, and sha256 evidence.
+- \`Config/release.env.example\` with commented private release environment variables for local handoff.
 - \`manual-release-evidence-form.md\` with the blank manual verification record and env-field mapping.
 - \`app-review-contact-readiness-report.md\` with redacted reviewer contact status, blocker counts, and next actions.
 - \`manual-release-readiness-report.md\` with redacted manual evidence status, blocker counts, and next actions.

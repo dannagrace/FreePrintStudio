@@ -1965,6 +1965,7 @@ if [[ ! -x "Scripts/prepare_app_store_submission_packet.sh" ]]; then
   failures=$((failures + 1))
 fi
 check_contains "Scripts/prepare_app_store_submission_packet.sh" "AppStore/release-inputs-worksheet.md" "Submission packet generator must include the release input worksheet"
+check_contains "Scripts/prepare_app_store_submission_packet.sh" "Config/release.env.example" "Submission packet generator must include the private release environment template"
 check_contains "Scripts/prepare_app_store_submission_packet.sh" "AppStore/commercial-configuration.md" "Submission packet generator must include the commercial configuration"
 check_contains "Scripts/prepare_app_store_submission_packet.sh" "AppStore/review-guideline-audit.md" "Submission packet generator must include the App Review guideline self-audit"
 check_contains "Scripts/prepare_app_store_submission_packet.sh" "AppStoreSubmissionPacket" "Submission packet generator must write a deterministic package directory"
@@ -2286,6 +2287,7 @@ check_contains "Scripts/prepare_app_store_submission_packet.sh" '\\`app-review-s
 check_contains "Scripts/prepare_app_store_submission_packet.sh" "release-input-status.txt" "Submission packet generator must include the redacted release input status output"
 check_contains "Scripts/prepare_app_store_submission_packet.sh" "write_release_input_status" "Submission packet generator must write the redacted release input status output"
 check_contains "Scripts/prepare_app_store_submission_packet.sh" '\\`release-input-status.txt\\`' "Submission packet summary must reference the redacted release input status output"
+check_contains "Scripts/prepare_app_store_submission_packet.sh" '\\`Config/release.env.example\\`' "Submission packet summary must reference the private release environment template"
 check_contains "Scripts/verify_release.sh" "review-report" "Release verification must expose App Review submission readiness report generation"
 check_contains "README.md" "Scripts/verify_release.sh review-report" "README must document the App Review submission readiness report command"
 check_contains "AppStore/release-checklist.md" "Scripts/verify_release.sh review-report" "Release checklist must include App Review submission readiness report generation"
@@ -2302,6 +2304,8 @@ if [[ -f "Scripts/validate_app_store_submission_packet.sh" && ! -x "Scripts/vali
   failures=$((failures + 1))
 fi
 check_contains "Scripts/validate_app_store_submission_packet.sh" "ACTION_ITEMS.md" "Submission packet validator must require action items"
+check_contains "Scripts/validate_app_store_submission_packet.sh" "files/Config/release.env.example" "Submission packet validator must require the private release environment template in the file manifest"
+check_contains "Scripts/validate_app_store_submission_packet.sh" "DEVELOPMENT_TEAM_ID" "Submission packet validator must check the release environment template content"
 check_contains "Scripts/validate_app_store_submission_packet.sh" "release-input-status.txt" "Submission packet validator must require redacted release input status"
 check_contains "Scripts/validate_app_store_submission_packet.sh" "Missing Release Input Fields" "Submission packet validator must require release input missing field tracking"
 check_contains "Scripts/validate_app_store_submission_packet.sh" "MISSING_FIELD:" "Submission packet validator must require field-level missing input output"
