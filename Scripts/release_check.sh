@@ -1067,6 +1067,45 @@ if grep -q 'OK: Manual real-device, AirPrint, and TestFlight evidence ready: 17/
   failures=$((failures + 1))
 fi
 rm -rf "$release_input_status_manual_validation_dir"
+release_input_status_loose_manual_dir="$(mktemp -d)"
+release_input_status_loose_manual_env="$release_input_status_loose_manual_dir/release.env"
+release_input_status_loose_manual_evidence="$release_input_status_loose_manual_dir/manual-release-verification.env"
+release_input_status_loose_manual_log="$release_input_status_loose_manual_dir/status.log"
+printf '%s\n' 'APP_STORE_BUILD_NUMBER=42' >"$release_input_status_loose_manual_env"
+cat >"$release_input_status_loose_manual_evidence" <<EOF
+MANUAL_VERIFIER_NAME="Release Tester"
+MANUAL_REAL_IPHONE_MODEL="iPhone 15"
+MANUAL_REAL_IPHONE_IOS_VERSION="18.5"
+MANUAL_REAL_IPHONE_TEST_DATE="$today"
+MANUAL_REAL_IPHONE_PHOTOS_IMPORT="pass"
+MANUAL_REAL_IPHONE_PDF_EXPORT="pass"
+MANUAL_REAL_IPHONE_PRINT_SHEET="pass"
+MANUAL_AIRPRINT_TEST_DATE="$today"
+MANUAL_AIRPRINT_PRINTER="Production AirPrint validation"
+MANUAL_AIRPRINT_EXACT_SIZE="pass"
+MANUAL_AIRPRINT_RULER_TARGET_INCHES="6"
+MANUAL_AIRPRINT_RULER_MEASURED_INCHES="6.00"
+MANUAL_TESTFLIGHT_BUILD_NUMBER="42"
+MANUAL_TESTFLIGHT_DEVICE="iPhone 15"
+MANUAL_TESTFLIGHT_TEST_DATE="$today"
+MANUAL_TESTFLIGHT_INSTALL="pass"
+MANUAL_TESTFLIGHT_PRINT_WORKFLOW="pass"
+EOF
+chmod 644 "$release_input_status_loose_manual_evidence"
+RELEASE_ENV_PATH="$release_input_status_loose_manual_env" \
+  MANUAL_RELEASE_VERIFICATION_PATH="$release_input_status_loose_manual_evidence" \
+  Scripts/print_release_input_status.sh >"$release_input_status_loose_manual_log" 2>&1 || true
+if ! grep -q 'Manual release verification evidence permissions are too broad' "$release_input_status_loose_manual_log"; then
+  printf 'FAIL: Release input status must reject broad manual evidence permissions before sourcing private values\n'
+  failures=$((failures + 1))
+elif ! grep -q 'chmod 600' "$release_input_status_loose_manual_log"; then
+  printf 'FAIL: Release input status broad manual evidence output should include chmod 600 guidance\n'
+  failures=$((failures + 1))
+elif grep -Fq "$release_input_status_loose_manual_evidence" "$release_input_status_loose_manual_log"; then
+  printf 'FAIL: Release input status must not print the full loose manual evidence path\n'
+  failures=$((failures + 1))
+fi
+rm -rf "$release_input_status_loose_manual_dir"
 release_input_status_default_target_dir="$(mktemp -d)"
 release_input_status_default_target_env="$release_input_status_default_target_dir/release.env"
 release_input_status_default_target_evidence="$release_input_status_default_target_dir/manual-release-verification.env"
@@ -2496,6 +2535,44 @@ if ! grep -q 'Target ruler length.*Defaulted to built-in 6 inch Test Ruler targe
   failures=$((failures + 1))
 fi
 rm -rf "$manual_report_default_target_test_dir"
+manual_report_loose_evidence_test_dir="$(mktemp -d)"
+manual_report_loose_evidence="$manual_report_loose_evidence_test_dir/manual-release-verification.env"
+manual_report_loose_report="$manual_report_loose_evidence_test_dir/manual-release-readiness-report.md"
+cat >"$manual_report_loose_evidence" <<EOF
+MANUAL_VERIFIER_NAME="Release Tester"
+MANUAL_REAL_IPHONE_MODEL="iPhone 15"
+MANUAL_REAL_IPHONE_IOS_VERSION="18.5"
+MANUAL_REAL_IPHONE_TEST_DATE="$today"
+MANUAL_REAL_IPHONE_PHOTOS_IMPORT="pass"
+MANUAL_REAL_IPHONE_PDF_EXPORT="pass"
+MANUAL_REAL_IPHONE_PRINT_SHEET="pass"
+MANUAL_AIRPRINT_TEST_DATE="$today"
+MANUAL_AIRPRINT_PRINTER="Production AirPrint validation"
+MANUAL_AIRPRINT_EXACT_SIZE="pass"
+MANUAL_AIRPRINT_RULER_TARGET_INCHES="6"
+MANUAL_AIRPRINT_RULER_MEASURED_INCHES="6.00"
+MANUAL_TESTFLIGHT_BUILD_NUMBER="42"
+MANUAL_TESTFLIGHT_DEVICE="iPhone 15"
+MANUAL_TESTFLIGHT_TEST_DATE="$today"
+MANUAL_TESTFLIGHT_INSTALL="pass"
+MANUAL_TESTFLIGHT_PRINT_WORKFLOW="pass"
+EOF
+chmod 644 "$manual_report_loose_evidence"
+MANUAL_RELEASE_VERIFICATION_PATH="$manual_report_loose_evidence" \
+  Scripts/generate_manual_release_readiness_report.sh "$manual_report_loose_report" >/dev/null
+if ! grep -q 'Evidence file permissions: Too broad; run `chmod 600 Config/manual-release-verification.env`' "$manual_report_loose_report"; then
+  printf 'FAIL: Manual readiness report must reject broad manual evidence permissions before sourcing private values\n'
+  failures=$((failures + 1))
+fi
+if grep -q 'Evidence file parses as shell env: Yes' "$manual_report_loose_report"; then
+  printf 'FAIL: Manual readiness report must not parse broadly-readable manual evidence files\n'
+  failures=$((failures + 1))
+fi
+if grep -Fq "$manual_report_loose_evidence" "$manual_report_loose_report"; then
+  printf 'FAIL: Manual readiness report must not print the full loose manual evidence path\n'
+  failures=$((failures + 1))
+fi
+rm -rf "$manual_report_loose_evidence_test_dir"
 check_contains "Scripts/prepare_app_store_submission_packet.sh" "app-review-submission-readiness-report.md" "Submission packet generator must include the App Review submission readiness report"
 check_contains "Scripts/prepare_app_store_submission_packet.sh" "generate_app_review_submission_readiness_report.sh" "Submission packet generator must generate the App Review submission readiness report"
 check_contains "Scripts/prepare_app_store_submission_packet.sh" '\\`app-review-submission-readiness-report.md\\`' "Submission packet summary must reference the App Review submission readiness report"

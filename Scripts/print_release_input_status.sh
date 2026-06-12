@@ -89,6 +89,28 @@ looks_like_placeholder() {
   return 1
 }
 
+manual_evidence_permissions_ok() {
+  local path="$1"
+
+  python3 - "$path" <<'PY'
+from pathlib import Path
+import stat
+import sys
+
+path = Path(sys.argv[1]).expanduser()
+
+try:
+    mode = path.stat().st_mode
+except Exception:
+    print("Manual release verification evidence permissions could not be checked")
+    raise SystemExit(1)
+
+if stat.S_IMODE(mode) & 0o077:
+    print("Manual release verification evidence permissions are too broad; run chmod 600 Config/manual-release-verification.env")
+    raise SystemExit(1)
+PY
+}
+
 mark_missing() {
   printf 'MISSING: %s\n' "$1"
   missing_count=$((missing_count + 1))
@@ -335,16 +357,21 @@ fi
 printf '\n== Manual Release Evidence ==\n'
 manual_source_status=1
 if [[ -f "$manual_evidence_path" ]]; then
-  set +e
-  set -a
-  # shellcheck source=/dev/null
-  source "$manual_evidence_path" >/tmp/freeprintstudio-release-input-status-manual.log 2>&1
-  manual_source_status="$?"
-  set +a
-  set -e
-  if [[ "$manual_source_status" -ne 0 ]]; then
-    mark_missing "Manual release verification evidence is not a valid shell env file"
-    sed 's/^/  /' /tmp/freeprintstudio-release-input-status-manual.log
+  if manual_permission_message="$(manual_evidence_permissions_ok "$manual_evidence_path" 2>&1)"; then
+    set +e
+    set -a
+    # shellcheck source=/dev/null
+    source "$manual_evidence_path" >/tmp/freeprintstudio-release-input-status-manual.log 2>&1
+    manual_source_status="$?"
+    set +a
+    set -e
+    if [[ "$manual_source_status" -ne 0 ]]; then
+      mark_missing "Manual release verification evidence is not a valid shell env file"
+      sed 's/^/  /' /tmp/freeprintstudio-release-input-status-manual.log
+    fi
+  else
+    mark_missing "$manual_permission_message"
+    record_missing_field "MANUAL_RELEASE_VERIFICATION_PATH permissions" "Config/manual-release-verification.env" "chmod 600 Config/manual-release-verification.env && APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/validate_manual_release_verification.sh"
   fi
 else
   record_missing_field "MANUAL_RELEASE_VERIFICATION_PATH" "Config/manual-release-verification.env" "APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/validate_manual_release_verification.sh"

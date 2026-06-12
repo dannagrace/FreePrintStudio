@@ -36,6 +36,7 @@ failures=0
 ready_count=0
 warning_count=0
 evidence_file_exists=0
+evidence_permission_status='Not checked'
 evidence_source_valid=0
 
 mask_value() {
@@ -67,6 +68,30 @@ looks_placeholder_like() {
   [[ "$lower_value" == *placeholder* ]] && return 0
   [[ "$value" == "PROCESSED_BUILD_NUMBER" ]] && return 0
   return 1
+}
+
+manual_evidence_permissions_status() {
+  local path="$1"
+
+  python3 - "$path" <<'PY'
+from pathlib import Path
+import stat
+import sys
+
+path = Path(sys.argv[1]).expanduser()
+
+try:
+    mode = path.stat().st_mode
+except Exception:
+    print("Could not be checked")
+    raise SystemExit(1)
+
+if stat.S_IMODE(mode) & 0o077:
+    print("Too broad; run `chmod 600 Config/manual-release-verification.env`")
+    raise SystemExit(1)
+
+print("Private")
+PY
 }
 
 record_ready() {
@@ -297,19 +322,24 @@ build_match_status() {
 
 if [[ -f "$evidence_path" ]]; then
   evidence_file_exists=1
-  set +e
-  set -a
-  # shellcheck source=/dev/null
-  source "$evidence_path" >/tmp/freeprintstudio-manual-report-source.log 2>&1
-  source_status="$?"
-  set +a
-  set -e
-  if [[ "$source_status" -eq 0 ]]; then
-    evidence_source_valid=1
+  if evidence_permission_status="$(manual_evidence_permissions_status "$evidence_path" 2>&1)"; then
+    set +e
+    set -a
+    # shellcheck source=/dev/null
+    source "$evidence_path" >/tmp/freeprintstudio-manual-report-source.log 2>&1
+    source_status="$?"
+    set +a
+    set -e
+    if [[ "$source_status" -eq 0 ]]; then
+      evidence_source_valid=1
+    else
+      record_failure
+    fi
   else
     record_failure
   fi
 else
+  evidence_permission_status='Not checked; evidence file missing'
   record_failure
 fi
 
@@ -358,6 +388,7 @@ cat >"$output_path" <<EOF
 - Generated At: $generated_at
 - This report is redacted: it does not print verifier names, device names, printer names, screenshots, private notes, or full build identifiers.
 - Evidence file configured: $(if [[ "$evidence_file_exists" == "1" ]]; then printf 'Yes'; else printf 'No'; fi)
+- Evidence file permissions: $evidence_permission_status
 - Evidence file parses as shell env: $(if [[ "$evidence_source_valid" == "1" ]]; then printf 'Yes'; else printf 'No or not checked'; fi)
 - Maximum evidence age: $max_age_days day(s)
 - Strict validation command: \`APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/validate_manual_release_verification.sh\`
