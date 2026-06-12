@@ -44,7 +44,7 @@
 - Confirm real Photos import on a simulator when changing the Photos picker; the generated-image simulator workflow above covers app launch, unit switching, screenshot rendering, and PDF export.
 - Confirm the same flow on a real iPhone.
 - Confirm AirPrint output on a real printer or a production-equivalent print workflow with the built-in Test Ruler.
-- Enable GitHub Pages from the repository `docs` folder and verify the privacy and support URLs in `AppStore/metadata.md`.
+- Set GitHub Pages source to GitHub Actions, run `.github/workflows/pages.yml`, and verify both `Scripts/check_github_pages_source.sh` and the privacy/support URLs in `AppStore/metadata.md`.
 
 ## App Store Connect
 

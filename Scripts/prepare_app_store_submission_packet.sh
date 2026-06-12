@@ -376,6 +376,12 @@ external_action_fields() {
   local validation_command="Scripts/check_app_store_readiness.sh"
 
   case "$item" in
+    *"GitHub Pages build_type"*|*"GitHub Pages settings"*)
+      category="GitHub Pages Source"
+      owner="Repository administrator"
+      next_action="Switch repository Pages source to GitHub Actions, then run .github/workflows/pages.yml and Scripts/check_github_pages_source.sh."
+      validation_command="Scripts/check_github_pages_source.sh"
+      ;;
     *APP_PRIVACY_DETAILS_CONFIRMED_IN_APP_STORE_CONNECT*|*"App Privacy Details"*App\ Store\ Connect*)
       category="App Privacy"
       owner="App Store Connect account holder"
@@ -446,6 +452,8 @@ external_action_field_for_item() {
     field="APP_STORE_CONNECT_API_KEY_JSON or ASC_KEY_ID/ASC_ISSUER_ID/ASC_KEY_PATH"
   elif [[ "$item" == *"app record"* || "$item" == *"TestFlight status"* ]]; then
     field="App Store Connect app record/TestFlight status"
+  elif [[ "$item" == *"GitHub Pages build_type"* || "$item" == *"GitHub Pages settings"* ]]; then
+    field="GitHub Pages build_type"
   fi
 
   printf '%s' "$field"
@@ -487,6 +495,9 @@ external_action_target_for_item() {
       ;;
     *"app record"*|*"TestFlight status"*)
       target="App Store Connect"
+      ;;
+    *"GitHub Pages build_type"*|*"GitHub Pages settings"*)
+      target="GitHub repository Pages settings"
       ;;
     *MANUAL_*|*"Manual "*|*"Real iPhone"*|*"AirPrint"*|*"TestFlight"*)
       target="Config/manual-release-verification.env"

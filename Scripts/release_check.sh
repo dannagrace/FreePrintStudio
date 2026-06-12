@@ -416,6 +416,17 @@ check_contains "Scripts/validate_public_pages.sh" "support.html" "Public pages v
 check_contains "Scripts/validate_public_pages.sh" "FreePrint Studio Privacy Policy" "Public pages validator must verify privacy policy body text"
 check_contains "Scripts/validate_public_pages.sh" "FreePrint Studio Support" "Public pages validator must verify support page body text"
 check_contains "Scripts/validate_public_pages.sh" "Public pages validation failed" "Public pages validator must fail when public pages are not ready"
+check_file "Scripts/check_github_pages_source.sh" "GitHub Pages publishing source validator is required"
+if [[ -f "Scripts/check_github_pages_source.sh" && ! -x "Scripts/check_github_pages_source.sh" ]]; then
+  printf 'FAIL: GitHub Pages publishing source validator must be executable (Scripts/check_github_pages_source.sh)\n'
+  failures=$((failures + 1))
+fi
+check_contains "Scripts/check_github_pages_source.sh" "\"build_type\"" "GitHub Pages source validator must inspect the Pages build_type"
+check_contains "Scripts/check_github_pages_source.sh" "\"workflow\"" "GitHub Pages source validator must require custom workflow publishing"
+check_contains "Scripts/check_app_store_readiness.sh" "check_github_pages_source.sh" "Readiness audit must verify GitHub Pages uses custom workflow publishing"
+check_contains "Scripts/prepare_app_store_submission_packet.sh" "GitHub Pages Source" "Submission packet must classify GitHub Pages source external actions"
+check_contains "Scripts/prepare_app_store_submission_packet.sh" "GitHub Pages build_type" "Submission packet must track GitHub Pages source affected field"
+check_contains "Scripts/validate_app_store_submission_packet.sh" "check_github_pages_source.sh" "Submission packet validator must track GitHub Pages source validation actions"
 check_contains "Scripts/verify_release.sh" "generate_public_pages_readiness_report.sh" "Release verification must expose public pages readiness report generation"
 check_contains "Scripts/verify_release.sh" "public-pages-report" "Release verification must provide a public-pages-report command"
 check_contains "Scripts/verify_release.sh" "validate_public_pages.sh" "Release verification must expose strict public pages validation"
@@ -2955,6 +2966,15 @@ check_contains ".github/workflows/release.yml" "FREEPRINTSTUDIO_TEMPORARY_SIMULA
 check_contains ".github/workflows/release.yml" "Scripts/verify_release.sh submission-packet" "Release workflow must generate the App Store submission packet"
 check_contains ".github/workflows/release.yml" "actions/upload-artifact@v7" "Release workflow must upload the App Store submission packet with the current artifact action"
 check_contains ".github/workflows/release.yml" "build/AppStoreSubmissionPacket" "Release workflow must upload the generated submission packet directory"
+check_file ".github/workflows/pages.yml" "GitHub Pages custom workflow is required"
+check_contains ".github/workflows/pages.yml" "actions/checkout@v6" "Pages workflow must use the current checkout action"
+check_contains ".github/workflows/pages.yml" "actions/configure-pages@v5" "Pages workflow must configure GitHub Pages through the supported action"
+check_contains ".github/workflows/pages.yml" "actions/upload-pages-artifact@v4" "Pages workflow must upload docs as a Pages artifact"
+check_contains ".github/workflows/pages.yml" "actions/deploy-pages@v4" "Pages workflow must deploy through the supported Pages action"
+check_contains ".github/workflows/pages.yml" "path: docs" "Pages workflow must publish the docs directory"
+check_contains ".github/workflows/pages.yml" "pages: write" "Pages workflow must request pages: write permission"
+check_contains ".github/workflows/pages.yml" "id-token: write" "Pages workflow must request id-token: write permission"
+check_contains ".github/workflows/pages.yml" "workflow_dispatch:" "Pages workflow must be manually runnable after switching Pages source to GitHub Actions"
 check_contains "README.md" "GitHub Actions uploads the generated App Store submission packet" "README must document the Release Gates submission packet artifact"
 check_contains "AppStore/release-checklist.md" "GitHub Actions uploads the generated App Store submission packet" "Release checklist must document the Release Gates submission packet artifact"
 check_contains "FreePrintStudio/Resources/Info.plist" "CFBundleDisplayName" "Info.plist must define display name"

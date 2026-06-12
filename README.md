@@ -377,4 +377,8 @@ App Store Connect questionnaire drafts are stored in:
 - `AppStore/accessibility-labels.md`
 - `AppStore/export-compliance.md`
 
-The privacy and support pages are in `docs/`. For the metadata URLs in `AppStore/metadata.md` to be public, enable GitHub Pages for this repository from the `docs` folder.
+The privacy and support pages are in `docs/`. For the metadata URLs in `AppStore/metadata.md` to be public, set GitHub Pages source to GitHub Actions and use `.github/workflows/pages.yml` to publish the `docs` directory. Verify the repository setting with:
+
+```sh
+Scripts/check_github_pages_source.sh
+```

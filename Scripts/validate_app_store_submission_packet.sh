@@ -253,6 +253,11 @@ if grep -qE 'Apple Developer Team ID|Apple Distribution|provisioning profile' "$
   require_contains "external-readiness-actions.tsv" "Scripts/check_code_signing_assets.sh" "signing validation command tracking"
 fi
 
+if grep -q '^BLOCKED: GitHub Pages build_type' "$PACKET_DIR/readiness.txt"; then
+  require_contains "external-readiness-actions.tsv" "GitHub Pages Source" "GitHub Pages source external action tracking"
+  require_contains "external-readiness-actions.tsv" "Scripts/check_github_pages_source.sh" "GitHub Pages source validation command tracking"
+fi
+
 if grep -qE 'FASTLANE_USER|App Store Connect|ASC_' "$PACKET_DIR/readiness.txt"; then
   require_contains "external-readiness-actions.tsv" "App Store Connect" "App Store Connect external action tracking"
   require_contains "external-readiness-actions.tsv" "Scripts/check_app_store_connect_credentials.sh" "App Store Connect validation command tracking"

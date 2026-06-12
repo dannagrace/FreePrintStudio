@@ -253,6 +253,17 @@ fi
 printf '\n== Public Pages ==\n'
 check_public_page "Privacy policy" "https://dannagrace.github.io/FreePrintStudio/privacy-policy.html" "FreePrint Studio Privacy Policy"
 check_public_page "Support" "https://dannagrace.github.io/FreePrintStudio/support.html" "FreePrint Studio Support"
+if Scripts/check_github_pages_source.sh >/tmp/freeprintstudio-github-pages-source.log 2>&1; then
+  ok "GitHub Pages uses custom workflow publishing"
+else
+  while IFS= read -r line; do
+    case "$line" in
+      OK:*) ok "${line#OK: }" ;;
+      BLOCKED:*) block "${line#BLOCKED: }" ;;
+      *) printf '  %s\n' "$line" ;;
+    esac
+  done </tmp/freeprintstudio-github-pages-source.log
+fi
 
 printf '\n== Tooling ==\n'
 if xcode_version="$(xcodebuild -version 2>/dev/null | tr '\n' ' ')"; then
