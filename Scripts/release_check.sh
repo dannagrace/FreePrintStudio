@@ -3,6 +3,7 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"
+umask 077
 
 failures=0
 
@@ -494,6 +495,8 @@ check_contains "Scripts/validate_manual_release_verification.sh" "APP_STORE_BUIL
 check_contains "Scripts/validate_manual_release_verification.sh" "source Scripts/load_release_env.sh" "Manual verification script must load release.env before comparing the selected App Store build"
 check_contains "Scripts/validate_manual_release_verification.sh" "PROCESSED_BUILD_NUMBER" "Manual verification script must reject selected-build placeholder values"
 check_contains "Scripts/validate_manual_release_verification.sh" "Selected App Store build still looks like a placeholder" "Manual verification script must validate the selected App Store build before comparing evidence"
+check_contains "Scripts/validate_manual_release_verification.sh" "permissions are too broad" "Manual verification must reject overly broad manual evidence file permissions before sourcing private values"
+check_contains "Scripts/validate_manual_release_verification.sh" "chmod 600" "Manual verification must explain how to fix broad manual evidence file permissions"
 manual_release_missing_evidence_test_dir="$(mktemp -d)"
 manual_release_missing_evidence_log="$manual_release_missing_evidence_test_dir/manual-release-verification-missing.log"
 if MANUAL_RELEASE_VERIFICATION_PATH="$manual_release_missing_evidence_test_dir/missing.env" \
@@ -767,12 +770,54 @@ elif ! grep -q 'Real iPhone model must be a physical device, not a simulator' "$
   failures=$((failures + 1))
 fi
 rm -rf "$manual_release_simulator_device_test_dir"
+manual_release_loose_evidence_test_dir="$(mktemp -d)"
+manual_release_loose_evidence="$manual_release_loose_evidence_test_dir/manual-release-verification.env"
+manual_release_loose_evidence_log="$manual_release_loose_evidence_test_dir/manual-release-verification-loose.log"
+cat >"$manual_release_loose_evidence" <<EOF
+MANUAL_VERIFIER_NAME="Release Tester"
+MANUAL_REAL_IPHONE_MODEL="iPhone 15"
+MANUAL_REAL_IPHONE_IOS_VERSION="18.5"
+MANUAL_REAL_IPHONE_TEST_DATE="$today"
+MANUAL_REAL_IPHONE_PHOTOS_IMPORT="pass"
+MANUAL_REAL_IPHONE_PDF_EXPORT="pass"
+MANUAL_REAL_IPHONE_PRINT_SHEET="pass"
+MANUAL_AIRPRINT_TEST_DATE="$today"
+MANUAL_AIRPRINT_PRINTER="Production AirPrint validation"
+MANUAL_AIRPRINT_EXACT_SIZE="pass"
+MANUAL_AIRPRINT_RULER_TARGET_INCHES="6"
+MANUAL_AIRPRINT_RULER_MEASURED_INCHES="6.00"
+MANUAL_TESTFLIGHT_BUILD_NUMBER="42"
+MANUAL_TESTFLIGHT_DEVICE="iPhone 15"
+MANUAL_TESTFLIGHT_TEST_DATE="$today"
+MANUAL_TESTFLIGHT_INSTALL="pass"
+MANUAL_TESTFLIGHT_PRINT_WORKFLOW="pass"
+EOF
+chmod 644 "$manual_release_loose_evidence"
+if APP_STORE_BUILD_NUMBER=42 \
+  RELEASE_ENV_PATH="$manual_release_loose_evidence_test_dir/missing-release.env" \
+  MANUAL_RELEASE_VERIFICATION_PATH="$manual_release_loose_evidence" \
+  Scripts/validate_manual_release_verification.sh >"$manual_release_loose_evidence_log" 2>&1; then
+  printf 'FAIL: Manual verification must reject overly broad manual evidence file permissions\n'
+  failures=$((failures + 1))
+elif ! grep -q 'Manual release verification evidence permissions are too broad' "$manual_release_loose_evidence_log"; then
+  printf 'FAIL: Manual verification should identify broad manual evidence file permissions\n'
+  failures=$((failures + 1))
+elif ! grep -q 'chmod 600' "$manual_release_loose_evidence_log"; then
+  printf 'FAIL: Manual verification broad-permission output should include chmod 600 guidance\n'
+  failures=$((failures + 1))
+elif grep -Fq "$manual_release_loose_evidence" "$manual_release_loose_evidence_log"; then
+  printf 'FAIL: Manual verification must not print the full loose manual evidence path\n'
+  failures=$((failures + 1))
+fi
+rm -rf "$manual_release_loose_evidence_test_dir"
 check_contains "Scripts/check_app_store_readiness.sh" "validate_manual_release_verification.sh" "Readiness audit must validate manual release evidence"
 check_contains "Scripts/verify_release.sh" "manual-verification" "Release verification must expose manual release evidence validation"
 check_file "Scripts/load_release_env.sh" "Release environment loader script is required"
 check_contains "Scripts/load_release_env.sh" "Config/release.env" "Release environment loader must read the untracked release.env file"
 check_contains "Scripts/load_release_env.sh" "not a valid shell env file" "Release environment loader must explain invalid release.env syntax"
 check_contains "Scripts/load_release_env.sh" "Quote values containing spaces" "Release environment loader must explain how to fix values containing spaces"
+check_contains "Scripts/load_release_env.sh" "permissions are too broad" "Release environment loader must reject overly broad release.env permissions before sourcing private values"
+check_contains "Scripts/load_release_env.sh" "chmod 600" "Release environment loader must explain how to fix broad release.env permissions"
 release_env_loader_test_dir="$(mktemp -d)"
 release_env_loader_test_file="$release_env_loader_test_dir/release.env"
 printf '%s\n' \
@@ -791,6 +836,26 @@ if ! RELEASE_ENV_PATH="$release_env_loader_test_file" APP_STORE_BUILD_NUMBER=42 
   fi
 ' _ "$ROOT_DIR"; then
   printf 'FAIL: Release environment loader must preserve non-empty inline values while loading missing values from release.env\n'
+  failures=$((failures + 1))
+fi
+release_env_loader_loose_file="$release_env_loader_test_dir/loose-release.env"
+printf 'ASC_KEY_ID=file-key-id\n' >"$release_env_loader_loose_file"
+chmod 644 "$release_env_loader_loose_file"
+if RELEASE_ENV_PATH="$release_env_loader_loose_file" bash -c '
+  set -euo pipefail
+  cd "$1"
+  source Scripts/load_release_env.sh
+' _ "$ROOT_DIR" >"$release_env_loader_test_dir/loose-release-env.log" 2>&1; then
+  printf 'FAIL: Release environment loader must reject overly broad release.env file permissions\n'
+  failures=$((failures + 1))
+elif ! grep -q 'Release environment permissions are too broad' "$release_env_loader_test_dir/loose-release-env.log"; then
+  printf 'FAIL: Release environment loader should identify broad release.env permissions\n'
+  failures=$((failures + 1))
+elif ! grep -q 'chmod 600' "$release_env_loader_test_dir/loose-release-env.log"; then
+  printf 'FAIL: Release environment loader broad-permission output should include chmod 600 guidance\n'
+  failures=$((failures + 1))
+elif grep -Fq "$release_env_loader_loose_file" "$release_env_loader_test_dir/loose-release-env.log"; then
+  printf 'FAIL: Release environment loader must not print the full loose release.env path\n'
   failures=$((failures + 1))
 fi
 rm -rf "$release_env_loader_test_dir"

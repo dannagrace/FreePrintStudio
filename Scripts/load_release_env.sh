@@ -7,6 +7,32 @@ fi
 release_env_path="${RELEASE_ENV_PATH:-$ROOT_DIR/Config/release.env}"
 
 if [[ -f "$release_env_path" ]]; then
+  if ! _freeprint_permission_status="$(python3 - "$release_env_path" <<'PY'
+from pathlib import Path
+import stat
+import sys
+
+path = Path(sys.argv[1]).expanduser()
+try:
+    mode = path.stat().st_mode
+except Exception:
+    print("Release environment permissions could not be checked")
+    raise SystemExit(1)
+
+if stat.S_IMODE(mode) & 0o077:
+    print("Release environment permissions are too broad; run chmod 600 on the configured file")
+    raise SystemExit(1)
+PY
+  )"; then
+    printf 'BLOCKED: %s\n' "$_freeprint_permission_status" >&2
+    unset _freeprint_permission_status
+    if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
+      return 1
+    fi
+    exit 1
+  fi
+  unset _freeprint_permission_status
+
   _freeprint_release_env_names=(
     DEVELOPMENT_TEAM_ID
     ALLOW_PROVISIONING_UPDATES

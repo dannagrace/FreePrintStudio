@@ -39,6 +39,30 @@ looks_placeholder_like() {
   return 1
 }
 
+validate_private_file_permissions() {
+  local path="$1"
+  local label="$2"
+
+  python3 - "$path" "$label" <<'PY'
+from pathlib import Path
+import stat
+import sys
+
+path = Path(sys.argv[1]).expanduser()
+label = sys.argv[2]
+
+try:
+    mode = path.stat().st_mode
+except Exception:
+    print(f"{label} permissions could not be checked")
+    raise SystemExit(1)
+
+if stat.S_IMODE(mode) & 0o077:
+    print(f"{label} permissions are too broad; run chmod 600 on the configured file")
+    raise SystemExit(1)
+PY
+}
+
 require_value() {
   local name="$1"
   local label="$2"
@@ -248,6 +272,12 @@ if [[ ! -f "$EVIDENCE_PATH" ]]; then
   block "Manual release verification evidence file is missing: $EVIDENCE_PATH"
   printf '  Copy Config/manual-release-verification.env.example to Config/manual-release-verification.env after real-device testing.\n'
   validate_required_evidence_values
+  printf '\nManual release verification evidence failed with %d issue(s).\n' "$failures"
+  exit 1
+fi
+
+if ! permission_status="$(validate_private_file_permissions "$EVIDENCE_PATH" "Manual release verification evidence")"; then
+  block "$permission_status"
   printf '\nManual release verification evidence failed with %d issue(s).\n' "$failures"
   exit 1
 fi
