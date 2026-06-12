@@ -60,6 +60,11 @@ Optional Apple ID flow for App Privacy Details upload:
 - `FASTLANE_ITC_TEAM_ID` or `FASTLANE_ITC_TEAM_NAME`, if the Apple ID belongs to more than one team.
 - `CONFIRM_UPLOAD_APP_PRIVACY=1` only when the App Privacy Details JSON has been reviewed.
 
+Final App Privacy Details confirmation:
+
+- `APP_PRIVACY_DETAILS_CONFIRMED_IN_APP_STORE_CONNECT=1` after Fastlane upload or manual App Store Connect entry matches `AppStore/app_privacy_details.json`.
+- Validate with `Scripts/validate_app_privacy_connect_entry.sh`.
+
 Validate credentials before TestFlight upload or final review submission:
 
 ```sh

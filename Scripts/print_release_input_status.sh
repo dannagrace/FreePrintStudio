@@ -328,9 +328,20 @@ if (( asc_credentials_ready_for_validation == 1 )); then
 fi
 
 if is_set "${FASTLANE_USER:-}"; then
-  mark_ok "FASTLANE_USER is configured for App Privacy Details upload"
+  mark_ok "FASTLANE_USER is configured for App Privacy Details upload automation"
 else
-  mark_optional "FASTLANE_USER is not configured; App Privacy Details upload may need manual entry"
+  mark_optional "FASTLANE_USER is not configured; manual App Privacy Details confirmation is allowed"
+fi
+
+app_privacy_connect_confirmation="$(trimmed_value "${APP_PRIVACY_DETAILS_CONFIRMED_IN_APP_STORE_CONNECT:-}")"
+if [[ "$app_privacy_connect_confirmation" == "1" ]]; then
+  mark_ok "APP_PRIVACY_DETAILS_CONFIRMED_IN_APP_STORE_CONNECT is set after App Store Connect verification"
+elif is_set "$app_privacy_connect_confirmation"; then
+  mark_missing "APP_PRIVACY_DETAILS_CONFIRMED_IN_APP_STORE_CONNECT must be 1 after App Store Connect matches AppStore/app_privacy_details.json"
+  record_missing_field "APP_PRIVACY_DETAILS_CONFIRMED_IN_APP_STORE_CONNECT" "Config/release.env" "Scripts/validate_app_privacy_connect_entry.sh"
+else
+  mark_missing "APP_PRIVACY_DETAILS_CONFIRMED_IN_APP_STORE_CONNECT is missing; confirm App Privacy Details in App Store Connect before final App Review submission"
+  record_missing_field "APP_PRIVACY_DETAILS_CONFIRMED_IN_APP_STORE_CONNECT" "Config/release.env" "Scripts/validate_app_privacy_connect_entry.sh"
 fi
 
 printf '\n== Final Submission Guards ==\n'

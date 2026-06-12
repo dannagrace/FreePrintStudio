@@ -322,6 +322,11 @@ FASTLANE_USER=apple-id@example.com CONFIRM_UPLOAD_APP_PRIVACY=1 Scripts/run_fast
 ```
 
 Set `APP_PRIVACY_SKIP_PUBLISH=1` to upload the App Privacy Details without publishing them.
+After Fastlane upload or manual App Store Connect entry, confirm the live App Privacy Details match `AppStore/app_privacy_details.json`:
+
+```sh
+APP_PRIVACY_DETAILS_CONFIRMED_IN_APP_STORE_CONNECT=1 Scripts/validate_app_privacy_connect_entry.sh
+```
 
 Fastlane can also call the local gates and create the signed archive:
 

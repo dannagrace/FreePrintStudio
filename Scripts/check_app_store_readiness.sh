@@ -299,10 +299,22 @@ fi
 
 printf '\n== App Store Connect ==\n'
 app_store_connect_state_checked=0
-if [[ -n "${FASTLANE_USER:-}" ]]; then
-  ok "FASTLANE_USER configured for App Privacy Details upload"
+if Scripts/validate_app_privacy_connect_entry.sh >/tmp/freeprintstudio-app-privacy-connect-entry.log 2>&1; then
+  ok "App Privacy Details are confirmed in App Store Connect"
 else
-  warn "FASTLANE_USER is not configured; automated App Privacy Details upload will be blocked"
+  while IFS= read -r line; do
+    case "$line" in
+      OK:*) ok "${line#OK: }" ;;
+      BLOCKED:*) block "${line#BLOCKED: }" ;;
+      *) printf '  %s\n' "$line" ;;
+    esac
+  done </tmp/freeprintstudio-app-privacy-connect-entry.log
+fi
+
+if [[ -n "${FASTLANE_USER:-}" ]]; then
+  ok "FASTLANE_USER configured for App Privacy Details upload automation"
+else
+  ok "FASTLANE_USER is not configured; manual App Privacy Details confirmation is allowed"
 fi
 
 if Scripts/check_app_store_connect_credentials.sh >/tmp/freeprintstudio-asc-credentials.log 2>&1; then

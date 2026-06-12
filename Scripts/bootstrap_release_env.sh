@@ -71,6 +71,9 @@ FASTLANE_ITC_TEAM_NAME=
 CONFIRM_UPLOAD_APP_PRIVACY=
 APP_PRIVACY_SKIP_PUBLISH=
 
+# Set after Fastlane upload or manual App Store Connect entry matches AppStore/app_privacy_details.json.
+APP_PRIVACY_DETAILS_CONFIRMED_IN_APP_STORE_CONNECT=
+
 # Optional overrides.
 IPA_PATH=
 TESTFLIGHT_CHANGELOG=

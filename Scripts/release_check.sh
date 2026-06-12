@@ -1537,6 +1537,59 @@ check_contains "Scripts/preflight_metadata_upload.sh" "Scripts/validate_app_revi
 check_contains "Scripts/preflight_metadata_upload.sh" "Scripts/check_app_store_connect_credentials.sh" "Metadata upload preflight must validate App Store Connect credentials"
 check_contains "Scripts/preflight_metadata_upload.sh" "APP_STORE_CONNECT_SKIP_BUILD_CHECK=1 Scripts/check_app_store_connect_state.sh" "Metadata upload preflight must verify App Store Connect app and version without requiring a selected build"
 check_contains "Scripts/preflight_metadata_upload.sh" "Scripts/run_fastlane.sh ios metadata" "Metadata upload preflight must print the metadata upload next command"
+check_file "Scripts/validate_app_privacy_connect_entry.sh" "App Privacy Details App Store Connect confirmation validator is required"
+if [[ -f "Scripts/validate_app_privacy_connect_entry.sh" && ! -x "Scripts/validate_app_privacy_connect_entry.sh" ]]; then
+  printf 'FAIL: App Privacy Details App Store Connect confirmation validator must be executable (Scripts/validate_app_privacy_connect_entry.sh)\n'
+  failures=$((failures + 1))
+fi
+check_contains "Config/release.env.example" "APP_PRIVACY_DETAILS_CONFIRMED_IN_APP_STORE_CONNECT" "Release environment template must include the App Privacy Details App Store Connect confirmation"
+check_contains "Scripts/load_release_env.sh" "APP_PRIVACY_DETAILS_CONFIRMED_IN_APP_STORE_CONNECT" "Release environment loader must preserve the App Privacy Details App Store Connect confirmation"
+check_contains "Scripts/validate_release_env.sh" "APP_PRIVACY_DETAILS_CONFIRMED_IN_APP_STORE_CONNECT" "Release environment validation must reject placeholder App Privacy Details App Store Connect confirmations"
+check_contains "Scripts/check_app_store_readiness.sh" "validate_app_privacy_connect_entry.sh" "Readiness audit must require App Privacy Details confirmation in App Store Connect"
+check_contains "Scripts/preflight_app_review_submission.sh" "validate_app_privacy_connect_entry.sh" "App Review submission preflight must require App Privacy Details confirmation in App Store Connect"
+check_contains "Scripts/print_release_input_status.sh" "APP_PRIVACY_DETAILS_CONFIRMED_IN_APP_STORE_CONNECT" "Release input status must summarize App Privacy Details confirmation in App Store Connect"
+check_contains "README.md" "APP_PRIVACY_DETAILS_CONFIRMED_IN_APP_STORE_CONNECT" "README must document App Privacy Details App Store Connect confirmation"
+check_contains "AppStore/release-checklist.md" "APP_PRIVACY_DETAILS_CONFIRMED_IN_APP_STORE_CONNECT" "Release checklist must document App Privacy Details App Store Connect confirmation"
+check_contains "AppStore/release-inputs-worksheet.md" "APP_PRIVACY_DETAILS_CONFIRMED_IN_APP_STORE_CONNECT" "Release input worksheet must include App Privacy Details App Store Connect confirmation"
+app_privacy_missing_confirmation_test_dir="$(mktemp -d)"
+app_privacy_missing_confirmation_env="$app_privacy_missing_confirmation_test_dir/release.env"
+app_privacy_missing_confirmation_log="$app_privacy_missing_confirmation_test_dir/app-privacy-confirmation.log"
+: >"$app_privacy_missing_confirmation_env"
+chmod 600 "$app_privacy_missing_confirmation_env"
+if RELEASE_ENV_PATH="$app_privacy_missing_confirmation_env" Scripts/validate_app_privacy_connect_entry.sh >"$app_privacy_missing_confirmation_log" 2>&1; then
+  printf 'FAIL: App Privacy Details App Store Connect confirmation must be required before App Review submission\n'
+  failures=$((failures + 1))
+elif ! grep -q 'APP_PRIVACY_DETAILS_CONFIRMED_IN_APP_STORE_CONNECT=1' "$app_privacy_missing_confirmation_log"; then
+  printf 'FAIL: Missing App Privacy Details App Store Connect confirmation must name APP_PRIVACY_DETAILS_CONFIRMED_IN_APP_STORE_CONNECT=1\n'
+  failures=$((failures + 1))
+fi
+rm -rf "$app_privacy_missing_confirmation_test_dir"
+app_privacy_invalid_confirmation_test_dir="$(mktemp -d)"
+app_privacy_invalid_confirmation_env="$app_privacy_invalid_confirmation_test_dir/release.env"
+app_privacy_invalid_confirmation_log="$app_privacy_invalid_confirmation_test_dir/app-privacy-confirmation-invalid.log"
+printf 'APP_PRIVACY_DETAILS_CONFIRMED_IN_APP_STORE_CONNECT=yes\n' >"$app_privacy_invalid_confirmation_env"
+chmod 600 "$app_privacy_invalid_confirmation_env"
+if RELEASE_ENV_PATH="$app_privacy_invalid_confirmation_env" Scripts/validate_app_privacy_connect_entry.sh >"$app_privacy_invalid_confirmation_log" 2>&1; then
+  printf 'FAIL: App Privacy Details App Store Connect confirmation must reject non-1 values\n'
+  failures=$((failures + 1))
+elif ! grep -q 'must be 1 after App Store Connect matches AppStore/app_privacy_details.json' "$app_privacy_invalid_confirmation_log"; then
+  printf 'FAIL: Invalid App Privacy Details App Store Connect confirmation must explain the expected value\n'
+  failures=$((failures + 1))
+fi
+rm -rf "$app_privacy_invalid_confirmation_test_dir"
+app_privacy_valid_confirmation_test_dir="$(mktemp -d)"
+app_privacy_valid_confirmation_env="$app_privacy_valid_confirmation_test_dir/release.env"
+app_privacy_valid_confirmation_log="$app_privacy_valid_confirmation_test_dir/app-privacy-confirmation-valid.log"
+printf 'APP_PRIVACY_DETAILS_CONFIRMED_IN_APP_STORE_CONNECT=1\n' >"$app_privacy_valid_confirmation_env"
+chmod 600 "$app_privacy_valid_confirmation_env"
+if ! RELEASE_ENV_PATH="$app_privacy_valid_confirmation_env" Scripts/validate_app_privacy_connect_entry.sh >"$app_privacy_valid_confirmation_log" 2>&1; then
+  printf 'FAIL: App Privacy Details App Store Connect confirmation must pass when APP_PRIVACY_DETAILS_CONFIRMED_IN_APP_STORE_CONNECT=1\n'
+  failures=$((failures + 1))
+elif ! grep -q 'App Privacy Details confirmed in App Store Connect' "$app_privacy_valid_confirmation_log"; then
+  printf 'FAIL: App Privacy Details App Store Connect confirmation success must be explicit\n'
+  failures=$((failures + 1))
+fi
+rm -rf "$app_privacy_valid_confirmation_test_dir"
 check_file "Scripts/preflight_app_privacy_upload.sh" "App Privacy Details upload preflight script is required"
 if [[ -f "Scripts/preflight_app_privacy_upload.sh" && ! -x "Scripts/preflight_app_privacy_upload.sh" ]]; then
   printf 'FAIL: App Privacy Details upload preflight script must be executable (Scripts/preflight_app_privacy_upload.sh)\n'

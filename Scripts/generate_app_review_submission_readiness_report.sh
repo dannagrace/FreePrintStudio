@@ -86,6 +86,7 @@ run_step status_screenshots "Scripts/validate_screenshot_sync.sh" Scripts/valida
 run_step status_public_pages "Scripts/validate_public_pages.sh" Scripts/validate_public_pages.sh
 run_step status_privacy_surface "Scripts/validate_privacy_surface.sh" Scripts/validate_privacy_surface.sh
 run_step status_app_privacy "Scripts/validate_app_privacy_details.sh" Scripts/validate_app_privacy_details.sh
+run_step status_app_privacy_connect "Scripts/validate_app_privacy_connect_entry.sh" Scripts/validate_app_privacy_connect_entry.sh
 run_step status_questionnaires "Scripts/validate_app_store_questionnaires.sh" Scripts/validate_app_store_questionnaires.sh
 run_step status_review_contact "Scripts/validate_app_review_contact.sh" Scripts/validate_app_review_contact.sh
 run_step status_manual_evidence "APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/validate_manual_release_verification.sh" Scripts/validate_manual_release_verification.sh
@@ -140,6 +141,7 @@ cat >"$output_path" <<EOF
 | Public privacy/support pages | \`Scripts/validate_public_pages.sh\` | $status_public_pages |
 | Privacy surface | \`Scripts/validate_privacy_surface.sh\` | $status_privacy_surface |
 | App Privacy Details JSON | \`Scripts/validate_app_privacy_details.sh\` | $status_app_privacy |
+| App Privacy Details confirmed in App Store Connect | \`Scripts/validate_app_privacy_connect_entry.sh\` | $status_app_privacy_connect |
 | App Store questionnaires | \`Scripts/validate_app_store_questionnaires.sh\` | $status_questionnaires |
 
 ## Review And Evidence Checks

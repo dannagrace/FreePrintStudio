@@ -376,6 +376,12 @@ external_action_fields() {
   local validation_command="Scripts/check_app_store_readiness.sh"
 
   case "$item" in
+    *APP_PRIVACY_DETAILS_CONFIRMED_IN_APP_STORE_CONNECT*|*"App Privacy Details"*App\ Store\ Connect*)
+      category="App Privacy"
+      owner="App Store Connect account holder"
+      next_action="Confirm App Privacy Details in App Store Connect match AppStore/app_privacy_details.json, then set APP_PRIVACY_DETAILS_CONFIRMED_IN_APP_STORE_CONNECT=1 in untracked Config/release.env."
+      validation_command="Scripts/validate_app_privacy_connect_entry.sh"
+      ;;
     *"FASTLANE_USER is not configured"*)
       category="App Privacy Upload"
       owner="App Store Connect account holder"
@@ -426,7 +432,7 @@ external_action_field_for_item() {
     field="${BASH_REMATCH[1]}"
   elif [[ "$item" =~ (APP_REVIEW_CONTACT_[A-Z_]+) ]]; then
     field="${BASH_REMATCH[1]}"
-  elif [[ "$item" =~ (APP_STORE_CONNECT_API_KEY_JSON|ASC_[A-Z0-9_]+|FASTLANE_USER) ]]; then
+  elif [[ "$item" =~ (APP_PRIVACY_DETAILS_CONFIRMED_IN_APP_STORE_CONNECT|APP_STORE_CONNECT_API_KEY_JSON|ASC_[A-Z0-9_]+|FASTLANE_USER) ]]; then
     field="${BASH_REMATCH[1]}"
   elif [[ "$item" == *"Manual release verification evidence file"* ]]; then
     field="MANUAL_RELEASE_VERIFICATION_PATH"
@@ -455,7 +461,7 @@ external_action_target_for_item() {
       target="Config/manual-release-verification.env"
       ;;
     APP_REVIEW_CONTACT_*|DEVELOPMENT_TEAM_ID|APP_STORE_BUILD_NUMBER|CONFIRM_SUBMIT_FOR_REVIEW|\
-    APP_STORE_CONNECT_API_KEY_JSON|FASTLANE_USER|APP_STORE_CONNECT_API_KEY_JSON\ or\ ASC_KEY_ID/ASC_ISSUER_ID/ASC_KEY_PATH)
+    APP_PRIVACY_DETAILS_CONFIRMED_IN_APP_STORE_CONNECT|APP_STORE_CONNECT_API_KEY_JSON|FASTLANE_USER|APP_STORE_CONNECT_API_KEY_JSON\ or\ ASC_KEY_ID/ASC_ISSUER_ID/ASC_KEY_PATH)
       target="Config/release.env"
       ;;
     Apple\ Distribution\ certificate)
@@ -471,6 +477,9 @@ external_action_target_for_item() {
 
   case "$item" in
     *APP_REVIEW_CONTACT*|*"App Review contact"*)
+      target="Config/release.env"
+      ;;
+    *APP_PRIVACY_DETAILS_CONFIRMED_IN_APP_STORE_CONNECT*)
       target="Config/release.env"
       ;;
     *ASC_*|*"App Store Connect API credentials"*|*"API credentials"*|*FASTLANE_USER*)

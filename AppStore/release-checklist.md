@@ -61,6 +61,7 @@
 - Optional automation: run `Scripts/install_release_dependencies.sh` or `brew install fastlane`, configure App Store Connect API credentials, then run `Scripts/run_fastlane.sh ios metadata` to upload App Store metadata and screenshots without submitting for review.
 - App Privacy upload preflight: verify `AppStore/app_privacy_details.json`, then run `FASTLANE_USER=... CONFIRM_UPLOAD_APP_PRIVACY=1 Scripts/preflight_app_privacy_upload.sh`.
 - App Privacy automation: verify `AppStore/app_privacy_details.json`, then run `FASTLANE_USER=... CONFIRM_UPLOAD_APP_PRIVACY=1 Scripts/run_fastlane.sh ios privacy_details`.
+- App Privacy App Store Connect confirmation: after Fastlane upload or manual entry, set `APP_PRIVACY_DETAILS_CONFIRMED_IN_APP_STORE_CONNECT=1` and run `Scripts/validate_app_privacy_connect_entry.sh`.
 - TestFlight upload dependency preflight: before creating or uploading a TestFlight archive, run `Scripts/preflight_testflight_upload_dependencies.sh` to verify private release inputs, App Store Connect API credentials, and the app/version record.
 - TestFlight upload preflight: after creating the signed export and configuring App Store Connect API credentials, run `Scripts/preflight_testflight_upload.sh`.
 - Optional TestFlight automation: configure `ASC_KEY_ID`, `ASC_ISSUER_ID`, and `ASC_KEY_PATH`, then run `Scripts/run_fastlane.sh ios upload_testflight` to upload the exported IPA without external distribution.

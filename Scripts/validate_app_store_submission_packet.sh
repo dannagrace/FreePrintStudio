@@ -258,7 +258,12 @@ if grep -qE 'FASTLANE_USER|App Store Connect|ASC_' "$PACKET_DIR/readiness.txt"; 
   require_contains "external-readiness-actions.tsv" "Scripts/check_app_store_connect_credentials.sh" "App Store Connect validation command tracking"
 fi
 
-if grep -q 'FASTLANE_USER is not configured' "$PACKET_DIR/readiness.txt"; then
+if grep -q 'APP_PRIVACY_DETAILS_CONFIRMED_IN_APP_STORE_CONNECT' "$PACKET_DIR/readiness.txt"; then
+  require_contains "external-readiness-actions.tsv" "App Privacy" "App Privacy external action tracking"
+  require_contains "external-readiness-actions.tsv" "Scripts/validate_app_privacy_connect_entry.sh" "App Privacy Details App Store Connect confirmation validation command tracking"
+fi
+
+if grep -q '^WARN: FASTLANE_USER is not configured' "$PACKET_DIR/readiness.txt"; then
   require_contains "external-readiness-actions.tsv" "Scripts/preflight_app_privacy_upload.sh" "FASTLANE_USER warning validation command tracking"
 fi
 

@@ -172,6 +172,9 @@ fi
 privacy_upload_confirmed=0
 [[ "${CONFIRM_UPLOAD_APP_PRIVACY:-}" == "1" ]] && privacy_upload_confirmed=1
 
+privacy_connect_confirmed=0
+[[ "${APP_PRIVACY_DETAILS_CONFIRMED_IN_APP_STORE_CONNECT:-}" == "1" ]] && privacy_connect_confirmed=1
+
 submit_review_confirmed=0
 [[ "${CONFIRM_SUBMIT_FOR_REVIEW:-}" == "1" ]] && submit_review_confirmed=1
 
@@ -211,6 +214,7 @@ cat >"$output_path" <<EOF
 | \`FASTLANE_USER\` configured | $(status_from_bool "$fastlane_user_configured" "Yes ($(mask_value "${FASTLANE_USER:-}"))" "No") |
 | \`APP_STORE_BUILD_NUMBER\` configured | $build_number_status |
 | \`CONFIRM_UPLOAD_APP_PRIVACY=1\` | $(status_from_bool "$privacy_upload_confirmed" "Yes" "No") |
+| \`APP_PRIVACY_DETAILS_CONFIRMED_IN_APP_STORE_CONNECT=1\` | $(status_from_bool "$privacy_connect_confirmed" "Yes" "No") |
 | \`CONFIRM_SUBMIT_FOR_REVIEW=1\` | $(status_from_bool "$submit_review_confirmed" "Yes" "No") |
 
 ## Account-Dependent Checks
@@ -230,6 +234,7 @@ Replace \`PROCESSED_BUILD_NUMBER\` with the processed App Store Connect build nu
 - [ ] Run \`Scripts/check_app_store_connect_credentials.sh\`.
 - [ ] Create or verify the App Store Connect app record for \`com.dannagrace.FreePrintStudio\`.
 - [ ] Upload a signed IPA to TestFlight with \`Scripts/run_fastlane.sh ios upload_testflight\`.
+- [ ] Confirm App Privacy Details in App Store Connect match \`AppStore/app_privacy_details.json\`, then set \`APP_PRIVACY_DETAILS_CONFIRMED_IN_APP_STORE_CONNECT=1\`.
 - [ ] Wait for the build to finish processing, then set \`APP_STORE_BUILD_NUMBER\`.
 - [ ] Run \`APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/run_fastlane.sh ios app_store_connect_state\`.
 - [ ] Run \`APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/preflight_app_review_submission.sh\` before final submission.
