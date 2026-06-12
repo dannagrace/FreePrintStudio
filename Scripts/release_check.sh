@@ -1606,6 +1606,7 @@ check_contains "Scripts/preflight_testflight_upload_dependencies.sh" "APP_STORE_
 check_contains "Scripts/preflight_testflight_upload_dependencies.sh" "Scripts/check_app_store_connect_state.sh" "TestFlight dependency preflight must query App Store Connect state before archive fallback"
 check_contains "Scripts/preflight_testflight_upload_dependencies.sh" "TestFlight upload dependency preflight passed" "TestFlight dependency preflight must print a clear success message"
 check_contains "Scripts/verify_release.sh" "testflight-dependencies-preflight" "Release verification must expose the TestFlight upload dependency preflight command"
+check_contains "Scripts/bootstrap_release_inputs.sh" "Scripts/verify_release.sh testflight-dependencies-preflight" "Release input bootstrap next commands must include the TestFlight upload dependency preflight"
 check_contains "Scripts/verify_release.sh" "testflight-preflight" "Release verification must expose the TestFlight upload preflight command"
 check_file "Scripts/preflight_app_review_submission.sh" "App Review submission preflight script is required"
 if [[ ! -x "Scripts/preflight_app_review_submission.sh" ]]; then
