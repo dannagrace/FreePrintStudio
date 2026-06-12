@@ -308,6 +308,7 @@ Scripts/preflight_metadata_upload.sh
 ASC_KEY_ID=XXXXXXXXXX ASC_ISSUER_ID=00000000-0000-0000-0000-000000000000 ASC_KEY_PATH=/secure/AuthKey_XXXXXXXXXX.p8 Scripts/run_fastlane.sh ios metadata
 ```
 
+The metadata preflight starts with `Scripts/print_release_input_status.sh --strict`, so missing release inputs are shown as field-level action items before metadata, screenshot, public page, App Review contact, and App Store Connect credential checks.
 The Fastlane metadata, App Privacy Details, and final review-submission lanes run the local App Store questionnaire validation before uploading or submitting.
 The metadata lane uses App Store Connect API credentials so it fails before `deliver` can fall back to an interactive Apple ID session.
 
@@ -329,6 +330,7 @@ FASTLANE_USER=apple-id@example.com CONFIRM_UPLOAD_APP_PRIVACY=1 Scripts/prefligh
 FASTLANE_USER=apple-id@example.com CONFIRM_UPLOAD_APP_PRIVACY=1 Scripts/run_fastlane.sh ios privacy_details
 ```
 
+The App Privacy upload preflight starts with `Scripts/print_release_input_status.sh --strict`, so missing private release inputs are visible before the explicit upload confirmation and Fastlane Apple ID checks.
 Set `APP_PRIVACY_SKIP_PUBLISH=1` to upload the App Privacy Details without publishing them.
 After Fastlane upload or manual App Store Connect entry, confirm the live App Privacy Details match `AppStore/app_privacy_details.json`:
 
@@ -352,6 +354,7 @@ Scripts/preflight_testflight_upload.sh
 ASC_KEY_ID=XXXXXXXXXX ASC_ISSUER_ID=00000000-0000-0000-0000-000000000000 ASC_KEY_PATH=/secure/AuthKey_XXXXXXXXXX.p8 Scripts/run_fastlane.sh ios upload_testflight
 ```
 
+Both TestFlight preflights start with `Scripts/print_release_input_status.sh --strict`, so signing, App Store Connect, and manual device-evidence gaps are listed before archive fallback or IPA upload checks continue.
 If the exported IPA lives outside the default `build/AppStoreExport/` folder, pass `IPA_PATH=/absolute/path/to/FreePrintStudio.ipa`.
 
 After the build has processed in App Store Connect, verify the app record, version, and selected TestFlight build:

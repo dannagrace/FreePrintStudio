@@ -1551,7 +1551,21 @@ check_contains "Scripts/preflight_metadata_upload.sh" "Scripts/validate_app_stor
 check_contains "Scripts/preflight_metadata_upload.sh" "Scripts/validate_app_review_contact.sh" "Metadata upload preflight must validate App Review contact"
 check_contains "Scripts/preflight_metadata_upload.sh" "Scripts/check_app_store_connect_credentials.sh" "Metadata upload preflight must validate App Store Connect credentials"
 check_contains "Scripts/preflight_metadata_upload.sh" "APP_STORE_CONNECT_SKIP_BUILD_CHECK=1 Scripts/check_app_store_connect_state.sh" "Metadata upload preflight must verify App Store Connect app and version without requiring a selected build"
+check_contains "Scripts/preflight_metadata_upload.sh" "Scripts/print_release_input_status.sh --strict" "Metadata upload preflight must print field-level release input status before upload gates"
 check_contains "Scripts/preflight_metadata_upload.sh" "Scripts/run_fastlane.sh ios metadata" "Metadata upload preflight must print the metadata upload next command"
+if ! python3 - <<'PY'
+from pathlib import Path
+
+source = Path("Scripts/preflight_metadata_upload.sh").read_text()
+status_index = source.find('run_step "Release input status" Scripts/print_release_input_status.sh --strict')
+metadata_index = source.find('run_step "App Store metadata" Scripts/validate_app_store_metadata.sh')
+if status_index == -1 or metadata_index == -1 or status_index > metadata_index:
+    raise SystemExit(1)
+PY
+then
+  printf 'FAIL: Metadata upload preflight must print release input status before metadata validation\n'
+  failures=$((failures + 1))
+fi
 check_file "Scripts/validate_app_privacy_connect_entry.sh" "App Privacy Details App Store Connect confirmation validator is required"
 if [[ -f "Scripts/validate_app_privacy_connect_entry.sh" && ! -x "Scripts/validate_app_privacy_connect_entry.sh" ]]; then
   printf 'FAIL: App Privacy Details App Store Connect confirmation validator must be executable (Scripts/validate_app_privacy_connect_entry.sh)\n'
@@ -1616,8 +1630,22 @@ check_contains "Scripts/preflight_app_privacy_upload.sh" "Scripts/validate_relea
 check_contains "Scripts/preflight_app_privacy_upload.sh" "Scripts/validate_privacy_surface.sh" "App Privacy Details upload preflight must validate privacy surface"
 check_contains "Scripts/preflight_app_privacy_upload.sh" "Scripts/validate_app_privacy_details.sh" "App Privacy Details upload preflight must validate App Privacy Details JSON"
 check_contains "Scripts/preflight_app_privacy_upload.sh" "Scripts/validate_app_store_questionnaires.sh" "App Privacy Details upload preflight must validate App Store questionnaires"
+check_contains "Scripts/preflight_app_privacy_upload.sh" "Scripts/print_release_input_status.sh --strict" "App Privacy Details upload preflight must print field-level release input status before privacy upload gates"
 check_contains "Scripts/preflight_app_privacy_upload.sh" "Scripts/run_fastlane.sh ios privacy_details" "App Privacy Details upload preflight must print the privacy upload next command"
 check_not_contains "Scripts/preflight_app_privacy_upload.sh" 'printf '\''Next: FASTLANE_USER=%s' "App Privacy Details upload preflight must not print the real Fastlane Apple ID in the next command"
+if ! python3 - <<'PY'
+from pathlib import Path
+
+source = Path("Scripts/preflight_app_privacy_upload.sh").read_text()
+status_index = source.find('run_step "Release input status" Scripts/print_release_input_status.sh --strict')
+privacy_index = source.find('run_step "Privacy surface" Scripts/validate_privacy_surface.sh')
+if status_index == -1 or privacy_index == -1 or status_index > privacy_index:
+    raise SystemExit(1)
+PY
+then
+  printf 'FAIL: App Privacy Details upload preflight must print release input status before privacy validation\n'
+  failures=$((failures + 1))
+fi
 check_contains "Scripts/verify_release.sh" "metadata-preflight" "Release verification must expose metadata upload preflight"
 check_contains "Scripts/verify_release.sh" "privacy-preflight" "Release verification must expose App Privacy Details upload preflight"
 check_contains "fastlane/Deliverfile" "project_root" "Deliverfile must use project-root absolute paths"
@@ -2313,7 +2341,21 @@ check_contains "Scripts/preflight_testflight_upload.sh" "source Scripts/load_rel
 check_contains "Scripts/preflight_testflight_upload.sh" "Scripts/validate_app_store_export.sh" "TestFlight preflight must validate the signed IPA export"
 check_contains "Scripts/preflight_testflight_upload.sh" "APP_STORE_CONNECT_SKIP_BUILD_CHECK=1" "TestFlight preflight must verify the App Store Connect app/version before upload without requiring an existing build"
 check_contains "Scripts/preflight_testflight_upload.sh" "Scripts/check_app_store_connect_state.sh" "TestFlight preflight must query App Store Connect state"
+check_contains "Scripts/preflight_testflight_upload.sh" "Scripts/print_release_input_status.sh --strict" "TestFlight upload preflight must print field-level release input status before upload gates"
 check_contains "Scripts/preflight_testflight_upload.sh" "TestFlight upload preflight passed" "TestFlight preflight must print a clear success message"
+if ! python3 - <<'PY'
+from pathlib import Path
+
+source = Path("Scripts/preflight_testflight_upload.sh").read_text()
+status_index = source.find('run_step "Release input status" Scripts/print_release_input_status.sh --strict')
+credentials_index = source.find('run_step "App Store Connect credentials" Scripts/check_app_store_connect_credentials.sh')
+if status_index == -1 or credentials_index == -1 or status_index > credentials_index:
+    raise SystemExit(1)
+PY
+then
+  printf 'FAIL: TestFlight upload preflight must print release input status before credential validation\n'
+  failures=$((failures + 1))
+fi
 check_file "Scripts/preflight_testflight_upload_dependencies.sh" "TestFlight upload dependency preflight script is required"
 if [[ -f "Scripts/preflight_testflight_upload_dependencies.sh" && ! -x "Scripts/preflight_testflight_upload_dependencies.sh" ]]; then
   printf 'FAIL: TestFlight upload dependency preflight script must be executable (Scripts/preflight_testflight_upload_dependencies.sh)\n'
@@ -2323,7 +2365,21 @@ check_contains "Scripts/preflight_testflight_upload_dependencies.sh" "Scripts/va
 check_contains "Scripts/preflight_testflight_upload_dependencies.sh" "Scripts/check_app_store_connect_credentials.sh" "TestFlight dependency preflight must validate App Store Connect credentials before archive fallback"
 check_contains "Scripts/preflight_testflight_upload_dependencies.sh" "APP_STORE_CONNECT_SKIP_BUILD_CHECK=1" "TestFlight dependency preflight must verify the App Store Connect app/version before archive fallback"
 check_contains "Scripts/preflight_testflight_upload_dependencies.sh" "Scripts/check_app_store_connect_state.sh" "TestFlight dependency preflight must query App Store Connect state before archive fallback"
+check_contains "Scripts/preflight_testflight_upload_dependencies.sh" "Scripts/print_release_input_status.sh --strict" "TestFlight dependency preflight must print field-level release input status before archive fallback gates"
 check_contains "Scripts/preflight_testflight_upload_dependencies.sh" "TestFlight upload dependency preflight passed" "TestFlight dependency preflight must print a clear success message"
+if ! python3 - <<'PY'
+from pathlib import Path
+
+source = Path("Scripts/preflight_testflight_upload_dependencies.sh").read_text()
+status_index = source.find('run_step "Release input status" Scripts/print_release_input_status.sh --strict')
+environment_index = source.find('run_step "Private release environment" Scripts/validate_release_env.sh')
+if status_index == -1 or environment_index == -1 or status_index > environment_index:
+    raise SystemExit(1)
+PY
+then
+  printf 'FAIL: TestFlight upload dependency preflight must print release input status before release environment validation\n'
+  failures=$((failures + 1))
+fi
 check_contains "Scripts/verify_release.sh" "testflight-dependencies-preflight" "Release verification must expose the TestFlight upload dependency preflight command"
 check_contains "Scripts/bootstrap_release_inputs.sh" "Scripts/verify_release.sh testflight-dependencies-preflight" "Release input bootstrap next commands must include the TestFlight upload dependency preflight"
 check_contains "Scripts/bootstrap_release_inputs.sh" "Scripts/preflight_app_store_archive.sh" "Release input bootstrap next commands must include the App Store archive preflight"

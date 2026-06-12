@@ -46,6 +46,7 @@ run_fastlane_user_step() {
   printf '\n'
 }
 
+run_step "Release input status" Scripts/print_release_input_status.sh --strict
 run_confirmation_step
 run_fastlane_user_step
 run_step "Private release environment" Scripts/validate_release_env.sh
