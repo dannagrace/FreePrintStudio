@@ -313,7 +313,7 @@ if Scripts/check_app_store_connect_credentials.sh >/tmp/freeprintstudio-asc-cred
     sed 's/^/  /' /tmp/freeprintstudio-asc-state.log
   fi
 else
-  warn "Fastlane App Store Connect API credentials are not configured; automated metadata and TestFlight upload will be blocked"
+  block "Fastlane App Store Connect API credentials are not configured; automated metadata and TestFlight upload will be blocked"
   sed 's/^BLOCKED:/missing:/; s/^/  /' /tmp/freeprintstudio-asc-credentials.log
 fi
 warn "App Store Connect app record and TestFlight status require account-specific verification outside this local audit"
