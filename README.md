@@ -366,7 +366,7 @@ Before submitting for App Review, run the final preflight without triggering sub
 APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/preflight_app_review_submission.sh
 ```
 
-The preflight requires `MANUAL_TESTFLIGHT_BUILD_NUMBER` in `Config/manual-release-verification.env` to match the same APP_STORE_BUILD_NUMBER, and requires physical iPad TestFlight evidence for the supported iPad build.
+The preflight starts with `Scripts/print_release_input_status.sh --strict`, so it prints field-level missing release inputs before the individual submission gates run. It requires `MANUAL_TESTFLIGHT_BUILD_NUMBER` in `Config/manual-release-verification.env` to match the same APP_STORE_BUILD_NUMBER, and requires physical iPad TestFlight evidence for the supported iPad build.
 
 After the uploaded build is processed in App Store Connect and the store listing, privacy details, age rating, screenshots, and review contact details are final, submit the selected build for App Review:
 

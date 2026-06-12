@@ -2336,6 +2336,7 @@ check_contains "Scripts/preflight_app_review_submission.sh" "Scripts/validate_ma
 check_contains "Scripts/preflight_app_review_submission.sh" "Scripts/check_app_store_connect_credentials.sh" "App Review preflight must validate App Store Connect credentials"
 check_contains "Scripts/preflight_app_review_submission.sh" "source Scripts/load_release_env.sh" "App Review preflight must load private release inputs before checking selected build and credentials"
 check_contains "Scripts/preflight_app_review_submission.sh" "Scripts/validate_release_env.sh" "App Review preflight must reject placeholder private release inputs"
+check_contains "Scripts/preflight_app_review_submission.sh" "Scripts/print_release_input_status.sh --strict" "App Review preflight must print field-level release input status before final submission"
 check_contains "Scripts/preflight_app_review_submission.sh" "Scripts/check_app_store_connect_state.sh" "App Review preflight must require a processed selected build"
 check_contains "Scripts/preflight_app_review_submission.sh" "APP_STORE_BUILD_NUMBER" "App Review preflight must require an explicit selected build number"
 check_contains "Scripts/preflight_app_review_submission.sh" "PROCESSED_BUILD_NUMBER placeholder" "App Review preflight must reject the selected-build placeholder"
@@ -2378,6 +2379,10 @@ if grep -q 'OK: APP_STORE_BUILD_NUMBER is set to todo' "$review_preflight_placeh
 fi
 if ! grep -q 'BLOCKED: APP_STORE_BUILD_NUMBER still looks like a placeholder' "$review_preflight_placeholder_output"; then
   printf 'FAIL: App Review preflight must flag lowercase todo selected build as a placeholder\n'
+  failures=$((failures + 1))
+fi
+if ! grep -q 'MISSING_FIELD:' "$review_preflight_placeholder_output"; then
+  printf 'FAIL: App Review preflight must print field-level missing release input rows\n'
   failures=$((failures + 1))
 fi
 rm -rf "$review_preflight_placeholder_test_dir"
