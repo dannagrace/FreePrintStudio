@@ -1680,12 +1680,26 @@ check_contains "Scripts/preflight_app_store_archive.sh" "Scripts/verify_release.
 check_contains "Scripts/preflight_app_store_archive.sh" "Scripts/verify_release.sh store-ready" "Archive preflight must run the full store-ready release gate before signing"
 check_contains "Scripts/preflight_app_store_archive.sh" "source Scripts/load_release_env.sh" "Archive preflight must load private release inputs before checking signing assets"
 check_contains "Scripts/preflight_app_store_archive.sh" "Scripts/validate_release_env.sh" "Archive preflight must validate private release env placeholders"
+check_contains "Scripts/preflight_app_store_archive.sh" "Scripts/print_release_input_status.sh --strict" "Archive preflight must print field-level release input status before signing"
 check_contains "Scripts/preflight_app_store_archive.sh" "Scripts/validate_app_review_contact.sh" "Archive preflight must validate App Review contact details"
 check_contains "Scripts/preflight_app_store_archive.sh" "Scripts/check_code_signing_assets.sh" "Archive preflight must validate signing assets"
 check_contains "Scripts/preflight_app_store_archive.sh" "Scripts/check_app_store_readiness.sh" "Archive preflight must finish with the full readiness audit"
 check_contains "Scripts/preflight_app_store_archive.sh" "App Store archive preflight passed" "Archive preflight must print a clear success message"
 check_not_contains "Scripts/preflight_app_store_archive.sh" "DEVELOPMENT_TEAM_ID=<" "Archive preflight success command must use a shell-safe Team ID placeholder"
 check_contains "Scripts/preflight_app_store_archive.sh" "DEVELOPMENT_TEAM_ID=YOURTEAMID ALLOW_PROVISIONING_UPDATES=1 Scripts/archive_app_store.sh" "Archive preflight success command must show the guarded archive command"
+if ! python3 - <<'PY'
+from pathlib import Path
+
+source = Path("Scripts/preflight_app_store_archive.sh").read_text()
+status_index = source.find('run_step "Release input status" Scripts/print_release_input_status.sh --strict')
+store_ready_index = source.find('run_step "Local store-ready release gate" Scripts/verify_release.sh store-ready')
+if status_index == -1 or store_ready_index == -1 or status_index > store_ready_index:
+    raise SystemExit(1)
+PY
+then
+  printf 'FAIL: Archive preflight must print release input status before the full store-ready gate\n'
+  failures=$((failures + 1))
+fi
 check_contains "Scripts/verify_release.sh" "archive-preflight" "Release verification must expose the archive preflight command"
 check_file "Scripts/validate_app_store_export.sh" "App Store archive/export validation script is required"
 if [[ ! -x "Scripts/validate_app_store_export.sh" ]]; then

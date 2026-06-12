@@ -183,7 +183,7 @@ Validate that installed signing assets match the release bundle, Apple team, and
 Scripts/check_code_signing_assets.sh
 ```
 
-Run the full App Store archive preflight after private release values and signing assets are configured, before creating the signed archive. This preflight starts with `Scripts/verify_release.sh store-ready`, then checks the private release environment, App Review contact, code signing assets, and readiness audit:
+Run the full App Store archive preflight after private release values and signing assets are configured, before creating the signed archive. This preflight starts with `Scripts/print_release_input_status.sh --strict` so missing private release inputs are shown as field-level action items, then runs `Scripts/verify_release.sh store-ready`, the private release environment, App Review contact, code signing assets, and readiness audit:
 
 ```sh
 Scripts/verify_release.sh archive-preflight

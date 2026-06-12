@@ -24,6 +24,7 @@ run_step() {
   printf '\n'
 }
 
+run_step "Release input status" Scripts/print_release_input_status.sh --strict
 run_step "Local store-ready release gate" Scripts/verify_release.sh store-ready
 run_step "Private release environment" Scripts/validate_release_env.sh
 run_step "App Review contact" Scripts/validate_app_review_contact.sh
