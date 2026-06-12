@@ -198,6 +198,13 @@ def preflight_app_store_archive!
   )
 end
 
+def preflight_app_review_submission!
+  run_release_script!(
+    "Scripts/preflight_app_review_submission.sh",
+    "App Review submission preflight failed."
+  )
+end
+
 def verify_app_store_connect_state!
   run_release_script!(
     "Scripts/check_app_store_connect_state.sh",
@@ -319,6 +326,7 @@ platform :ios do
     build_number = ENV["APP_STORE_BUILD_NUMBER"].to_s.strip
     UI.user_error!("Set APP_STORE_BUILD_NUMBER to the processed App Store Connect build number before submitting for review") if build_number.empty?
 
+    preflight_app_review_submission!
     validate_release_env!
     validate_app_store_metadata!
     validate_screenshot_sync!
