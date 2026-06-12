@@ -65,8 +65,33 @@ status_from_bool() {
   fi
 }
 
+private_file_permissions_status() {
+  local path="$1"
+
+  python3 - "$path" <<'PY'
+from pathlib import Path
+import stat
+import sys
+
+path = Path(sys.argv[1]).expanduser()
+
+try:
+    mode = path.stat().st_mode
+except Exception:
+    print("Could not be checked")
+    raise SystemExit(1)
+
+if stat.S_IMODE(mode) & 0o077:
+    print("Too broad; run `chmod 600` on the configured file")
+    raise SystemExit(1)
+
+print("Private")
+PY
+}
+
 json_configured=0
 json_file_exists=0
+json_permission_status="Not checked"
 json_valid=0
 json_key_id_present=0
 json_issuer_id_present=0
@@ -76,9 +101,10 @@ if [[ -n "${APP_STORE_CONNECT_API_KEY_JSON:-}" ]]; then
   json_configured=1
   if [[ -f "$APP_STORE_CONNECT_API_KEY_JSON" ]]; then
     json_file_exists=1
-    json_summary_path="$(mktemp)"
-    set +e
-    python3 - "$APP_STORE_CONNECT_API_KEY_JSON" >"$json_summary_path" <<'PY'
+    if json_permission_status="$(private_file_permissions_status "$APP_STORE_CONNECT_API_KEY_JSON" 2>&1)"; then
+      json_summary_path="$(mktemp)"
+      set +e
+      python3 - "$APP_STORE_CONNECT_API_KEY_JSON" >"$json_summary_path" <<'PY'
 import json
 import sys
 
@@ -93,18 +119,19 @@ print(f"json_key_id_present={1 if payload.get('key_id') else 0}")
 print(f"json_issuer_id_present={1 if payload.get('issuer_id') else 0}")
 print(f"json_key_material_present={1 if payload.get('key') or payload.get('key_filepath') else 0}")
 PY
-    set -e
+      set -e
 
-    read_json_summary() {
-      local key="$1"
-      awk -F= -v key="$key" '$1 == key { print $2; found=1 } END { if (!found) print 0 }' "$json_summary_path"
-    }
+      read_json_summary() {
+        local key="$1"
+        awk -F= -v key="$key" '$1 == key { print $2; found=1 } END { if (!found) print 0 }' "$json_summary_path"
+      }
 
-    json_valid="$(read_json_summary json_valid)"
-    json_key_id_present="$(read_json_summary json_key_id_present)"
-    json_issuer_id_present="$(read_json_summary json_issuer_id_present)"
-    json_key_material_present="$(read_json_summary json_key_material_present)"
-    rm -f "$json_summary_path"
+      json_valid="$(read_json_summary json_valid)"
+      json_key_id_present="$(read_json_summary json_key_id_present)"
+      json_issuer_id_present="$(read_json_summary json_issuer_id_present)"
+      json_key_material_present="$(read_json_summary json_key_material_present)"
+      rm -f "$json_summary_path"
+    fi
   fi
 fi
 
@@ -114,10 +141,12 @@ triplet_present_count=0
 [[ -n "${ASC_KEY_PATH:-}" ]] && triplet_present_count=$((triplet_present_count + 1))
 
 asc_key_path_exists=0
+asc_key_path_permission_status="Not checked"
 asc_key_path_private_key=0
 if [[ -n "${ASC_KEY_PATH:-}" && -f "$ASC_KEY_PATH" ]]; then
   asc_key_path_exists=1
-  if grep -q "BEGIN PRIVATE KEY" "$ASC_KEY_PATH"; then
+  if asc_key_path_permission_status="$(private_file_permissions_status "$ASC_KEY_PATH" 2>&1)" \
+    && grep -q "BEGIN PRIVATE KEY" "$ASC_KEY_PATH"; then
     asc_key_path_private_key=1
   fi
 fi
@@ -163,6 +192,7 @@ cat >"$output_path" <<EOF
 | Selected credential mode | $credential_mode |
 | \`APP_STORE_CONNECT_API_KEY_JSON\` configured | $(status_from_bool "$json_configured" "Yes; value redacted" "No") |
 | \`APP_STORE_CONNECT_API_KEY_JSON\` file exists | $(status_from_bool "$json_file_exists" "Yes" "No or not configured") |
+| \`APP_STORE_CONNECT_API_KEY_JSON\` permissions | $json_permission_status |
 | API JSON parses as JSON | $(status_from_bool "$json_valid" "Yes" "No or not checked") |
 | API JSON \`key_id\` present | $(status_from_bool "$json_key_id_present" "Yes" "No or not checked") |
 | API JSON \`issuer_id\` present | $(status_from_bool "$json_issuer_id_present" "Yes" "No or not checked") |
@@ -171,6 +201,7 @@ cat >"$output_path" <<EOF
 | \`ASC_ISSUER_ID\` configured | $(status_from_bool "$([[ -n "${ASC_ISSUER_ID:-}" ]] && printf 1 || printf 0)" "Yes; value redacted" "No") |
 | \`ASC_KEY_PATH\` configured | $(status_from_bool "$([[ -n "${ASC_KEY_PATH:-}" ]] && printf 1 || printf 0)" "Yes; path redacted" "No") |
 | \`ASC_KEY_PATH\` file exists | $(status_from_bool "$asc_key_path_exists" "Yes" "No or not configured") |
+| \`ASC_KEY_PATH\` permissions | $asc_key_path_permission_status |
 | \`ASC_KEY_PATH\` looks like a private key | $(status_from_bool "$asc_key_path_private_key" "Yes" "No or not checked") |
 
 ## Upload And Submission Inputs

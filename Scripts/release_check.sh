@@ -1895,6 +1895,60 @@ check_contains "Scripts/generate_app_store_connect_readiness_report.sh" "Scripts
 check_contains "Scripts/generate_app_store_connect_readiness_report.sh" "Scripts/preflight_testflight_upload.sh" "App Store Connect readiness report must reference the TestFlight preflight"
 check_contains "Scripts/generate_app_store_connect_readiness_report.sh" "Scripts/preflight_app_review_submission.sh" "App Store Connect readiness report must reference the App Review preflight"
 check_contains "Scripts/generate_app_store_connect_readiness_report.sh" "redacted" "App Store Connect readiness report must avoid printing private credentials"
+asc_report_loose_json_dir="$(mktemp -d)"
+asc_report_loose_json_path="$asc_report_loose_json_dir/fastlane-api-key.json"
+asc_report_loose_json_report="$asc_report_loose_json_dir/app-store-connect-readiness-report.md"
+cat >"$asc_report_loose_json_path" <<'EOF'
+{
+  "key_id": "KEYID12345",
+  "issuer_id": "00000000-0000-0000-0000-000000000001",
+  "key": "-----BEGIN PRIVATE KEY-----\nrelease-check-placeholder\n-----END PRIVATE KEY-----"
+}
+EOF
+chmod 644 "$asc_report_loose_json_path"
+RELEASE_ENV_PATH="$asc_report_loose_json_dir/missing-release.env" \
+  APP_STORE_CONNECT_API_KEY_JSON="$asc_report_loose_json_path" \
+  Scripts/generate_app_store_connect_readiness_report.sh "$asc_report_loose_json_report" >/dev/null
+if ! grep -q 'APP_STORE_CONNECT_API_KEY_JSON` permissions.*Too broad' "$asc_report_loose_json_report"; then
+  printf 'FAIL: App Store Connect readiness report must flag broad API JSON permissions before parsing private credentials\n'
+  failures=$((failures + 1))
+fi
+if grep -q 'API JSON parses as JSON | Yes' "$asc_report_loose_json_report"; then
+  printf 'FAIL: App Store Connect readiness report must not parse overly broad API JSON files\n'
+  failures=$((failures + 1))
+fi
+if grep -Fq "$asc_report_loose_json_path" "$asc_report_loose_json_report"; then
+  printf 'FAIL: App Store Connect readiness report must not print the full loose API JSON path\n'
+  failures=$((failures + 1))
+fi
+rm -rf "$asc_report_loose_json_dir"
+asc_report_loose_key_dir="$(mktemp -d)"
+asc_report_loose_key_path="$asc_report_loose_key_dir/AuthKey_KEYID12345.p8"
+asc_report_loose_key_report="$asc_report_loose_key_dir/app-store-connect-readiness-report.md"
+cat >"$asc_report_loose_key_path" <<'EOF'
+-----BEGIN PRIVATE KEY-----
+release-check-placeholder
+-----END PRIVATE KEY-----
+EOF
+chmod 644 "$asc_report_loose_key_path"
+RELEASE_ENV_PATH="$asc_report_loose_key_dir/missing-release.env" \
+  ASC_KEY_ID=KEYID12345 \
+  ASC_ISSUER_ID=00000000-0000-0000-0000-000000000001 \
+  ASC_KEY_PATH="$asc_report_loose_key_path" \
+  Scripts/generate_app_store_connect_readiness_report.sh "$asc_report_loose_key_report" >/dev/null
+if ! grep -q 'ASC_KEY_PATH` permissions.*Too broad' "$asc_report_loose_key_report"; then
+  printf 'FAIL: App Store Connect readiness report must flag broad ASC_KEY_PATH permissions before reading private credentials\n'
+  failures=$((failures + 1))
+fi
+if grep -q 'ASC_KEY_PATH` looks like a private key | Yes' "$asc_report_loose_key_report"; then
+  printf 'FAIL: App Store Connect readiness report must not read overly broad ASC_KEY_PATH files\n'
+  failures=$((failures + 1))
+fi
+if grep -Fq "$asc_report_loose_key_path" "$asc_report_loose_key_report"; then
+  printf 'FAIL: App Store Connect readiness report must not print the full loose ASC_KEY_PATH path\n'
+  failures=$((failures + 1))
+fi
+rm -rf "$asc_report_loose_key_dir"
 check_file "Scripts/validate_app_review_contact.sh" "App Review contact validation script is required"
 if [[ ! -x "Scripts/validate_app_review_contact.sh" ]]; then
   printf 'FAIL: App Review contact validation script must be executable (Scripts/validate_app_review_contact.sh)\n'
