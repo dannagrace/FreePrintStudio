@@ -249,6 +249,7 @@ Scripts/verify_release.sh asc-report
 Scripts/verify_release.sh review-report
 Scripts/bootstrap_release_env.sh
 Scripts/check_app_store_readiness.sh
+Scripts/preflight_testflight_upload_dependencies.sh
 Scripts/preflight_app_store_archive.sh
 DEVELOPMENT_TEAM_ID=YOURTEAMID ALLOW_PROVISIONING_UPDATES=1 Scripts/archive_app_store.sh
 Scripts/preflight_testflight_upload.sh
@@ -453,6 +454,7 @@ Scripts/verify_release.sh asc-report
 Scripts/verify_release.sh review-report
 Scripts/bootstrap_release_env.sh
 Scripts/check_app_store_readiness.sh
+Scripts/preflight_testflight_upload_dependencies.sh
 Scripts/preflight_app_store_archive.sh
 DEVELOPMENT_TEAM_ID=YOURTEAMID ALLOW_PROVISIONING_UPDATES=1 Scripts/archive_app_store.sh
 Scripts/preflight_testflight_upload.sh

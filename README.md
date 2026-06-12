@@ -314,6 +314,7 @@ Scripts/run_fastlane.sh ios archive
 After the archive exports an IPA and an App Store Connect API key is configured, upload the build to TestFlight without external distribution:
 
 ```sh
+Scripts/preflight_testflight_upload_dependencies.sh
 Scripts/preflight_testflight_upload.sh
 ASC_KEY_ID=XXXXXXXXXX ASC_ISSUER_ID=00000000-0000-0000-0000-000000000000 ASC_KEY_PATH=/secure/AuthKey_XXXXXXXXXX.p8 Scripts/run_fastlane.sh ios upload_testflight
 ```
