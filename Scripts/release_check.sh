@@ -1423,6 +1423,27 @@ check_contains "Scripts/check_app_store_readiness.sh" "iphone-test-ruler.jpg" "R
 check_contains "Scripts/prepare_app_store_submission_packet.sh" "iphone-test-ruler.jpg" "Submission packet must include the Test Ruler screenshot"
 check_contains "Scripts/verify_release.sh" "run_store_ready_validation" "Release verification must expose a single local store-ready gate"
 check_contains "Scripts/verify_release.sh" "store-ready)" "Release verification must accept the store-ready command"
+if ! python3 - "Scripts/verify_release.sh" "run_store_ready_validation" "run_public_pages_validation" <<'PY'
+from pathlib import Path
+import sys
+
+path = Path(sys.argv[1])
+function_name = sys.argv[2]
+needle = sys.argv[3]
+source = path.read_text()
+start = source.find(f"{function_name}() {{")
+if start < 0:
+    raise SystemExit(1)
+end = source.find("\n}", start)
+if end < 0:
+    raise SystemExit(1)
+body = source[start:end]
+raise SystemExit(0 if needle in body else 1)
+PY
+then
+  printf 'FAIL: Store-ready verification must strictly validate public privacy and support pages (Scripts/verify_release.sh run_store_ready_validation missing run_public_pages_validation)\n'
+  failures=$((failures + 1))
+fi
 check_file "Scripts/validate_pdf_export.sh" "PDF export validation script is required"
 check_contains "Scripts/validate_pdf_export.sh" "FreePrintStudioAutoExportPDFPath" "PDF export validation must exercise the app renderer"
 check_contains "Scripts/validate_pdf_export.sh" "FIT_MODES=(fit fill stretch)" "PDF export validation must cover Fit, Fill, and Stretch output modes"
@@ -1932,6 +1953,7 @@ check_contains "README.md" "Scripts/verify_release.sh print-sheet" "README must 
 check_contains "README.md" "Scripts/prepare_app_store_submission_packet.sh" "README must document the App Store submission packet generator"
 check_contains "README.md" "Scripts/verify_release.sh submission-packet" "README must document the submission packet release command"
 check_contains "README.md" "Scripts/verify_release.sh store-ready" "README must document the single local store-ready release command"
+check_contains "README.md" "strict public privacy/support page validation" "README store-ready gate must document strict public pages validation"
 check_not_contains "README.md" "DEVELOPMENT_TEAM_ID=ABCDE12345" "README archive commands must use the validated YOURTEAMID placeholder"
 check_contains "README.md" "DEVELOPMENT_TEAM_ID=YOURTEAMID ALLOW_PROVISIONING_UPDATES=1 Scripts/archive_app_store.sh" "README must show a shell-safe archive command placeholder"
 check_contains "AppStore/release-checklist.md" "Scripts/run_fastlane.sh ios upload_testflight" "Release checklist must include the TestFlight upload command"
@@ -1988,6 +2010,7 @@ check_contains "AppStore/release-checklist.md" "Scripts/verify_release.sh print-
 check_contains "AppStore/release-checklist.md" "Scripts/prepare_app_store_submission_packet.sh" "Release checklist must include the App Store submission packet generator"
 check_contains "AppStore/release-checklist.md" "Scripts/verify_release.sh submission-packet" "Release checklist must include the submission packet release command"
 check_contains "AppStore/release-checklist.md" "Scripts/verify_release.sh store-ready" "Release checklist must include the single local store-ready release command"
+check_contains "AppStore/release-checklist.md" "strict public privacy/support page validation" "Release checklist store-ready gate must document strict public pages validation"
 check_file "Scripts/prepare_app_store_submission_packet.sh" "App Store submission packet generator is required"
 if [[ ! -x "Scripts/prepare_app_store_submission_packet.sh" ]]; then
   printf 'FAIL: App Store submission packet generator must be executable (Scripts/prepare_app_store_submission_packet.sh)\n'

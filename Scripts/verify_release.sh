@@ -481,6 +481,8 @@ run_store_ready_validation() {
   printf '\n'
   run_print_sheet_validation
   printf '\n'
+  run_public_pages_validation
+  printf '\n'
   run_submission_packet_generation
   printf '\n'
   run_submission_packet_validation
