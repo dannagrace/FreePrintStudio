@@ -376,6 +376,18 @@ external_action_fields() {
   local validation_command="Scripts/check_app_store_readiness.sh"
 
   case "$item" in
+    *"FASTLANE_USER is not configured"*)
+      category="App Privacy Upload"
+      owner="App Store Connect account holder"
+      next_action="Set FASTLANE_USER in untracked Config/release.env if uploading App Privacy Details through Fastlane, then run Scripts/preflight_app_privacy_upload.sh."
+      validation_command="Scripts/preflight_app_privacy_upload.sh"
+      ;;
+    *"App Store Connect app record and version require account-specific verification"*)
+      category="App Store Connect"
+      owner="App Store Connect account holder"
+      next_action="After App Store Connect credentials are configured, verify the app record and editable version with APP_STORE_CONNECT_SKIP_BUILD_CHECK=1 Scripts/check_app_store_connect_state.sh."
+      validation_command="APP_STORE_CONNECT_SKIP_BUILD_CHECK=1 Scripts/check_app_store_connect_state.sh"
+      ;;
     *APP_REVIEW_CONTACT*|*"App Review contact"*)
       category="App Review Contact"
       owner="Release owner"

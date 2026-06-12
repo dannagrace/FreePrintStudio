@@ -258,6 +258,14 @@ if grep -qE 'FASTLANE_USER|App Store Connect|ASC_' "$PACKET_DIR/readiness.txt"; 
   require_contains "external-readiness-actions.tsv" "Scripts/check_app_store_connect_credentials.sh" "App Store Connect validation command tracking"
 fi
 
+if grep -q 'FASTLANE_USER is not configured' "$PACKET_DIR/readiness.txt"; then
+  require_contains "external-readiness-actions.tsv" "Scripts/preflight_app_privacy_upload.sh" "FASTLANE_USER warning validation command tracking"
+fi
+
+if grep -q 'App Store Connect app record and version require account-specific verification' "$PACKET_DIR/readiness.txt"; then
+  require_contains "external-readiness-actions.tsv" "APP_STORE_CONNECT_SKIP_BUILD_CHECK=1 Scripts/check_app_store_connect_state.sh" "App Store Connect app/version warning validation command tracking"
+fi
+
 required_screenshot_entries=(
   "AppStore/Screenshots/iphone-main.jpg"
   "AppStore/Screenshots/iphone-test-ruler.jpg"
