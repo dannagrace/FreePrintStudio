@@ -34,7 +34,7 @@ Run the local release gate before archiving:
 Scripts/verify_release.sh
 ```
 
-Run the full local store-ready gate before handing the project to App Store Connect. This runs the default release gate plus simulator workflow, real Photos import, review UI validation, accessibility screenshots, print sheet validation, strict public privacy/support page validation, and submission packet generation:
+Run the full local store-ready gate before handing the project to App Store Connect. This runs the default release gate plus simulator workflow, real Photos import, review UI validation, accessibility screenshots, print sheet validation, strict public privacy/support page validation, and submission packet generation and validation:
 
 ```sh
 Scripts/verify_release.sh store-ready

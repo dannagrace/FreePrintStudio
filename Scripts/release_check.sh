@@ -1956,6 +1956,7 @@ check_contains "README.md" "Scripts/prepare_app_store_submission_packet.sh" "REA
 check_contains "README.md" "Scripts/verify_release.sh submission-packet" "README must document the submission packet release command"
 check_contains "README.md" "Scripts/verify_release.sh store-ready" "README must document the single local store-ready release command"
 check_contains "README.md" "strict public privacy/support page validation" "README store-ready gate must document strict public pages validation"
+check_contains "README.md" "submission packet generation and validation" "README store-ready gate must document submission packet validation"
 check_not_contains "README.md" "DEVELOPMENT_TEAM_ID=ABCDE12345" "README archive commands must use the validated YOURTEAMID placeholder"
 check_contains "README.md" "DEVELOPMENT_TEAM_ID=YOURTEAMID ALLOW_PROVISIONING_UPDATES=1 Scripts/archive_app_store.sh" "README must show a shell-safe archive command placeholder"
 check_contains "AppStore/release-checklist.md" "Scripts/run_fastlane.sh ios upload_testflight" "Release checklist must include the TestFlight upload command"
@@ -2014,6 +2015,7 @@ check_contains "AppStore/release-checklist.md" "Scripts/prepare_app_store_submis
 check_contains "AppStore/release-checklist.md" "Scripts/verify_release.sh submission-packet" "Release checklist must include the submission packet release command"
 check_contains "AppStore/release-checklist.md" "Scripts/verify_release.sh store-ready" "Release checklist must include the single local store-ready release command"
 check_contains "AppStore/release-checklist.md" "strict public privacy/support page validation" "Release checklist store-ready gate must document strict public pages validation"
+check_contains "AppStore/release-checklist.md" "submission packet generation and validation" "Release checklist store-ready gate must document submission packet validation"
 check_file "Scripts/prepare_app_store_submission_packet.sh" "App Store submission packet generator is required"
 if [[ ! -x "Scripts/prepare_app_store_submission_packet.sh" ]]; then
   printf 'FAIL: App Store submission packet generator must be executable (Scripts/prepare_app_store_submission_packet.sh)\n'
