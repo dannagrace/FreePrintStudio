@@ -220,6 +220,14 @@ Generate the draft App Store screenshots. The default iPhone command prefers a 6
 Scripts/capture_app_store_screenshot_set.sh
 ```
 
+Validate the reviewed and Fastlane screenshot copies before upload, including size, sync, blank-content, alpha, and privacy metadata checks:
+
+```sh
+Scripts/verify_release.sh screenshots
+# Or only the metadata privacy check:
+Scripts/validate_screenshot_privacy.sh
+```
+
 Capture or debug a single screenshot when needed:
 
 ```sh

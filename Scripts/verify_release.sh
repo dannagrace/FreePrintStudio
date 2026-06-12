@@ -326,6 +326,7 @@ run_screenshot_checks() {
     esac
   done
   run_with_timeout "$SCREENSHOT_SYNC_TIMEOUT_SECONDS" Scripts/validate_screenshot_sync.sh
+  run_with_timeout "$SCREENSHOT_SYNC_TIMEOUT_SECONDS" Scripts/validate_screenshot_privacy.sh
 }
 
 run_accessibility_screenshot_validation() {

@@ -41,6 +41,7 @@ run_app_version_step() {
 run_step "Private release environment" Scripts/validate_release_env.sh
 run_step "App Store metadata" Scripts/validate_app_store_metadata.sh
 run_step "Screenshot sync" Scripts/validate_screenshot_sync.sh
+run_step "Screenshot privacy metadata" Scripts/validate_screenshot_privacy.sh
 run_step "Public privacy and support pages" Scripts/validate_public_pages.sh
 run_step "App Store questionnaires" Scripts/validate_app_store_questionnaires.sh
 run_step "App Review contact" Scripts/validate_app_review_contact.sh

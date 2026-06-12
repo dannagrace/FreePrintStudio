@@ -1769,6 +1769,18 @@ check_contains "Scripts/validate_screenshot_sync.sh" "AppStore/Screenshots" "Scr
 check_contains "Scripts/validate_screenshot_sync.sh" "fastlane/screenshots/en-US" "Screenshot sync validation must check Fastlane upload screenshots"
 check_contains "Scripts/validate_screenshot_sync.sh" "iphone-test-ruler.jpg" "Screenshot sync validation must require the Test Ruler screenshot"
 check_contains "Scripts/verify_release.sh" "validate_screenshot_sync.sh" "Release verification must validate screenshot sync"
+check_file "Scripts/validate_screenshot_privacy.sh" "Screenshot privacy metadata validation script is required"
+if [[ ! -x "Scripts/validate_screenshot_privacy.sh" ]]; then
+  printf 'FAIL: Screenshot privacy metadata validation script must be executable (Scripts/validate_screenshot_privacy.sh)\n'
+  failures=$((failures + 1))
+fi
+check_contains "Scripts/validate_screenshot_privacy.sh" "kMDItemLatitude" "Screenshot privacy validation must reject location metadata"
+check_contains "Scripts/validate_screenshot_privacy.sh" "kMDItemAcquisitionMake" "Screenshot privacy validation must reject camera make metadata"
+check_contains "Scripts/validate_screenshot_privacy.sh" "kMDItemAuthors" "Screenshot privacy validation must reject author metadata"
+check_contains "Scripts/validate_screenshot_privacy.sh" "AppStore/Screenshots" "Screenshot privacy validation must check reviewed App Store screenshots"
+check_contains "Scripts/validate_screenshot_privacy.sh" "fastlane/screenshots/en-US" "Screenshot privacy validation must check Fastlane upload screenshots"
+check_contains "Scripts/verify_release.sh" "validate_screenshot_privacy.sh" "Release verification must validate screenshot privacy metadata"
+check_contains "Scripts/preflight_metadata_upload.sh" "validate_screenshot_privacy.sh" "Metadata upload preflight must validate screenshot privacy metadata"
 check_contains "Scripts/verify_release.sh" "iphone-test-ruler.jpg" "Release verification must validate the Test Ruler screenshot asset"
 check_contains "Scripts/check_app_store_readiness.sh" "iphone-test-ruler.jpg" "Readiness audit must validate the Test Ruler screenshot size"
 check_contains "Scripts/prepare_app_store_submission_packet.sh" "iphone-test-ruler.jpg" "Submission packet must include the Test Ruler screenshot"

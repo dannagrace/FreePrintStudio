@@ -33,6 +33,7 @@
 - Run `Scripts/verify_release.sh review-ui`; it calls `Scripts/validate_review_ui.sh` to verify the App Review-facing About screen privacy policy, support URL, and app version without the full Photos picker workflow.
 - Run `Scripts/check_app_store_readiness.sh`; fix every `BLOCKED` item before archiving.
 - Run `Scripts/capture_app_store_screenshot_set.sh` after UI, fit mode, paper, orientation, unit, or iPad layout changes and inspect `iphone-main.jpg`, `iphone-test-ruler.jpg`, `iphone-fit.jpg`, `iphone-fill.jpg`, `iphone-stretch.jpg`, `iphone-metric-landscape.jpg`, and `ipad-main.jpg`.
+- Run `Scripts/verify_release.sh screenshots` before screenshot upload; it validates dimensions, blank-content, alpha, reviewed-to-Fastlane sync, and screenshot privacy metadata.
 - Run `Scripts/capture_app_store_screenshots.sh` only when refreshing or debugging one screenshot in isolation.
 - Run the standalone iPad screenshot command from `README.md` only when refreshing or debugging the iPad screenshot in isolation.
 - Run `Scripts/verify_release.sh accessibility` after visible UI changes; it calls `Scripts/validate_accessibility_screenshots.sh` for dark interface and Larger Text screenshots.
