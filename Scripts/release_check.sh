@@ -467,6 +467,9 @@ check_contains "Config/manual-release-verification.env.example" "MANUAL_AIRPRINT
 check_contains "Config/manual-release-verification.env.example" "MANUAL_AIRPRINT_RULER_TARGET_INCHES" "Manual verification template must include AirPrint target ruler length evidence"
 check_contains "Config/manual-release-verification.env.example" "MANUAL_AIRPRINT_RULER_MEASURED_INCHES" "Manual verification template must include AirPrint measured ruler length evidence"
 check_contains "Config/manual-release-verification.env.example" "MANUAL_TESTFLIGHT_INSTALL" "Manual verification template must include TestFlight install evidence"
+check_contains "Config/manual-release-verification.env.example" "MANUAL_IPAD_TESTFLIGHT_DEVICE" "Manual verification template must include iPad TestFlight device evidence"
+check_contains "Config/manual-release-verification.env.example" "MANUAL_IPAD_TESTFLIGHT_LAYOUT" "Manual verification template must include iPad TestFlight layout evidence"
+check_contains "Config/manual-release-verification.env.example" "MANUAL_IPAD_TESTFLIGHT_PRINT_WORKFLOW" "Manual verification template must include iPad TestFlight print workflow evidence"
 check_file "AppStore/release-inputs-worksheet.md" "Release input worksheet is required for private App Store handoff values"
 check_contains "AppStore/release-inputs-worksheet.md" "DEVELOPMENT_TEAM_ID" "Release input worksheet must cover Apple Developer Team ID"
 check_contains "AppStore/release-inputs-worksheet.md" "APP_REVIEW_CONTACT_EMAIL" "Release input worksheet must cover App Review contact values"
@@ -474,6 +477,7 @@ check_contains "AppStore/release-inputs-worksheet.md" "ASC_KEY_ID" "Release inpu
 check_contains "AppStore/release-inputs-worksheet.md" "Apple Distribution" "Release input worksheet must cover distribution signing assets"
 check_contains "AppStore/release-inputs-worksheet.md" "MANUAL_AIRPRINT_EXACT_SIZE" "Release input worksheet must cover AirPrint exact-size evidence"
 check_contains "AppStore/release-inputs-worksheet.md" "MANUAL_AIRPRINT_RULER_MEASURED_INCHES" "Release input worksheet must cover AirPrint measured ruler evidence"
+check_contains "AppStore/release-inputs-worksheet.md" "MANUAL_IPAD_TESTFLIGHT_LAYOUT" "Release input worksheet must cover iPad TestFlight layout evidence"
 check_contains "AppStore/release-inputs-worksheet.md" "same APP_STORE_BUILD_NUMBER" "Release input worksheet must require evidence for the selected App Store build"
 check_not_contains "AppStore/release-inputs-worksheet.md" "APP_STORE_BUILD_NUMBER=1" "Release input worksheet must not hard-code a selected App Store build number"
 check_not_contains "AppStore/release-inputs-worksheet.md" "APP_STORE_BUILD_NUMBER=<" "Release input worksheet must use shell-safe selected build placeholders"
@@ -491,6 +495,9 @@ check_contains "Scripts/validate_manual_release_verification.sh" "DEFAULT_AIRPRI
 check_contains "Scripts/validate_manual_release_verification.sh" "MANUAL_AIRPRINT_RULER_MEASURED_INCHES" "Manual verification script must require AirPrint measured ruler evidence"
 check_contains "Scripts/validate_manual_release_verification.sh" "MANUAL_TESTFLIGHT_INSTALL" "Manual verification script must require TestFlight install evidence"
 check_contains "Scripts/validate_manual_release_verification.sh" "MANUAL_TESTFLIGHT_BUILD_NUMBER" "Manual verification script must require the tested TestFlight build number"
+check_contains "Scripts/validate_manual_release_verification.sh" "MANUAL_IPAD_TESTFLIGHT_DEVICE" "Manual verification script must require iPad TestFlight device evidence"
+check_contains "Scripts/validate_manual_release_verification.sh" "MANUAL_IPAD_TESTFLIGHT_LAYOUT" "Manual verification script must require iPad TestFlight layout evidence"
+check_contains "Scripts/validate_manual_release_verification.sh" "MANUAL_IPAD_TESTFLIGHT_PRINT_WORKFLOW" "Manual verification script must require iPad TestFlight print workflow evidence"
 check_contains "Scripts/validate_manual_release_verification.sh" "APP_STORE_BUILD_NUMBER" "Manual verification script must compare tested TestFlight build with the selected App Store build"
 check_contains "Scripts/validate_manual_release_verification.sh" "source Scripts/load_release_env.sh" "Manual verification script must load release.env before comparing the selected App Store build"
 check_contains "Scripts/validate_manual_release_verification.sh" "PROCESSED_BUILD_NUMBER" "Manual verification script must reject selected-build placeholder values"
@@ -504,7 +511,8 @@ if MANUAL_RELEASE_VERIFICATION_PATH="$manual_release_missing_evidence_test_dir/m
   printf 'FAIL: Manual verification must reject a missing evidence file\n'
   failures=$((failures + 1))
 elif ! grep -q 'MANUAL_REAL_IPHONE_PHOTOS_IMPORT' "$manual_release_missing_evidence_log" \
-  || ! grep -q 'MANUAL_TESTFLIGHT_PRINT_WORKFLOW' "$manual_release_missing_evidence_log"; then
+  || ! grep -q 'MANUAL_TESTFLIGHT_PRINT_WORKFLOW' "$manual_release_missing_evidence_log" \
+  || ! grep -q 'MANUAL_IPAD_TESTFLIGHT_PRINT_WORKFLOW' "$manual_release_missing_evidence_log"; then
   printf 'FAIL: Manual verification missing-file output must list required manual evidence fields\n'
   failures=$((failures + 1))
 fi
@@ -561,6 +569,11 @@ MANUAL_TESTFLIGHT_DEVICE="iPhone 15"
 MANUAL_TESTFLIGHT_TEST_DATE="$today"
 MANUAL_TESTFLIGHT_INSTALL="pass"
 MANUAL_TESTFLIGHT_PRINT_WORKFLOW="pass"
+MANUAL_IPAD_TESTFLIGHT_DEVICE="iPad Pro 13-inch"
+MANUAL_IPAD_TESTFLIGHT_TEST_DATE="$today"
+MANUAL_IPAD_TESTFLIGHT_INSTALL="pass"
+MANUAL_IPAD_TESTFLIGHT_LAYOUT="pass"
+MANUAL_IPAD_TESTFLIGHT_PRINT_WORKFLOW="pass"
 EOF
 if ! APP_STORE_BUILD_NUMBER=42 \
   MANUAL_RELEASE_VERIFICATION_PATH="$manual_release_airprint_default_target_evidence" \
@@ -572,6 +585,75 @@ elif ! grep -q 'AirPrint ruler target length defaulted to 6 inch' "$manual_relea
   failures=$((failures + 1))
 fi
 rm -rf "$manual_release_airprint_default_target_test_dir"
+manual_release_missing_ipad_test_dir="$(mktemp -d)"
+manual_release_missing_ipad_evidence="$manual_release_missing_ipad_test_dir/manual-release-verification.env"
+manual_release_missing_ipad_log="$manual_release_missing_ipad_test_dir/manual-release-verification-missing-ipad.log"
+cat >"$manual_release_missing_ipad_evidence" <<EOF
+MANUAL_VERIFIER_NAME="Release Tester"
+MANUAL_REAL_IPHONE_MODEL="iPhone 15"
+MANUAL_REAL_IPHONE_IOS_VERSION="18.5"
+MANUAL_REAL_IPHONE_TEST_DATE="$today"
+MANUAL_REAL_IPHONE_PHOTOS_IMPORT="pass"
+MANUAL_REAL_IPHONE_PDF_EXPORT="pass"
+MANUAL_REAL_IPHONE_PRINT_SHEET="pass"
+MANUAL_AIRPRINT_TEST_DATE="$today"
+MANUAL_AIRPRINT_PRINTER="Office AirPrint Printer"
+MANUAL_AIRPRINT_EXACT_SIZE="pass"
+MANUAL_AIRPRINT_RULER_MEASURED_INCHES="6.00"
+MANUAL_TESTFLIGHT_BUILD_NUMBER="42"
+MANUAL_TESTFLIGHT_DEVICE="iPhone 15"
+MANUAL_TESTFLIGHT_TEST_DATE="$today"
+MANUAL_TESTFLIGHT_INSTALL="pass"
+MANUAL_TESTFLIGHT_PRINT_WORKFLOW="pass"
+EOF
+if APP_STORE_BUILD_NUMBER=42 \
+  MANUAL_RELEASE_VERIFICATION_PATH="$manual_release_missing_ipad_evidence" \
+  Scripts/validate_manual_release_verification.sh >"$manual_release_missing_ipad_log" 2>&1; then
+  printf 'FAIL: Manual verification must require iPad TestFlight evidence when the app supports iPad\n'
+  failures=$((failures + 1))
+elif ! grep -q 'iPad TestFlight device is missing (MANUAL_IPAD_TESTFLIGHT_DEVICE)' "$manual_release_missing_ipad_log" \
+  || ! grep -q 'iPad TestFlight layout result is missing (MANUAL_IPAD_TESTFLIGHT_LAYOUT=pass)' "$manual_release_missing_ipad_log" \
+  || ! grep -q 'iPad TestFlight print workflow result is missing (MANUAL_IPAD_TESTFLIGHT_PRINT_WORKFLOW=pass)' "$manual_release_missing_ipad_log"; then
+  printf 'FAIL: Manual verification missing-iPad failure should identify the required iPad TestFlight evidence fields\n'
+  failures=$((failures + 1))
+fi
+rm -rf "$manual_release_missing_ipad_test_dir"
+manual_release_wrong_ipad_device_test_dir="$(mktemp -d)"
+manual_release_wrong_ipad_device_evidence="$manual_release_wrong_ipad_device_test_dir/manual-release-verification.env"
+manual_release_wrong_ipad_device_log="$manual_release_wrong_ipad_device_test_dir/manual-release-verification-wrong-ipad-device.log"
+cat >"$manual_release_wrong_ipad_device_evidence" <<EOF
+MANUAL_VERIFIER_NAME="Release Tester"
+MANUAL_REAL_IPHONE_MODEL="iPhone 15"
+MANUAL_REAL_IPHONE_IOS_VERSION="18.5"
+MANUAL_REAL_IPHONE_TEST_DATE="$today"
+MANUAL_REAL_IPHONE_PHOTOS_IMPORT="pass"
+MANUAL_REAL_IPHONE_PDF_EXPORT="pass"
+MANUAL_REAL_IPHONE_PRINT_SHEET="pass"
+MANUAL_AIRPRINT_TEST_DATE="$today"
+MANUAL_AIRPRINT_PRINTER="Office AirPrint Printer"
+MANUAL_AIRPRINT_EXACT_SIZE="pass"
+MANUAL_AIRPRINT_RULER_MEASURED_INCHES="6.00"
+MANUAL_TESTFLIGHT_BUILD_NUMBER="42"
+MANUAL_TESTFLIGHT_DEVICE="iPhone 15"
+MANUAL_TESTFLIGHT_TEST_DATE="$today"
+MANUAL_TESTFLIGHT_INSTALL="pass"
+MANUAL_TESTFLIGHT_PRINT_WORKFLOW="pass"
+MANUAL_IPAD_TESTFLIGHT_DEVICE="iPhone 15"
+MANUAL_IPAD_TESTFLIGHT_TEST_DATE="$today"
+MANUAL_IPAD_TESTFLIGHT_INSTALL="pass"
+MANUAL_IPAD_TESTFLIGHT_LAYOUT="pass"
+MANUAL_IPAD_TESTFLIGHT_PRINT_WORKFLOW="pass"
+EOF
+if APP_STORE_BUILD_NUMBER=42 \
+  MANUAL_RELEASE_VERIFICATION_PATH="$manual_release_wrong_ipad_device_evidence" \
+  Scripts/validate_manual_release_verification.sh >"$manual_release_wrong_ipad_device_log" 2>&1; then
+  printf 'FAIL: Manual verification must reject non-iPad evidence in the iPad TestFlight device field\n'
+  failures=$((failures + 1))
+elif ! grep -q 'iPad TestFlight device must be a physical iPad device' "$manual_release_wrong_ipad_device_log"; then
+  printf 'FAIL: Manual verification wrong-iPad-device failure should identify the iPad device field\n'
+  failures=$((failures + 1))
+fi
+rm -rf "$manual_release_wrong_ipad_device_test_dir"
 manual_release_ios_version_test_dir="$(mktemp -d)"
 manual_release_ios_version_evidence="$manual_release_ios_version_test_dir/manual-release-verification.env"
 manual_release_ios_version_log="$manual_release_ios_version_test_dir/manual-release-verification-ios-version.log"
@@ -593,6 +675,11 @@ MANUAL_TESTFLIGHT_DEVICE="iPhone 15"
 MANUAL_TESTFLIGHT_TEST_DATE="$today"
 MANUAL_TESTFLIGHT_INSTALL="pass"
 MANUAL_TESTFLIGHT_PRINT_WORKFLOW="pass"
+MANUAL_IPAD_TESTFLIGHT_DEVICE="iPad Pro 13-inch"
+MANUAL_IPAD_TESTFLIGHT_TEST_DATE="$today"
+MANUAL_IPAD_TESTFLIGHT_INSTALL="pass"
+MANUAL_IPAD_TESTFLIGHT_LAYOUT="pass"
+MANUAL_IPAD_TESTFLIGHT_PRINT_WORKFLOW="pass"
 EOF
 if APP_STORE_BUILD_NUMBER=42 \
   MANUAL_RELEASE_VERIFICATION_PATH="$manual_release_ios_version_evidence" \
@@ -625,6 +712,11 @@ MANUAL_TESTFLIGHT_DEVICE="iPhone 15"
 MANUAL_TESTFLIGHT_TEST_DATE="$today"
 MANUAL_TESTFLIGHT_INSTALL="pass"
 MANUAL_TESTFLIGHT_PRINT_WORKFLOW="pass"
+MANUAL_IPAD_TESTFLIGHT_DEVICE="iPad Pro 13-inch"
+MANUAL_IPAD_TESTFLIGHT_TEST_DATE="$today"
+MANUAL_IPAD_TESTFLIGHT_INSTALL="pass"
+MANUAL_IPAD_TESTFLIGHT_LAYOUT="pass"
+MANUAL_IPAD_TESTFLIGHT_PRINT_WORKFLOW="pass"
 EOF
 if APP_STORE_BUILD_NUMBER=42 \
   MANUAL_RELEASE_VERIFICATION_PATH="$manual_release_airprint_tolerance_evidence" \
@@ -660,6 +752,11 @@ MANUAL_TESTFLIGHT_DEVICE="iPhone 15"
 MANUAL_TESTFLIGHT_TEST_DATE="$today"
 MANUAL_TESTFLIGHT_INSTALL="pass"
 MANUAL_TESTFLIGHT_PRINT_WORKFLOW="pass"
+MANUAL_IPAD_TESTFLIGHT_DEVICE="iPad Pro 13-inch"
+MANUAL_IPAD_TESTFLIGHT_TEST_DATE="$today"
+MANUAL_IPAD_TESTFLIGHT_INSTALL="pass"
+MANUAL_IPAD_TESTFLIGHT_LAYOUT="pass"
+MANUAL_IPAD_TESTFLIGHT_PRINT_WORKFLOW="pass"
 EOF
 if env -u APP_STORE_BUILD_NUMBER \
   RELEASE_ENV_PATH="$manual_release_selected_build_env" \
@@ -694,6 +791,11 @@ MANUAL_TESTFLIGHT_DEVICE="iPhone 15"
 MANUAL_TESTFLIGHT_TEST_DATE="$today"
 MANUAL_TESTFLIGHT_INSTALL="pass"
 MANUAL_TESTFLIGHT_PRINT_WORKFLOW="pass"
+MANUAL_IPAD_TESTFLIGHT_DEVICE="iPad Pro 13-inch"
+MANUAL_IPAD_TESTFLIGHT_TEST_DATE="$today"
+MANUAL_IPAD_TESTFLIGHT_INSTALL="pass"
+MANUAL_IPAD_TESTFLIGHT_LAYOUT="pass"
+MANUAL_IPAD_TESTFLIGHT_PRINT_WORKFLOW="pass"
 EOF
 if APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER \
   MANUAL_RELEASE_VERIFICATION_PATH="$manual_release_placeholder_build_evidence" \
@@ -726,6 +828,11 @@ MANUAL_TESTFLIGHT_DEVICE="iPhone 15"
 MANUAL_TESTFLIGHT_TEST_DATE="$today"
 MANUAL_TESTFLIGHT_INSTALL="pass"
 MANUAL_TESTFLIGHT_PRINT_WORKFLOW="pass"
+MANUAL_IPAD_TESTFLIGHT_DEVICE="iPad Pro 13-inch"
+MANUAL_IPAD_TESTFLIGHT_TEST_DATE="$today"
+MANUAL_IPAD_TESTFLIGHT_INSTALL="pass"
+MANUAL_IPAD_TESTFLIGHT_LAYOUT="pass"
+MANUAL_IPAD_TESTFLIGHT_PRINT_WORKFLOW="pass"
 EOF
 if APP_STORE_BUILD_NUMBER=42 \
   MANUAL_RELEASE_VERIFICATION_PATH="$manual_release_lowercase_placeholder_evidence" \
@@ -758,6 +865,11 @@ MANUAL_TESTFLIGHT_DEVICE="iPhone 15 Simulator"
 MANUAL_TESTFLIGHT_TEST_DATE="$today"
 MANUAL_TESTFLIGHT_INSTALL="pass"
 MANUAL_TESTFLIGHT_PRINT_WORKFLOW="pass"
+MANUAL_IPAD_TESTFLIGHT_DEVICE="iPad Pro 13-inch"
+MANUAL_IPAD_TESTFLIGHT_TEST_DATE="$today"
+MANUAL_IPAD_TESTFLIGHT_INSTALL="pass"
+MANUAL_IPAD_TESTFLIGHT_LAYOUT="pass"
+MANUAL_IPAD_TESTFLIGHT_PRINT_WORKFLOW="pass"
 EOF
 if APP_STORE_BUILD_NUMBER=42 \
   MANUAL_RELEASE_VERIFICATION_PATH="$manual_release_simulator_device_evidence" \
@@ -791,6 +903,11 @@ MANUAL_TESTFLIGHT_DEVICE="iPhone 15"
 MANUAL_TESTFLIGHT_TEST_DATE="$today"
 MANUAL_TESTFLIGHT_INSTALL="pass"
 MANUAL_TESTFLIGHT_PRINT_WORKFLOW="pass"
+MANUAL_IPAD_TESTFLIGHT_DEVICE="iPad Pro 13-inch"
+MANUAL_IPAD_TESTFLIGHT_TEST_DATE="$today"
+MANUAL_IPAD_TESTFLIGHT_INSTALL="pass"
+MANUAL_IPAD_TESTFLIGHT_LAYOUT="pass"
+MANUAL_IPAD_TESTFLIGHT_PRINT_WORKFLOW="pass"
 EOF
 chmod 644 "$manual_release_loose_evidence"
 if APP_STORE_BUILD_NUMBER=42 \
@@ -1097,6 +1214,11 @@ MANUAL_TESTFLIGHT_DEVICE="iPhone 15"
 MANUAL_TESTFLIGHT_TEST_DATE="$today"
 MANUAL_TESTFLIGHT_INSTALL="pass"
 MANUAL_TESTFLIGHT_PRINT_WORKFLOW="pass"
+MANUAL_IPAD_TESTFLIGHT_DEVICE="iPad Pro 13-inch"
+MANUAL_IPAD_TESTFLIGHT_TEST_DATE="$today"
+MANUAL_IPAD_TESTFLIGHT_INSTALL="pass"
+MANUAL_IPAD_TESTFLIGHT_LAYOUT="pass"
+MANUAL_IPAD_TESTFLIGHT_PRINT_WORKFLOW="pass"
 EOF
 RELEASE_ENV_PATH="$release_input_status_manual_validation_env" \
   MANUAL_RELEASE_VERIFICATION_PATH="$release_input_status_manual_validation_evidence" \
@@ -1105,7 +1227,7 @@ if ! grep -q 'Manual release evidence validation fails' "$release_input_status_m
   printf 'FAIL: Release input status must surface strict manual evidence validation failures\n'
   failures=$((failures + 1))
 fi
-if grep -q 'OK: Manual real-device, AirPrint, and TestFlight evidence ready: 17/17' "$release_input_status_manual_validation_log"; then
+if grep -q 'OK: Manual real-device, AirPrint, iPad, and TestFlight evidence ready: 22/22' "$release_input_status_manual_validation_log"; then
   printf 'FAIL: Release input status must not mark manual evidence ready when strict validation fails\n'
   failures=$((failures + 1))
 fi
@@ -1133,6 +1255,11 @@ MANUAL_TESTFLIGHT_DEVICE="iPhone 15"
 MANUAL_TESTFLIGHT_TEST_DATE="$today"
 MANUAL_TESTFLIGHT_INSTALL="pass"
 MANUAL_TESTFLIGHT_PRINT_WORKFLOW="pass"
+MANUAL_IPAD_TESTFLIGHT_DEVICE="iPad Pro 13-inch"
+MANUAL_IPAD_TESTFLIGHT_TEST_DATE="$today"
+MANUAL_IPAD_TESTFLIGHT_INSTALL="pass"
+MANUAL_IPAD_TESTFLIGHT_LAYOUT="pass"
+MANUAL_IPAD_TESTFLIGHT_PRINT_WORKFLOW="pass"
 EOF
 chmod 644 "$release_input_status_loose_manual_evidence"
 RELEASE_ENV_PATH="$release_input_status_loose_manual_env" \
@@ -1171,11 +1298,16 @@ MANUAL_TESTFLIGHT_DEVICE="iPhone 15"
 MANUAL_TESTFLIGHT_TEST_DATE="$today"
 MANUAL_TESTFLIGHT_INSTALL="pass"
 MANUAL_TESTFLIGHT_PRINT_WORKFLOW="pass"
+MANUAL_IPAD_TESTFLIGHT_DEVICE="iPad Pro 13-inch"
+MANUAL_IPAD_TESTFLIGHT_TEST_DATE="$today"
+MANUAL_IPAD_TESTFLIGHT_INSTALL="pass"
+MANUAL_IPAD_TESTFLIGHT_LAYOUT="pass"
+MANUAL_IPAD_TESTFLIGHT_PRINT_WORKFLOW="pass"
 EOF
 RELEASE_ENV_PATH="$release_input_status_default_target_env" \
   MANUAL_RELEASE_VERIFICATION_PATH="$release_input_status_default_target_evidence" \
   Scripts/print_release_input_status.sh >"$release_input_status_default_target_log" 2>&1 || true
-if ! grep -q 'OK: Manual real-device, AirPrint, and TestFlight evidence ready: 17/17' "$release_input_status_default_target_log"; then
+if ! grep -q 'OK: Manual real-device, AirPrint, iPad, and TestFlight evidence ready: 22/22' "$release_input_status_default_target_log"; then
   printf 'FAIL: Release input status should count the default built-in AirPrint target ruler length as ready\n'
   failures=$((failures + 1))
 fi
@@ -2400,6 +2532,8 @@ check_contains "Scripts/generate_manual_release_evidence_form.sh" "MANUAL_REAL_I
 check_contains "Scripts/generate_manual_release_evidence_form.sh" "MANUAL_AIRPRINT_EXACT_SIZE" "Manual release evidence form must cover AirPrint exact-size evidence"
 check_contains "Scripts/generate_manual_release_evidence_form.sh" "MANUAL_AIRPRINT_RULER_MEASURED_INCHES" "Manual release evidence form must cover AirPrint measured ruler evidence"
 check_contains "Scripts/generate_manual_release_evidence_form.sh" "MANUAL_TESTFLIGHT_PRINT_WORKFLOW" "Manual release evidence form must cover TestFlight print workflow evidence"
+check_contains "Scripts/generate_manual_release_evidence_form.sh" "MANUAL_IPAD_TESTFLIGHT_LAYOUT" "Manual release evidence form must cover iPad TestFlight layout evidence"
+check_contains "Scripts/generate_manual_release_evidence_form.sh" "MANUAL_IPAD_TESTFLIGHT_PRINT_WORKFLOW" "Manual release evidence form must cover iPad TestFlight print workflow evidence"
 check_contains "Scripts/generate_manual_release_evidence_form.sh" "Numeric iOS version" "Manual release evidence form must require a traceable numeric iOS version"
 check_contains "Scripts/generate_manual_release_evidence_form.sh" "processed App Store Connect build number" "Manual release evidence form must warn that selected-build placeholders must be replaced"
 check_file "Scripts/generate_manual_release_readiness_report.sh" "Manual release readiness report generator is required"
@@ -2413,6 +2547,9 @@ check_contains "Scripts/generate_manual_release_readiness_report.sh" "MANUAL_AIR
 check_contains "Scripts/generate_manual_release_readiness_report.sh" "MANUAL_AIRPRINT_RULER_MEASURED_INCHES" "Manual release readiness report must summarize AirPrint measured ruler evidence"
 check_contains "Scripts/generate_manual_release_readiness_report.sh" "DEFAULT_AIRPRINT_RULER_TARGET_INCHES" "Manual release readiness report must default the built-in AirPrint target ruler length"
 check_contains "Scripts/generate_manual_release_readiness_report.sh" "MANUAL_TESTFLIGHT_BUILD_NUMBER" "Manual release readiness report must summarize selected TestFlight build evidence"
+check_contains "Scripts/generate_manual_release_readiness_report.sh" "MANUAL_IPAD_TESTFLIGHT_DEVICE" "Manual release readiness report must summarize iPad TestFlight device evidence"
+check_contains "Scripts/generate_manual_release_readiness_report.sh" "MANUAL_IPAD_TESTFLIGHT_LAYOUT" "Manual release readiness report must summarize iPad TestFlight layout evidence"
+check_contains "Scripts/generate_manual_release_readiness_report.sh" "MANUAL_IPAD_TESTFLIGHT_PRINT_WORKFLOW" "Manual release readiness report must summarize iPad TestFlight print workflow evidence"
 check_contains "Scripts/generate_manual_release_readiness_report.sh" "APP_STORE_BUILD_NUMBER" "Manual release readiness report must compare the selected App Store build"
 check_contains "Scripts/generate_manual_release_readiness_report.sh" "Scripts/validate_manual_release_verification.sh" "Manual release readiness report must reference the strict validator"
 check_contains "Scripts/generate_manual_release_readiness_report.sh" "ios_version_status" "Manual release readiness report must validate real iPhone iOS version format"
@@ -2588,6 +2725,11 @@ MANUAL_TESTFLIGHT_DEVICE="iPhone 15"
 MANUAL_TESTFLIGHT_TEST_DATE="$today"
 MANUAL_TESTFLIGHT_INSTALL="pass"
 MANUAL_TESTFLIGHT_PRINT_WORKFLOW="pass"
+MANUAL_IPAD_TESTFLIGHT_DEVICE="iPad Pro 13-inch"
+MANUAL_IPAD_TESTFLIGHT_TEST_DATE="$today"
+MANUAL_IPAD_TESTFLIGHT_INSTALL="pass"
+MANUAL_IPAD_TESTFLIGHT_LAYOUT="pass"
+MANUAL_IPAD_TESTFLIGHT_PRINT_WORKFLOW="pass"
 EOF
 MANUAL_RELEASE_VERIFICATION_PATH="$manual_report_ios_version_evidence" \
   Scripts/generate_manual_release_readiness_report.sh "$manual_report_ios_version_report" >/dev/null
@@ -2620,6 +2762,11 @@ MANUAL_TESTFLIGHT_DEVICE="iPhone 15"
 MANUAL_TESTFLIGHT_TEST_DATE="$today"
 MANUAL_TESTFLIGHT_INSTALL="pass"
 MANUAL_TESTFLIGHT_PRINT_WORKFLOW="pass"
+MANUAL_IPAD_TESTFLIGHT_DEVICE="iPad Pro 13-inch"
+MANUAL_IPAD_TESTFLIGHT_TEST_DATE="$today"
+MANUAL_IPAD_TESTFLIGHT_INSTALL="pass"
+MANUAL_IPAD_TESTFLIGHT_LAYOUT="pass"
+MANUAL_IPAD_TESTFLIGHT_PRINT_WORKFLOW="pass"
 EOF
 MANUAL_RELEASE_VERIFICATION_PATH="$manual_report_default_target_evidence" \
   Scripts/generate_manual_release_readiness_report.sh "$manual_report_default_target_report" >/dev/null
@@ -2653,6 +2800,11 @@ MANUAL_TESTFLIGHT_DEVICE="iPhone 15"
 MANUAL_TESTFLIGHT_TEST_DATE="$today"
 MANUAL_TESTFLIGHT_INSTALL="pass"
 MANUAL_TESTFLIGHT_PRINT_WORKFLOW="pass"
+MANUAL_IPAD_TESTFLIGHT_DEVICE="iPad Pro 13-inch"
+MANUAL_IPAD_TESTFLIGHT_TEST_DATE="$today"
+MANUAL_IPAD_TESTFLIGHT_INSTALL="pass"
+MANUAL_IPAD_TESTFLIGHT_LAYOUT="pass"
+MANUAL_IPAD_TESTFLIGHT_PRINT_WORKFLOW="pass"
 EOF
 chmod 644 "$manual_report_loose_evidence"
 MANUAL_RELEASE_VERIFICATION_PATH="$manual_report_loose_evidence" \

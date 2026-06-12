@@ -392,7 +392,9 @@ if [[ "$manual_source_status" -eq 0 ]]; then
     MANUAL_AIRPRINT_RULER_MEASURED_INCHES \
     MANUAL_TESTFLIGHT_BUILD_NUMBER \
     MANUAL_TESTFLIGHT_DEVICE \
-    MANUAL_TESTFLIGHT_TEST_DATE
+    MANUAL_TESTFLIGHT_TEST_DATE \
+    MANUAL_IPAD_TESTFLIGHT_DEVICE \
+    MANUAL_IPAD_TESTFLIGHT_TEST_DATE
   do
     if is_set "${!name:-}"; then
       manual_ready=$((manual_ready + 1))
@@ -408,7 +410,10 @@ if [[ "$manual_source_status" -eq 0 ]]; then
     MANUAL_REAL_IPHONE_PRINT_SHEET \
     MANUAL_AIRPRINT_EXACT_SIZE \
     MANUAL_TESTFLIGHT_INSTALL \
-    MANUAL_TESTFLIGHT_PRINT_WORKFLOW
+    MANUAL_TESTFLIGHT_PRINT_WORKFLOW \
+    MANUAL_IPAD_TESTFLIGHT_INSTALL \
+    MANUAL_IPAD_TESTFLIGHT_LAYOUT \
+    MANUAL_IPAD_TESTFLIGHT_PRINT_WORKFLOW
   do
     lower_value="$(printf '%s' "${!name:-}" | tr '[:upper:]' '[:lower:]')"
     if [[ "$lower_value" == "pass" ]]; then
@@ -425,17 +430,17 @@ if [[ "$manual_source_status" -eq 0 ]]; then
     fi
   fi
 fi
-if (( manual_ready == 17 )); then
+if (( manual_ready == 22 )); then
   if (( manual_validation_passed == 1 )); then
-    mark_ok "Manual real-device, AirPrint, and TestFlight evidence ready: 17/17"
+    mark_ok "Manual real-device, AirPrint, iPad, and TestFlight evidence ready: 22/22"
     mark_ok "Manual release evidence validation passes"
   elif (( manual_validation_ran == 1 )); then
     mark_missing "Manual release evidence validation fails"
   else
-    mark_missing "Manual real-device, AirPrint, and TestFlight evidence ready: 17/17"
+    mark_missing "Manual real-device, AirPrint, iPad, and TestFlight evidence ready: 22/22"
   fi
 else
-  status_count "Manual real-device, AirPrint, and TestFlight evidence ready" "$manual_ready" 17
+  status_count "Manual real-device, AirPrint, iPad, and TestFlight evidence ready" "$manual_ready" 22
 fi
 
 if is_set "${APP_STORE_BUILD_NUMBER:-}" && is_set "${MANUAL_TESTFLIGHT_BUILD_NUMBER:-}"; then

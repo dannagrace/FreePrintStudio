@@ -301,7 +301,7 @@ EOF
 - `FASTLANE_USER` if uploading App Privacy Details through the Fastlane Apple ID flow.
 - Manual commercial configuration in App Store Connect from `AppStore/commercial-configuration.md`.
 - App Review self-audit evidence from `AppStore/review-guideline-audit.md`.
-- Manual release verification evidence in untracked `Config/manual-release-verification.env` after real iPhone, AirPrint, and TestFlight checks.
+- Manual release verification evidence in untracked `Config/manual-release-verification.env` after real iPhone, AirPrint, iPad, and TestFlight checks.
 - Follow `AppStore/release-inputs-worksheet.md` while filling private values; do not commit secrets or real contact details.
 
 ## Command Order
@@ -403,7 +403,7 @@ external_action_fields() {
     *MANUAL_*|*"Manual "*|*"Real iPhone"*|*"AirPrint"*|*"TestFlight"*)
       category="Manual Verification"
       owner="QA/release owner"
-      next_action="Record real iPhone, AirPrint, and TestFlight evidence in untracked Config/manual-release-verification.env, then run APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/validate_manual_release_verification.sh."
+      next_action="Record real iPhone, AirPrint, iPad, and TestFlight evidence in untracked Config/manual-release-verification.env, then run APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/validate_manual_release_verification.sh."
       validation_command="APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/validate_manual_release_verification.sh"
       ;;
     *"Developer Team"*|*"Apple Distribution"*|*"provisioning profile"*|*"provisioning profiles"*|*"signing identity"*|*"signing assets"*)
@@ -597,9 +597,9 @@ cat >"$SUMMARY_PATH" <<EOF
 - App Review guideline self-audit with evidence and open blockers.
 - Release input worksheet for private Apple account, signing, and real-device evidence collection.
 - Release environment template for private Apple signing, App Review contact, App Store Connect, and final submission guard inputs.
-- Manual release evidence form for recording real iPhone, AirPrint, and TestFlight checks.
+- Manual release evidence form for recording real iPhone, AirPrint, iPad, and TestFlight checks.
 - Redacted App Review contact readiness report for required reviewer contact fields.
-- Redacted manual release readiness report for real iPhone, AirPrint, TestFlight, and selected-build evidence.
+- Redacted manual release readiness report for real iPhone, AirPrint, iPad, TestFlight, and selected-build evidence.
 - Redacted signing readiness report for Apple Developer Team, certificate, and provisioning profile state.
 - Redacted App Store Connect readiness report for credential mode, upload guards, build selection, and account-dependent checks.
 - Redacted App Store Connect state report for selected-build remote state check output and exit code.

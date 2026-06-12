@@ -9,7 +9,7 @@ Scripts/bootstrap_release_inputs.sh
 ## Private File Rules
 
 - Fill Apple signing, App Review contact, App Store Connect, and submission guard values in `Config/release.env`.
-- Fill real iPhone, AirPrint, and TestFlight evidence in `Config/manual-release-verification.env`.
+- Fill real iPhone, AirPrint, iPad, and TestFlight evidence in `Config/manual-release-verification.env`.
 - Keep `Config/release.env`, `Config/manual-release-verification.env`, `AuthKey_*.p8`, `*.p12`, `*.mobileprovision`, `*.ipa`, and `*.xcarchive` out of git.
 - Run `git status --short --ignored Config/release.env Config/manual-release-verification.env` and confirm both files appear as ignored before adding any release values.
 
@@ -110,6 +110,14 @@ APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/validate_manual_release_ve
 ```
 
 Replace `PROCESSED_BUILD_NUMBER` with the processed build selected in App Store Connect.
+
+iPad TestFlight evidence is required because the app targets iPhone and iPad:
+
+- `MANUAL_IPAD_TESTFLIGHT_DEVICE`: physical iPad model, not a Simulator.
+- `MANUAL_IPAD_TESTFLIGHT_TEST_DATE`
+- `MANUAL_IPAD_TESTFLIGHT_INSTALL=pass`
+- `MANUAL_IPAD_TESTFLIGHT_LAYOUT=pass`: editor layout, preview, sizing controls, and output actions remain usable on iPad.
+- `MANUAL_IPAD_TESTFLIGHT_PRINT_WORKFLOW=pass`
 
 ## Final Submission Guards
 

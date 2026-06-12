@@ -17,7 +17,7 @@ usage() {
 Usage: Scripts/generate_manual_release_readiness_report.sh [output-path]
 
 Generates a redacted manual release readiness report. The report is safe to
-package because it summarizes real-device, AirPrint, and TestFlight evidence
+package because it summarizes real-device, AirPrint, iPad, and TestFlight evidence
 status without printing verifier names, device names, printer names, screenshots,
 private notes, or full build identifiers.
 EOF
@@ -119,6 +119,30 @@ value_status() {
   else
     record_ready
     status_result='Recorded; value redacted'
+  fi
+}
+
+ipad_device_status() {
+  local name="$1"
+  local value
+  local lower_value
+  value="$(value_for "$name")"
+  lower_value="$(printf '%s' "$value" | tr '[:upper:]' '[:lower:]')"
+  if [[ -z "$value" ]]; then
+    record_failure
+    status_result='Missing; expected physical iPad model'
+  elif looks_placeholder_like "$value"; then
+    record_failure
+    status_result='Placeholder-like'
+  elif [[ "$lower_value" == *"simulator"* ]]; then
+    record_failure
+    status_result='Invalid; simulator is not physical iPad evidence'
+  elif [[ "$lower_value" != *"ipad"* ]]; then
+    record_failure
+    status_result='Invalid; expected physical iPad model'
+  else
+    record_ready
+    status_result='Recorded; physical iPad value redacted'
   fi
 }
 
@@ -381,6 +405,16 @@ pass_status MANUAL_TESTFLIGHT_PRINT_WORKFLOW
 status_testflight_print_workflow="$status_result"
 build_match_status
 status_build_match="$status_result"
+ipad_device_status MANUAL_IPAD_TESTFLIGHT_DEVICE
+status_ipad_testflight_device="$status_result"
+date_status MANUAL_IPAD_TESTFLIGHT_TEST_DATE
+status_ipad_testflight_test_date="$status_result"
+pass_status MANUAL_IPAD_TESTFLIGHT_INSTALL
+status_ipad_testflight_install="$status_result"
+pass_status MANUAL_IPAD_TESTFLIGHT_LAYOUT
+status_ipad_testflight_layout="$status_result"
+pass_status MANUAL_IPAD_TESTFLIGHT_PRINT_WORKFLOW
+status_ipad_testflight_print_workflow="$status_result"
 
 cat >"$output_path" <<EOF
 # FreePrint Studio Manual Release Readiness Report
@@ -438,10 +472,20 @@ cat >"$output_path" <<EOF
 | Print workflow succeeds from TestFlight build | \`MANUAL_TESTFLIGHT_PRINT_WORKFLOW\` | $status_testflight_print_workflow |
 | Selected build matches evidence build | \`APP_STORE_BUILD_NUMBER\` and \`MANUAL_TESTFLIGHT_BUILD_NUMBER\` | $status_build_match |
 
+## iPad TestFlight Evidence
+
+| Evidence | Env field | Status |
+| --- | --- | --- |
+| iPad TestFlight device | \`MANUAL_IPAD_TESTFLIGHT_DEVICE\` | $status_ipad_testflight_device |
+| Test date | \`MANUAL_IPAD_TESTFLIGHT_TEST_DATE\` | $status_ipad_testflight_test_date |
+| TestFlight install succeeds on iPad | \`MANUAL_IPAD_TESTFLIGHT_INSTALL\` | $status_ipad_testflight_install |
+| iPad layout is usable | \`MANUAL_IPAD_TESTFLIGHT_LAYOUT\` | $status_ipad_testflight_layout |
+| Print workflow succeeds from iPad TestFlight build | \`MANUAL_IPAD_TESTFLIGHT_PRINT_WORKFLOW\` | $status_ipad_testflight_print_workflow |
+
 ## Required Next Actions
 
 - [ ] Run \`Scripts/bootstrap_release_inputs.sh\` to create the git-ignored evidence file if it is missing.
-- [ ] Fill \`Config/manual-release-verification.env\` only after real iPhone, AirPrint, and TestFlight checks.
+- [ ] Fill \`Config/manual-release-verification.env\` only after real iPhone, AirPrint, iPad, and TestFlight checks.
 - [ ] Set \`APP_STORE_BUILD_NUMBER\` to the processed build selected in App Store Connect.
 - [ ] Run \`APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/validate_manual_release_verification.sh\`.
 - [ ] Run \`APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/preflight_app_review_submission.sh\`.

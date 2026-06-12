@@ -147,7 +147,7 @@ cat >"$output_path" <<EOF
 | Check | Command | Status |
 | --- | --- | --- |
 | App Review contact | \`Scripts/validate_app_review_contact.sh\` | $status_review_contact |
-| Manual real-device, AirPrint, and TestFlight evidence | \`APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/validate_manual_release_verification.sh\` | $status_manual_evidence |
+| Manual real-device, AirPrint, iPad, and TestFlight evidence | \`APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/validate_manual_release_verification.sh\` | $status_manual_evidence |
 
 ## App Store Connect Checks
 

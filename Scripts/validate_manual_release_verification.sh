@@ -97,6 +97,27 @@ require_physical_device_value() {
   fi
 }
 
+require_ipad_device_value() {
+  local name="$1"
+  local label="$2"
+  local value
+  local lower_value
+  value="$(value_for "$name")"
+  lower_value="$(printf '%s' "$value" | tr '[:upper:]' '[:lower:]')"
+
+  if [[ -z "$value" ]]; then
+    block "$label is missing ($name)"
+  elif looks_placeholder_like "$value"; then
+    block "$label still looks like a placeholder ($name)"
+  elif [[ "$lower_value" == *"simulator"* ]]; then
+    block "$label must be a physical iPad device, not a simulator"
+  elif [[ "$lower_value" != *"ipad"* ]]; then
+    block "$label must be a physical iPad device"
+  else
+    ok "$label recorded"
+  fi
+}
+
 require_ios_version() {
   local name="$1"
   local label="$2"
@@ -266,6 +287,12 @@ validate_required_evidence_values() {
   require_recent_date MANUAL_TESTFLIGHT_TEST_DATE "TestFlight verification"
   require_pass MANUAL_TESTFLIGHT_INSTALL "TestFlight install"
   require_pass MANUAL_TESTFLIGHT_PRINT_WORKFLOW "TestFlight print workflow"
+
+  require_ipad_device_value MANUAL_IPAD_TESTFLIGHT_DEVICE "iPad TestFlight device"
+  require_recent_date MANUAL_IPAD_TESTFLIGHT_TEST_DATE "iPad TestFlight verification"
+  require_pass MANUAL_IPAD_TESTFLIGHT_INSTALL "iPad TestFlight install"
+  require_pass MANUAL_IPAD_TESTFLIGHT_LAYOUT "iPad TestFlight layout"
+  require_pass MANUAL_IPAD_TESTFLIGHT_PRINT_WORKFLOW "iPad TestFlight print workflow"
 }
 
 if [[ ! -f "$EVIDENCE_PATH" ]]; then

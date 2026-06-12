@@ -133,7 +133,7 @@ Generate a redacted App Review contact readiness report before and after setting
 Scripts/verify_release.sh contact-report
 ```
 
-Generate a redacted manual release readiness report before and after recording real iPhone, AirPrint, and TestFlight evidence:
+Generate a redacted manual release readiness report before and after recording real iPhone, AirPrint, iPad, and TestFlight evidence:
 
 ```sh
 Scripts/verify_release.sh manual-report
@@ -243,7 +243,7 @@ Scripts/verify_release.sh print-sheet
 Scripts/validate_print_sheet.sh
 ```
 
-Record and validate manual real-device, AirPrint, and TestFlight evidence before final App Review submission:
+Record and validate manual real-device, AirPrint, iPad, and TestFlight evidence before final App Review submission:
 
 ```sh
 Scripts/bootstrap_release_inputs.sh
@@ -253,7 +253,7 @@ APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/validate_manual_release_ve
 
 `PROCESSED_BUILD_NUMBER` is a placeholder; replace it with the processed build number selected in App Store Connect before running these commands. The release environment validator intentionally rejects this placeholder so it cannot be submitted accidentally.
 
-When validating the final App Review build, run the manual evidence check with the same APP_STORE_BUILD_NUMBER that will be submitted so the tested TestFlight build cannot drift from the selected App Store build.
+When validating the final App Review build, run the manual evidence check with the same APP_STORE_BUILD_NUMBER that will be submitted so the tested TestFlight build cannot drift from the selected App Store build. Because the app targets iPhone and iPad, also record physical iPad TestFlight install, layout, and print workflow evidence in `MANUAL_IPAD_TESTFLIGHT_*`.
 
 Prepare a local App Store submission packet with metadata, questionnaire drafts, screenshots, PDF export validation evidence, the blank manual release evidence form, redacted App Review contact, manual release, signing, App Store Connect readiness, App Store Connect state, App Review submission readiness, and public pages readiness reports, checksums, readiness audit output, and next commands:
 
@@ -353,7 +353,7 @@ Before submitting for App Review, run the final preflight without triggering sub
 APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/preflight_app_review_submission.sh
 ```
 
-The preflight requires `MANUAL_TESTFLIGHT_BUILD_NUMBER` in `Config/manual-release-verification.env` to match the same APP_STORE_BUILD_NUMBER.
+The preflight requires `MANUAL_TESTFLIGHT_BUILD_NUMBER` in `Config/manual-release-verification.env` to match the same APP_STORE_BUILD_NUMBER, and requires physical iPad TestFlight evidence for the supported iPad build.
 
 After the uploaded build is processed in App Store Connect and the store listing, privacy details, age rating, screenshots, and review contact details are final, submit the selected build for App Review:
 

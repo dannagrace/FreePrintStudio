@@ -35,7 +35,7 @@ cat >"$output_path" <<EOF
 - Status Command: \`Scripts/print_release_input_status.sh --strict\`
 - Selected build placeholder: replace \`PROCESSED_BUILD_NUMBER\` with the processed App Store Connect build number before running selected-build commands; local validators intentionally reject that placeholder.
 
-Use this form while performing the final real-device checks. Do not write phone
+Use this form while performing the final real-device and iPad checks. Do not write phone
 numbers, personal contact details, Apple credentials, UDIDs, certificate files,
 private keys, screenshots containing personal data, or signed build artifacts in
 this tracked form. Record final pass/fail values only in the git-ignored
@@ -48,6 +48,7 @@ this tracked form. Record final pass/fail values only in the git-ignored
 - [ ] The selected build was uploaded to TestFlight and finished processing in App Store Connect.
 - [ ] \`APP_STORE_BUILD_NUMBER\` is set to the processed build selected for App Review.
 - [ ] The built-in Test Ruler PDF check passed with \`Scripts/validate_test_ruler_pdf_export.sh\`.
+- [ ] A physical iPad is available for TestFlight layout and print workflow validation.
 
 ## Real iPhone Evidence
 
@@ -104,6 +105,24 @@ Manual notes:
 - [ ] Install the selected build from TestFlight.
 - [ ] Repeat the import, sizing, PDF export, and print sheet workflow.
 - [ ] Confirm \`MANUAL_TESTFLIGHT_BUILD_NUMBER\` equals the selected \`APP_STORE_BUILD_NUMBER\`.
+
+## iPad TestFlight Evidence
+
+Record these fields after installing the processed App Store build from TestFlight on a physical iPad, not a Simulator:
+
+| Evidence | Env field | Required value |
+| --- | --- | --- |
+| iPad TestFlight device | \`MANUAL_IPAD_TESTFLIGHT_DEVICE\` | Physical iPad model |
+| Test date | \`MANUAL_IPAD_TESTFLIGHT_TEST_DATE\` | \`YYYY-MM-DD\` |
+| TestFlight install succeeds on iPad | \`MANUAL_IPAD_TESTFLIGHT_INSTALL\` | \`pass\` |
+| iPad layout is usable | \`MANUAL_IPAD_TESTFLIGHT_LAYOUT\` | \`pass\` |
+| Print workflow succeeds from iPad TestFlight build | \`MANUAL_IPAD_TESTFLIGHT_PRINT_WORKFLOW\` | \`pass\` |
+
+Manual notes:
+
+- [ ] Install the selected build from TestFlight on a physical iPad.
+- [ ] Confirm the editor layout, paper preview, sizing controls, and output actions remain usable on iPad.
+- [ ] Repeat the import, sizing, PDF export, and print sheet workflow on iPad.
 
 ## Final Commands
 

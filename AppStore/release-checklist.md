@@ -16,7 +16,7 @@
 - Run `Scripts/bootstrap_release_env.sh` before filling private Apple signing, App Review contact, and App Store Connect values in `Config/release.env`.
 - Run `Scripts/validate_release_env.sh` after creating or editing `Config/release.env`.
 - Run `Scripts/verify_release.sh contact-report` before and after setting App Review contact fields to generate a redacted reviewer contact status report.
-- Run `Scripts/verify_release.sh manual-report` before and after recording real iPhone, AirPrint, and TestFlight evidence to generate a redacted manual release status report.
+- Run `Scripts/verify_release.sh manual-report` before and after recording real iPhone, AirPrint, iPad, and TestFlight evidence to generate a redacted manual release status report.
 - Run `Scripts/verify_release.sh signing-report` before and after installing signing assets to generate a redacted Team ID, certificate, and provisioning profile status report.
 - Run `Scripts/verify_release.sh asc-report` before and after configuring App Store Connect credentials, TestFlight upload, or review submission inputs to generate a redacted account readiness report.
 - Run `Scripts/verify_release.sh asc-state-report` after selecting a processed TestFlight build, or before handoff to show the redacted selected-build App Store Connect state check output and exit code.
@@ -40,7 +40,7 @@
 - Run `Scripts/verify_release.sh submission-packet` before handing off to App Store Connect; it calls `Scripts/prepare_app_store_submission_packet.sh` to package metadata, questionnaire drafts, screenshots, PDF export validation evidence, a blank manual release evidence form, redacted App Review contact, manual release, signing, App Store Connect readiness, App Store Connect state, App Review submission readiness, and public pages readiness reports, checksums, readiness audit output, and next commands under `build/AppStoreSubmissionPacket/`.
 - Run `Scripts/verify_release.sh submission-packet-check` before uploading or handing off the packet; it calls `Scripts/validate_app_store_submission_packet.sh` to verify required files, evidence manifests, external action tracking, and absence of local absolute paths.
 - GitHub Actions uploads the generated App Store submission packet from successful Release Gates runs as the `freeprintstudio-app-store-submission-packet` artifact.
-- Run `Scripts/validate_manual_release_verification.sh` after recording real iPhone, AirPrint, and TestFlight evidence in untracked `Config/manual-release-verification.env`.
+- Run `Scripts/validate_manual_release_verification.sh` after recording real iPhone, AirPrint, iPad, and TestFlight evidence in untracked `Config/manual-release-verification.env`.
 - Confirm real Photos import on a simulator when changing the Photos picker; the generated-image simulator workflow above covers app launch, unit switching, screenshot rendering, and PDF export.
 - Confirm the same flow on a real iPhone.
 - Confirm AirPrint output on a real printer or a production-equivalent print workflow with the built-in Test Ruler.
@@ -68,7 +68,7 @@
 - Replace any `PROCESSED_BUILD_NUMBER` placeholder in generated handoff commands with the processed App Store Connect build number before running them; the local release validators intentionally reject that placeholder.
 - Commercial configuration: apply `AppStore/commercial-configuration.md` in App Store Connect before submission.
 - App Review self-audit: review `AppStore/review-guideline-audit.md` and resolve every open blocker before submission.
-- Manual release evidence: run `Scripts/bootstrap_release_inputs.sh` and `Scripts/verify_release.sh manual-evidence-form`, record real-device verification in `Config/manual-release-verification.env`, and use the built-in Test Ruler for `MANUAL_AIRPRINT_EXACT_SIZE`, `MANUAL_AIRPRINT_RULER_TARGET_INCHES`, and `MANUAL_AIRPRINT_RULER_MEASURED_INCHES`, then run `APP_STORE_BUILD_NUMBER=... Scripts/validate_manual_release_verification.sh` with the same APP_STORE_BUILD_NUMBER selected for App Review.
+- Manual release evidence: run `Scripts/bootstrap_release_inputs.sh` and `Scripts/verify_release.sh manual-evidence-form`, record real-device verification in `Config/manual-release-verification.env`, include physical iPad TestFlight layout and print workflow evidence, and use the built-in Test Ruler for `MANUAL_AIRPRINT_EXACT_SIZE`, `MANUAL_AIRPRINT_RULER_TARGET_INCHES`, and `MANUAL_AIRPRINT_RULER_MEASURED_INCHES`, then run `APP_STORE_BUILD_NUMBER=... Scripts/validate_manual_release_verification.sh` with the same APP_STORE_BUILD_NUMBER selected for App Review.
 - App Review submission preflight: after every listing field is final and the selected build has processed, run `APP_STORE_BUILD_NUMBER=... Scripts/preflight_app_review_submission.sh`.
 - Final review submission automation: after the uploaded build has processed and every listing field is final, run `APP_STORE_BUILD_NUMBER=... CONFIRM_SUBMIT_FOR_REVIEW=1 Scripts/run_fastlane.sh ios submit_review`; the `submit_review` lane re-runs manual release evidence validation before contacting App Store Connect.
 - Upload screenshots from `fastlane/screenshots/en-US` or through App Store Connect.
@@ -79,7 +79,7 @@
 - Complete Accessibility Nutrition Label fields using `AppStore/accessibility-labels.md` after validating the listed device checks.
 - Complete export compliance using `AppStore/export-compliance.md`; `Info.plist` declares `ITSAppUsesNonExemptEncryption` as false.
 - Upload final screenshots accepted by App Store Connect for every supported device family.
-- If iPad remains supported, validate the iPad UI on a real device or TestFlight and upload iPad screenshots.
+- Because iPad remains supported, validate the iPad UI on a physical iPad through TestFlight, record `MANUAL_IPAD_TESTFLIGHT_*` evidence, and upload iPad screenshots.
 - Run TestFlight on at least one real device before submitting for review.
 
 ## Current Apple references

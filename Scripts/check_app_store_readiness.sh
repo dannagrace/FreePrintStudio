@@ -239,7 +239,7 @@ fi
 
 printf '\n== Manual Release Verification ==\n'
 if Scripts/validate_manual_release_verification.sh >/tmp/freeprintstudio-manual-release-verification.log 2>&1; then
-  ok "Manual real-device, AirPrint, and TestFlight verification evidence is recorded"
+  ok "Manual real-device, AirPrint, iPad, and TestFlight verification evidence is recorded"
 else
   while IFS= read -r line; do
     case "$line" in
