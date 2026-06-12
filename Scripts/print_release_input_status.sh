@@ -431,6 +431,13 @@ printf 'Scripts/validate_release_env.sh\n'
 printf 'APP_STORE_BUILD_NUMBER=%s Scripts/validate_manual_release_verification.sh\n' "$selected_app_store_build"
 printf 'Scripts/check_app_store_readiness.sh\n'
 printf 'Scripts/verify_release.sh testflight-dependencies-preflight\n'
+printf 'Scripts/preflight_app_store_archive.sh\n'
+printf 'DEVELOPMENT_TEAM_ID=YOURTEAMID ALLOW_PROVISIONING_UPDATES=1 Scripts/archive_app_store.sh\n'
+printf 'Scripts/preflight_testflight_upload.sh\n'
+printf 'ASC_KEY_ID=XXXXXXXXXX ASC_ISSUER_ID=00000000-0000-0000-0000-000000000000 ASC_KEY_PATH=/secure/AuthKey_XXXXXXXXXX.p8 Scripts/run_fastlane.sh ios upload_testflight\n'
+printf 'APP_STORE_BUILD_NUMBER=%s Scripts/run_fastlane.sh ios app_store_connect_state\n' "$selected_app_store_build"
+printf 'APP_STORE_BUILD_NUMBER=%s Scripts/preflight_app_review_submission.sh\n' "$selected_app_store_build"
+printf 'APP_STORE_BUILD_NUMBER=%s CONFIRM_SUBMIT_FOR_REVIEW=1 Scripts/run_fastlane.sh ios submit_review\n' "$selected_app_store_build"
 
 printf '\nSummary: %d missing required release input item(s).\n' "$missing_count"
 if (( strict == 1 && missing_count > 0 )); then
