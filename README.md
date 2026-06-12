@@ -376,7 +376,7 @@ APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER CONFIRM_SUBMIT_FOR_REVIEW=1 Script
 
 Replace `PROCESSED_BUILD_NUMBER` before running the App Store Connect state, App Review preflight, or final submission commands; leaving it in place is expected to fail locally.
 
-`submit_review` uses manual release (`automatic_release: false`) and submits only the explicit `APP_STORE_BUILD_NUMBER`. The `submit_review` lane re-runs manual release evidence validation before calling App Store Connect, so the recorded TestFlight evidence must still match the selected build at final submission time.
+`submit_review` uses manual release (`automatic_release: false`) and submits only the explicit `APP_STORE_BUILD_NUMBER`. The `submit_review` lane re-runs screenshot privacy metadata validation and re-runs manual release evidence validation before calling App Store Connect, so the screenshots and recorded TestFlight evidence must still match the selected build at final submission time.
 
 App Store Connect questionnaire drafts are stored in:
 

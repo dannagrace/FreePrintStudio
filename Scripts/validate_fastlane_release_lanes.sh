@@ -76,6 +76,8 @@ if source:
         fail("Fastfile must call Scripts/validate_app_store_metadata.sh")
     if "Scripts/validate_screenshot_sync.sh" not in source:
         fail("Fastfile must call Scripts/validate_screenshot_sync.sh")
+    if "Scripts/validate_screenshot_privacy.sh" not in source:
+        fail("Fastfile must call Scripts/validate_screenshot_privacy.sh")
     if "Scripts/validate_app_privacy_details.sh" not in source:
         fail("Fastfile must call Scripts/validate_app_privacy_details.sh")
     if "Scripts/validate_privacy_surface.sh" not in source:
@@ -108,6 +110,7 @@ if source:
         require_before("metadata", metadata, "validate_release_env!", "deliver(")
         require_before("metadata", metadata, "validate_app_store_metadata!", "deliver(")
         require_before("metadata", metadata, "validate_screenshot_sync!", "deliver(")
+        require_before("metadata", metadata, "validate_screenshot_privacy!", "deliver(")
         require_before("metadata", metadata, "validate_app_store_questionnaires!", "deliver(")
         require_before("metadata", metadata, "validate_app_review_contact!", "deliver(")
         require_before("metadata", metadata, "app_store_connect_credentials(required: true)", "deliver(")
@@ -140,6 +143,7 @@ if source:
         require_before("submit_review", submit_review, "validate_release_env!", "deliver(")
         require_before("submit_review", submit_review, "validate_app_store_metadata!", "deliver(")
         require_before("submit_review", submit_review, "validate_screenshot_sync!", "deliver(")
+        require_before("submit_review", submit_review, "validate_screenshot_privacy!", "deliver(")
         require_before("submit_review", submit_review, "validate_privacy_surface!", "deliver(")
         require_before("submit_review", submit_review, "validate_app_privacy_details!", "deliver(")
         require_before("submit_review", submit_review, "validate_app_store_questionnaires!", "deliver(")

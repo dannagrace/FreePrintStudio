@@ -61,6 +61,7 @@ run_step "Private release environment" Scripts/validate_release_env.sh
 run_build_number_step
 run_step "App Store metadata" Scripts/validate_app_store_metadata.sh
 run_step "Screenshot sync" Scripts/validate_screenshot_sync.sh
+run_step "Screenshot privacy metadata" Scripts/validate_screenshot_privacy.sh
 run_step "Public privacy and support pages" Scripts/validate_public_pages.sh
 run_step "Privacy surface" Scripts/validate_privacy_surface.sh
 run_step "App Privacy Details" Scripts/validate_app_privacy_details.sh

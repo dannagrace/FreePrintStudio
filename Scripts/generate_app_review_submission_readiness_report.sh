@@ -83,6 +83,7 @@ run_step() {
 
 run_step status_metadata "Scripts/validate_app_store_metadata.sh" Scripts/validate_app_store_metadata.sh
 run_step status_screenshots "Scripts/validate_screenshot_sync.sh" Scripts/validate_screenshot_sync.sh
+run_step status_screenshot_privacy "Scripts/validate_screenshot_privacy.sh" Scripts/validate_screenshot_privacy.sh
 run_step status_public_pages "Scripts/validate_public_pages.sh" Scripts/validate_public_pages.sh
 run_step status_privacy_surface "Scripts/validate_privacy_surface.sh" Scripts/validate_privacy_surface.sh
 run_step status_app_privacy "Scripts/validate_app_privacy_details.sh" Scripts/validate_app_privacy_details.sh
@@ -138,6 +139,7 @@ cat >"$output_path" <<EOF
 | --- | --- | --- |
 | App Store metadata limits | \`Scripts/validate_app_store_metadata.sh\` | $status_metadata |
 | Screenshot sync | \`Scripts/validate_screenshot_sync.sh\` | $status_screenshots |
+| Screenshot privacy metadata | \`Scripts/validate_screenshot_privacy.sh\` | $status_screenshot_privacy |
 | Public privacy/support pages | \`Scripts/validate_public_pages.sh\` | $status_public_pages |
 | Privacy surface | \`Scripts/validate_privacy_surface.sh\` | $status_privacy_surface |
 | App Privacy Details JSON | \`Scripts/validate_app_privacy_details.sh\` | $status_app_privacy |

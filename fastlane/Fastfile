@@ -121,6 +121,13 @@ def validate_screenshot_sync!
   )
 end
 
+def validate_screenshot_privacy!
+  run_release_script!(
+    "Scripts/validate_screenshot_privacy.sh",
+    "Screenshot privacy metadata validation failed."
+  )
+end
+
 def validate_app_privacy_details!
   run_release_script!(
     "Scripts/validate_app_privacy_details.sh",
@@ -270,6 +277,7 @@ platform :ios do
     validate_release_env!
     validate_app_store_metadata!
     validate_screenshot_sync!
+    validate_screenshot_privacy!
     validate_app_store_questionnaires!
     validate_app_review_contact!
     credential_options = app_store_connect_credentials(required: true)
@@ -337,6 +345,7 @@ platform :ios do
     validate_release_env!
     validate_app_store_metadata!
     validate_screenshot_sync!
+    validate_screenshot_privacy!
     validate_privacy_surface!
     validate_app_privacy_details!
     validate_app_store_questionnaires!

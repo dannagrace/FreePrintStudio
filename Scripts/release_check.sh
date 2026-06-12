@@ -1509,7 +1509,9 @@ check_contains "fastlane/Fastfile" "Scripts/validate_release_env.sh" "Fastfile m
 check_contains "fastlane/Fastfile" "Scripts/validate_app_review_contact.sh" "Fastfile must run App Review contact validation before upload or submission"
 check_contains "fastlane/Fastfile" "Scripts/validate_manual_release_verification.sh" "Fastfile must run manual release evidence validation before App Review submission"
 check_contains "fastlane/Fastfile" "Scripts/validate_app_store_questionnaires.sh" "Fastfile must run App Store questionnaire validation before upload or submission"
+check_contains "fastlane/Fastfile" "Scripts/validate_screenshot_privacy.sh" "Fastfile must run screenshot privacy metadata validation before upload or submission"
 check_occurrences_at_least "fastlane/Fastfile" "validate_app_review_contact!" 2 "Fastfile metadata and submit lanes must require App Review contact validation"
+check_occurrences_at_least "fastlane/Fastfile" "validate_screenshot_privacy!" 2 "Fastfile metadata and submit lanes must require screenshot privacy metadata validation"
 check_occurrences_at_least "fastlane/Fastfile" "validate_app_store_questionnaires!" 4 "Fastfile upload and submit lanes must require App Store questionnaire validation"
 check_file "Scripts/validate_fastlane_release_lanes.sh" "Fastlane release lane validation script is required"
 if [[ ! -x "Scripts/validate_fastlane_release_lanes.sh" ]]; then
@@ -1521,6 +1523,7 @@ if [[ -x "Scripts/validate_fastlane_release_lanes.sh" ]]; then
 fi
 check_contains "Scripts/validate_fastlane_release_lanes.sh" "validate_release_env!" "Fastlane lane validation must check release environment placeholder gates"
 check_contains "Scripts/validate_fastlane_release_lanes.sh" "validate_app_review_contact!" "Fastlane lane validation must check App Review contact gates"
+check_contains "Scripts/validate_fastlane_release_lanes.sh" "validate_screenshot_privacy!" "Fastlane lane validation must check screenshot privacy metadata gates"
 check_contains "Scripts/validate_fastlane_release_lanes.sh" "validate_manual_release_verification!" "Fastlane lane validation must check manual release evidence gates"
 check_contains "Scripts/validate_fastlane_release_lanes.sh" "validate_app_store_questionnaires!" "Fastlane lane validation must check App Store questionnaire gates"
 check_contains "Scripts/validate_fastlane_release_lanes.sh" "verify_app_store_connect_state!" "Fastlane lane validation must check App Store Connect state preflight gates"
@@ -1542,6 +1545,7 @@ fi
 check_contains "Scripts/preflight_metadata_upload.sh" "Scripts/validate_release_env.sh" "Metadata upload preflight must validate private release inputs"
 check_contains "Scripts/preflight_metadata_upload.sh" "Scripts/validate_app_store_metadata.sh" "Metadata upload preflight must validate App Store metadata"
 check_contains "Scripts/preflight_metadata_upload.sh" "Scripts/validate_screenshot_sync.sh" "Metadata upload preflight must validate screenshot sync"
+check_contains "Scripts/preflight_metadata_upload.sh" "Scripts/validate_screenshot_privacy.sh" "Metadata upload preflight must validate screenshot privacy metadata"
 check_contains "Scripts/preflight_metadata_upload.sh" "Scripts/validate_public_pages.sh" "Metadata upload preflight must validate public privacy and support pages"
 check_contains "Scripts/preflight_metadata_upload.sh" "Scripts/validate_app_store_questionnaires.sh" "Metadata upload preflight must validate App Store questionnaires"
 check_contains "Scripts/preflight_metadata_upload.sh" "Scripts/validate_app_review_contact.sh" "Metadata upload preflight must validate App Review contact"
@@ -2323,6 +2327,7 @@ if [[ ! -x "Scripts/preflight_app_review_submission.sh" ]]; then
 fi
 check_contains "Scripts/preflight_app_review_submission.sh" "Scripts/validate_app_store_metadata.sh" "App Review preflight must validate App Store metadata"
 check_contains "Scripts/preflight_app_review_submission.sh" "Scripts/validate_screenshot_sync.sh" "App Review preflight must validate screenshot sync"
+check_contains "Scripts/preflight_app_review_submission.sh" "Scripts/validate_screenshot_privacy.sh" "App Review preflight must validate screenshot privacy metadata"
 check_contains "Scripts/preflight_app_review_submission.sh" "Scripts/validate_privacy_surface.sh" "App Review preflight must validate the privacy surface"
 check_contains "Scripts/preflight_app_review_submission.sh" "Scripts/validate_app_privacy_details.sh" "App Review preflight must validate App Privacy Details"
 check_contains "Scripts/preflight_app_review_submission.sh" "Scripts/validate_app_store_questionnaires.sh" "App Review preflight must validate questionnaire consistency"
@@ -2687,6 +2692,7 @@ fi
 check_contains "Scripts/generate_app_review_submission_readiness_report.sh" "app-review-submission-readiness-report.md" "App Review submission readiness report generator must use a deterministic output name"
 check_contains "Scripts/generate_app_review_submission_readiness_report.sh" "preflight_app_review_submission.sh" "App Review submission readiness report must reference the final preflight"
 check_contains "Scripts/generate_app_review_submission_readiness_report.sh" "validate_app_store_metadata.sh" "App Review submission readiness report must summarize metadata validation"
+check_contains "Scripts/generate_app_review_submission_readiness_report.sh" "validate_screenshot_privacy.sh" "App Review submission readiness report must summarize screenshot privacy metadata validation"
 check_contains "Scripts/generate_app_review_submission_readiness_report.sh" "validate_manual_release_verification.sh" "App Review submission readiness report must summarize manual release evidence"
 check_contains "Scripts/generate_app_review_submission_readiness_report.sh" "check_app_store_connect_state.sh" "App Review submission readiness report must summarize selected build state checks"
 check_contains "Scripts/generate_app_review_submission_readiness_report.sh" "processed App Store Connect build number" "App Review submission readiness report must warn that selected-build placeholders must be replaced"
