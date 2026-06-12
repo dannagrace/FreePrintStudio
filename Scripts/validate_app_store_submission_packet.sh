@@ -179,6 +179,7 @@ required_files=(
   "app-store-connect-readiness-report.md"
   "app-store-connect-state-report.md"
   "app-review-submission-readiness-report.md"
+  "public-pages-readiness-report.md"
 )
 
 for relative_path in "${required_files[@]}"; do
@@ -211,6 +212,11 @@ require_contains "app-store-connect-state-report.md" "Scripts/check_app_store_co
 require_contains "app-store-connect-state-report.md" "Exit Code:" "selected-build state report exit code"
 require_contains "app-store-connect-state-report.md" "Redacted Output" "selected-build state report redacted output"
 require_contains "readiness.txt" "Summary:" "readiness audit summary"
+require_contains "public-pages-readiness-report.md" "Public page checks" "public page check status"
+require_contains "public-pages-readiness-report.md" "https://dannagrace.github.io/FreePrintStudio/privacy-policy.html" "public privacy URL tracking"
+require_contains "public-pages-readiness-report.md" "https://dannagrace.github.io/FreePrintStudio/support.html" "public support URL tracking"
+require_contains "public-pages-readiness-report.md" "FreePrint Studio Privacy Policy" "public privacy page expected text tracking"
+require_contains "public-pages-readiness-report.md" "FreePrint Studio Support" "public support page expected text tracking"
 
 if grep -qE 'Manual release verification evidence failed|Manual verifier|Real iPhone|AirPrint|TestFlight|MANUAL_' "$PACKET_DIR/readiness.txt"; then
   require_contains "external-readiness-actions.tsv" "Manual Verification" "manual verification external action tracking"
@@ -258,6 +264,7 @@ required_file_manifest_entries=(
   "SUMMARY.md"
   "external-readiness-actions.tsv"
   "pdf-export-validation.tsv"
+  "public-pages-readiness-report.md"
   "readiness.txt"
   "screenshots.tsv"
   "files/AppStore/metadata.md"

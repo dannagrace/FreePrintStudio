@@ -163,6 +163,12 @@ Generate a redacted App Review submission readiness report before the final pref
 Scripts/verify_release.sh review-report
 ```
 
+Generate a public privacy/support page readiness report before release handoff:
+
+```sh
+Scripts/verify_release.sh public-pages-report
+```
+
 Validate that installed signing assets match the release bundle, Apple team, and App Store Connect export method:
 
 ```sh
@@ -241,7 +247,7 @@ APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/validate_manual_release_ve
 
 When validating the final App Review build, run the manual evidence check with the same APP_STORE_BUILD_NUMBER that will be submitted so the tested TestFlight build cannot drift from the selected App Store build.
 
-Prepare a local App Store submission packet with metadata, questionnaire drafts, screenshots, PDF export validation evidence, the blank manual release evidence form, redacted App Review contact, manual release, signing, App Store Connect readiness, App Store Connect state, and App Review submission readiness reports, checksums, readiness audit output, and next commands:
+Prepare a local App Store submission packet with metadata, questionnaire drafts, screenshots, PDF export validation evidence, the blank manual release evidence form, redacted App Review contact, manual release, signing, App Store Connect readiness, App Store Connect state, App Review submission readiness, and public pages readiness reports, checksums, readiness audit output, and next commands:
 
 ```sh
 Scripts/verify_release.sh submission-packet
