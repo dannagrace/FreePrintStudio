@@ -177,6 +177,13 @@ def preflight_testflight_upload!
   )
 end
 
+def preflight_testflight_upload_dependencies!
+  run_release_script!(
+    "Scripts/preflight_testflight_upload_dependencies.sh",
+    "TestFlight upload dependency preflight failed."
+  )
+end
+
 def preflight_metadata_upload!
   run_release_script!(
     "Scripts/preflight_metadata_upload.sh",
@@ -375,6 +382,7 @@ platform :ios do
 
   desc "Upload the signed App Store IPA to TestFlight without external distribution"
   lane :upload_testflight do
+    preflight_testflight_upload_dependencies!
     validate_release_env!
     ipa_path = exported_ipa_path
 

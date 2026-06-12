@@ -1020,6 +1020,7 @@ check_contains "fastlane/Fastfile" "validate_app_store_export!" "Fastfile must v
 check_contains "fastlane/Fastfile" "Scripts/preflight_app_store_archive.sh" "Fastfile must run the App Store archive preflight script"
 check_contains "fastlane/Fastfile" "app_store_connect_api_key" "Fastfile must support App Store Connect API key upload"
 check_contains "fastlane/Fastfile" "upload_to_testflight" "Fastfile must upload the signed IPA to TestFlight"
+check_contains "fastlane/Fastfile" "Scripts/preflight_testflight_upload_dependencies.sh" "Fastfile must run the TestFlight upload dependency preflight before archive fallback"
 check_contains "fastlane/Fastfile" "upload_app_privacy_details_to_app_store" "Fastfile must support App Privacy Details upload"
 check_contains "fastlane/Fastfile" "CONFIRM_UPLOAD_APP_PRIVACY" "Fastfile privacy lane must require explicit upload confirmation"
 check_contains "fastlane/Fastfile" "AppStore/app_privacy_details.json" "Fastfile privacy lane must use the reviewed App Privacy Details JSON"
@@ -1059,6 +1060,7 @@ check_contains "Scripts/validate_fastlane_release_lanes.sh" "validate_manual_rel
 check_contains "Scripts/validate_fastlane_release_lanes.sh" "validate_app_store_questionnaires!" "Fastlane lane validation must check App Store questionnaire gates"
 check_contains "Scripts/validate_fastlane_release_lanes.sh" "verify_app_store_connect_state!" "Fastlane lane validation must check App Store Connect state preflight gates"
 check_contains "Scripts/validate_fastlane_release_lanes.sh" "preflight_metadata_upload!" "Fastlane lane validation must check metadata upload preflight gates"
+check_contains "Scripts/validate_fastlane_release_lanes.sh" "preflight_testflight_upload_dependencies!" "Fastlane lane validation must check TestFlight upload dependency preflight gates"
 check_contains "Scripts/validate_fastlane_release_lanes.sh" "preflight_app_privacy_upload!" "Fastlane lane validation must check App Privacy Details upload preflight gates"
 check_contains "Scripts/validate_fastlane_release_lanes.sh" "preflight_app_store_archive!" "Fastlane lane validation must check App Store archive preflight gates"
 check_contains "Scripts/validate_fastlane_release_lanes.sh" "preflight_app_review_submission!" "Fastlane lane validation must check App Review submission preflight gates"
@@ -1589,6 +1591,16 @@ check_contains "Scripts/preflight_testflight_upload.sh" "Scripts/validate_app_st
 check_contains "Scripts/preflight_testflight_upload.sh" "APP_STORE_CONNECT_SKIP_BUILD_CHECK=1" "TestFlight preflight must verify the App Store Connect app/version before upload without requiring an existing build"
 check_contains "Scripts/preflight_testflight_upload.sh" "Scripts/check_app_store_connect_state.sh" "TestFlight preflight must query App Store Connect state"
 check_contains "Scripts/preflight_testflight_upload.sh" "TestFlight upload preflight passed" "TestFlight preflight must print a clear success message"
+check_file "Scripts/preflight_testflight_upload_dependencies.sh" "TestFlight upload dependency preflight script is required"
+if [[ -f "Scripts/preflight_testflight_upload_dependencies.sh" && ! -x "Scripts/preflight_testflight_upload_dependencies.sh" ]]; then
+  printf 'FAIL: TestFlight upload dependency preflight script must be executable (Scripts/preflight_testflight_upload_dependencies.sh)\n'
+  failures=$((failures + 1))
+fi
+check_contains "Scripts/preflight_testflight_upload_dependencies.sh" "Scripts/validate_release_env.sh" "TestFlight dependency preflight must validate private release inputs before archive fallback"
+check_contains "Scripts/preflight_testflight_upload_dependencies.sh" "Scripts/check_app_store_connect_credentials.sh" "TestFlight dependency preflight must validate App Store Connect credentials before archive fallback"
+check_contains "Scripts/preflight_testflight_upload_dependencies.sh" "APP_STORE_CONNECT_SKIP_BUILD_CHECK=1" "TestFlight dependency preflight must verify the App Store Connect app/version before archive fallback"
+check_contains "Scripts/preflight_testflight_upload_dependencies.sh" "Scripts/check_app_store_connect_state.sh" "TestFlight dependency preflight must query App Store Connect state before archive fallback"
+check_contains "Scripts/preflight_testflight_upload_dependencies.sh" "TestFlight upload dependency preflight passed" "TestFlight dependency preflight must print a clear success message"
 check_contains "Scripts/verify_release.sh" "testflight-preflight" "Release verification must expose the TestFlight upload preflight command"
 check_file "Scripts/preflight_app_review_submission.sh" "App Review submission preflight script is required"
 if [[ ! -x "Scripts/preflight_app_review_submission.sh" ]]; then

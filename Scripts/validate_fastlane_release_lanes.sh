@@ -90,6 +90,8 @@ if source:
         fail("Fastfile must call Scripts/validate_manual_release_verification.sh")
     if "Scripts/preflight_testflight_upload.sh" not in source:
         fail("Fastfile must call Scripts/preflight_testflight_upload.sh")
+    if "Scripts/preflight_testflight_upload_dependencies.sh" not in source:
+        fail("Fastfile must call Scripts/preflight_testflight_upload_dependencies.sh")
     if "Scripts/preflight_metadata_upload.sh" not in source:
         fail("Fastfile must call Scripts/preflight_metadata_upload.sh")
     if "Scripts/preflight_app_privacy_upload.sh" not in source:
@@ -173,6 +175,9 @@ if source:
 
     upload_testflight = lane_body(source, "upload_testflight")
     if upload_testflight:
+        require_before("upload_testflight", upload_testflight, "preflight_testflight_upload_dependencies!", "validate_release_env!")
+        require_before("upload_testflight", upload_testflight, "preflight_testflight_upload_dependencies!", "Scripts/archive_app_store.sh")
+        require_before("upload_testflight", upload_testflight, "preflight_testflight_upload_dependencies!", "preflight_testflight_upload!")
         require_before("upload_testflight", upload_testflight, "validate_release_env!", "upload_to_testflight(")
         require_before("upload_testflight", upload_testflight, "validate_app_store_export!", "upload_to_testflight(")
         require_before("upload_testflight", upload_testflight, "preflight_testflight_upload!", "upload_to_testflight(")
