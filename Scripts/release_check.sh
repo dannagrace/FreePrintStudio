@@ -1406,6 +1406,35 @@ if RELEASE_ENV_PATH="$app_store_connect_api_json_test_dir/missing-release.env" \
 elif ! grep -q 'key_filepath does not exist' "$app_store_connect_api_json_log"; then
   printf 'FAIL: Credential audit should identify a missing API JSON key_filepath\n'
   failures=$((failures + 1))
+elif grep -Fq "$app_store_connect_api_json_test_dir/missing/AuthKey_KEYID12345.p8" "$app_store_connect_api_json_log"; then
+  printf 'FAIL: Credential audit must not print the full missing API JSON key_filepath\n'
+  failures=$((failures + 1))
+fi
+missing_app_store_connect_api_json_path="$app_store_connect_api_json_test_dir/missing/fastlane-api-key.json"
+if RELEASE_ENV_PATH="$app_store_connect_api_json_test_dir/missing-release.env" \
+  APP_STORE_CONNECT_API_KEY_JSON="$missing_app_store_connect_api_json_path" \
+  Scripts/check_app_store_connect_credentials.sh >"$app_store_connect_api_json_log" 2>&1; then
+  printf 'FAIL: Credential audit must reject a missing APP_STORE_CONNECT_API_KEY_JSON file\n'
+  failures=$((failures + 1))
+elif ! grep -q 'APP_STORE_CONNECT_API_KEY_JSON does not exist' "$app_store_connect_api_json_log"; then
+  printf 'FAIL: Credential audit should identify a missing APP_STORE_CONNECT_API_KEY_JSON file\n'
+  failures=$((failures + 1))
+elif grep -Fq "$missing_app_store_connect_api_json_path" "$app_store_connect_api_json_log"; then
+  printf 'FAIL: Credential audit must not print the full missing APP_STORE_CONNECT_API_KEY_JSON path\n'
+  failures=$((failures + 1))
+fi
+missing_app_store_connect_triplet_path="$app_store_connect_api_json_test_dir/missing/AuthKey_TRIPLET123.p8"
+if RELEASE_ENV_PATH="$app_store_connect_api_json_test_dir/missing-release.env" \
+  ASC_KEY_ID=KEYID12345 ASC_ISSUER_ID=00000000-0000-0000-0000-000000000001 ASC_KEY_PATH="$missing_app_store_connect_triplet_path" \
+  Scripts/check_app_store_connect_credentials.sh >"$app_store_connect_api_json_log" 2>&1; then
+  printf 'FAIL: Credential audit must reject a missing ASC_KEY_PATH file\n'
+  failures=$((failures + 1))
+elif ! grep -q 'ASC_KEY_PATH does not exist' "$app_store_connect_api_json_log"; then
+  printf 'FAIL: Credential audit should identify a missing ASC_KEY_PATH file\n'
+  failures=$((failures + 1))
+elif grep -Fq "$missing_app_store_connect_triplet_path" "$app_store_connect_api_json_log"; then
+  printf 'FAIL: Credential audit must not print the full missing ASC_KEY_PATH path\n'
+  failures=$((failures + 1))
 fi
 cat >"$app_store_connect_api_json_key_path" <<'EOF'
 -----BEGIN PRIVATE KEY-----

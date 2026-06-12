@@ -68,17 +68,17 @@ if key_filepath:
     if not key_path.is_absolute():
         key_path = (json_path.parent / key_path).resolve()
     if not key_path.is_file():
-        raise SystemExit(f"BLOCKED: APP_STORE_CONNECT_API_KEY_JSON key_filepath does not exist: {key_path}")
+        raise SystemExit("BLOCKED: APP_STORE_CONNECT_API_KEY_JSON key_filepath does not exist at the configured path")
     try:
         key_text = key_path.read_text(encoding="utf-8")
-    except Exception as exc:
-        raise SystemExit(f"BLOCKED: APP_STORE_CONNECT_API_KEY_JSON key_filepath is not readable: {exc}")
+    except Exception:
+        raise SystemExit("BLOCKED: APP_STORE_CONNECT_API_KEY_JSON key_filepath is not readable at the configured path")
     if "BEGIN PRIVATE KEY" not in key_text:
         raise SystemExit("BLOCKED: APP_STORE_CONNECT_API_KEY_JSON key_filepath does not look like an App Store Connect .p8 private key")
 print("OK: Fastlane App Store Connect API JSON is present")
 PY
   else
-    block "APP_STORE_CONNECT_API_KEY_JSON does not exist: $APP_STORE_CONNECT_API_KEY_JSON"
+    block "APP_STORE_CONNECT_API_KEY_JSON does not exist at the configured path"
   fi
 else
   if [[ -n "${ASC_KEY_ID:-}" ]]; then
@@ -104,7 +104,7 @@ else
   if [[ -z "${ASC_KEY_PATH:-}" ]]; then
     block "ASC_KEY_PATH is missing"
   elif [[ ! -f "$ASC_KEY_PATH" ]]; then
-    block "ASC_KEY_PATH does not exist: $ASC_KEY_PATH"
+    block "ASC_KEY_PATH does not exist at the configured path"
   elif ! grep -q "BEGIN PRIVATE KEY" "$ASC_KEY_PATH"; then
     block "ASC_KEY_PATH does not look like an App Store Connect .p8 private key"
   else
