@@ -166,6 +166,7 @@ fi
 required_files=(
   "SUMMARY.md"
   "ACTION_ITEMS.md"
+  "release-input-status.txt"
   "readiness.txt"
   "screenshots.tsv"
   "pdf-export-validation.tsv"
@@ -193,6 +194,10 @@ require_contains "pdf-export-validation.tsv" "test-ruler-stretch" "Test Ruler PD
 require_contains "ACTION_ITEMS.md" "## External Values To Provide" "external values checklist"
 require_contains "ACTION_ITEMS.md" "## Command Order" "release command order"
 require_contains "SUMMARY.md" "ACTION_ITEMS.md" "summary action item reference"
+require_contains "SUMMARY.md" "release-input-status.txt" "summary redacted release input status reference"
+require_contains "release-input-status.txt" "== Release Input Status ==" "redacted release input status header"
+require_contains "release-input-status.txt" "== Missing Release Input Fields ==" "release input missing field checklist"
+require_contains "release-input-status.txt" "MISSING_FIELD:" "release input field-level missing item output"
 require_contains "SUMMARY.md" "external-readiness-actions.tsv" "summary external readiness manifest reference"
 require_contains "readiness.txt" "Summary:" "readiness audit summary"
 

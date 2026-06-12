@@ -15,6 +15,7 @@ CONTACT_READINESS_REPORT="$PACKET_DIR/app-review-contact-readiness-report.md"
 SIGNING_READINESS_REPORT="$PACKET_DIR/signing-readiness-report.md"
 APP_STORE_CONNECT_READINESS_REPORT="$PACKET_DIR/app-store-connect-readiness-report.md"
 APP_REVIEW_SUBMISSION_READINESS_REPORT="$PACKET_DIR/app-review-submission-readiness-report.md"
+RELEASE_INPUT_STATUS="$PACKET_DIR/release-input-status.txt"
 FILE_MANIFEST="$PACKET_DIR/file-manifest.tsv"
 SUMMARY_PATH="$PACKET_DIR/SUMMARY.md"
 ACTION_ITEMS_PATH="$PACKET_DIR/ACTION_ITEMS.md"
@@ -161,6 +162,12 @@ write_app_store_connect_readiness_report() {
 
 write_app_review_submission_readiness_report() {
   Scripts/generate_app_review_submission_readiness_report.sh "$APP_REVIEW_SUBMISSION_READINESS_REPORT" >/dev/null
+}
+
+write_release_input_status() {
+  set +e
+  Scripts/print_release_input_status.sh --strict >"$RELEASE_INPUT_STATUS" 2>&1
+  set -e
 }
 
 write_file_manifest() {
@@ -427,6 +434,7 @@ write_contact_readiness_report
 write_signing_readiness_report
 write_app_store_connect_readiness_report
 write_app_review_submission_readiness_report
+write_release_input_status
 
 set +e
 Scripts/check_app_store_readiness.sh >"$READINESS_LOG" 2>&1
@@ -464,6 +472,7 @@ cat >"$SUMMARY_PATH" <<EOF
 - Redacted signing readiness report for Apple Developer Team, certificate, and provisioning profile state.
 - Redacted App Store Connect readiness report for credential mode, upload guards, build selection, and account-dependent checks.
 - Redacted App Review submission readiness report for final metadata, policy, evidence, credential, and selected-build checks.
+- Redacted release input status with field-level missing private input tracking.
 - Reviewed screenshots and Fastlane upload screenshots.
 - PDF export validation manifest, including Test Ruler exact-size evidence.
 - Public privacy and support page source files.
@@ -477,6 +486,7 @@ cat >"$SUMMARY_PATH" <<EOF
 - \`signing-readiness-report.md\` with redacted signing status, profile counts, and next actions.
 - \`app-store-connect-readiness-report.md\` with redacted App Store Connect credential status, upload guard state, and next actions.
 - \`app-review-submission-readiness-report.md\` with redacted final App Review submission gate status and next actions.
+- \`release-input-status.txt\` with redacted private input readiness and missing field checklist.
 - \`external-readiness-actions.tsv\` with categorized external blockers, affected fields, validation commands, and warnings for release tracking.
 - \`file-manifest.tsv\` with package file sizes and sha256 checksums.
 - \`readiness.txt\` with the latest App Store readiness audit.
