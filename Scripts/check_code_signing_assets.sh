@@ -55,10 +55,10 @@ fi
 
 identity_log="$(security find-identity -v -p codesigning 2>/dev/null || true)"
 if [[ -n "$team_id" ]] && grep -Eq "Apple Distribution: .*\($team_id\)" <<<"$identity_log"; then
-  ok "Apple Distribution signing identity found for team $team_id"
+  ok "Apple Distribution signing identity found for the selected team"
 elif grep -q "Apple Distribution" <<<"$identity_log"; then
   if [[ -n "$team_id" ]]; then
-    block "Apple Distribution identity exists, but none matched team $team_id"
+    block "Apple Distribution identity exists, but none matched the selected team"
   else
     ok "Apple Distribution signing identity found"
   fi
@@ -101,14 +101,13 @@ for path in profile_paths:
             capture_output=True,
         )
         profile = plistlib.loads(result.stdout)
-    except Exception as exc:
-        print(f"INFO: Ignoring unreadable provisioning profile {path.name}: {exc}")
+    except Exception:
+        print("INFO: Ignoring unreadable provisioning profile during signing validation")
         continue
 
     entitlements = profile.get("Entitlements", {})
     application_identifier = entitlements.get("application-identifier", "")
     team_ids = profile.get("TeamIdentifier", [])
-    profile_name = profile.get("Name", path.name)
     expiration_date = profile.get("ExpirationDate")
     provisioned_devices = profile.get("ProvisionedDevices")
     get_task_allow = entitlements.get("get-task-allow")
@@ -129,14 +128,14 @@ for path in profile_paths:
     if get_task_allow:
         continue
 
-    matches.append(profile_name)
+    matches.append(True)
 
 if matches:
-    print(f"OK: Matching App Store provisioning profile found for {bundle_id}: {matches[0]}")
+    print(f"OK: Matching App Store provisioning profile found for {bundle_id}")
 else:
     print(
         "BLOCKED: No matching App Store provisioning profile found for "
-        f"{bundle_id} and team {team_id}; profile must not contain ProvisionedDevices"
+        f"{bundle_id} and the selected team; profile must not contain ProvisionedDevices"
     )
     sys.exit(1)
 PY

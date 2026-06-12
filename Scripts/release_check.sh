@@ -1506,6 +1506,10 @@ check_contains "Scripts/check_code_signing_assets.sh" "Apple Distribution" "Code
 check_contains "Scripts/check_code_signing_assets.sh" "com.dannagrace.FreePrintStudio" "Code signing preflight must verify the release bundle id"
 check_contains "Scripts/check_code_signing_assets.sh" "app-store-connect" "Code signing preflight must verify App Store Connect export intent"
 check_contains "Scripts/check_code_signing_assets.sh" "ProvisionedDevices" "Code signing preflight must reject development or ad hoc provisioning profiles"
+check_not_contains "Scripts/check_code_signing_assets.sh" 'team $team_id' "Code signing preflight must not print the selected Apple Developer Team ID"
+check_not_contains "Scripts/check_code_signing_assets.sh" 'team {team_id}' "Code signing preflight must not print the selected Apple Developer Team ID from profile matching"
+check_not_contains "Scripts/check_code_signing_assets.sh" 'matches\[0\]' "Code signing preflight must not print provisioning profile names"
+check_not_contains "Scripts/check_code_signing_assets.sh" 'profile {path.name}: {exc}' "Code signing preflight must not print provisioning profile filenames or parser errors"
 check_file "Scripts/generate_signing_readiness_report.sh" "Signing readiness report generator is required"
 if [[ -f "Scripts/generate_signing_readiness_report.sh" && ! -x "Scripts/generate_signing_readiness_report.sh" ]]; then
   printf 'FAIL: Signing readiness report generator must be executable (Scripts/generate_signing_readiness_report.sh)\n'
