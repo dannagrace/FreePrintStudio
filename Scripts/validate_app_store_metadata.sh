@@ -63,12 +63,42 @@ def check_metadata_match(label: str, expected: str, actual: str) -> None:
         failures.append(f"{label} must match the Fastlane upload source")
 
 
+def check_review_notes_requirements(review_notes: str) -> None:
+    lower_notes = review_notes.lower()
+    required_phrases = [
+        ("account requirement", "does not require an account"),
+        ("local image processing", "locally on device"),
+        ("Photos import test path", "Choose an image from Photos"),
+        ("Test Ruler test path", "Test Ruler"),
+        ("six inch calibration guide", "six inch"),
+        ("PDF export test path", "Export PDF"),
+        ("AirPrint test path", "AirPrint"),
+        ("no image upload disclosure", "does not upload images"),
+        ("no analytics disclosure", "analytics"),
+        ("no ads disclosure", "ads"),
+        ("no tracking disclosure", "track users"),
+    ]
+
+    for label, phrase in required_phrases:
+        if phrase.lower() not in lower_notes:
+            failures.append(f"Review notes must include {label}: {phrase}")
+
+    numbered_steps = re.findall(r"^\d+\.\s+\S", review_notes, re.M)
+    if len(numbered_steps) < 4:
+        failures.append("Review notes must include at least four numbered reviewer test steps")
+
+    if re.search(r"\b(TODO|TBD|PLACEHOLDER)\b", review_notes, re.I):
+        failures.append("Review notes must not contain TODO, TBD, or PLACEHOLDER text")
+
+
 check_char_limit("App name", "name.txt", 2, 30)
 check_char_limit("Subtitle", "subtitle.txt", None, 30)
 check_char_limit("Promotional text", "promotional_text.txt", None, 170)
 check_char_limit("Description", "description.txt", None, 4000)
 check_char_limit("Release notes", "release_notes.txt", None, 4000)
 check_char_limit("Review notes", "notes.txt", None, 4000, REVIEW_METADATA)
+review_notes_text = read_text(REVIEW_METADATA / "notes.txt")
+check_review_notes_requirements(review_notes_text)
 
 copyright_text = read_text(NONLOCALIZED_METADATA / "copyright.txt")
 if copyright_text and not re.match(r"^(Copyright\s+|©\s*)?(19|20)\d{2}\s+\S", copyright_text):
@@ -105,7 +135,7 @@ metadata_matches = [
     ("Keywords", keywords_text, metadata_section(metadata_draft, "Keywords")),
     ("Copyright", copyright_text, metadata_section(metadata_draft, "Copyright")),
     ("Release notes", read_text(METADATA / "release_notes.txt"), metadata_section(metadata_draft, "Version Release Notes")),
-    ("Review notes", read_text(REVIEW_METADATA / "notes.txt"), metadata_section(metadata_draft, "Review Notes")),
+    ("Review notes", review_notes_text, metadata_section(metadata_draft, "Review Notes")),
     (
         "Privacy URL",
         read_text(METADATA / "privacy_url.txt"),
