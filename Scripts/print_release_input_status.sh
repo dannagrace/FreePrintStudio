@@ -377,6 +377,7 @@ printf 'Scripts/bootstrap_release_inputs.sh\n'
 printf 'Scripts/validate_release_env.sh\n'
 printf 'APP_STORE_BUILD_NUMBER=%s Scripts/validate_manual_release_verification.sh\n' "$selected_app_store_build"
 printf 'Scripts/check_app_store_readiness.sh\n'
+printf 'Scripts/verify_release.sh testflight-dependencies-preflight\n'
 
 printf '\nSummary: %d missing required release input item(s).\n' "$missing_count"
 if (( strict == 1 && missing_count > 0 )); then

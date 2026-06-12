@@ -732,6 +732,7 @@ check_contains "Scripts/print_release_input_status.sh" "--strict" "Release input
 check_contains "Scripts/print_release_input_status.sh" "does not print private values" "Release input status must explicitly avoid printing private values"
 check_contains "Scripts/print_release_input_status.sh" "Scripts/check_app_store_connect_credentials.sh" "Release input status must run strict App Store Connect credential validation"
 check_contains "Scripts/print_release_input_status.sh" "APP_STORE_BUILD_NUMBER=%s Scripts/validate_manual_release_verification.sh" "Release input status next commands must validate manual evidence against the selected App Store build"
+check_contains "Scripts/print_release_input_status.sh" "Scripts/verify_release.sh testflight-dependencies-preflight" "Release input status next commands must include the TestFlight upload dependency preflight"
 check_not_contains "Scripts/print_release_input_status.sh" "APP_STORE_BUILD_NUMBER:-<" "Release input status must use a shell-safe selected-build placeholder when APP_STORE_BUILD_NUMBER is missing"
 check_contains "Scripts/print_release_input_status.sh" "PROCESSED_BUILD_NUMBER" "Release input status must show a selected-build placeholder when APP_STORE_BUILD_NUMBER is missing"
 release_input_placeholder_build_test_dir="$(mktemp -d)"
