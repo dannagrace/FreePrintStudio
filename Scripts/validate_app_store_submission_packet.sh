@@ -182,7 +182,7 @@ require_contains "SUMMARY.md" "ACTION_ITEMS.md" "summary action item reference"
 require_contains "SUMMARY.md" "external-readiness-actions.tsv" "summary external readiness manifest reference"
 require_contains "readiness.txt" "Summary:" "readiness audit summary"
 
-if grep -q 'Manual release verification evidence failed' "$PACKET_DIR/readiness.txt"; then
+if grep -qE 'Manual release verification evidence failed|Manual verifier|Real iPhone|AirPrint|TestFlight|MANUAL_' "$PACKET_DIR/readiness.txt"; then
   require_contains "external-readiness-actions.tsv" "Manual Verification" "manual verification external action tracking"
 fi
 

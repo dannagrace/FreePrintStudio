@@ -2038,6 +2038,7 @@ check_contains "Scripts/validate_app_store_submission_packet.sh" "pdf-export-val
 check_contains "Scripts/validate_app_store_submission_packet.sh" "screenshots.tsv" "Submission packet validator must require screenshot evidence"
 check_contains "Scripts/validate_app_store_submission_packet.sh" "test-ruler-stretch" "Submission packet validator must require Test Ruler PDF evidence"
 check_contains "Scripts/validate_app_store_submission_packet.sh" "Manual Verification" "Submission packet validator must require manual verification tracking"
+check_contains "Scripts/validate_app_store_submission_packet.sh" "Manual verifier|Real iPhone|AirPrint|TestFlight|MANUAL_" "Submission packet validator must detect individual manual release evidence blockers"
 check_contains "Scripts/validate_app_store_submission_packet.sh" "/Users/" "Submission packet validator must reject leaked absolute local paths"
 check_contains "Scripts/validate_app_store_submission_packet.sh" "require_no_forbidden_private_artifacts" "Submission packet validator must reject private release artifacts by filename"
 check_contains "Scripts/validate_app_store_submission_packet.sh" "Config/release.env" "Submission packet validator must reject filled private release.env files"
