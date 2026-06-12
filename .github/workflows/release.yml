@@ -55,6 +55,10 @@ jobs:
         timeout-minutes: 5
         run: Scripts/verify_release.sh screenshots
 
+      - name: Public pages validation
+        timeout-minutes: 2
+        run: Scripts/verify_release.sh public-pages
+
       - name: App Store submission packet
         timeout-minutes: 5
         run: Scripts/verify_release.sh submission-packet
