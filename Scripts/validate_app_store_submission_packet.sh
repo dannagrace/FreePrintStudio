@@ -48,6 +48,19 @@ require_tsv_header() {
   fi
 }
 
+require_tsv_column_populated() {
+  local relative_path="$1"
+  local column_index="$2"
+  local description="$3"
+  if [[ ! -s "$PACKET_DIR/$relative_path" ]]; then
+    fail "$description cannot be checked because $PACKET_DIR/$relative_path is missing"
+    return
+  fi
+  if ! awk -F '\t' -v column_index="$column_index" 'NR > 1 && $column_index == "" { exit 1 }' "$PACKET_DIR/$relative_path"; then
+    fail "$description has empty values in column $column_index"
+  fi
+}
+
 require_manifest_entry() {
   local manifest="$1"
   local expected_path="$2"
@@ -173,7 +186,8 @@ done
 require_tsv_header "screenshots.tsv" $'path\twidth\theight\thasAlpha\tsha256' "screenshots.tsv"
 require_tsv_header "pdf-export-validation.tsv" $'label\tcontent\tmode\tpaper\torientation\tunit\ttargetWidth\ttargetHeight\tpdfPath\tmediaBoxWidthPt\tmediaBoxHeightPt\tclipWidthPt\tclipHeightPt\tdrawWidthPt\tdrawHeightPt\tsha256' "pdf-export-validation.tsv"
 require_tsv_header "file-manifest.tsv" $'path\tbytes\tsha256' "file-manifest.tsv"
-require_tsv_header "external-readiness-actions.tsv" $'category\tseverity\towner\titem\tnext_action' "external-readiness-actions.tsv"
+require_tsv_header "external-readiness-actions.tsv" $'category	severity	owner	field	item	next_action	validation_command' "external-readiness-actions.tsv"
+require_tsv_column_populated "external-readiness-actions.tsv" 4 "external-readiness-actions.tsv affected field tracking"
 
 require_contains "pdf-export-validation.tsv" "test-ruler-stretch" "Test Ruler PDF validation evidence"
 require_contains "ACTION_ITEMS.md" "## External Values To Provide" "external values checklist"
@@ -184,18 +198,22 @@ require_contains "readiness.txt" "Summary:" "readiness audit summary"
 
 if grep -qE 'Manual release verification evidence failed|Manual verifier|Real iPhone|AirPrint|TestFlight|MANUAL_' "$PACKET_DIR/readiness.txt"; then
   require_contains "external-readiness-actions.tsv" "Manual Verification" "manual verification external action tracking"
+  require_contains "external-readiness-actions.tsv" "Scripts/validate_manual_release_verification.sh" "manual verification validation command tracking"
 fi
 
 if grep -q 'APP_REVIEW_CONTACT_' "$PACKET_DIR/readiness.txt"; then
   require_contains "external-readiness-actions.tsv" "App Review Contact" "App Review contact external action tracking"
+  require_contains "external-readiness-actions.tsv" "Scripts/validate_app_review_contact.sh" "App Review contact validation command tracking"
 fi
 
 if grep -qE 'Apple Developer Team ID|Apple Distribution|provisioning profile' "$PACKET_DIR/readiness.txt"; then
   require_contains "external-readiness-actions.tsv" "Signing" "signing external action tracking"
+  require_contains "external-readiness-actions.tsv" "Scripts/check_code_signing_assets.sh" "signing validation command tracking"
 fi
 
 if grep -qE 'FASTLANE_USER|App Store Connect|ASC_' "$PACKET_DIR/readiness.txt"; then
   require_contains "external-readiness-actions.tsv" "App Store Connect" "App Store Connect external action tracking"
+  require_contains "external-readiness-actions.tsv" "Scripts/check_app_store_connect_credentials.sh" "App Store Connect validation command tracking"
 fi
 
 required_screenshot_entries=(

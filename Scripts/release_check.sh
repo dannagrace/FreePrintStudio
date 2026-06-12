@@ -1961,7 +1961,13 @@ check_contains "Scripts/prepare_app_store_submission_packet.sh" "write_external_
 check_contains "Scripts/prepare_app_store_submission_packet.sh" "redact_external_action_item" "External readiness actions must redact local absolute paths from item text"
 check_contains "Scripts/prepare_app_store_submission_packet.sh" "\\[repo\\]/" "External readiness actions must replace repository absolute paths with a stable placeholder"
 check_contains "Scripts/prepare_app_store_submission_packet.sh" "\\[home\\]/" "External readiness actions must replace home-directory absolute paths with a stable placeholder"
-check_contains "Scripts/prepare_app_store_submission_packet.sh" $'category\tseverity\towner\titem\tnext_action' "External readiness actions manifest must include stable TSV headers"
+check_contains "Scripts/prepare_app_store_submission_packet.sh" $'category\tseverity\towner\tfield\titem\tnext_action\tvalidation_command' "External readiness actions manifest must include stable TSV headers with fields and validation commands"
+check_contains "Scripts/prepare_app_store_submission_packet.sh" "external_action_field_for_item" "External readiness actions must extract the affected release field"
+check_contains "Scripts/prepare_app_store_submission_packet.sh" "validation_command" "External readiness actions must include the command that verifies each item"
+check_contains "Scripts/prepare_app_store_submission_packet.sh" "Scripts/validate_app_review_contact.sh" "External readiness actions must point App Review contact items at the contact validator"
+check_contains "Scripts/prepare_app_store_submission_packet.sh" "Scripts/validate_manual_release_verification.sh" "External readiness actions must point manual evidence items at the manual evidence validator"
+check_contains "Scripts/prepare_app_store_submission_packet.sh" "Scripts/check_code_signing_assets.sh" "External readiness actions must point signing items at the signing validator"
+check_contains "Scripts/prepare_app_store_submission_packet.sh" "Scripts/check_app_store_connect_credentials.sh" "External readiness actions must point App Store Connect credential items at the credential validator"
 if ! python3 - <<'PY'
 from pathlib import Path
 
@@ -2216,6 +2222,8 @@ if [[ -f "Scripts/validate_app_store_submission_packet.sh" && ! -x "Scripts/vali
 fi
 check_contains "Scripts/validate_app_store_submission_packet.sh" "ACTION_ITEMS.md" "Submission packet validator must require action items"
 check_contains "Scripts/validate_app_store_submission_packet.sh" "external-readiness-actions.tsv" "Submission packet validator must require external readiness actions"
+check_contains "Scripts/validate_app_store_submission_packet.sh" $'category\tseverity\towner\tfield\titem\tnext_action\tvalidation_command' "Submission packet validator must require external action fields and validation commands"
+check_contains "Scripts/validate_app_store_submission_packet.sh" "require_tsv_column_populated" "Submission packet validator must reject missing external action affected fields"
 check_contains "Scripts/validate_app_store_submission_packet.sh" "file-manifest.tsv" "Submission packet validator must require the file manifest"
 check_contains "Scripts/validate_app_store_submission_packet.sh" "pdf-export-validation.tsv" "Submission packet validator must require PDF validation evidence"
 check_contains "Scripts/validate_app_store_submission_packet.sh" "screenshots.tsv" "Submission packet validator must require screenshot evidence"
