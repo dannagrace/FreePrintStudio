@@ -2026,6 +2026,17 @@ check_contains "Scripts/prepare_app_store_submission_packet.sh" "Scripts/validat
 check_contains "Scripts/prepare_app_store_submission_packet.sh" "Scripts/validate_manual_release_verification.sh" "External readiness actions must point manual evidence items at the manual evidence validator"
 check_contains "Scripts/prepare_app_store_submission_packet.sh" "Scripts/check_code_signing_assets.sh" "External readiness actions must point signing items at the signing validator"
 check_contains "Scripts/prepare_app_store_submission_packet.sh" "Scripts/check_app_store_connect_credentials.sh" "External readiness actions must point App Store Connect credential items at the credential validator"
+check_contains "Scripts/prepare_app_store_submission_packet.sh" "release-provenance.tsv" "Submission packet generator must include release provenance"
+check_contains "Scripts/prepare_app_store_submission_packet.sh" "write_release_provenance" "Submission packet generator must write release provenance"
+check_contains "Scripts/prepare_app_store_submission_packet.sh" "git rev-parse HEAD" "Submission packet provenance must record the source commit"
+check_contains "Scripts/prepare_app_store_submission_packet.sh" "git status --short" "Submission packet provenance must record worktree cleanliness"
+check_contains "Scripts/prepare_app_store_submission_packet.sh" "GITHUB_RUN_ID" "Submission packet provenance must record GitHub Actions run context when available"
+check_contains "Scripts/prepare_app_store_submission_packet.sh" '\\`release-provenance.tsv\\`' "Submission packet summary must reference release provenance"
+check_contains "Scripts/validate_app_store_submission_packet.sh" "release-provenance.tsv" "Submission packet validator must require release provenance"
+check_contains "Scripts/validate_app_store_submission_packet.sh" $'key\tvalue' "Submission packet validator must check release provenance header"
+check_contains "Scripts/validate_app_store_submission_packet.sh" "git_commit" "Submission packet validator must require release provenance source commit"
+check_contains "Scripts/validate_app_store_submission_packet.sh" "git_branch" "Submission packet validator must require release provenance branch"
+check_contains "Scripts/validate_app_store_submission_packet.sh" "git_status" "Submission packet validator must require release provenance worktree status"
 if ! python3 - <<'PY'
 from pathlib import Path
 

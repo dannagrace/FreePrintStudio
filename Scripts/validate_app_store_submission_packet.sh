@@ -74,6 +74,19 @@ require_manifest_entry() {
   fi
 }
 
+require_tsv_key() {
+  local relative_path="$1"
+  local expected_key="$2"
+  local description="$3"
+  if [[ ! -s "$PACKET_DIR/$relative_path" ]]; then
+    fail "$description cannot be checked because $PACKET_DIR/$relative_path is missing"
+    return
+  fi
+  if ! awk -F '\t' -v key="$expected_key" 'NR > 1 && $1 == key && $2 != "" { found = 1 } END { exit(found ? 0 : 1) }' "$PACKET_DIR/$relative_path"; then
+    fail "$description is missing or empty in $PACKET_DIR/$relative_path: $expected_key"
+  fi
+}
+
 require_manifest_files_exist() {
   local manifest="$PACKET_DIR/file-manifest.tsv"
   local relative_path
@@ -171,6 +184,7 @@ required_files=(
   "screenshots.tsv"
   "pdf-export-validation.tsv"
   "file-manifest.tsv"
+  "release-provenance.tsv"
   "external-readiness-actions.tsv"
   "manual-release-evidence-form.md"
   "manual-release-readiness-report.md"
@@ -189,6 +203,7 @@ done
 require_tsv_header "screenshots.tsv" $'path\twidth\theight\thasAlpha\tsha256' "screenshots.tsv"
 require_tsv_header "pdf-export-validation.tsv" $'label\tcontent\tmode\tpaper\torientation\tunit\ttargetWidth\ttargetHeight\tpdfPath\tmediaBoxWidthPt\tmediaBoxHeightPt\tclipWidthPt\tclipHeightPt\tdrawWidthPt\tdrawHeightPt\tsha256' "pdf-export-validation.tsv"
 require_tsv_header "file-manifest.tsv" $'path\tbytes\tsha256' "file-manifest.tsv"
+require_tsv_header "release-provenance.tsv" $'key	value' "release-provenance.tsv"
 require_tsv_header "external-readiness-actions.tsv" $'category	severity	owner	field	target	item	next_action	validation_command' "external-readiness-actions.tsv"
 require_tsv_column_populated "external-readiness-actions.tsv" 4 "external-readiness-actions.tsv affected field tracking"
 require_tsv_column_populated "external-readiness-actions.tsv" 5 "external-readiness-actions.tsv target tracking"
@@ -206,6 +221,11 @@ require_contains "SUMMARY.md" "release-input-status.txt" "summary redacted relea
 require_contains "release-input-status.txt" "== Release Input Status ==" "redacted release input status header"
 require_contains "release-input-status.txt" "== Missing Release Input Fields ==" "release input missing field checklist"
 require_contains "release-input-status.txt" "MISSING_FIELD:" "release input field-level missing item output"
+require_contains "SUMMARY.md" "release-provenance.tsv" "summary release provenance reference"
+require_tsv_key "release-provenance.tsv" "git_commit" "release provenance source commit"
+require_tsv_key "release-provenance.tsv" "git_branch" "release provenance branch"
+require_tsv_key "release-provenance.tsv" "git_status" "release provenance worktree status"
+require_tsv_key "release-provenance.tsv" "github_run_url" "release provenance GitHub Actions run URL"
 require_contains "SUMMARY.md" "external-readiness-actions.tsv" "summary external readiness manifest reference"
 require_contains "SUMMARY.md" "app-store-connect-state-report.md" "summary App Store Connect state report reference"
 require_contains "app-store-connect-state-report.md" "Scripts/check_app_store_connect_state.sh" "selected-build state report command tracking"
@@ -265,6 +285,7 @@ required_file_manifest_entries=(
   "external-readiness-actions.tsv"
   "pdf-export-validation.tsv"
   "public-pages-readiness-report.md"
+  "release-provenance.tsv"
   "readiness.txt"
   "screenshots.tsv"
   "files/AppStore/metadata.md"

@@ -18,6 +18,7 @@ APP_STORE_CONNECT_STATE_REPORT="$PACKET_DIR/app-store-connect-state-report.md"
 APP_REVIEW_SUBMISSION_READINESS_REPORT="$PACKET_DIR/app-review-submission-readiness-report.md"
 PUBLIC_PAGES_READINESS_REPORT="$PACKET_DIR/public-pages-readiness-report.md"
 RELEASE_INPUT_STATUS="$PACKET_DIR/release-input-status.txt"
+RELEASE_PROVENANCE="$PACKET_DIR/release-provenance.tsv"
 FILE_MANIFEST="$PACKET_DIR/file-manifest.tsv"
 SUMMARY_PATH="$PACKET_DIR/SUMMARY.md"
 ACTION_ITEMS_PATH="$PACKET_DIR/ACTION_ITEMS.md"
@@ -179,6 +180,58 @@ write_release_input_status() {
   set +e
   Scripts/print_release_input_status.sh --strict >"$RELEASE_INPUT_STATUS" 2>&1
   set -e
+}
+
+redact_remote_url() {
+  local value="$1"
+  if [[ "$value" == /* || "$value" == file:* ]]; then
+    printf '[local-remote]'
+    return
+  fi
+
+  printf '%s' "$value" \
+    | sed -E 's#(https?://)[^/@]+@#\1[redacted]@#; s#(https?://)[^/:]+:[^/@]+@#\1[redacted]@#'
+}
+
+write_release_provenance() {
+  local commit
+  local branch
+  local remote_origin
+  local dirty_count
+  local git_status
+  local github_run_url="not available"
+  local github_ref="${GITHUB_REF_NAME:-${GITHUB_REF:-not available}}"
+  local github_sha="${GITHUB_SHA:-not available}"
+
+  commit="$(git rev-parse HEAD 2>/dev/null || printf 'unknown')"
+  branch="${GITHUB_REF_NAME:-$(git branch --show-current 2>/dev/null || true)}"
+  if [[ -z "$branch" ]]; then
+    branch="$(git rev-parse --abbrev-ref HEAD 2>/dev/null || printf 'unknown')"
+  fi
+  remote_origin="$(redact_remote_url "$(git config --get remote.origin.url 2>/dev/null || printf 'unknown')")"
+  dirty_count="$(git status --short 2>/dev/null | wc -l | tr -d '[:space:]')"
+  if [[ "$dirty_count" == "0" ]]; then
+    git_status="clean"
+  else
+    git_status="dirty (${dirty_count} tracked/untracked item(s))"
+  fi
+
+  if [[ -n "${GITHUB_SERVER_URL:-}" && -n "${GITHUB_REPOSITORY:-}" && -n "${GITHUB_RUN_ID:-}" ]]; then
+    github_run_url="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+  fi
+
+  {
+    printf 'key\tvalue\n'
+    printf 'generated_at\t%s\n' "$generated_at"
+    printf 'git_commit\t%s\n' "$commit"
+    printf 'git_branch\t%s\n' "$branch"
+    printf 'git_remote_origin\t%s\n' "$remote_origin"
+    printf 'git_status\t%s\n' "$git_status"
+    printf 'git_dirty_count\t%s\n' "$dirty_count"
+    printf 'github_run_url\t%s\n' "$github_run_url"
+    printf 'github_ref\t%s\n' "$github_ref"
+    printf 'github_sha\t%s\n' "$github_sha"
+  } >"$RELEASE_PROVENANCE"
 }
 
 write_file_manifest() {
@@ -508,6 +561,7 @@ blocker_count="$(grep -c '^BLOCKED:' "$READINESS_LOG" || true)"
 warning_count="$(grep -c '^WARN:' "$READINESS_LOG" || true)"
 ok_count="$(grep -c '^OK:' "$READINESS_LOG" || true)"
 generated_at="$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
+write_release_provenance
 write_action_items
 write_external_readiness_actions
 
@@ -520,6 +574,7 @@ cat >"$SUMMARY_PATH" <<EOF
 - Readiness OK Count: $ok_count
 - Readiness Blockers: $blocker_count
 - Readiness Warnings: $warning_count
+- Release Provenance: \`release-provenance.tsv\`
 
 ## Included Materials
 
@@ -554,6 +609,7 @@ cat >"$SUMMARY_PATH" <<EOF
 - \`app-store-connect-state-report.md\` with redacted selected-build App Store Connect state check output and exit code.
 - \`app-review-submission-readiness-report.md\` with redacted final App Review submission gate status and next actions.
 - \`public-pages-readiness-report.md\` with public privacy/support page status, URLs, expected text, and next actions.
+- \`release-provenance.tsv\` with source commit, branch, sanitized remote, worktree status, and GitHub Actions run context when available.
 - \`release-input-status.txt\` with redacted private input readiness and missing field checklist.
 - \`external-readiness-actions.tsv\` with categorized external blockers, affected fields, target locations, validation commands, and warnings for release tracking.
 - \`file-manifest.tsv\` with package file sizes and sha256 checksums.
