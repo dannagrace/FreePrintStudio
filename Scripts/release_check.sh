@@ -1842,6 +1842,13 @@ check_contains "Scripts/preflight_testflight_upload_dependencies.sh" "Scripts/ch
 check_contains "Scripts/preflight_testflight_upload_dependencies.sh" "TestFlight upload dependency preflight passed" "TestFlight dependency preflight must print a clear success message"
 check_contains "Scripts/verify_release.sh" "testflight-dependencies-preflight" "Release verification must expose the TestFlight upload dependency preflight command"
 check_contains "Scripts/bootstrap_release_inputs.sh" "Scripts/verify_release.sh testflight-dependencies-preflight" "Release input bootstrap next commands must include the TestFlight upload dependency preflight"
+check_contains "Scripts/bootstrap_release_inputs.sh" "Scripts/preflight_app_store_archive.sh" "Release input bootstrap next commands must include the App Store archive preflight"
+check_contains "Scripts/bootstrap_release_inputs.sh" "DEVELOPMENT_TEAM_ID=YOURTEAMID ALLOW_PROVISIONING_UPDATES=1 Scripts/archive_app_store.sh" "Release input bootstrap next commands must include the guarded archive command"
+check_contains "Scripts/bootstrap_release_inputs.sh" "Scripts/preflight_testflight_upload.sh" "Release input bootstrap next commands must include the TestFlight upload preflight"
+check_contains "Scripts/bootstrap_release_inputs.sh" "Scripts/run_fastlane.sh ios upload_testflight" "Release input bootstrap next commands must include TestFlight upload"
+check_contains "Scripts/bootstrap_release_inputs.sh" "APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/run_fastlane.sh ios app_store_connect_state" "Release input bootstrap next commands must verify the selected App Store Connect build"
+check_contains "Scripts/bootstrap_release_inputs.sh" "APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/preflight_app_review_submission.sh" "Release input bootstrap next commands must include the final App Review preflight"
+check_contains "Scripts/bootstrap_release_inputs.sh" "APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER CONFIRM_SUBMIT_FOR_REVIEW=1 Scripts/run_fastlane.sh ios submit_review" "Release input bootstrap next commands must include the guarded final App Review submission"
 check_contains "Scripts/verify_release.sh" "testflight-preflight" "Release verification must expose the TestFlight upload preflight command"
 check_file "Scripts/preflight_app_review_submission.sh" "App Review submission preflight script is required"
 if [[ ! -x "Scripts/preflight_app_review_submission.sh" ]]; then

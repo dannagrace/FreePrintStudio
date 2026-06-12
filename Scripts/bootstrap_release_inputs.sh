@@ -92,7 +92,7 @@ copy_private_template \
   "$manual_evidence_path" \
   "manual release verification evidence"
 
-printf '\nNext required release inputs:\n'
+printf '\nNext release input and submission commands:\n'
 printf '  1. Fill real Apple signing, App Review contact, and App Store Connect values in %s\n' "$release_env_path"
 printf '  2. Record real iPhone, AirPrint, and TestFlight evidence in %s after testing\n' "$manual_evidence_path"
 printf '  3. Run Scripts/print_release_input_status.sh\n'
@@ -100,3 +100,10 @@ printf '  4. Run Scripts/validate_release_env.sh\n'
 printf '  5. Run APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/validate_manual_release_verification.sh\n'
 printf '  6. Run Scripts/check_app_store_readiness.sh\n'
 printf '  7. Run Scripts/verify_release.sh testflight-dependencies-preflight\n'
+printf '  8. Run Scripts/preflight_app_store_archive.sh\n'
+printf '  9. Run DEVELOPMENT_TEAM_ID=YOURTEAMID ALLOW_PROVISIONING_UPDATES=1 Scripts/archive_app_store.sh\n'
+printf '  10. Run Scripts/preflight_testflight_upload.sh\n'
+printf '  11. Run ASC_KEY_ID=XXXXXXXXXX ASC_ISSUER_ID=00000000-0000-0000-0000-000000000000 ASC_KEY_PATH=/secure/AuthKey_XXXXXXXXXX.p8 Scripts/run_fastlane.sh ios upload_testflight\n'
+printf '  12. Run APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/run_fastlane.sh ios app_store_connect_state\n'
+printf '  13. Run APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/preflight_app_review_submission.sh\n'
+printf '  14. Run APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER CONFIRM_SUBMIT_FOR_REVIEW=1 Scripts/run_fastlane.sh ios submit_review\n'
