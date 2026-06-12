@@ -804,6 +804,12 @@ check_contains "Scripts/print_release_input_status.sh" "does not print private v
 check_contains "Scripts/print_release_input_status.sh" "Scripts/check_app_store_connect_credentials.sh" "Release input status must run strict App Store Connect credential validation"
 check_contains "Scripts/print_release_input_status.sh" "APP_STORE_BUILD_NUMBER=%s Scripts/validate_manual_release_verification.sh" "Release input status next commands must validate manual evidence against the selected App Store build"
 check_contains "Scripts/print_release_input_status.sh" "Scripts/verify_release.sh testflight-dependencies-preflight" "Release input status next commands must include the TestFlight upload dependency preflight"
+check_contains "Scripts/print_release_input_status.sh" "Missing Release Input Fields" "Release input status must print a field-level missing input checklist"
+check_contains "Scripts/print_release_input_status.sh" "MISSING_FIELD:" "Release input status must label individual missing input fields without private values"
+check_contains "Scripts/print_release_input_status.sh" "APP_REVIEW_CONTACT_FIRST_NAME" "Release input status missing field checklist must include App Review contact fields"
+check_contains "Scripts/print_release_input_status.sh" "MANUAL_REAL_IPHONE_PHOTOS_IMPORT" "Release input status missing field checklist must include manual result fields"
+check_contains "Scripts/print_release_input_status.sh" "Apple Distribution certificate" "Release input status missing field checklist must include signing certificate status"
+check_contains "Scripts/print_release_input_status.sh" "APP_STORE_CONNECT_API_KEY_JSON or ASC_KEY_ID/ASC_ISSUER_ID/ASC_KEY_PATH" "Release input status missing field checklist must include App Store Connect credential alternatives"
 check_not_contains "Scripts/print_release_input_status.sh" "APP_STORE_BUILD_NUMBER:-<" "Release input status must use a shell-safe selected-build placeholder when APP_STORE_BUILD_NUMBER is missing"
 check_contains "Scripts/print_release_input_status.sh" "PROCESSED_BUILD_NUMBER" "Release input status must show a selected-build placeholder when APP_STORE_BUILD_NUMBER is missing"
 release_input_placeholder_build_test_dir="$(mktemp -d)"
@@ -897,6 +903,32 @@ else
   failures=$((failures + 1))
 fi
 rm -rf "$release_input_status_external_dir"
+release_input_status_missing_fields_dir="$(mktemp -d)"
+release_input_status_missing_fields_env="$release_input_status_missing_fields_dir/release.env"
+release_input_status_missing_fields_manual="$release_input_status_missing_fields_dir/manual-release-verification.env"
+release_input_status_missing_fields_log="$release_input_status_missing_fields_dir/status.log"
+: >"$release_input_status_missing_fields_env"
+: >"$release_input_status_missing_fields_manual"
+RELEASE_ENV_PATH="$release_input_status_missing_fields_env" \
+  MANUAL_RELEASE_VERIFICATION_PATH="$release_input_status_missing_fields_manual" \
+  Scripts/print_release_input_status.sh >"$release_input_status_missing_fields_log" 2>&1 || true
+for expected_missing_field in \
+  "== Missing Release Input Fields ==" \
+  "MISSING_FIELD: APP_REVIEW_CONTACT_FIRST_NAME" \
+  "MISSING_FIELD: MANUAL_REAL_IPHONE_PHOTOS_IMPORT" \
+  "MISSING_FIELD: Apple Distribution certificate" \
+  "MISSING_FIELD: APP_STORE_CONNECT_API_KEY_JSON or ASC_KEY_ID/ASC_ISSUER_ID/ASC_KEY_PATH"
+do
+  if ! grep -q "$expected_missing_field" "$release_input_status_missing_fields_log"; then
+    printf 'FAIL: Release input status missing field checklist must include %s\n' "$expected_missing_field"
+    failures=$((failures + 1))
+  fi
+done
+if grep -q "$release_input_status_missing_fields_dir" "$release_input_status_missing_fields_log"; then
+  printf 'FAIL: Release input status missing field checklist must not print private release input paths\n'
+  failures=$((failures + 1))
+fi
+rm -rf "$release_input_status_missing_fields_dir"
 release_input_status_manual_validation_dir="$(mktemp -d)"
 release_input_status_manual_validation_env="$release_input_status_manual_validation_dir/release.env"
 release_input_status_manual_validation_evidence="$release_input_status_manual_validation_dir/manual-release-verification.env"

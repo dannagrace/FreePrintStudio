@@ -9,6 +9,7 @@ manual_evidence_path="${MANUAL_RELEASE_VERIFICATION_PATH:-$ROOT_DIR/Config/manua
 DEFAULT_AIRPRINT_RULER_TARGET_INCHES="${MANUAL_AIRPRINT_RULER_TARGET_DEFAULT_INCHES:-6}"
 strict=0
 missing_count=0
+missing_fields=()
 
 usage() {
   cat <<'EOF'
@@ -99,6 +100,34 @@ mark_ok() {
 
 mark_optional() {
   printf 'OPTIONAL: %s\n' "$1"
+}
+
+record_missing_field() {
+  local field="$1"
+  local target="$2"
+  local validation_command="$3"
+  missing_fields+=("$field|$target|$validation_command")
+}
+
+print_missing_fields() {
+  local entry
+  local field
+  local target
+  local validation_command
+
+  printf '\n== Missing Release Input Fields ==\n'
+  if ((${#missing_fields[@]} == 0)); then
+    printf 'None.\n'
+    return
+  fi
+
+  for entry in "${missing_fields[@]}"; do
+    field="${entry%%|*}"
+    entry="${entry#*|}"
+    target="${entry%%|*}"
+    validation_command="${entry#*|}"
+    printf 'MISSING_FIELD: %s | file: %s | validate: %s\n' "$field" "$target" "$validation_command"
+  done
 }
 
 status_count() {
@@ -199,6 +228,8 @@ for name in \
 do
   if is_set "${!name:-}"; then
     contact_ready=$((contact_ready + 1))
+  else
+    record_missing_field "$name" "Config/release.env" "Scripts/validate_app_review_contact.sh"
   fi
 done
 status_count "App Review contact fields configured" "$contact_ready" 4
@@ -219,12 +250,16 @@ if { is_set "${DEVELOPMENT_TEAM_ID:-}" && matches_format "$DEVELOPMENT_TEAM_ID" 
   team_ready=1
 fi
 status_count "DEVELOPMENT_TEAM_ID or Xcode DEVELOPMENT_TEAM configured" "$team_ready" 1
+if (( team_ready == 0 )); then
+  record_missing_field "DEVELOPMENT_TEAM_ID" "Config/release.env or Xcode project settings" "Scripts/check_code_signing_assets.sh"
+fi
 
 identity_log="$(security find-identity -v -p codesigning 2>/dev/null || true)"
 if grep -q "Apple Distribution" <<<"$identity_log"; then
   mark_ok "Apple Distribution signing identity is installed"
 else
   mark_missing "Apple Distribution signing identity is missing"
+  record_missing_field "Apple Distribution certificate" "login keychain" "Scripts/check_code_signing_assets.sh"
 fi
 
 profiles_dir="$HOME/Library/MobileDevice/Provisioning Profiles"
@@ -233,6 +268,7 @@ if [[ -d "$profiles_dir" ]] \
   mark_ok "Provisioning profile files are installed"
 else
   mark_missing "Provisioning profile files are missing"
+  record_missing_field "App Store provisioning profile" "~/Library/MobileDevice/Provisioning Profiles" "Scripts/check_code_signing_assets.sh"
 fi
 
 printf '\n== App Store Connect Inputs ==\n'
@@ -243,6 +279,7 @@ if is_set "${APP_STORE_CONNECT_API_KEY_JSON:-}"; then
     asc_credentials_ready_for_validation=1
   else
     mark_missing "APP_STORE_CONNECT_API_KEY_JSON is set but the file is missing"
+    record_missing_field "APP_STORE_CONNECT_API_KEY_JSON" "Config/release.env" "Scripts/check_app_store_connect_credentials.sh"
   fi
 else
   asc_triplet_ready=0
@@ -256,6 +293,7 @@ else
     asc_credentials_ready_for_validation=1
   else
     mark_missing "App Store Connect API credentials configured: $asc_triplet_ready/3"
+    record_missing_field "APP_STORE_CONNECT_API_KEY_JSON or ASC_KEY_ID/ASC_ISSUER_ID/ASC_KEY_PATH" "Config/release.env" "Scripts/check_app_store_connect_credentials.sh"
   fi
 fi
 
@@ -277,11 +315,13 @@ printf '\n== Final Submission Guards ==\n'
 if is_set "${APP_STORE_BUILD_NUMBER:-}"; then
   if looks_like_placeholder "${APP_STORE_BUILD_NUMBER:-}"; then
     mark_missing "APP_STORE_BUILD_NUMBER still uses a placeholder value; replace PROCESSED_BUILD_NUMBER with the processed App Store Connect build before final App Review submission"
+    record_missing_field "APP_STORE_BUILD_NUMBER" "Config/release.env" "APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/preflight_app_review_submission.sh"
   else
     mark_ok "APP_STORE_BUILD_NUMBER is configured for final App Review submission"
   fi
 else
   mark_missing "APP_STORE_BUILD_NUMBER is missing; set it to the processed App Store Connect build before final App Review submission"
+  record_missing_field "APP_STORE_BUILD_NUMBER" "Config/release.env" "APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/preflight_app_review_submission.sh"
 fi
 
 confirm_submit_for_review="$(trimmed_value "${CONFIRM_SUBMIT_FOR_REVIEW:-}")"
@@ -289,6 +329,7 @@ if [[ "$confirm_submit_for_review" == "1" ]]; then
   mark_ok "CONFIRM_SUBMIT_FOR_REVIEW is set to 1 for guarded final App Review submission"
 else
   mark_missing "CONFIRM_SUBMIT_FOR_REVIEW is not set to 1; set only after final preflight passes"
+  record_missing_field "CONFIRM_SUBMIT_FOR_REVIEW" "Config/release.env" "APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/preflight_app_review_submission.sh"
 fi
 
 printf '\n== Manual Release Evidence ==\n'
@@ -305,6 +346,8 @@ if [[ -f "$manual_evidence_path" ]]; then
     mark_missing "Manual release verification evidence is not a valid shell env file"
     sed 's/^/  /' /tmp/freeprintstudio-release-input-status-manual.log
   fi
+else
+  record_missing_field "MANUAL_RELEASE_VERIFICATION_PATH" "Config/manual-release-verification.env" "APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/validate_manual_release_verification.sh"
 fi
 
 manual_ready=0
@@ -328,6 +371,8 @@ if [[ "$manual_source_status" -eq 0 ]]; then
       manual_ready=$((manual_ready + 1))
     elif [[ "$name" == "MANUAL_AIRPRINT_RULER_TARGET_INCHES" ]] && is_set "$DEFAULT_AIRPRINT_RULER_TARGET_INCHES"; then
       manual_ready=$((manual_ready + 1))
+    else
+      record_missing_field "$name" "Config/manual-release-verification.env" "APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/validate_manual_release_verification.sh"
     fi
   done
   for name in \
@@ -341,6 +386,8 @@ if [[ "$manual_source_status" -eq 0 ]]; then
     lower_value="$(printf '%s' "${!name:-}" | tr '[:upper:]' '[:lower:]')"
     if [[ "$lower_value" == "pass" ]]; then
       manual_ready=$((manual_ready + 1))
+    else
+      record_missing_field "$name" "Config/manual-release-verification.env" "APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/validate_manual_release_verification.sh"
     fi
   done
 
@@ -371,8 +418,11 @@ if is_set "${APP_STORE_BUILD_NUMBER:-}" && is_set "${MANUAL_TESTFLIGHT_BUILD_NUM
     mark_ok "MANUAL_TESTFLIGHT_BUILD_NUMBER matches selected APP_STORE_BUILD_NUMBER"
   else
     mark_missing "MANUAL_TESTFLIGHT_BUILD_NUMBER does not match selected APP_STORE_BUILD_NUMBER"
+    record_missing_field "MANUAL_TESTFLIGHT_BUILD_NUMBER" "Config/manual-release-verification.env" "APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/validate_manual_release_verification.sh"
   fi
 fi
+
+print_missing_fields
 
 printf '\n== Next Commands ==\n'
 selected_app_store_build="${APP_STORE_BUILD_NUMBER:-PROCESSED_BUILD_NUMBER}"
