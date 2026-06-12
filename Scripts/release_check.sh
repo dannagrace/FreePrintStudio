@@ -1995,9 +1995,12 @@ check_contains "Scripts/prepare_app_store_submission_packet.sh" "\\[manual-evide
 check_contains "Scripts/prepare_app_store_submission_packet.sh" "\\[release-env\\]" "External readiness actions must redact release env paths from readiness output"
 check_contains "Scripts/prepare_app_store_submission_packet.sh" "\\[repo\\]/" "External readiness actions must replace repository absolute paths with a stable placeholder"
 check_contains "Scripts/prepare_app_store_submission_packet.sh" "\\[home\\]/" "External readiness actions must replace home-directory absolute paths with a stable placeholder"
-check_contains "Scripts/prepare_app_store_submission_packet.sh" $'category\tseverity\towner\tfield\titem\tnext_action\tvalidation_command' "External readiness actions manifest must include stable TSV headers with fields and validation commands"
+check_contains "Scripts/prepare_app_store_submission_packet.sh" $'category\tseverity\towner\tfield\ttarget\titem\tnext_action\tvalidation_command' "External readiness actions manifest must include stable TSV headers with fields, target locations, and validation commands"
 check_contains "Scripts/prepare_app_store_submission_packet.sh" "external_action_field_for_item" "External readiness actions must extract the affected release field"
+check_contains "Scripts/prepare_app_store_submission_packet.sh" "external_action_target_for_item" "External readiness actions must map each affected release field to the private file, keychain, profile directory, or App Store Connect target"
 check_contains "Scripts/prepare_app_store_submission_packet.sh" "MANUAL_RELEASE_VERIFICATION_PATH" "External readiness actions must map missing manual evidence files to the manual evidence path"
+check_contains "Scripts/prepare_app_store_submission_packet.sh" "Config/manual-release-verification.env" "External readiness actions must identify manual evidence private file targets"
+check_contains "Scripts/prepare_app_store_submission_packet.sh" "Config/release.env" "External readiness actions must identify release environment private file targets"
 check_contains "Scripts/prepare_app_store_submission_packet.sh" "validation_command" "External readiness actions must include the command that verifies each item"
 check_contains "Scripts/prepare_app_store_submission_packet.sh" "Scripts/validate_app_review_contact.sh" "External readiness actions must point App Review contact items at the contact validator"
 check_contains "Scripts/prepare_app_store_submission_packet.sh" "Scripts/validate_manual_release_verification.sh" "External readiness actions must point manual evidence items at the manual evidence validator"
@@ -2014,6 +2017,23 @@ if asc_index == -1 or manual_index == -1 or asc_index > manual_index:
 PY
 then
   printf 'FAIL: External readiness actions must classify App Store Connect items before broad TestFlight manual evidence rules\n'
+  failures=$((failures + 1))
+fi
+if ! python3 - <<'PY'
+from pathlib import Path
+
+source = Path("Scripts/prepare_app_store_submission_packet.sh").read_text()
+target_start = source.find("external_action_target_for_item()")
+if target_start == -1:
+    raise SystemExit(1)
+source = source[target_start:]
+app_record_index = source.find('*"app record"*|*"TestFlight status"*)')
+manual_index = source.find('*MANUAL_*|*"Manual "*|*"Real iPhone"*|*"AirPrint"*|*"TestFlight"*)')
+if app_record_index == -1 or manual_index == -1 or app_record_index > manual_index:
+    raise SystemExit(1)
+PY
+then
+  printf 'FAIL: External readiness action targets must map App Store Connect app record/TestFlight status before broad manual TestFlight targets\n'
   failures=$((failures + 1))
 fi
 check_contains "Scripts/prepare_app_store_submission_packet.sh" "sha256" "Submission packet generator must record file checksums"
@@ -2263,7 +2283,8 @@ check_contains "Scripts/validate_app_store_submission_packet.sh" "release-input-
 check_contains "Scripts/validate_app_store_submission_packet.sh" "Missing Release Input Fields" "Submission packet validator must require release input missing field tracking"
 check_contains "Scripts/validate_app_store_submission_packet.sh" "MISSING_FIELD:" "Submission packet validator must require field-level missing input output"
 check_contains "Scripts/validate_app_store_submission_packet.sh" "external-readiness-actions.tsv" "Submission packet validator must require external readiness actions"
-check_contains "Scripts/validate_app_store_submission_packet.sh" $'category\tseverity\towner\tfield\titem\tnext_action\tvalidation_command' "Submission packet validator must require external action fields and validation commands"
+check_contains "Scripts/validate_app_store_submission_packet.sh" $'category\tseverity\towner\tfield\ttarget\titem\tnext_action\tvalidation_command' "Submission packet validator must require external action fields, target locations, and validation commands"
+check_contains "Scripts/validate_app_store_submission_packet.sh" "external-readiness-actions.tsv target tracking" "Submission packet validator must reject missing external action target locations"
 check_contains "Scripts/validate_app_store_submission_packet.sh" "require_tsv_column_populated" "Submission packet validator must reject missing external action affected fields"
 check_contains "Scripts/validate_app_store_submission_packet.sh" "file-manifest.tsv" "Submission packet validator must require the file manifest"
 check_contains "Scripts/validate_app_store_submission_packet.sh" "pdf-export-validation.tsv" "Submission packet validator must require PDF validation evidence"

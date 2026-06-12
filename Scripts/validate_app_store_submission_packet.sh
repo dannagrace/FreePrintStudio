@@ -187,8 +187,9 @@ done
 require_tsv_header "screenshots.tsv" $'path\twidth\theight\thasAlpha\tsha256' "screenshots.tsv"
 require_tsv_header "pdf-export-validation.tsv" $'label\tcontent\tmode\tpaper\torientation\tunit\ttargetWidth\ttargetHeight\tpdfPath\tmediaBoxWidthPt\tmediaBoxHeightPt\tclipWidthPt\tclipHeightPt\tdrawWidthPt\tdrawHeightPt\tsha256' "pdf-export-validation.tsv"
 require_tsv_header "file-manifest.tsv" $'path\tbytes\tsha256' "file-manifest.tsv"
-require_tsv_header "external-readiness-actions.tsv" $'category	severity	owner	field	item	next_action	validation_command' "external-readiness-actions.tsv"
+require_tsv_header "external-readiness-actions.tsv" $'category	severity	owner	field	target	item	next_action	validation_command' "external-readiness-actions.tsv"
 require_tsv_column_populated "external-readiness-actions.tsv" 4 "external-readiness-actions.tsv affected field tracking"
+require_tsv_column_populated "external-readiness-actions.tsv" 5 "external-readiness-actions.tsv target tracking"
 
 require_contains "pdf-export-validation.tsv" "test-ruler-stretch" "Test Ruler PDF validation evidence"
 require_contains "ACTION_ITEMS.md" "## External Values To Provide" "external values checklist"

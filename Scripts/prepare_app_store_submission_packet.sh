@@ -366,19 +366,70 @@ external_action_field_for_item() {
   printf '%s' "$field"
 }
 
+external_action_target_for_item() {
+  local item="$1"
+  local field="$2"
+  local target="Release owner follow-up"
+
+  case "$field" in
+    MANUAL_*|MANUAL_RELEASE_VERIFICATION_PATH)
+      target="Config/manual-release-verification.env"
+      ;;
+    APP_REVIEW_CONTACT_*|DEVELOPMENT_TEAM_ID|APP_STORE_BUILD_NUMBER|CONFIRM_SUBMIT_FOR_REVIEW|\
+    APP_STORE_CONNECT_API_KEY_JSON|FASTLANE_USER|APP_STORE_CONNECT_API_KEY_JSON\ or\ ASC_KEY_ID/ASC_ISSUER_ID/ASC_KEY_PATH)
+      target="Config/release.env"
+      ;;
+    Apple\ Distribution\ certificate)
+      target="login keychain"
+      ;;
+    App\ Store\ provisioning\ profile)
+      target="~/Library/MobileDevice/Provisioning Profiles"
+      ;;
+    App\ Store\ Connect\ app\ record/TestFlight\ status)
+      target="App Store Connect"
+      ;;
+  esac
+
+  case "$item" in
+    *APP_REVIEW_CONTACT*|*"App Review contact"*)
+      target="Config/release.env"
+      ;;
+    *ASC_*|*"App Store Connect API credentials"*|*"API credentials"*|*FASTLANE_USER*)
+      target="Config/release.env"
+      ;;
+    *"app record"*|*"TestFlight status"*)
+      target="App Store Connect"
+      ;;
+    *MANUAL_*|*"Manual "*|*"Real iPhone"*|*"AirPrint"*|*"TestFlight"*)
+      target="Config/manual-release-verification.env"
+      ;;
+    *"Developer Team"*)
+      target="Config/release.env or Xcode project settings"
+      ;;
+    *"Apple Distribution"*|*"signing identity"*)
+      target="login keychain"
+      ;;
+    *"provisioning profile"*|*"provisioning profiles"*)
+      target="~/Library/MobileDevice/Provisioning Profiles"
+      ;;
+  esac
+
+  printf '%s' "$target"
+}
+
 write_external_readiness_actions() {
   local line
   local severity
   local item
   local redacted_item
-  local fields
   local category
   local owner
   local field
+  local target
   local next_action
   local validation_command
 
-  printf 'category	severity	owner	field	item	next_action	validation_command\n' >"$EXTERNAL_READINESS_ACTIONS"
+  printf 'category	severity	owner	field	target	item	next_action	validation_command\n' >"$EXTERNAL_READINESS_ACTIONS"
   while IFS= read -r line; do
     case "$line" in
       BLOCKED:*)
@@ -394,20 +445,16 @@ write_external_readiness_actions() {
         ;;
     esac
 
-    fields="$(external_action_fields "$item")"
     redacted_item="$(redact_external_action_item "$item")"
     field="$(external_action_field_for_item "$item")"
-    category="${fields%%$'\t'*}"
-    fields="${fields#*$'\t'}"
-    owner="${fields%%$'\t'*}"
-    fields="${fields#*$'\t'}"
-    next_action="${fields%%$'\t'*}"
-    validation_command="${fields#*$'\t'}"
-    printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
+    target="$(external_action_target_for_item "$item" "$field")"
+    IFS=$'\t' read -r category owner next_action validation_command < <(external_action_fields "$item")
+    printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
       "$(tsv_escape "$category")" \
       "$(tsv_escape "$severity")" \
       "$(tsv_escape "$owner")" \
       "$(tsv_escape "$field")" \
+      "$(tsv_escape "$target")" \
       "$(tsv_escape "$redacted_item")" \
       "$(tsv_escape "$next_action")" \
       "$(tsv_escape "$validation_command")" \
@@ -487,7 +534,7 @@ cat >"$SUMMARY_PATH" <<EOF
 - \`app-store-connect-readiness-report.md\` with redacted App Store Connect credential status, upload guard state, and next actions.
 - \`app-review-submission-readiness-report.md\` with redacted final App Review submission gate status and next actions.
 - \`release-input-status.txt\` with redacted private input readiness and missing field checklist.
-- \`external-readiness-actions.tsv\` with categorized external blockers, affected fields, validation commands, and warnings for release tracking.
+- \`external-readiness-actions.tsv\` with categorized external blockers, affected fields, target locations, validation commands, and warnings for release tracking.
 - \`file-manifest.tsv\` with package file sizes and sha256 checksums.
 - \`readiness.txt\` with the latest App Store readiness audit.
 - \`ACTION_ITEMS.md\` with external account, signing, and App Store Connect follow-up work.
