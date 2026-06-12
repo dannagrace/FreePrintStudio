@@ -320,6 +320,7 @@ Scripts/verify_release.sh asc-report
 Scripts/verify_release.sh asc-state-report
 Scripts/verify_release.sh review-report
 Scripts/verify_release.sh public-pages-report
+Scripts/verify_release.sh public-pages
 Scripts/bootstrap_release_env.sh
 Scripts/check_app_store_readiness.sh
 Scripts/preflight_testflight_upload_dependencies.sh
@@ -632,6 +633,7 @@ Scripts/verify_release.sh asc-report
 Scripts/verify_release.sh asc-state-report
 Scripts/verify_release.sh review-report
 Scripts/verify_release.sh public-pages-report
+Scripts/verify_release.sh public-pages
 Scripts/bootstrap_release_env.sh
 Scripts/check_app_store_readiness.sh
 Scripts/preflight_testflight_upload_dependencies.sh

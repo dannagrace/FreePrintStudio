@@ -405,8 +405,20 @@ check_contains "Scripts/generate_public_pages_readiness_report.sh" "support.html
 check_contains "Scripts/generate_public_pages_readiness_report.sh" "curl" "Public pages report must verify deployed page reachability"
 check_contains "Scripts/generate_public_pages_readiness_report.sh" "FreePrint Studio Privacy Policy" "Public pages report must verify privacy policy body text"
 check_contains "Scripts/generate_public_pages_readiness_report.sh" "FreePrint Studio Support" "Public pages report must verify support page body text"
+check_file "Scripts/validate_public_pages.sh" "Public pages strict validator is required"
+if [[ -f "Scripts/validate_public_pages.sh" && ! -x "Scripts/validate_public_pages.sh" ]]; then
+  printf 'FAIL: Public pages strict validator must be executable (Scripts/validate_public_pages.sh)\n'
+  failures=$((failures + 1))
+fi
+check_contains "Scripts/validate_public_pages.sh" "privacy-policy.html" "Public pages validator must check the public privacy policy URL"
+check_contains "Scripts/validate_public_pages.sh" "support.html" "Public pages validator must check the public support URL"
+check_contains "Scripts/validate_public_pages.sh" "FreePrint Studio Privacy Policy" "Public pages validator must verify privacy policy body text"
+check_contains "Scripts/validate_public_pages.sh" "FreePrint Studio Support" "Public pages validator must verify support page body text"
+check_contains "Scripts/validate_public_pages.sh" "Public pages validation failed" "Public pages validator must fail when public pages are not ready"
 check_contains "Scripts/verify_release.sh" "generate_public_pages_readiness_report.sh" "Release verification must expose public pages readiness report generation"
 check_contains "Scripts/verify_release.sh" "public-pages-report" "Release verification must provide a public-pages-report command"
+check_contains "Scripts/verify_release.sh" "validate_public_pages.sh" "Release verification must expose strict public pages validation"
+check_contains "Scripts/verify_release.sh" "public-pages)" "Release verification must provide a public-pages validation command"
 check_file "AppStore/commercial-configuration.md" "App Store commercial configuration draft is required"
 check_contains "AppStore/commercial-configuration.md" "Price: Free" "Commercial configuration must state the MVP price"
 check_contains "AppStore/commercial-configuration.md" "Availability: All App Store countries or regions" "Commercial configuration must state availability scope"
@@ -1883,6 +1895,7 @@ check_contains "README.md" "Scripts/verify_release.sh manual-report" "README mus
 check_contains "README.md" "Scripts/verify_release.sh signing-report" "README must document the signing readiness report command"
 check_contains "README.md" "Scripts/verify_release.sh asc-report" "README must document the App Store Connect readiness report command"
 check_contains "README.md" "Scripts/verify_release.sh public-pages-report" "README must document the public pages readiness report command"
+check_contains "README.md" "Scripts/verify_release.sh public-pages" "README must document strict public page validation"
 check_contains "README.md" "Scripts/check_code_signing_assets.sh" "README must document precise code signing asset validation"
 check_contains "README.md" "Scripts/validate_app_review_contact.sh" "README must document App Review contact validation"
 check_contains "README.md" "Scripts/validate_manual_release_verification.sh" "README must document manual release verification evidence validation"
@@ -1945,6 +1958,7 @@ check_contains "AppStore/release-checklist.md" "Scripts/verify_release.sh manual
 check_contains "AppStore/release-checklist.md" "Scripts/verify_release.sh signing-report" "Release checklist must include signing readiness report generation"
 check_contains "AppStore/release-checklist.md" "Scripts/verify_release.sh asc-report" "Release checklist must include App Store Connect readiness report generation"
 check_contains "AppStore/release-checklist.md" "Scripts/verify_release.sh public-pages-report" "Release checklist must include public pages readiness report generation"
+check_contains "AppStore/release-checklist.md" "Scripts/verify_release.sh public-pages" "Release checklist must include strict public page validation"
 check_contains "AppStore/release-checklist.md" "Scripts/check_code_signing_assets.sh" "Release checklist must include precise code signing asset validation"
 check_contains "AppStore/release-checklist.md" "Scripts/validate_app_review_contact.sh" "Release checklist must include App Review contact validation"
 check_contains "AppStore/release-checklist.md" "Scripts/validate_manual_release_verification.sh" "Release checklist must include manual release verification evidence validation"
@@ -2037,6 +2051,9 @@ check_contains "Scripts/validate_app_store_submission_packet.sh" $'key\tvalue' "
 check_contains "Scripts/validate_app_store_submission_packet.sh" "git_commit" "Submission packet validator must require release provenance source commit"
 check_contains "Scripts/validate_app_store_submission_packet.sh" "git_branch" "Submission packet validator must require release provenance branch"
 check_contains "Scripts/validate_app_store_submission_packet.sh" "git_status" "Submission packet validator must require release provenance worktree status"
+check_contains "Scripts/preflight_app_review_submission.sh" "validate_public_pages.sh" "App Review submission preflight must validate public privacy and support pages"
+check_contains "Scripts/generate_app_review_submission_readiness_report.sh" "validate_public_pages.sh" "App Review submission readiness report must include public page validation"
+check_contains "Scripts/prepare_app_store_submission_packet.sh" "Scripts/verify_release.sh public-pages" "Submission packet command order must include strict public page validation"
 if ! python3 - <<'PY'
 from pathlib import Path
 

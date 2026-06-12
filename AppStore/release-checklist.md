@@ -22,6 +22,7 @@
 - Run `Scripts/verify_release.sh asc-state-report` after selecting a processed TestFlight build, or before handoff to show the redacted selected-build App Store Connect state check output and exit code.
 - Run `Scripts/verify_release.sh review-report` before final App Review preflight to generate a redacted metadata, policy, evidence, credential, and selected-build readiness report.
 - Run `Scripts/verify_release.sh public-pages-report` before release handoff to generate a public privacy/support page status report.
+- Run `Scripts/verify_release.sh public-pages` before metadata upload or review submission to strictly validate deployed privacy/support page reachability.
 - Run `Scripts/check_code_signing_assets.sh` after installing certificates or provisioning profiles.
 - Run `Scripts/verify_release.sh archive-preflight` before creating the signed App Store archive.
 - Run `Scripts/validate_app_store_export.sh` after creating a signed archive and App Store IPA.

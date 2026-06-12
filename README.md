@@ -169,6 +169,14 @@ Generate a public privacy/support page readiness report before release handoff:
 Scripts/verify_release.sh public-pages-report
 ```
 
+Strictly validate that the deployed privacy policy and support pages are reachable before metadata upload or review submission:
+
+```sh
+Scripts/verify_release.sh public-pages
+# Or directly:
+Scripts/validate_public_pages.sh
+```
+
 Validate that installed signing assets match the release bundle, Apple team, and App Store Connect export method:
 
 ```sh
