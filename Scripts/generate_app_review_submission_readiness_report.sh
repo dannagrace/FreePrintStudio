@@ -93,6 +93,21 @@ run_step status_review_contact "Scripts/validate_app_review_contact.sh" Scripts/
 run_step status_manual_evidence "APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/validate_manual_release_verification.sh" Scripts/validate_manual_release_verification.sh
 run_step status_asc_credentials "Scripts/check_app_store_connect_credentials.sh" Scripts/check_app_store_connect_credentials.sh
 
+release_input_status_log="$(mktemp)"
+set +e
+Scripts/print_release_input_status.sh --strict >"$release_input_status_log" 2>&1
+release_input_status_code="$?"
+set -e
+release_input_missing_fields="$(grep '^MISSING_FIELD:' "$release_input_status_log" || true)"
+if [[ "$release_input_status_code" -eq 0 ]]; then
+  status_release_inputs='Pass'
+  ready_count=$((ready_count + 1))
+else
+  status_release_inputs='Blocked; run `Scripts/print_release_input_status.sh --strict` for field-level missing release inputs'
+  blocker_count=$((blocker_count + 1))
+fi
+rm -f "$release_input_status_log"
+
 if [[ -n "${APP_STORE_BUILD_NUMBER:-}" ]]; then
   if looks_placeholder_like "$APP_STORE_BUILD_NUMBER"; then
     status_selected_build='Blocked; `APP_STORE_BUILD_NUMBER` still uses a placeholder'
@@ -132,6 +147,18 @@ cat >"$output_path" <<EOF
 | Ready submission checks | $ready_count |
 | Blocking submission checks | $blocker_count |
 | Warning submission checks | $warning_count |
+
+## Release Input Status
+
+| Check | Command | Status |
+| --- | --- | --- |
+| Field-level private release input status | \`Scripts/print_release_input_status.sh --strict\` | $status_release_inputs |
+
+## Missing Release Input Fields
+
+\`\`\`text
+${release_input_missing_fields:-None.}
+\`\`\`
 
 ## Store Listing And Policy Checks
 

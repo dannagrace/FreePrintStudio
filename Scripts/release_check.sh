@@ -2695,6 +2695,8 @@ check_contains "Scripts/generate_app_review_submission_readiness_report.sh" "val
 check_contains "Scripts/generate_app_review_submission_readiness_report.sh" "validate_screenshot_privacy.sh" "App Review submission readiness report must summarize screenshot privacy metadata validation"
 check_contains "Scripts/generate_app_review_submission_readiness_report.sh" "validate_manual_release_verification.sh" "App Review submission readiness report must summarize manual release evidence"
 check_contains "Scripts/generate_app_review_submission_readiness_report.sh" "check_app_store_connect_state.sh" "App Review submission readiness report must summarize selected build state checks"
+check_contains "Scripts/generate_app_review_submission_readiness_report.sh" "Scripts/print_release_input_status.sh --strict" "App Review submission readiness report must include field-level release input status"
+check_contains "Scripts/generate_app_review_submission_readiness_report.sh" "Missing Release Input Fields" "App Review submission readiness report must surface missing release input fields"
 check_contains "Scripts/generate_app_review_submission_readiness_report.sh" "processed App Store Connect build number" "App Review submission readiness report must warn that selected-build placeholders must be replaced"
 check_contains "Scripts/generate_app_review_submission_readiness_report.sh" "redacted" "App Review submission readiness report must avoid printing private release values"
 selected_build_report_placeholder_test_dir="$(mktemp -d)"
@@ -2766,6 +2768,14 @@ if grep -q 'Selected processed build value.*Configured' "$selected_build_review_
 fi
 if ! grep -q 'Selected processed build value.*placeholder' "$selected_build_review_lowercase_report"; then
   printf 'FAIL: App Review submission readiness report must flag lowercase todo as a selected-build placeholder\n'
+  failures=$((failures + 1))
+fi
+if ! grep -q '## Missing Release Input Fields' "$selected_build_review_report"; then
+  printf 'FAIL: App Review submission readiness report must include a missing release input fields section\n'
+  failures=$((failures + 1))
+fi
+if ! grep -q 'MISSING_FIELD:' "$selected_build_review_report"; then
+  printf 'FAIL: App Review submission readiness report must include field-level missing release input rows\n'
   failures=$((failures + 1))
 fi
 if grep -q 'selected build is redacted-MBER' "$selected_build_manual_report"; then
