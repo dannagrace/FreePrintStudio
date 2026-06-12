@@ -393,6 +393,11 @@ run_app_store_connect_readiness_report_generation() {
   Scripts/generate_app_store_connect_readiness_report.sh
 }
 
+run_app_store_connect_state_report_generation() {
+  printf '== App Store Connect state report ==\n'
+  Scripts/generate_app_store_connect_state_report.sh
+}
+
 run_app_review_submission_readiness_report_generation() {
   printf '== App Review submission readiness report ==\n'
   Scripts/generate_app_review_submission_readiness_report.sh
@@ -538,6 +543,9 @@ case "${1:-all}" in
   asc-report)
     run_app_store_connect_readiness_report_generation
     ;;
+  asc-state-report)
+    run_app_store_connect_state_report_generation
+    ;;
   review-report)
     run_app_review_submission_readiness_report_generation
     ;;
@@ -563,7 +571,7 @@ case "${1:-all}" in
     run_manual_verification_validation
     ;;
   *)
-    printf 'Usage: %s [all|store-ready|static|core|plist|privacy|questionnaires|pdf|build|screenshots|accessibility|simulator-workflow|photo-import|review-ui|print-sheet|submission-packet|submission-packet-check|contact-report|manual-evidence-form|manual-report|signing-report|asc-report|review-report|archive-preflight|testflight-dependencies-preflight|metadata-preflight|privacy-preflight|testflight-preflight|review-preflight|manual-verification]\n' "$0"
+    printf 'Usage: %s [all|store-ready|static|core|plist|privacy|questionnaires|pdf|build|screenshots|accessibility|simulator-workflow|photo-import|review-ui|print-sheet|submission-packet|submission-packet-check|contact-report|manual-evidence-form|manual-report|signing-report|asc-report|asc-state-report|review-report|archive-preflight|testflight-dependencies-preflight|metadata-preflight|privacy-preflight|testflight-preflight|review-preflight|manual-verification]\n' "$0"
     exit 1
     ;;
 esac

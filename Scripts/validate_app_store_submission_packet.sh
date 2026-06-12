@@ -177,6 +177,7 @@ required_files=(
   "app-review-contact-readiness-report.md"
   "signing-readiness-report.md"
   "app-store-connect-readiness-report.md"
+  "app-store-connect-state-report.md"
   "app-review-submission-readiness-report.md"
 )
 
@@ -200,6 +201,10 @@ require_contains "release-input-status.txt" "== Release Input Status ==" "redact
 require_contains "release-input-status.txt" "== Missing Release Input Fields ==" "release input missing field checklist"
 require_contains "release-input-status.txt" "MISSING_FIELD:" "release input field-level missing item output"
 require_contains "SUMMARY.md" "external-readiness-actions.tsv" "summary external readiness manifest reference"
+require_contains "SUMMARY.md" "app-store-connect-state-report.md" "summary App Store Connect state report reference"
+require_contains "app-store-connect-state-report.md" "Scripts/check_app_store_connect_state.sh" "selected-build state report command tracking"
+require_contains "app-store-connect-state-report.md" "Exit Code:" "selected-build state report exit code"
+require_contains "app-store-connect-state-report.md" "Redacted Output" "selected-build state report redacted output"
 require_contains "readiness.txt" "Summary:" "readiness audit summary"
 
 if grep -qE 'Manual release verification evidence failed|Manual verifier|Real iPhone|AirPrint|TestFlight|MANUAL_' "$PACKET_DIR/readiness.txt"; then

@@ -19,6 +19,7 @@
 - Run `Scripts/verify_release.sh manual-report` before and after recording real iPhone, AirPrint, and TestFlight evidence to generate a redacted manual release status report.
 - Run `Scripts/verify_release.sh signing-report` before and after installing signing assets to generate a redacted Team ID, certificate, and provisioning profile status report.
 - Run `Scripts/verify_release.sh asc-report` before and after configuring App Store Connect credentials, TestFlight upload, or review submission inputs to generate a redacted account readiness report.
+- Run `Scripts/verify_release.sh asc-state-report` after selecting a processed TestFlight build, or before handoff to show the redacted selected-build App Store Connect state check output and exit code.
 - Run `Scripts/verify_release.sh review-report` before final App Review preflight to generate a redacted metadata, policy, evidence, credential, and selected-build readiness report.
 - Run `Scripts/check_code_signing_assets.sh` after installing certificates or provisioning profiles.
 - Run `Scripts/verify_release.sh archive-preflight` before creating the signed App Store archive.
@@ -34,7 +35,7 @@
 - Run the standalone iPad screenshot command from `README.md` only when refreshing or debugging the iPad screenshot in isolation.
 - Run `Scripts/verify_release.sh accessibility` after visible UI changes; it calls `Scripts/validate_accessibility_screenshots.sh` for dark interface and Larger Text screenshots.
 - Run `Scripts/verify_release.sh print-sheet` before submission; it calls `Scripts/validate_print_sheet.sh` to verify the simulator can open the system print sheet with a generated PDF.
-- Run `Scripts/verify_release.sh submission-packet` before handing off to App Store Connect; it calls `Scripts/prepare_app_store_submission_packet.sh` to package metadata, questionnaire drafts, screenshots, PDF export validation evidence, a blank manual release evidence form, redacted App Review contact, manual release, signing, App Store Connect, and App Review submission readiness reports, checksums, readiness audit output, and next commands under `build/AppStoreSubmissionPacket/`.
+- Run `Scripts/verify_release.sh submission-packet` before handing off to App Store Connect; it calls `Scripts/prepare_app_store_submission_packet.sh` to package metadata, questionnaire drafts, screenshots, PDF export validation evidence, a blank manual release evidence form, redacted App Review contact, manual release, signing, App Store Connect readiness, App Store Connect state, and App Review submission readiness reports, checksums, readiness audit output, and next commands under `build/AppStoreSubmissionPacket/`.
 - Run `Scripts/verify_release.sh submission-packet-check` before uploading or handing off the packet; it calls `Scripts/validate_app_store_submission_packet.sh` to verify required files, evidence manifests, external action tracking, and absence of local absolute paths.
 - GitHub Actions uploads the generated App Store submission packet from successful Release Gates runs as the `freeprintstudio-app-store-submission-packet` artifact.
 - Run `Scripts/validate_manual_release_verification.sh` after recording real iPhone, AirPrint, and TestFlight evidence in untracked `Config/manual-release-verification.env`.

@@ -2091,6 +2091,24 @@ check_contains "Scripts/prepare_app_store_submission_packet.sh" "generate_app_st
 check_contains "Scripts/prepare_app_store_submission_packet.sh" '\\`app-store-connect-readiness-report.md\\`' "Submission packet summary must reference the App Store Connect readiness report"
 check_contains "Scripts/verify_release.sh" "asc-report" "Release verification must expose App Store Connect readiness report generation"
 check_contains "Scripts/generate_app_store_connect_readiness_report.sh" "processed App Store Connect build number" "App Store Connect readiness report must warn that selected-build placeholders must be replaced"
+check_file "Scripts/generate_app_store_connect_state_report.sh" "App Store Connect state report generator is required"
+if [[ -f "Scripts/generate_app_store_connect_state_report.sh" && ! -x "Scripts/generate_app_store_connect_state_report.sh" ]]; then
+  printf 'FAIL: App Store Connect state report generator must be executable (Scripts/generate_app_store_connect_state_report.sh)\n'
+  failures=$((failures + 1))
+fi
+check_contains "Scripts/generate_app_store_connect_state_report.sh" "app-store-connect-state-report.md" "App Store Connect state report generator must use a deterministic output name"
+check_contains "Scripts/generate_app_store_connect_state_report.sh" "check_app_store_connect_state.sh" "App Store Connect state report must run the selected build state checker"
+check_contains "Scripts/generate_app_store_connect_state_report.sh" "Redacted Output" "App Store Connect state report must include redacted selected-build check output"
+check_contains "Scripts/generate_app_store_connect_state_report.sh" "Exit Code" "App Store Connect state report must include the selected-build check exit code"
+check_contains "Scripts/generate_app_store_connect_state_report.sh" "redacted" "App Store Connect state report must avoid printing private release values"
+check_contains "Scripts/prepare_app_store_submission_packet.sh" "app-store-connect-state-report.md" "Submission packet generator must include the App Store Connect state report"
+check_contains "Scripts/prepare_app_store_submission_packet.sh" "generate_app_store_connect_state_report.sh" "Submission packet generator must generate the App Store Connect state report"
+check_contains "Scripts/prepare_app_store_submission_packet.sh" '\\`app-store-connect-state-report.md\\`' "Submission packet summary must reference the App Store Connect state report"
+check_contains "Scripts/validate_app_store_submission_packet.sh" "app-store-connect-state-report.md" "Submission packet validator must require the App Store Connect state report"
+check_contains "Scripts/validate_app_store_submission_packet.sh" "Scripts/check_app_store_connect_state.sh" "Submission packet validator must require selected-build state report command tracking"
+check_contains "Scripts/verify_release.sh" "asc-state-report" "Release verification must expose App Store Connect state report generation"
+check_contains "README.md" "Scripts/verify_release.sh asc-state-report" "README must document the App Store Connect state report command"
+check_contains "AppStore/release-checklist.md" "Scripts/verify_release.sh asc-state-report" "Release checklist must include App Store Connect state report generation"
 check_file "Scripts/generate_app_review_submission_readiness_report.sh" "App Review submission readiness report generator is required"
 if [[ -f "Scripts/generate_app_review_submission_readiness_report.sh" && ! -x "Scripts/generate_app_review_submission_readiness_report.sh" ]]; then
   printf 'FAIL: App Review submission readiness report generator must be executable (Scripts/generate_app_review_submission_readiness_report.sh)\n'
