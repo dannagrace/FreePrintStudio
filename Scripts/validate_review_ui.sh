@@ -9,6 +9,8 @@ TEST_LOG_PATH="${FREEPRINTSTUDIO_REVIEW_UI_LOG_PATH:-/tmp/freeprintstudio-review
 SIMCTL_TIMEOUT_SECONDS="${FREEPRINTSTUDIO_REVIEW_UI_SIMCTL_TIMEOUT_SECONDS:-30}"
 BOOTSTATUS_TIMEOUT_SECONDS="${FREEPRINTSTUDIO_REVIEW_UI_BOOTSTATUS_TIMEOUT_SECONDS:-180}"
 XCODEBUILD_TIMEOUT_SECONDS="${FREEPRINTSTUDIO_REVIEW_UI_XCODEBUILD_TIMEOUT_SECONDS:-480}"
+REVIEW_UI_MAX_ATTEMPTS="${FREEPRINTSTUDIO_REVIEW_UI_MAX_ATTEMPTS:-2}"
+BUNDLE_ID="${FREEPRINTSTUDIO_BUNDLE_ID:-com.dannagrace.FreePrintStudio}"
 
 run_with_timeout() {
   local timeout_seconds="$1"
@@ -73,6 +75,13 @@ unique_candidate_simulators() {
   candidate_simulators | awk 'NF && !seen[$0]++'
 }
 
+validate_retry_count() {
+  if ! [[ "$REVIEW_UI_MAX_ATTEMPTS" =~ ^[1-9][0-9]*$ ]]; then
+    printf 'FREEPRINTSTUDIO_REVIEW_UI_MAX_ATTEMPTS must be a positive integer.\n' >&2
+    exit 1
+  fi
+}
+
 boot_simulator() {
   local device="$1"
   run_with_timeout "$SIMCTL_TIMEOUT_SECONDS" xcrun simctl boot "$device" >/dev/null 2>&1 || true
@@ -102,23 +111,54 @@ select_simulator() {
   exit 1
 }
 
+is_transient_launch_failure() {
+  grep -Eq \
+    'Failed to get background assertion|Timed out while acquiring background assertion' \
+    "$TEST_LOG_PATH"
+}
+
+run_review_ui_test() {
+  run_with_timeout "$SIMCTL_TIMEOUT_SECONDS" xcrun simctl terminate "$DEVICE" "$BUNDLE_ID" >/dev/null 2>&1 || true
+
+  run_with_timeout "$XCODEBUILD_TIMEOUT_SECONDS" \
+    xcodebuild \
+    -project FreePrintStudio.xcodeproj \
+    -scheme FreePrintStudio \
+    -destination "platform=iOS Simulator,id=$DEVICE" \
+    -derivedDataPath "$DERIVED_DATA_PATH" \
+    -only-testing:FreePrintStudioUITests/PhotoImportUITests/testAboutScreenShowsReviewAndSupportInformation \
+    CODE_SIGNING_ALLOWED=NO \
+    test >"$TEST_LOG_PATH" 2>&1
+}
+
+validate_retry_count
 DEVICE="$(select_simulator)"
 printf 'Using simulator: %s\n' "$DEVICE"
 
-set +e
-run_with_timeout "$XCODEBUILD_TIMEOUT_SECONDS" \
-  xcodebuild \
-  -project FreePrintStudio.xcodeproj \
-  -scheme FreePrintStudio \
-  -destination "platform=iOS Simulator,id=$DEVICE" \
-  -derivedDataPath "$DERIVED_DATA_PATH" \
-  -only-testing:FreePrintStudioUITests/PhotoImportUITests/testAboutScreenShowsReviewAndSupportInformation \
-  CODE_SIGNING_ALLOWED=NO \
-  test >"$TEST_LOG_PATH" 2>&1
-test_status="$?"
-set -e
+test_status=1
+for ((attempt = 1; attempt <= REVIEW_UI_MAX_ATTEMPTS; attempt += 1)); do
+  if (( attempt > 1 )); then
+    printf 'Retrying Review UI validation after transient simulator launch failure (attempt %s/%s)\n' \
+      "$attempt" "$REVIEW_UI_MAX_ATTEMPTS" >&2
+  fi
 
-tail -n 40 "$TEST_LOG_PATH"
+  set +e
+  run_review_ui_test
+  test_status="$?"
+  set -e
+
+  tail -n 40 "$TEST_LOG_PATH"
+
+  if [[ "$test_status" -eq 0 ]]; then
+    break
+  fi
+
+  if (( attempt < REVIEW_UI_MAX_ATTEMPTS )) && is_transient_launch_failure; then
+    continue
+  fi
+
+  break
+done
 
 if [[ "$test_status" -ne 0 ]]; then
   printf '\nReview UI validation failed. See %s\n' "$TEST_LOG_PATH"
