@@ -24,12 +24,15 @@ jobs:
         run: xcodebuild -version
 
       - name: Static release checks
+        timeout-minutes: 5
         run: Scripts/verify_release.sh static
 
       - name: Core checks
+        timeout-minutes: 5
         run: Scripts/verify_release.sh core
 
       - name: Property list lint
+        timeout-minutes: 2
         run: Scripts/verify_release.sh plist
 
       - name: PDF export validation
@@ -49,6 +52,7 @@ jobs:
         run: Scripts/verify_release.sh review-ui
 
       - name: Screenshot asset checks
+        timeout-minutes: 5
         run: Scripts/verify_release.sh screenshots
 
       - name: App Store submission packet
@@ -56,9 +60,11 @@ jobs:
         run: Scripts/verify_release.sh submission-packet
 
       - name: Validate App Store submission packet
+        timeout-minutes: 2
         run: Scripts/verify_release.sh submission-packet-check
 
       - name: Upload App Store submission packet
+        timeout-minutes: 2
         uses: actions/upload-artifact@v7
         with:
           name: freeprintstudio-app-store-submission-packet

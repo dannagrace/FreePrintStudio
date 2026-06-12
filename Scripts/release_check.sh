@@ -90,6 +90,45 @@ check_plist_raw_value() {
   fi
 }
 
+check_workflow_step_timeout() {
+  local step_name="$1"
+  local expected_timeout="$2"
+  local message="$3"
+
+  if ! python3 - ".github/workflows/release.yml" "$step_name" "$expected_timeout" <<'PY'
+from pathlib import Path
+import sys
+
+path = Path(sys.argv[1])
+step_name = sys.argv[2]
+expected_timeout = sys.argv[3]
+lines = path.read_text().splitlines()
+start = None
+
+for index, line in enumerate(lines):
+    if line.strip() == f"- name: {step_name}":
+        start = index
+        break
+
+if start is None:
+    raise SystemExit(1)
+
+for line in lines[start + 1:]:
+    stripped = line.strip()
+    if stripped.startswith("- name: "):
+        break
+    if stripped == f"timeout-minutes: {expected_timeout}":
+        raise SystemExit(0)
+
+raise SystemExit(1)
+PY
+  then
+    printf 'FAIL: %s (.github/workflows/release.yml step "%s" missing timeout-minutes: %s)\n' \
+      "$message" "$step_name" "$expected_timeout"
+    failures=$((failures + 1))
+  fi
+}
+
 check_icon_artwork() {
   local path="$1"
   if [[ ! -f "$path" ]]; then
@@ -2111,6 +2150,12 @@ check_contains ".github/workflows/release.yml" "concurrency:" "Release workflow 
 check_contains ".github/workflows/release.yml" "cancel-in-progress: true" "Release workflow must cancel stale release gate runs for the same branch or pull request"
 check_contains ".github/workflows/release.yml" "timeout-minutes: 10" "Slow release workflow steps must have command-level timeouts"
 check_contains ".github/workflows/release.yml" "timeout-minutes: 20" "PDF export validation must have enough GitHub Actions timeout headroom"
+check_workflow_step_timeout "Static release checks" "5" "Static release workflow step must fail fast if it hangs"
+check_workflow_step_timeout "Core checks" "5" "Core release workflow step must fail fast if it hangs"
+check_workflow_step_timeout "Property list lint" "2" "Plist lint release workflow step must fail fast if it hangs"
+check_workflow_step_timeout "Screenshot asset checks" "5" "Screenshot asset release workflow step must fail fast if it hangs"
+check_workflow_step_timeout "Validate App Store submission packet" "2" "Submission packet validation release workflow step must fail fast if it hangs"
+check_workflow_step_timeout "Upload App Store submission packet" "2" "Submission packet artifact upload step must fail fast if it hangs"
 check_contains ".github/workflows/release.yml" "FREEPRINTSTUDIO_MAX_SIMULATOR_CANDIDATES: 0" "CI PDF export validation must use a fresh temporary simulator"
 check_contains ".github/workflows/release.yml" "FREEPRINTSTUDIO_TEMPORARY_SIMULATOR_BOOT_TIMEOUT_SECONDS: 300" "CI PDF export validation must allow enough first-boot time for temporary simulators"
 check_contains ".github/workflows/release.yml" "FREEPRINTSTUDIO_TEMPORARY_SIMULATOR_APP_LAUNCH_TIMEOUT_SECONDS: 360" "CI PDF export validation must allow enough first-launch time for temporary simulators"
