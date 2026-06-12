@@ -7,6 +7,7 @@ source Scripts/load_release_env.sh
 
 EVIDENCE_PATH="${MANUAL_RELEASE_VERIFICATION_PATH:-$ROOT_DIR/Config/manual-release-verification.env}"
 MAX_AGE_DAYS="${MANUAL_RELEASE_VERIFICATION_MAX_AGE_DAYS:-45}"
+DEFAULT_AIRPRINT_RULER_TARGET_INCHES="${MANUAL_AIRPRINT_RULER_TARGET_DEFAULT_INCHES:-6}"
 failures=0
 
 ok() {
@@ -112,18 +113,20 @@ require_pass() {
 
 require_airprint_ruler_measurement() {
   local target
+  local target_value
   local measured
   local tolerance
   local measurement_status
   local missing=0
-  target="$(value_for MANUAL_AIRPRINT_RULER_TARGET_INCHES)"
+  target_value="$(value_for MANUAL_AIRPRINT_RULER_TARGET_INCHES)"
+  target="$target_value"
   measured="$(value_for MANUAL_AIRPRINT_RULER_MEASURED_INCHES)"
   tolerance="${MANUAL_AIRPRINT_RULER_TOLERANCE_INCHES:-0.0625}"
 
-  if [[ -z "$target" ]]; then
-    block "AirPrint ruler target length is missing (MANUAL_AIRPRINT_RULER_TARGET_INCHES)"
-    missing=1
-  elif looks_placeholder_like "$target"; then
+  if [[ -z "$target_value" ]]; then
+    target="$DEFAULT_AIRPRINT_RULER_TARGET_INCHES"
+    ok "AirPrint ruler target length defaulted to $target inch(es)"
+  elif looks_placeholder_like "$target_value"; then
     block "AirPrint ruler target length still looks like a placeholder (MANUAL_AIRPRINT_RULER_TARGET_INCHES)"
     missing=1
   fi

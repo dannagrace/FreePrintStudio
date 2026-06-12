@@ -457,7 +457,7 @@ fi
 check_contains "Scripts/validate_manual_release_verification.sh" "Config/manual-release-verification.env" "Manual verification script must load the untracked evidence file"
 check_contains "Scripts/validate_manual_release_verification.sh" "MANUAL_REAL_IPHONE_PHOTOS_IMPORT" "Manual verification script must require real iPhone Photos import evidence"
 check_contains "Scripts/validate_manual_release_verification.sh" "MANUAL_AIRPRINT_EXACT_SIZE" "Manual verification script must require AirPrint exact-size evidence"
-check_contains "Scripts/validate_manual_release_verification.sh" "MANUAL_AIRPRINT_RULER_TARGET_INCHES" "Manual verification script must require AirPrint target ruler evidence"
+check_contains "Scripts/validate_manual_release_verification.sh" "DEFAULT_AIRPRINT_RULER_TARGET_INCHES" "Manual verification script must default the built-in AirPrint target ruler length"
 check_contains "Scripts/validate_manual_release_verification.sh" "MANUAL_AIRPRINT_RULER_MEASURED_INCHES" "Manual verification script must require AirPrint measured ruler evidence"
 check_contains "Scripts/validate_manual_release_verification.sh" "MANUAL_TESTFLIGHT_INSTALL" "Manual verification script must require TestFlight install evidence"
 check_contains "Scripts/validate_manual_release_verification.sh" "MANUAL_TESTFLIGHT_BUILD_NUMBER" "Manual verification script must require the tested TestFlight build number"
@@ -503,12 +503,43 @@ if APP_STORE_BUILD_NUMBER=42 \
   Scripts/validate_manual_release_verification.sh >"$manual_release_airprint_measurement_log" 2>&1; then
   printf 'FAIL: Manual verification must require AirPrint measured ruler evidence, not only a pass flag\n'
   failures=$((failures + 1))
-elif ! grep -q 'AirPrint ruler target length is missing (MANUAL_AIRPRINT_RULER_TARGET_INCHES)' "$manual_release_airprint_measurement_log" \
+elif grep -q 'AirPrint ruler target length is missing (MANUAL_AIRPRINT_RULER_TARGET_INCHES)' "$manual_release_airprint_measurement_log" \
   || ! grep -q 'AirPrint ruler measured length is missing (MANUAL_AIRPRINT_RULER_MEASURED_INCHES)' "$manual_release_airprint_measurement_log"; then
-  printf 'FAIL: Manual verification missing AirPrint measurement failure should identify target and measured length fields\n'
+  printf 'FAIL: Manual verification missing AirPrint measurement failure should require measured length but default the built-in target length\n'
   failures=$((failures + 1))
 fi
 rm -rf "$manual_release_airprint_measurement_test_dir"
+manual_release_airprint_default_target_test_dir="$(mktemp -d)"
+manual_release_airprint_default_target_evidence="$manual_release_airprint_default_target_test_dir/manual-release-verification.env"
+manual_release_airprint_default_target_log="$manual_release_airprint_default_target_test_dir/manual-release-verification-airprint-default-target.log"
+cat >"$manual_release_airprint_default_target_evidence" <<EOF
+MANUAL_VERIFIER_NAME="Release Tester"
+MANUAL_REAL_IPHONE_MODEL="iPhone 15"
+MANUAL_REAL_IPHONE_IOS_VERSION="18.5"
+MANUAL_REAL_IPHONE_TEST_DATE="$today"
+MANUAL_REAL_IPHONE_PHOTOS_IMPORT="pass"
+MANUAL_REAL_IPHONE_PDF_EXPORT="pass"
+MANUAL_REAL_IPHONE_PRINT_SHEET="pass"
+MANUAL_AIRPRINT_TEST_DATE="$today"
+MANUAL_AIRPRINT_PRINTER="Office AirPrint Printer"
+MANUAL_AIRPRINT_EXACT_SIZE="pass"
+MANUAL_AIRPRINT_RULER_MEASURED_INCHES="6.00"
+MANUAL_TESTFLIGHT_BUILD_NUMBER="42"
+MANUAL_TESTFLIGHT_DEVICE="iPhone 15"
+MANUAL_TESTFLIGHT_TEST_DATE="$today"
+MANUAL_TESTFLIGHT_INSTALL="pass"
+MANUAL_TESTFLIGHT_PRINT_WORKFLOW="pass"
+EOF
+if ! APP_STORE_BUILD_NUMBER=42 \
+  MANUAL_RELEASE_VERIFICATION_PATH="$manual_release_airprint_default_target_evidence" \
+  Scripts/validate_manual_release_verification.sh >"$manual_release_airprint_default_target_log" 2>&1; then
+  printf 'FAIL: Manual verification should default the built-in AirPrint target ruler length when measured evidence is present\n'
+  failures=$((failures + 1))
+elif ! grep -q 'AirPrint ruler target length defaulted to 6 inch' "$manual_release_airprint_default_target_log"; then
+  printf 'FAIL: Manual verification should report the defaulted built-in AirPrint target ruler length\n'
+  failures=$((failures + 1))
+fi
+rm -rf "$manual_release_airprint_default_target_test_dir"
 manual_release_ios_version_test_dir="$(mktemp -d)"
 manual_release_ios_version_evidence="$manual_release_ios_version_test_dir/manual-release-verification.env"
 manual_release_ios_version_log="$manual_release_ios_version_test_dir/manual-release-verification-ios-version.log"
@@ -762,6 +793,7 @@ check_contains "Scripts/print_release_input_status.sh" "APP_REVIEW_CONTACT_EMAIL
 check_contains "Scripts/print_release_input_status.sh" "DEVELOPMENT_TEAM_ID" "Release input status must summarize Apple Developer Team configuration"
 check_contains "Scripts/print_release_input_status.sh" "ASC_KEY_ID" "Release input status must summarize App Store Connect API credentials"
 check_contains "Scripts/print_release_input_status.sh" "MANUAL_AIRPRINT_RULER_MEASURED_INCHES" "Release input status must summarize AirPrint measured ruler evidence"
+check_contains "Scripts/print_release_input_status.sh" "DEFAULT_AIRPRINT_RULER_TARGET_INCHES" "Release input status must default the built-in AirPrint target ruler length"
 check_contains "Scripts/print_release_input_status.sh" "MANUAL_TESTFLIGHT_BUILD_NUMBER" "Release input status must summarize tested TestFlight build evidence"
 check_contains "Scripts/print_release_input_status.sh" "Final Submission Guards" "Release input status must summarize final App Review submission guards"
 check_contains "Scripts/print_release_input_status.sh" "APP_STORE_BUILD_NUMBER is configured" "Release input status must show whether the selected App Store build is configured"
@@ -902,6 +934,37 @@ if grep -q 'OK: Manual real-device, AirPrint, and TestFlight evidence ready: 17/
   failures=$((failures + 1))
 fi
 rm -rf "$release_input_status_manual_validation_dir"
+release_input_status_default_target_dir="$(mktemp -d)"
+release_input_status_default_target_env="$release_input_status_default_target_dir/release.env"
+release_input_status_default_target_evidence="$release_input_status_default_target_dir/manual-release-verification.env"
+release_input_status_default_target_log="$release_input_status_default_target_dir/status.log"
+printf '%s\n' 'APP_STORE_BUILD_NUMBER=42' >"$release_input_status_default_target_env"
+cat >"$release_input_status_default_target_evidence" <<EOF
+MANUAL_VERIFIER_NAME="Release Tester"
+MANUAL_REAL_IPHONE_MODEL="iPhone 15"
+MANUAL_REAL_IPHONE_IOS_VERSION="18.5"
+MANUAL_REAL_IPHONE_TEST_DATE="$today"
+MANUAL_REAL_IPHONE_PHOTOS_IMPORT="pass"
+MANUAL_REAL_IPHONE_PDF_EXPORT="pass"
+MANUAL_REAL_IPHONE_PRINT_SHEET="pass"
+MANUAL_AIRPRINT_TEST_DATE="$today"
+MANUAL_AIRPRINT_PRINTER="Production AirPrint validation"
+MANUAL_AIRPRINT_EXACT_SIZE="pass"
+MANUAL_AIRPRINT_RULER_MEASURED_INCHES="6.00"
+MANUAL_TESTFLIGHT_BUILD_NUMBER="42"
+MANUAL_TESTFLIGHT_DEVICE="iPhone 15"
+MANUAL_TESTFLIGHT_TEST_DATE="$today"
+MANUAL_TESTFLIGHT_INSTALL="pass"
+MANUAL_TESTFLIGHT_PRINT_WORKFLOW="pass"
+EOF
+RELEASE_ENV_PATH="$release_input_status_default_target_env" \
+  MANUAL_RELEASE_VERIFICATION_PATH="$release_input_status_default_target_evidence" \
+  Scripts/print_release_input_status.sh >"$release_input_status_default_target_log" 2>&1 || true
+if ! grep -q 'OK: Manual real-device, AirPrint, and TestFlight evidence ready: 17/17' "$release_input_status_default_target_log"; then
+  printf 'FAIL: Release input status should count the default built-in AirPrint target ruler length as ready\n'
+  failures=$((failures + 1))
+fi
+rm -rf "$release_input_status_default_target_dir"
 release_input_status_invalid_asc_dir="$(mktemp -d)"
 release_input_status_invalid_asc_env="$release_input_status_invalid_asc_dir/release.env"
 release_input_status_invalid_asc_manual="$release_input_status_invalid_asc_dir/manual-release-verification.env"
@@ -1938,6 +2001,7 @@ check_contains "Scripts/generate_manual_release_readiness_report.sh" "manual-rel
 check_contains "Scripts/generate_manual_release_readiness_report.sh" "MANUAL_REAL_IPHONE_PHOTOS_IMPORT" "Manual release readiness report must summarize real iPhone Photos evidence"
 check_contains "Scripts/generate_manual_release_readiness_report.sh" "MANUAL_AIRPRINT_EXACT_SIZE" "Manual release readiness report must summarize AirPrint exact-size evidence"
 check_contains "Scripts/generate_manual_release_readiness_report.sh" "MANUAL_AIRPRINT_RULER_MEASURED_INCHES" "Manual release readiness report must summarize AirPrint measured ruler evidence"
+check_contains "Scripts/generate_manual_release_readiness_report.sh" "DEFAULT_AIRPRINT_RULER_TARGET_INCHES" "Manual release readiness report must default the built-in AirPrint target ruler length"
 check_contains "Scripts/generate_manual_release_readiness_report.sh" "MANUAL_TESTFLIGHT_BUILD_NUMBER" "Manual release readiness report must summarize selected TestFlight build evidence"
 check_contains "Scripts/generate_manual_release_readiness_report.sh" "APP_STORE_BUILD_NUMBER" "Manual release readiness report must compare the selected App Store build"
 check_contains "Scripts/generate_manual_release_readiness_report.sh" "Scripts/validate_manual_release_verification.sh" "Manual release readiness report must reference the strict validator"
@@ -2100,6 +2164,38 @@ if ! grep -q 'iOS version.*Invalid; expected numeric iOS version' "$manual_repor
   failures=$((failures + 1))
 fi
 rm -rf "$manual_report_ios_version_test_dir"
+manual_report_default_target_test_dir="$(mktemp -d)"
+manual_report_default_target_evidence="$manual_report_default_target_test_dir/manual-release-verification.env"
+manual_report_default_target_report="$manual_report_default_target_test_dir/manual-release-readiness-report.md"
+cat >"$manual_report_default_target_evidence" <<EOF
+MANUAL_VERIFIER_NAME="Release Tester"
+MANUAL_REAL_IPHONE_MODEL="iPhone 15"
+MANUAL_REAL_IPHONE_IOS_VERSION="18.5"
+MANUAL_REAL_IPHONE_TEST_DATE="$today"
+MANUAL_REAL_IPHONE_PHOTOS_IMPORT="pass"
+MANUAL_REAL_IPHONE_PDF_EXPORT="pass"
+MANUAL_REAL_IPHONE_PRINT_SHEET="pass"
+MANUAL_AIRPRINT_TEST_DATE="$today"
+MANUAL_AIRPRINT_PRINTER="Production AirPrint validation"
+MANUAL_AIRPRINT_EXACT_SIZE="pass"
+MANUAL_AIRPRINT_RULER_MEASURED_INCHES="6.00"
+MANUAL_TESTFLIGHT_BUILD_NUMBER="42"
+MANUAL_TESTFLIGHT_DEVICE="iPhone 15"
+MANUAL_TESTFLIGHT_TEST_DATE="$today"
+MANUAL_TESTFLIGHT_INSTALL="pass"
+MANUAL_TESTFLIGHT_PRINT_WORKFLOW="pass"
+EOF
+MANUAL_RELEASE_VERIFICATION_PATH="$manual_report_default_target_evidence" \
+  Scripts/generate_manual_release_readiness_report.sh "$manual_report_default_target_report" >/dev/null
+if grep -q 'Target ruler length.*Missing' "$manual_report_default_target_report"; then
+  printf 'FAIL: Manual readiness report must not mark the default built-in AirPrint target ruler length as missing\n'
+  failures=$((failures + 1))
+fi
+if ! grep -q 'Target ruler length.*Defaulted to built-in 6 inch Test Ruler target' "$manual_report_default_target_report"; then
+  printf 'FAIL: Manual readiness report should report the default built-in AirPrint target ruler length\n'
+  failures=$((failures + 1))
+fi
+rm -rf "$manual_report_default_target_test_dir"
 check_contains "Scripts/prepare_app_store_submission_packet.sh" "app-review-submission-readiness-report.md" "Submission packet generator must include the App Review submission readiness report"
 check_contains "Scripts/prepare_app_store_submission_packet.sh" "generate_app_review_submission_readiness_report.sh" "Submission packet generator must generate the App Review submission readiness report"
 check_contains "Scripts/prepare_app_store_submission_packet.sh" '\\`app-review-submission-readiness-report.md\\`' "Submission packet summary must reference the App Review submission readiness report"

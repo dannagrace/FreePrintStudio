@@ -6,6 +6,7 @@ cd "$ROOT_DIR"
 
 release_env_path="${RELEASE_ENV_PATH:-$ROOT_DIR/Config/release.env}"
 manual_evidence_path="${MANUAL_RELEASE_VERIFICATION_PATH:-$ROOT_DIR/Config/manual-release-verification.env}"
+DEFAULT_AIRPRINT_RULER_TARGET_INCHES="${MANUAL_AIRPRINT_RULER_TARGET_DEFAULT_INCHES:-6}"
 strict=0
 missing_count=0
 
@@ -324,6 +325,8 @@ if [[ "$manual_source_status" -eq 0 ]]; then
     MANUAL_TESTFLIGHT_TEST_DATE
   do
     if is_set "${!name:-}"; then
+      manual_ready=$((manual_ready + 1))
+    elif [[ "$name" == "MANUAL_AIRPRINT_RULER_TARGET_INCHES" ]] && is_set "$DEFAULT_AIRPRINT_RULER_TARGET_INCHES"; then
       manual_ready=$((manual_ready + 1))
     fi
   done

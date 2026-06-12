@@ -9,6 +9,7 @@ output_path="${1:-build/manual-release-readiness-report.md}"
 evidence_path="${MANUAL_RELEASE_VERIFICATION_PATH:-$ROOT_DIR/Config/manual-release-verification.env}"
 max_age_days="${MANUAL_RELEASE_VERIFICATION_MAX_AGE_DAYS:-45}"
 airprint_ruler_tolerance="${MANUAL_AIRPRINT_RULER_TOLERANCE_INCHES:-0.0625}"
+DEFAULT_AIRPRINT_RULER_TARGET_INCHES="${MANUAL_AIRPRINT_RULER_TARGET_DEFAULT_INCHES:-6}"
 generated_at="$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
 
 usage() {
@@ -137,6 +138,17 @@ pass_status() {
   esac
 }
 
+airprint_target_status() {
+  local value
+  value="$(value_for MANUAL_AIRPRINT_RULER_TARGET_INCHES)"
+  if [[ -z "$value" ]]; then
+    record_ready
+    status_result="Defaulted to built-in ${DEFAULT_AIRPRINT_RULER_TARGET_INCHES} inch Test Ruler target"
+  else
+    value_status MANUAL_AIRPRINT_RULER_TARGET_INCHES
+  fi
+}
+
 date_status() {
   local name="$1"
   local value
@@ -192,17 +204,18 @@ PY
 }
 
 airprint_measurement_status() {
-  local target="${MANUAL_AIRPRINT_RULER_TARGET_INCHES:-}"
+  local target_raw="${MANUAL_AIRPRINT_RULER_TARGET_INCHES:-}"
+  local target="${target_raw:-$DEFAULT_AIRPRINT_RULER_TARGET_INCHES}"
   local measured="${MANUAL_AIRPRINT_RULER_MEASURED_INCHES:-}"
   local result
 
-  if [[ -z "$target" || -z "$measured" ]]; then
+  if [[ -z "$measured" ]]; then
     record_failure
-    status_result='Missing target or measured ruler length'
+    status_result='Missing measured ruler length'
     return
   fi
 
-  if looks_placeholder_like "$target" || looks_placeholder_like "$measured"; then
+  if looks_placeholder_like "$target_raw" || looks_placeholder_like "$measured"; then
     record_failure
     status_result='Placeholder-like target or measured ruler length'
     return
@@ -320,7 +333,7 @@ value_status MANUAL_AIRPRINT_PRINTER
 status_airprint_printer="$status_result"
 pass_status MANUAL_AIRPRINT_EXACT_SIZE
 status_airprint_exact_size="$status_result"
-value_status MANUAL_AIRPRINT_RULER_TARGET_INCHES
+airprint_target_status
 status_airprint_ruler_target="$status_result"
 value_status MANUAL_AIRPRINT_RULER_MEASURED_INCHES
 status_airprint_ruler_measured="$status_result"
