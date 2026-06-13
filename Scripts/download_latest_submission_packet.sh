@@ -121,6 +121,7 @@ mkdir -p "$destination"
 cp -R "$packet_source"/. "$destination"/
 
 FREEPRINTSTUDIO_SUBMISSION_PACKET_DIR="$destination" Scripts/validate_app_store_submission_packet.sh
+Scripts/validate_release_provenance.sh "$destination/release-provenance.tsv" "$run_sha" "$run_url"
 
 printf 'Downloaded and validated CI submission packet: %s\n' "$destination"
 printf 'Source run: %s\n' "$run_url"

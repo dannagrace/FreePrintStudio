@@ -2668,6 +2668,8 @@ if [[ -f "Scripts/validate_release_provenance.sh" && ! -x "Scripts/validate_rele
   printf 'FAIL: Release provenance validator must be executable (Scripts/validate_release_provenance.sh)\n'
   failures=$((failures + 1))
 fi
+check_contains "Scripts/validate_release_provenance.sh" "expected_git_commit" "Release provenance validator must support expected source commit checks"
+check_contains "Scripts/validate_release_provenance.sh" "expected_github_run_url" "Release provenance validator must support expected GitHub Actions run URL checks"
 check_contains "Scripts/validate_app_store_submission_packet.sh" "Scripts/validate_release_provenance.sh" "Submission packet validator must require clean release provenance"
 if [[ -x "Scripts/validate_release_provenance.sh" ]]; then
   release_provenance_test_dir="$(mktemp -d)"
@@ -2709,6 +2711,32 @@ EOF
     failures=$((failures + 1))
   elif ! grep -q 'release provenance github_sha must match git_commit' "$release_provenance_log"; then
     printf 'FAIL: Release provenance validator must explain mismatched GitHub Actions SHA failures\n'
+    failures=$((failures + 1))
+  fi
+  cat >"$release_provenance_path" <<'EOF'
+key	value
+generated_at	2026-06-13T00:00:00Z
+git_commit	abcdef1234567890
+git_branch	main
+git_remote_origin	https://github.com/dannagrace/FreePrintStudio.git
+git_status	clean
+git_dirty_count	0
+github_run_url	https://github.com/dannagrace/FreePrintStudio/actions/runs/123456789
+github_ref	main
+github_sha	abcdef1234567890
+EOF
+  if Scripts/validate_release_provenance.sh "$release_provenance_path" "0000000000000000" "https://github.com/dannagrace/FreePrintStudio/actions/runs/123456789" >"$release_provenance_log" 2>&1; then
+    printf 'FAIL: Release provenance validator must reject provenance that does not match the expected CI run SHA\n'
+    failures=$((failures + 1))
+  elif ! grep -q 'release provenance git_commit must match expected source commit' "$release_provenance_log"; then
+    printf 'FAIL: Release provenance validator must explain expected source commit mismatches\n'
+    failures=$((failures + 1))
+  fi
+  if Scripts/validate_release_provenance.sh "$release_provenance_path" "abcdef1234567890" "https://github.com/dannagrace/FreePrintStudio/actions/runs/987654321" >"$release_provenance_log" 2>&1; then
+    printf 'FAIL: Release provenance validator must reject provenance that does not match the expected CI run URL\n'
+    failures=$((failures + 1))
+  elif ! grep -q 'release provenance github_run_url must match expected GitHub Actions run URL' "$release_provenance_log"; then
+    printf 'FAIL: Release provenance validator must explain expected GitHub Actions run URL mismatches\n'
     failures=$((failures + 1))
   fi
   cat >"$release_provenance_path" <<'EOF'
@@ -3251,6 +3279,7 @@ check_contains "Scripts/download_latest_submission_packet.sh" "freeprintstudio-a
 check_contains "Scripts/download_latest_submission_packet.sh" "validate_app_store_submission_packet.sh" "Latest CI submission packet download helper must validate the downloaded packet"
 check_contains "Scripts/download_latest_submission_packet.sh" "FREEPRINTSTUDIO_ARTIFACT_DOWNLOAD_ATTEMPTS" "Latest CI submission packet download helper must allow retry count overrides"
 check_contains "Scripts/download_latest_submission_packet.sh" "Artifact download attempt" "Latest CI submission packet download helper must retry transient artifact download failures"
+check_contains "Scripts/download_latest_submission_packet.sh" 'Scripts/validate_release_provenance.sh "$destination/release-provenance.tsv" "$run_sha" "$run_url"' "Latest CI submission packet download helper must verify downloaded provenance against the selected successful CI run"
 check_contains "README.md" "Scripts/download_latest_submission_packet.sh" "README must document downloading the latest CI submission packet artifact"
 check_contains "AppStore/release-checklist.md" "Scripts/download_latest_submission_packet.sh" "Release checklist must document downloading the latest CI submission packet artifact"
 check_contains "FreePrintStudio/Resources/Info.plist" "CFBundleDisplayName" "Info.plist must define display name"

@@ -1,12 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-if [[ "$#" -ne 1 ]]; then
-  printf 'Usage: %s <release-provenance.tsv>\n' "$0" >&2
+if [[ "$#" -lt 1 || "$#" -gt 3 ]]; then
+  printf 'Usage: %s <release-provenance.tsv> [expected-git-commit] [expected-github-run-url]\n' "$0" >&2
   exit 2
 fi
 
 provenance_path="$1"
+expected_git_commit="${2:-}"
+expected_github_run_url="${3:-}"
 
 if [[ ! -s "$provenance_path" ]]; then
   printf 'FAIL: release provenance is missing or empty: %s\n' "$provenance_path"
@@ -92,6 +94,24 @@ fi
 if [[ "$github_sha" != "not available" && "$git_commit" != "unknown" && "$github_sha" != "$git_commit" ]]; then
   printf 'FAIL: release provenance github_sha must match git_commit (github_sha: %s; git_commit: %s)\n' \
     "$github_sha" "$git_commit"
+  failures=$((failures + 1))
+fi
+
+if [[ -n "$expected_git_commit" && "$git_commit" != "$expected_git_commit" ]]; then
+  printf 'FAIL: release provenance git_commit must match expected source commit (expected: %s; got: %s)\n' \
+    "$expected_git_commit" "${git_commit:-missing}"
+  failures=$((failures + 1))
+fi
+
+if [[ -n "$expected_git_commit" && "$github_sha" != "not available" && "$github_sha" != "$expected_git_commit" ]]; then
+  printf 'FAIL: release provenance github_sha must match expected source commit (expected: %s; got: %s)\n' \
+    "$expected_git_commit" "${github_sha:-missing}"
+  failures=$((failures + 1))
+fi
+
+if [[ -n "$expected_github_run_url" && "$github_run_url" != "$expected_github_run_url" ]]; then
+  printf 'FAIL: release provenance github_run_url must match expected GitHub Actions run URL (expected: %s; got: %s)\n' \
+    "$expected_github_run_url" "${github_run_url:-missing}"
   failures=$((failures + 1))
 fi
 
