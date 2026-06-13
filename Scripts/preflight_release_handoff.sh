@@ -94,12 +94,12 @@ write_handoff_brief() {
   mkdir -p "$(dirname "$brief_path")"
   {
     printf '# FreePrint Studio Release Handoff Brief\n\n'
-    printf '- Generated At: `%s`\n' "$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
-    printf '- Handoff Status: `%s`\n' "$handoff_status"
-    printf '- Local HEAD: `%s`\n' "$local_head"
-    printf '- CI Packet Commit: `%s`\n' "$packet_git_commit"
-    printf '- CI Packet SHA: `%s`\n' "$packet_github_sha"
-    printf '- CI Run: %s\n\n' "$packet_github_run_url"
+    printf -- '- Generated At: `%s`\n' "$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
+    printf -- '- Handoff Status: `%s`\n' "$handoff_status"
+    printf -- '- Local HEAD: `%s`\n' "$local_head"
+    printf -- '- CI Packet Commit: `%s`\n' "$packet_git_commit"
+    printf -- '- CI Packet SHA: `%s`\n' "$packet_github_sha"
+    printf -- '- CI Run: %s\n\n' "$packet_github_run_url"
 
     printf '## Readiness Counts\n\n'
     printf '| Source | Blockers | Warnings | Log |\n'
@@ -129,13 +129,13 @@ write_handoff_brief() {
     fi
 
     printf '\n## Primary Action Files\n\n'
-    printf '- Machine summary: `%s`\n' "$summary_path"
-    printf '- Human brief: `%s`\n' "$brief_path"
-    printf '- CI action manifest: `%s`\n' "$external_actions_path"
-    printf '- CI action checklist: `%s/ACTION_ITEMS.md`\n' "$packet_dir"
-    printf '- Release input worksheet: `AppStore/release-inputs-worksheet.md`\n'
-    printf '- Private release values: `Config/release.env`\n'
-    printf '- Manual device evidence: `Config/manual-release-verification.env`\n\n'
+    printf -- '- Machine summary: `%s`\n' "$summary_path"
+    printf -- '- Human brief: `%s`\n' "$brief_path"
+    printf -- '- CI action manifest: `%s`\n' "$external_actions_path"
+    printf -- '- CI action checklist: `%s/ACTION_ITEMS.md`\n' "$packet_dir"
+    printf -- '- Release input worksheet: `AppStore/release-inputs-worksheet.md`\n'
+    printf -- '- Private release values: `Config/release.env`\n'
+    printf -- '- Manual device evidence: `Config/manual-release-verification.env`\n\n'
 
     printf '## Next Commands\n\n'
     printf '```sh\n'

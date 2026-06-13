@@ -3310,6 +3310,7 @@ check_contains "Scripts/preflight_release_handoff.sh" 'Scripts/validate_external
 check_contains "Scripts/preflight_release_handoff.sh" "external_readiness_actions" "Release handoff summary must record the external readiness action manifest path"
 check_contains "Scripts/preflight_release_handoff.sh" "External Action Summary" "Release handoff brief must summarize external action categories"
 check_contains "Scripts/preflight_release_handoff.sh" "Next Commands" "Release handoff brief must include next validation commands"
+check_not_contains "Scripts/preflight_release_handoff.sh" "printf '-" "Release handoff brief must not use printf formats that start with a dash"
 check_contains "Scripts/preflight_release_handoff.sh" "ci_readiness_log" "Release handoff summary must record the CI packet readiness log path"
 check_contains "Scripts/preflight_release_handoff.sh" "ci_readiness_blockers" "Release handoff summary must record the CI readiness blocker count"
 check_contains "Scripts/preflight_release_handoff.sh" "ci_readiness_warnings" "Release handoff summary must record the CI readiness warning count"
