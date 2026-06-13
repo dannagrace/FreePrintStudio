@@ -2699,6 +2699,25 @@ git_branch	main
 git_remote_origin	https://github.com/dannagrace/FreePrintStudio.git
 git_status	clean
 git_dirty_count	0
+github_run_url	https://github.com/dannagrace/FreePrintStudio/actions/runs/123456789
+github_ref	main
+github_sha	0000000000000000
+EOF
+  if Scripts/validate_release_provenance.sh "$release_provenance_path" >"$release_provenance_log" 2>&1; then
+    printf 'FAIL: Release provenance validator must reject mismatched GitHub Actions SHA provenance\n'
+    failures=$((failures + 1))
+  elif ! grep -q 'release provenance github_sha must match git_commit' "$release_provenance_log"; then
+    printf 'FAIL: Release provenance validator must explain mismatched GitHub Actions SHA failures\n'
+    failures=$((failures + 1))
+  fi
+  cat >"$release_provenance_path" <<'EOF'
+key	value
+generated_at	2026-06-13T00:00:00Z
+git_commit	abcdef1234567890
+git_branch	main
+git_remote_origin	https://github.com/dannagrace/FreePrintStudio.git
+git_status	clean
+git_dirty_count	0
 github_run_url	not available
 github_ref	not available
 github_sha	not available

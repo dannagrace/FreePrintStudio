@@ -54,6 +54,9 @@ git_status="$(value_for_key "git_status" 2>/dev/null || true)"
 git_dirty_count="$(value_for_key "git_dirty_count" 2>/dev/null || true)"
 git_commit="$(value_for_key "git_commit" 2>/dev/null || true)"
 git_branch="$(value_for_key "git_branch" 2>/dev/null || true)"
+github_run_url="$(value_for_key "github_run_url" 2>/dev/null || true)"
+github_ref="$(value_for_key "github_ref" 2>/dev/null || true)"
+github_sha="$(value_for_key "github_sha" 2>/dev/null || true)"
 
 if [[ "$git_status" != "clean" ]]; then
   printf 'FAIL: release provenance git_status must be clean before App Store handoff (got: %s)\n' "${git_status:-missing}"
@@ -72,6 +75,23 @@ fi
 
 if [[ "$git_branch" == "unknown" ]]; then
   printf 'FAIL: release provenance git_branch must record a real source branch\n'
+  failures=$((failures + 1))
+fi
+
+if [[ "$github_run_url" != "not available" ]]; then
+  if [[ "$github_ref" == "not available" ]]; then
+    printf 'FAIL: release provenance github_ref must be recorded when github_run_url is present\n'
+    failures=$((failures + 1))
+  fi
+  if [[ "$github_sha" == "not available" ]]; then
+    printf 'FAIL: release provenance github_sha must be recorded when github_run_url is present\n'
+    failures=$((failures + 1))
+  fi
+fi
+
+if [[ "$github_sha" != "not available" && "$git_commit" != "unknown" && "$github_sha" != "$git_commit" ]]; then
+  printf 'FAIL: release provenance github_sha must match git_commit (github_sha: %s; git_commit: %s)\n' \
+    "$github_sha" "$git_commit"
   failures=$((failures + 1))
 fi
 
