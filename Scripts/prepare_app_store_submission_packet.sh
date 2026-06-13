@@ -395,7 +395,7 @@ external_action_fields() {
     *APP_PRIVACY_DETAILS_CONFIRMED_IN_APP_STORE_CONNECT*|*"App Privacy Details"*App\ Store\ Connect*)
       category="App Privacy"
       owner="App Store Connect account holder"
-      next_action="Confirm App Privacy Details in App Store Connect match AppStore/app_privacy_details.json, then set APP_PRIVACY_DETAILS_CONFIRMED_IN_APP_STORE_CONNECT=1 in untracked Config/release.env."
+      next_action="Confirm App Privacy Details in App Store Connect match AppStore/app_privacy_details.json, then run FASTLANE_USER=apple-id@example.com CONFIRM_UPLOAD_APP_PRIVACY=1 Scripts/preflight_app_privacy_upload.sh, upload with FASTLANE_USER=apple-id@example.com CONFIRM_UPLOAD_APP_PRIVACY=1 Scripts/run_fastlane.sh ios privacy_details, verify App Store Connect, set APP_PRIVACY_DETAILS_CONFIRMED_IN_APP_STORE_CONNECT=1 in untracked Config/release.env, and run APP_PRIVACY_DETAILS_CONFIRMED_IN_APP_STORE_CONNECT=1 Scripts/validate_app_privacy_connect_entry.sh."
       validation_command="Scripts/validate_app_privacy_connect_entry.sh"
       ;;
     *"FASTLANE_USER is not configured"*)
@@ -431,7 +431,7 @@ external_action_fields() {
     *"Developer Team"*|*"Apple Distribution"*|*"provisioning profile"*|*"provisioning profiles"*|*"signing identity"*|*"signing assets"*)
       category="Signing"
       owner="Apple Developer account holder"
-      next_action="Install Apple Distribution signing assets and set DEVELOPMENT_TEAM_ID, then run Scripts/check_code_signing_assets.sh and Scripts/preflight_app_store_archive.sh."
+      next_action="Install Apple Distribution signing assets and set DEVELOPMENT_TEAM_ID, then run Scripts/check_code_signing_assets.sh, then run Scripts/preflight_app_store_archive.sh, then DEVELOPMENT_TEAM_ID=YOURTEAMID ALLOW_PROVISIONING_UPDATES=1 Scripts/archive_app_store.sh."
       validation_command="Scripts/check_code_signing_assets.sh"
       ;;
   esac
