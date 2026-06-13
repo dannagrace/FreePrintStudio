@@ -230,6 +230,9 @@ require_tsv_key "release-provenance.tsv" "git_commit" "release provenance source
 require_tsv_key "release-provenance.tsv" "git_branch" "release provenance branch"
 require_tsv_key "release-provenance.tsv" "git_status" "release provenance worktree status"
 require_tsv_key "release-provenance.tsv" "github_run_url" "release provenance GitHub Actions run URL"
+if ! Scripts/validate_release_provenance.sh "$PACKET_DIR/release-provenance.tsv"; then
+  failures=$((failures + 1))
+fi
 require_contains "SUMMARY.md" "external-readiness-actions.tsv" "summary external readiness manifest reference"
 require_contains "SUMMARY.md" "app-store-connect-state-report.md" "summary App Store Connect state report reference"
 require_contains "app-store-connect-state-report.md" "Scripts/check_app_store_connect_state.sh" "selected-build state report command tracking"

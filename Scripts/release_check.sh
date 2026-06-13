@@ -2662,6 +2662,54 @@ check_contains "Scripts/validate_app_store_submission_packet.sh" $'key\tvalue' "
 check_contains "Scripts/validate_app_store_submission_packet.sh" "git_commit" "Submission packet validator must require release provenance source commit"
 check_contains "Scripts/validate_app_store_submission_packet.sh" "git_branch" "Submission packet validator must require release provenance branch"
 check_contains "Scripts/validate_app_store_submission_packet.sh" "git_status" "Submission packet validator must require release provenance worktree status"
+check_file "Scripts/validate_release_provenance.sh" "Release provenance validator is required"
+if [[ -f "Scripts/validate_release_provenance.sh" && ! -x "Scripts/validate_release_provenance.sh" ]]; then
+  printf 'FAIL: Release provenance validator must be executable (Scripts/validate_release_provenance.sh)\n'
+  failures=$((failures + 1))
+fi
+check_contains "Scripts/validate_app_store_submission_packet.sh" "Scripts/validate_release_provenance.sh" "Submission packet validator must require clean release provenance"
+if [[ -x "Scripts/validate_release_provenance.sh" ]]; then
+  release_provenance_test_dir="$(mktemp -d)"
+  release_provenance_path="$release_provenance_test_dir/release-provenance.tsv"
+  release_provenance_log="$release_provenance_test_dir/validation.log"
+  cat >"$release_provenance_path" <<'EOF'
+key	value
+generated_at	2026-06-13T00:00:00Z
+git_commit	abcdef1234567890
+git_branch	main
+git_remote_origin	https://github.com/dannagrace/FreePrintStudio.git
+git_status	dirty (1 tracked/untracked item(s))
+git_dirty_count	1
+github_run_url	not available
+github_ref	not available
+github_sha	not available
+EOF
+  if Scripts/validate_release_provenance.sh "$release_provenance_path" >"$release_provenance_log" 2>&1; then
+    printf 'FAIL: Release provenance validator must reject dirty worktree provenance\n'
+    failures=$((failures + 1))
+  elif ! grep -q 'release provenance git_status must be clean' "$release_provenance_log"; then
+    printf 'FAIL: Release provenance validator must explain dirty git_status failures\n'
+    failures=$((failures + 1))
+  fi
+  cat >"$release_provenance_path" <<'EOF'
+key	value
+generated_at	2026-06-13T00:00:00Z
+git_commit	abcdef1234567890
+git_branch	main
+git_remote_origin	https://github.com/dannagrace/FreePrintStudio.git
+git_status	clean
+git_dirty_count	0
+github_run_url	not available
+github_ref	not available
+github_sha	not available
+EOF
+  if ! Scripts/validate_release_provenance.sh "$release_provenance_path" >"$release_provenance_log" 2>&1; then
+    printf 'FAIL: Release provenance validator must accept clean worktree provenance\n'
+    cat "$release_provenance_log"
+    failures=$((failures + 1))
+  fi
+  rm -rf "$release_provenance_test_dir"
+fi
 check_contains "Scripts/preflight_app_review_submission.sh" "validate_public_pages.sh" "App Review submission preflight must validate public privacy and support pages"
 check_contains "Scripts/generate_app_review_submission_readiness_report.sh" "validate_public_pages.sh" "App Review submission readiness report must include public page validation"
 check_contains "Scripts/prepare_app_store_submission_packet.sh" "Scripts/verify_release.sh public-pages" "Submission packet command order must include strict public page validation"
