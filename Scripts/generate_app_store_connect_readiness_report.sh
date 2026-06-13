@@ -184,6 +184,8 @@ cat >"$output_path" <<EOF
 - Generated At: $generated_at
 - This report is redacted: it does not print API key JSON paths, .p8 private key paths, Apple ID values, App Review contact values, or private credential contents.
 - Credential validation command: \`Scripts/check_app_store_connect_credentials.sh\`
+- Metadata upload preflight command: \`Scripts/preflight_metadata_upload.sh\`
+- App Privacy upload preflight command: \`Scripts/preflight_app_privacy_upload.sh\`
 - App/version/build state command: \`Scripts/run_fastlane.sh ios app_store_connect_state\`
 - TestFlight preflight command: \`Scripts/preflight_testflight_upload.sh\`
 - App Review preflight command: \`Scripts/preflight_app_review_submission.sh\`
@@ -224,6 +226,11 @@ Replace \`PROCESSED_BUILD_NUMBER\` with the processed App Store Connect build nu
 | Check | Command | When To Run |
 | --- | --- | --- |
 | Credential syntax | \`Scripts/check_app_store_connect_credentials.sh\` | After configuring API JSON or API key triplet. |
+| Metadata and screenshot upload preflight | \`Scripts/preflight_metadata_upload.sh\` | After App Store Connect credentials and App Review contact values are configured. |
+| Metadata and screenshot upload | \`Scripts/run_fastlane.sh ios metadata\` | After the metadata upload preflight passes. |
+| App Privacy Details upload preflight | \`FASTLANE_USER=apple-id@example.com CONFIRM_UPLOAD_APP_PRIVACY=1 Scripts/preflight_app_privacy_upload.sh\` | After reviewing \`AppStore/app_privacy_details.json\` against App Store Connect answers. |
+| App Privacy Details upload | \`FASTLANE_USER=apple-id@example.com CONFIRM_UPLOAD_APP_PRIVACY=1 Scripts/run_fastlane.sh ios privacy_details\` | After the App Privacy upload preflight passes. |
+| App Privacy Details confirmation | \`APP_PRIVACY_DETAILS_CONFIRMED_IN_APP_STORE_CONNECT=1 Scripts/validate_app_privacy_connect_entry.sh\` | After App Store Connect matches \`AppStore/app_privacy_details.json\`. |
 | App record, version, and selected build | \`APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/run_fastlane.sh ios app_store_connect_state\` | After TestFlight processing completes. |
 | TestFlight upload preflight | \`Scripts/preflight_testflight_upload.sh\` | After signing and App Store Connect credentials are configured. |
 | App Review submission preflight | \`APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/preflight_app_review_submission.sh\` | After listing fields, manual evidence, and selected build are final. |
@@ -233,8 +240,10 @@ Replace \`PROCESSED_BUILD_NUMBER\` with the processed App Store Connect build nu
 - [ ] Configure either \`APP_STORE_CONNECT_API_KEY_JSON\` or the \`ASC_KEY_ID\`, \`ASC_ISSUER_ID\`, and \`ASC_KEY_PATH\` triplet in untracked local release inputs.
 - [ ] Run \`Scripts/check_app_store_connect_credentials.sh\`.
 - [ ] Create or verify the App Store Connect app record for \`com.dannagrace.FreePrintStudio\`.
+- [ ] Run \`Scripts/preflight_metadata_upload.sh\`, then upload metadata and screenshots with \`Scripts/run_fastlane.sh ios metadata\`.
+- [ ] Run \`FASTLANE_USER=apple-id@example.com CONFIRM_UPLOAD_APP_PRIVACY=1 Scripts/preflight_app_privacy_upload.sh\`, then upload App Privacy Details with \`Scripts/run_fastlane.sh ios privacy_details\`.
 - [ ] Upload a signed IPA to TestFlight with \`Scripts/run_fastlane.sh ios upload_testflight\`.
-- [ ] Confirm App Privacy Details in App Store Connect match \`AppStore/app_privacy_details.json\`, then set \`APP_PRIVACY_DETAILS_CONFIRMED_IN_APP_STORE_CONNECT=1\`.
+- [ ] Confirm App Privacy Details in App Store Connect match \`AppStore/app_privacy_details.json\`, then set \`APP_PRIVACY_DETAILS_CONFIRMED_IN_APP_STORE_CONNECT=1\` and run \`APP_PRIVACY_DETAILS_CONFIRMED_IN_APP_STORE_CONNECT=1 Scripts/validate_app_privacy_connect_entry.sh\`.
 - [ ] Wait for the build to finish processing, then set \`APP_STORE_BUILD_NUMBER\`.
 - [ ] Run \`APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/run_fastlane.sh ios app_store_connect_state\`.
 - [ ] Run \`APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/preflight_app_review_submission.sh\` before final submission.

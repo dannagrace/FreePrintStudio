@@ -2761,6 +2761,11 @@ check_contains "Scripts/prepare_app_store_submission_packet.sh" "generate_app_st
 check_contains "Scripts/prepare_app_store_submission_packet.sh" '\\`app-store-connect-readiness-report.md\\`' "Submission packet summary must reference the App Store Connect readiness report"
 check_contains "Scripts/verify_release.sh" "asc-report" "Release verification must expose App Store Connect readiness report generation"
 check_contains "Scripts/generate_app_store_connect_readiness_report.sh" "processed App Store Connect build number" "App Store Connect readiness report must warn that selected-build placeholders must be replaced"
+check_contains "Scripts/generate_app_store_connect_readiness_report.sh" "Scripts/preflight_metadata_upload.sh" "App Store Connect readiness report must include the metadata upload preflight"
+check_contains "Scripts/generate_app_store_connect_readiness_report.sh" "Scripts/run_fastlane.sh ios metadata" "App Store Connect readiness report must include metadata upload"
+check_contains "Scripts/generate_app_store_connect_readiness_report.sh" "Scripts/preflight_app_privacy_upload.sh" "App Store Connect readiness report must include the App Privacy Details upload preflight"
+check_contains "Scripts/generate_app_store_connect_readiness_report.sh" "Scripts/run_fastlane.sh ios privacy_details" "App Store Connect readiness report must include App Privacy Details upload"
+check_contains "Scripts/generate_app_store_connect_readiness_report.sh" "APP_PRIVACY_DETAILS_CONFIRMED_IN_APP_STORE_CONNECT=1 Scripts/validate_app_privacy_connect_entry.sh" "App Store Connect readiness report must include App Privacy Details App Store Connect confirmation"
 check_file "Scripts/generate_app_store_connect_state_report.sh" "App Store Connect state report generator is required"
 if [[ -f "Scripts/generate_app_store_connect_state_report.sh" && ! -x "Scripts/generate_app_store_connect_state_report.sh" ]]; then
   printf 'FAIL: App Store Connect state report generator must be executable (Scripts/generate_app_store_connect_state_report.sh)\n'
