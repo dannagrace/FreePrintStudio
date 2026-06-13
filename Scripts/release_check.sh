@@ -3282,6 +3282,19 @@ check_contains "Scripts/download_latest_submission_packet.sh" "Artifact download
 check_contains "Scripts/download_latest_submission_packet.sh" 'Scripts/validate_release_provenance.sh "$destination/release-provenance.tsv" "$run_sha" "$run_url"' "Latest CI submission packet download helper must verify downloaded provenance against the selected successful CI run"
 check_contains "README.md" "Scripts/download_latest_submission_packet.sh" "README must document downloading the latest CI submission packet artifact"
 check_contains "AppStore/release-checklist.md" "Scripts/download_latest_submission_packet.sh" "Release checklist must document downloading the latest CI submission packet artifact"
+check_file "Scripts/preflight_release_handoff.sh" "Release handoff preflight script is required"
+if [[ -f "Scripts/preflight_release_handoff.sh" && ! -x "Scripts/preflight_release_handoff.sh" ]]; then
+  printf 'FAIL: Release handoff preflight script must be executable (Scripts/preflight_release_handoff.sh)\n'
+  failures=$((failures + 1))
+fi
+check_contains "Scripts/preflight_release_handoff.sh" "git status --short" "Release handoff preflight must require a clean local worktree"
+check_contains "Scripts/preflight_release_handoff.sh" "git rev-parse HEAD" "Release handoff preflight must identify the local source commit"
+check_contains "Scripts/preflight_release_handoff.sh" "Scripts/download_latest_submission_packet.sh" "Release handoff preflight must download and validate the latest CI submission packet"
+check_contains "Scripts/preflight_release_handoff.sh" 'Scripts/validate_release_provenance.sh "$packet_dir/release-provenance.tsv" "$local_head"' "Release handoff preflight must require the CI packet provenance to match the local HEAD"
+check_contains "Scripts/preflight_release_handoff.sh" "Scripts/check_app_store_readiness.sh" "Release handoff preflight must run the App Store readiness audit"
+check_contains "Scripts/preflight_release_handoff.sh" "Release handoff preflight blocked" "Release handoff preflight must explain readiness blocker failures"
+check_contains "README.md" "Scripts/preflight_release_handoff.sh" "README must document the release handoff preflight"
+check_contains "AppStore/release-checklist.md" "Scripts/preflight_release_handoff.sh" "Release checklist must document the release handoff preflight"
 check_contains "FreePrintStudio/Resources/Info.plist" "CFBundleDisplayName" "Info.plist must define display name"
 check_contains "FreePrintStudio/Resources/Info.plist" "ITSAppUsesNonExemptEncryption" "Info.plist must declare non-exempt encryption usage"
 check_plist_raw_value "FreePrintStudio/Resources/Info.plist" "ITSAppUsesNonExemptEncryption" "false" "Info.plist must declare no non-exempt encryption"
