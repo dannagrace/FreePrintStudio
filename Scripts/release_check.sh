@@ -3051,6 +3051,45 @@ check_contains "Scripts/validate_app_store_submission_packet.sh" "external-readi
 check_contains "Scripts/validate_app_store_submission_packet.sh" $'category\tseverity\towner\tfield\ttarget\titem\tnext_action\tvalidation_command' "Submission packet validator must require external action fields, target locations, and validation commands"
 check_contains "Scripts/validate_app_store_submission_packet.sh" "external-readiness-actions.tsv target tracking" "Submission packet validator must reject missing external action target locations"
 check_contains "Scripts/validate_app_store_submission_packet.sh" "require_tsv_column_populated" "Submission packet validator must reject missing external action affected fields"
+check_file "Scripts/validate_external_readiness_actions.sh" "External readiness action count validator is required"
+if [[ -f "Scripts/validate_external_readiness_actions.sh" && ! -x "Scripts/validate_external_readiness_actions.sh" ]]; then
+  printf 'FAIL: External readiness action count validator must be executable (Scripts/validate_external_readiness_actions.sh)\n'
+  failures=$((failures + 1))
+fi
+check_contains "Scripts/validate_app_store_submission_packet.sh" "Scripts/validate_external_readiness_actions.sh" "Submission packet validator must compare readiness summary counts with external readiness actions"
+if [[ -x "Scripts/validate_external_readiness_actions.sh" ]]; then
+  external_actions_count_test_dir="$(mktemp -d)"
+  external_actions_readiness="$external_actions_count_test_dir/readiness.txt"
+  external_actions_tsv="$external_actions_count_test_dir/external-readiness-actions.tsv"
+  external_actions_log="$external_actions_count_test_dir/validation.log"
+  cat >"$external_actions_readiness" <<'EOF'
+BLOCKED: First external value is missing
+BLOCKED: Second external value is missing
+WARN: One external warning remains
+Summary: 2 blocker(s), 1 warning(s).
+EOF
+  cat >"$external_actions_tsv" <<'EOF'
+category	severity	owner	field	target	item	next_action	validation_command
+General	blocker	Release owner	FIRST	Config/release.env	First external value is missing	Fix first.	Scripts/check_app_store_readiness.sh
+General	warning	Release owner	WARN	App Store Connect	One external warning remains	Check warning.	Scripts/check_app_store_readiness.sh
+EOF
+  if Scripts/validate_external_readiness_actions.sh "$external_actions_readiness" "$external_actions_tsv" >"$external_actions_log" 2>&1; then
+    printf 'FAIL: External readiness action validator must reject blocker count mismatches\n'
+    failures=$((failures + 1))
+  elif ! grep -q 'External readiness action count mismatch for blocker' "$external_actions_log"; then
+    printf 'FAIL: External readiness action validator must identify blocker count mismatches\n'
+    failures=$((failures + 1))
+  fi
+  cat >>"$external_actions_tsv" <<'EOF'
+General	blocker	Release owner	SECOND	Config/release.env	Second external value is missing	Fix second.	Scripts/check_app_store_readiness.sh
+EOF
+  if ! Scripts/validate_external_readiness_actions.sh "$external_actions_readiness" "$external_actions_tsv" >"$external_actions_log" 2>&1; then
+    printf 'FAIL: External readiness action validator must accept matching blocker and warning counts\n'
+    cat "$external_actions_log"
+    failures=$((failures + 1))
+  fi
+  rm -rf "$external_actions_count_test_dir"
+fi
 check_contains "Scripts/validate_app_store_submission_packet.sh" "file-manifest.tsv" "Submission packet validator must require the file manifest"
 check_contains "Scripts/validate_app_store_submission_packet.sh" "pdf-export-validation.tsv" "Submission packet validator must require PDF validation evidence"
 check_contains "Scripts/validate_app_store_submission_packet.sh" "screenshots.tsv" "Submission packet validator must require screenshot evidence"
