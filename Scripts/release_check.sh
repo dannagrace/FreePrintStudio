@@ -493,6 +493,11 @@ check_contains "AppStore/release-inputs-worksheet.md" "same APP_STORE_BUILD_NUMB
 check_not_contains "AppStore/release-inputs-worksheet.md" "APP_STORE_BUILD_NUMBER=1" "Release input worksheet must not hard-code a selected App Store build number"
 check_not_contains "AppStore/release-inputs-worksheet.md" "APP_STORE_BUILD_NUMBER=<" "Release input worksheet must use shell-safe selected build placeholders"
 check_contains "AppStore/release-inputs-worksheet.md" "APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/validate_manual_release_verification.sh" "Release input worksheet must validate manual evidence against the selected App Store build"
+check_contains "AppStore/release-inputs-worksheet.md" "Scripts/preflight_metadata_upload.sh" "Release input worksheet must include the metadata upload preflight command"
+check_contains "AppStore/release-inputs-worksheet.md" "Scripts/run_fastlane.sh ios metadata" "Release input worksheet must include the metadata upload command"
+check_contains "AppStore/release-inputs-worksheet.md" "Scripts/preflight_app_privacy_upload.sh" "Release input worksheet must include the App Privacy Details upload preflight command"
+check_contains "AppStore/release-inputs-worksheet.md" "Scripts/run_fastlane.sh ios privacy_details" "Release input worksheet must include the App Privacy Details upload command"
+check_contains "AppStore/release-inputs-worksheet.md" "APP_PRIVACY_DETAILS_CONFIRMED_IN_APP_STORE_CONNECT=1 Scripts/validate_app_privacy_connect_entry.sh" "Release input worksheet must include the App Privacy Details App Store Connect confirmation command"
 check_contains "AppStore/release-inputs-worksheet.md" "APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER CONFIRM_SUBMIT_FOR_REVIEW=1 Scripts/run_fastlane.sh ios submit_review" "Release input worksheet must submit the selected App Store build"
 check_file "Scripts/validate_manual_release_verification.sh" "Manual release verification evidence validation script is required"
 if [[ ! -x "Scripts/validate_manual_release_verification.sh" ]]; then

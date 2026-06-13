@@ -72,6 +72,21 @@ Scripts/check_app_store_connect_credentials.sh
 Scripts/preflight_testflight_upload.sh
 ```
 
+Upload metadata and screenshots after App Review contact values and App Store Connect API credentials are configured:
+
+```sh
+Scripts/preflight_metadata_upload.sh
+ASC_KEY_ID=XXXXXXXXXX ASC_ISSUER_ID=00000000-0000-0000-0000-000000000000 ASC_KEY_PATH=/secure/AuthKey_XXXXXXXXXX.p8 Scripts/run_fastlane.sh ios metadata
+```
+
+Upload App Privacy Details after reviewing `AppStore/app_privacy_details.json` against the App Store Connect answers:
+
+```sh
+FASTLANE_USER=apple-id@example.com CONFIRM_UPLOAD_APP_PRIVACY=1 Scripts/preflight_app_privacy_upload.sh
+FASTLANE_USER=apple-id@example.com CONFIRM_UPLOAD_APP_PRIVACY=1 Scripts/run_fastlane.sh ios privacy_details
+APP_PRIVACY_DETAILS_CONFIRMED_IN_APP_STORE_CONNECT=1 Scripts/validate_app_privacy_connect_entry.sh
+```
+
 ## Manual Release Verification
 
 Record real-device evidence in `Config/manual-release-verification.env`. Result fields must use lowercase `pass`.
@@ -130,6 +145,8 @@ Set these only after the signed build is uploaded, processed, and selected for A
 
 - `APP_STORE_BUILD_NUMBER`: the processed App Store Connect build to submit.
 - `CONFIRM_SUBMIT_FOR_REVIEW=1`: final guard for `Scripts/run_fastlane.sh ios submit_review`.
+
+Before final submission, confirm metadata upload, screenshot upload, App Privacy Details, and `APP_PRIVACY_DETAILS_CONFIRMED_IN_APP_STORE_CONNECT=1` are complete in App Store Connect.
 
 Run the final preflight before submission:
 
