@@ -294,7 +294,7 @@ Run the full release handoff preflight before giving the packet to the App Store
 Scripts/preflight_release_handoff.sh
 ```
 
-The handoff preflight writes `build/release-handoff-summary.tsv` with the local commit, CI packet run URL, packet commit, CI readiness log path, CI readiness blocker count, CI readiness warning count, CI `external-readiness-actions.tsv` path, local readiness status, local blocker count, local warning count, and local readiness log path.
+The handoff preflight writes `build/release-handoff-summary.tsv` with the local commit, CI packet run URL, packet commit, CI readiness log path, CI readiness blocker count, CI readiness warning count, CI `external-readiness-actions.tsv` path, local readiness status, local blocker count, local warning count, and local readiness log path. It also writes `build/release-handoff-brief.md` as the human-readable release owner brief with readiness counts, external action categories, primary action files, and next commands.
 
 Release metadata, screenshot assets, and the remaining App Store Connect checklist live under `AppStore/`.
 
