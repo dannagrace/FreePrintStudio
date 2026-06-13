@@ -7,6 +7,7 @@ cd "$ROOT_DIR"
 packet_dir="${FREEPRINTSTUDIO_HANDOFF_PACKET_DIR:-build/CISubmissionPacket}"
 readiness_log="${FREEPRINTSTUDIO_HANDOFF_READINESS_LOG:-build/release-handoff-readiness.txt}"
 summary_path="${FREEPRINTSTUDIO_HANDOFF_SUMMARY_PATH:-build/release-handoff-summary.tsv}"
+external_actions_path="$packet_dir/external-readiness-actions.tsv"
 
 usage() {
   cat <<'EOF'
@@ -17,6 +18,7 @@ Connect account work:
   - requires a clean local git worktree
   - downloads and validates the latest successful CI submission packet
   - verifies the downloaded packet provenance matches the local HEAD
+  - validates the CI external-readiness-actions.tsv manifest
   - runs the App Store readiness audit and surfaces remaining blockers
   - writes build/release-handoff-summary.tsv with CI packet and readiness status
 EOF
@@ -52,6 +54,7 @@ write_handoff_summary() {
     printf 'packet_git_commit\t%s\n' "$packet_git_commit"
     printf 'packet_github_sha\t%s\n' "$packet_github_sha"
     printf 'packet_github_run_url\t%s\n' "$packet_github_run_url"
+    printf 'external_readiness_actions\t%s\n' "$external_actions_path"
     printf 'readiness_log\t%s\n' "$readiness_log"
     printf 'readiness_status\t%s\n' "$readiness_status"
     printf 'readiness_blockers\t%s\n' "$readiness_blockers"
@@ -75,6 +78,7 @@ local_head="$(git rev-parse HEAD)"
 
 Scripts/download_latest_submission_packet.sh "$packet_dir"
 Scripts/validate_release_provenance.sh "$packet_dir/release-provenance.tsv" "$local_head"
+Scripts/validate_external_readiness_actions.sh "$packet_dir/readiness.txt" "$external_actions_path"
 
 mkdir -p "$(dirname "$readiness_log")"
 set +e
