@@ -286,6 +286,8 @@ Download and validate the latest successful CI-generated packet before release h
 Scripts/download_latest_submission_packet.sh
 ```
 
+If GitHub artifact downloads are slow or hang, tune `FREEPRINTSTUDIO_ARTIFACT_DOWNLOAD_ATTEMPTS` and `FREEPRINTSTUDIO_ARTIFACT_DOWNLOAD_TIMEOUT_SECONDS`; each download attempt is bounded before retrying.
+
 Run the full release handoff preflight before giving the packet to the App Store Connect account owner. It requires a clean local worktree, downloads the latest successful CI packet, verifies the packet provenance matches local `HEAD`, then runs the readiness audit:
 
 ```sh

@@ -18,6 +18,8 @@ Environment overrides:
   FREEPRINTSTUDIO_SUBMISSION_PACKET_ARTIFACT Artifact name, default freeprintstudio-app-store-submission-packet
   FREEPRINTSTUDIO_CI_SUBMISSION_PACKET_DIR   Destination, default build/CISubmissionPacket
   FREEPRINTSTUDIO_ARTIFACT_DOWNLOAD_ATTEMPTS Download attempts, default 3
+  FREEPRINTSTUDIO_ARTIFACT_DOWNLOAD_TIMEOUT_SECONDS
+                                               Per-attempt artifact download timeout, default 180
 EOF
 }
 
@@ -37,10 +39,42 @@ branch="${FREEPRINTSTUDIO_RELEASE_BRANCH:-main}"
 artifact_name="${FREEPRINTSTUDIO_SUBMISSION_PACKET_ARTIFACT:-freeprintstudio-app-store-submission-packet}"
 destination="${1:-${FREEPRINTSTUDIO_CI_SUBMISSION_PACKET_DIR:-build/CISubmissionPacket}}"
 download_attempts="${FREEPRINTSTUDIO_ARTIFACT_DOWNLOAD_ATTEMPTS:-3}"
+download_timeout_seconds="${FREEPRINTSTUDIO_ARTIFACT_DOWNLOAD_TIMEOUT_SECONDS:-180}"
 if ! [[ "$download_attempts" =~ ^[1-9][0-9]*$ ]]; then
   printf 'FAIL: FREEPRINTSTUDIO_ARTIFACT_DOWNLOAD_ATTEMPTS must be a positive integer.\n' >&2
   exit 1
 fi
+if ! [[ "$download_timeout_seconds" =~ ^[1-9][0-9]*$ ]]; then
+  printf 'FAIL: FREEPRINTSTUDIO_ARTIFACT_DOWNLOAD_TIMEOUT_SECONDS must be a positive integer.\n' >&2
+  exit 1
+fi
+
+run_with_timeout() {
+  local timeout_seconds="$1"
+  shift
+
+  python3 - "$timeout_seconds" "$@" <<'PY'
+import subprocess
+import sys
+
+timeout_text = sys.argv[1]
+command = sys.argv[2:]
+try:
+    completed = subprocess.run(
+        command,
+        timeout=float(timeout_text),
+        check=False,
+    )
+except subprocess.TimeoutExpired:
+    print(
+        f"Artifact download command timed out after {timeout_text} seconds: {' '.join(command)}",
+        file=sys.stderr,
+    )
+    raise SystemExit(124)
+
+raise SystemExit(completed.returncode)
+PY
+}
 
 case "$destination" in
   ""|"/"|"$ROOT_DIR"|"$HOME")
@@ -82,7 +116,7 @@ downloaded=0
 for attempt in $(seq 1 "$download_attempts"); do
   printf 'Artifact download attempt %s of %s\n' "$attempt" "$download_attempts"
   rm -rf "$temp_dir"/*
-  if gh run download "$run_id" \
+  if run_with_timeout "$download_timeout_seconds" gh run download "$run_id" \
     --repo "$repo" \
     --name "$artifact_name" \
     --dir "$temp_dir"; then
