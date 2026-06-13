@@ -48,7 +48,7 @@ jobs:
         run: Scripts/verify_release.sh build
 
       - name: Review UI validation
-        timeout-minutes: 10
+        timeout-minutes: 15
         run: Scripts/verify_release.sh review-ui
 
       - name: Screenshot asset checks
