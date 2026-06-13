@@ -7,6 +7,7 @@ cd "$ROOT_DIR"
 packet_dir="${FREEPRINTSTUDIO_HANDOFF_PACKET_DIR:-build/CISubmissionPacket}"
 readiness_log="${FREEPRINTSTUDIO_HANDOFF_READINESS_LOG:-build/release-handoff-readiness.txt}"
 summary_path="${FREEPRINTSTUDIO_HANDOFF_SUMMARY_PATH:-build/release-handoff-summary.tsv}"
+ci_readiness_log="$packet_dir/readiness.txt"
 external_actions_path="$packet_dir/external-readiness-actions.tsv"
 
 usage() {
@@ -35,12 +36,16 @@ write_handoff_summary() {
   local packet_git_commit
   local packet_github_run_url
   local packet_github_sha
+  local ci_readiness_blockers
+  local ci_readiness_warnings
   local readiness_blockers
   local readiness_warnings
 
   packet_git_commit="$(provenance_value git_commit 2>/dev/null || printf 'missing')"
   packet_github_run_url="$(provenance_value github_run_url 2>/dev/null || printf 'missing')"
   packet_github_sha="$(provenance_value github_sha 2>/dev/null || printf 'missing')"
+  ci_readiness_blockers="$(grep -c '^BLOCKED:' "$ci_readiness_log" || true)"
+  ci_readiness_warnings="$(grep -c '^WARN:' "$ci_readiness_log" || true)"
   readiness_blockers="$(grep -c '^BLOCKED:' "$readiness_log" || true)"
   readiness_warnings="$(grep -c '^WARN:' "$readiness_log" || true)"
 
@@ -54,6 +59,9 @@ write_handoff_summary() {
     printf 'packet_git_commit\t%s\n' "$packet_git_commit"
     printf 'packet_github_sha\t%s\n' "$packet_github_sha"
     printf 'packet_github_run_url\t%s\n' "$packet_github_run_url"
+    printf 'ci_readiness_log\t%s\n' "$ci_readiness_log"
+    printf 'ci_readiness_blockers\t%s\n' "$ci_readiness_blockers"
+    printf 'ci_readiness_warnings\t%s\n' "$ci_readiness_warnings"
     printf 'external_readiness_actions\t%s\n' "$external_actions_path"
     printf 'readiness_log\t%s\n' "$readiness_log"
     printf 'readiness_status\t%s\n' "$readiness_status"
