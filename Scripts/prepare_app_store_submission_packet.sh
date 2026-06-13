@@ -328,6 +328,11 @@ Scripts/verify_release.sh public-pages-report
 Scripts/verify_release.sh public-pages
 Scripts/bootstrap_release_env.sh
 Scripts/check_app_store_readiness.sh
+Scripts/preflight_metadata_upload.sh
+ASC_KEY_ID=XXXXXXXXXX ASC_ISSUER_ID=00000000-0000-0000-0000-000000000000 ASC_KEY_PATH=/secure/AuthKey_XXXXXXXXXX.p8 Scripts/run_fastlane.sh ios metadata
+FASTLANE_USER=apple-id@example.com CONFIRM_UPLOAD_APP_PRIVACY=1 Scripts/preflight_app_privacy_upload.sh
+FASTLANE_USER=apple-id@example.com CONFIRM_UPLOAD_APP_PRIVACY=1 Scripts/run_fastlane.sh ios privacy_details
+APP_PRIVACY_DETAILS_CONFIRMED_IN_APP_STORE_CONNECT=1 Scripts/validate_app_privacy_connect_entry.sh
 Scripts/preflight_testflight_upload_dependencies.sh
 Scripts/preflight_app_store_archive.sh
 DEVELOPMENT_TEAM_ID=YOURTEAMID ALLOW_PROVISIONING_UPDATES=1 Scripts/archive_app_store.sh
@@ -676,6 +681,11 @@ Scripts/verify_release.sh public-pages-report
 Scripts/verify_release.sh public-pages
 Scripts/bootstrap_release_env.sh
 Scripts/check_app_store_readiness.sh
+Scripts/preflight_metadata_upload.sh
+ASC_KEY_ID=XXXXXXXXXX ASC_ISSUER_ID=00000000-0000-0000-0000-000000000000 ASC_KEY_PATH=/secure/AuthKey_XXXXXXXXXX.p8 Scripts/run_fastlane.sh ios metadata
+FASTLANE_USER=apple-id@example.com CONFIRM_UPLOAD_APP_PRIVACY=1 Scripts/preflight_app_privacy_upload.sh
+FASTLANE_USER=apple-id@example.com CONFIRM_UPLOAD_APP_PRIVACY=1 Scripts/run_fastlane.sh ios privacy_details
+APP_PRIVACY_DETAILS_CONFIRMED_IN_APP_STORE_CONNECT=1 Scripts/validate_app_privacy_connect_entry.sh
 Scripts/preflight_testflight_upload_dependencies.sh
 Scripts/preflight_app_store_archive.sh
 DEVELOPMENT_TEAM_ID=YOURTEAMID ALLOW_PROVISIONING_UPDATES=1 Scripts/archive_app_store.sh
