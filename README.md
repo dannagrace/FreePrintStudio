@@ -292,6 +292,8 @@ Run the full release handoff preflight before giving the packet to the App Store
 Scripts/preflight_release_handoff.sh
 ```
 
+The handoff preflight writes `build/release-handoff-summary.tsv` with the local commit, CI packet run URL, packet commit, readiness status, blocker count, warning count, and readiness log path.
+
 Release metadata, screenshot assets, and the remaining App Store Connect checklist live under `AppStore/`.
 
 Use `AppStore/commercial-configuration.md` for App Store Connect pricing, availability, monetization, and manual release settings. The MVP configuration is free, all App Store countries or regions, no in-app purchases, no subscriptions, no advertising, and manual release after approval.
