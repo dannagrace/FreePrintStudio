@@ -41,6 +41,7 @@
 - Run `Scripts/verify_release.sh submission-packet` before handing off to App Store Connect; it calls `Scripts/prepare_app_store_submission_packet.sh` to package metadata, questionnaire drafts, screenshots, PDF export validation evidence, a blank manual release evidence form, redacted App Review contact, manual release, signing, App Store Connect readiness, App Store Connect state, App Review submission readiness, and public pages readiness reports, checksums, readiness audit output, and next commands under `build/AppStoreSubmissionPacket/`.
 - Run `Scripts/verify_release.sh submission-packet-check` before uploading or handing off the packet; it calls `Scripts/validate_app_store_submission_packet.sh` to verify required files, evidence manifests, external action tracking, and absence of local absolute paths.
 - GitHub Actions uploads the generated App Store submission packet from successful Release Gates runs as the `freeprintstudio-app-store-submission-packet` artifact.
+- Run `Scripts/download_latest_submission_packet.sh` to download and validate the latest successful CI-generated submission packet before release handoff.
 - Run `Scripts/validate_manual_release_verification.sh` after recording real iPhone, AirPrint, iPad, and TestFlight evidence in untracked `Config/manual-release-verification.env`.
 - Confirm real Photos import on a simulator when changing the Photos picker; the generated-image simulator workflow above covers app launch, unit switching, screenshot rendering, and PDF export.
 - Confirm the same flow on a real iPhone.

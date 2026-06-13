@@ -3238,6 +3238,19 @@ check_contains ".github/workflows/pages.yml" "id-token: write" "Pages workflow m
 check_contains ".github/workflows/pages.yml" "workflow_dispatch:" "Pages workflow must be manually runnable after switching Pages source to GitHub Actions"
 check_contains "README.md" "GitHub Actions uploads the generated App Store submission packet" "README must document the Release Gates submission packet artifact"
 check_contains "AppStore/release-checklist.md" "GitHub Actions uploads the generated App Store submission packet" "Release checklist must document the Release Gates submission packet artifact"
+check_file "Scripts/download_latest_submission_packet.sh" "Latest CI submission packet download helper is required"
+if [[ -f "Scripts/download_latest_submission_packet.sh" && ! -x "Scripts/download_latest_submission_packet.sh" ]]; then
+  printf 'FAIL: Latest CI submission packet download helper must be executable (Scripts/download_latest_submission_packet.sh)\n'
+  failures=$((failures + 1))
+fi
+check_contains "Scripts/download_latest_submission_packet.sh" "gh run list" "Latest CI submission packet download helper must find the latest successful Release Gates run"
+check_contains "Scripts/download_latest_submission_packet.sh" "gh run download" "Latest CI submission packet download helper must download the GitHub Actions artifact"
+check_contains "Scripts/download_latest_submission_packet.sh" "freeprintstudio-app-store-submission-packet" "Latest CI submission packet download helper must use the release artifact name"
+check_contains "Scripts/download_latest_submission_packet.sh" "validate_app_store_submission_packet.sh" "Latest CI submission packet download helper must validate the downloaded packet"
+check_contains "Scripts/download_latest_submission_packet.sh" "FREEPRINTSTUDIO_ARTIFACT_DOWNLOAD_ATTEMPTS" "Latest CI submission packet download helper must allow retry count overrides"
+check_contains "Scripts/download_latest_submission_packet.sh" "Artifact download attempt" "Latest CI submission packet download helper must retry transient artifact download failures"
+check_contains "README.md" "Scripts/download_latest_submission_packet.sh" "README must document downloading the latest CI submission packet artifact"
+check_contains "AppStore/release-checklist.md" "Scripts/download_latest_submission_packet.sh" "Release checklist must document downloading the latest CI submission packet artifact"
 check_contains "FreePrintStudio/Resources/Info.plist" "CFBundleDisplayName" "Info.plist must define display name"
 check_contains "FreePrintStudio/Resources/Info.plist" "ITSAppUsesNonExemptEncryption" "Info.plist must declare non-exempt encryption usage"
 check_plist_raw_value "FreePrintStudio/Resources/Info.plist" "ITSAppUsesNonExemptEncryption" "false" "Info.plist must declare no non-exempt encryption"

@@ -280,6 +280,11 @@ Scripts/validate_app_store_submission_packet.sh
 ```
 
 GitHub Actions uploads the generated App Store submission packet from successful Release Gates runs as the `freeprintstudio-app-store-submission-packet` artifact.
+Download and validate the latest successful CI-generated packet before release handoff:
+
+```sh
+Scripts/download_latest_submission_packet.sh
+```
 
 Release metadata, screenshot assets, and the remaining App Store Connect checklist live under `AppStore/`.
 
