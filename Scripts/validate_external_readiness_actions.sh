@@ -45,8 +45,44 @@ if [[ "$actual_warnings" != "$expected_warnings" ]]; then
   failures=$((failures + 1))
 fi
 
+temp_dir="$(mktemp -d)"
+trap 'rm -rf "$temp_dir"' EXIT
+expected_pairs="$temp_dir/expected.tsv"
+actual_pairs="$temp_dir/actual.tsv"
+
+awk '
+  /^BLOCKED: / {
+    item = $0
+    sub(/^BLOCKED: /, "", item)
+    print "blocker\t" item
+  }
+  /^WARN: / {
+    item = $0
+    sub(/^WARN: /, "", item)
+    print "warning\t" item
+  }
+' "$readiness_path" | LC_ALL=C sort -u >"$expected_pairs"
+
+awk -F '\t' '
+  NR > 1 && ($2 == "blocker" || $2 == "warning") {
+    print $2 "\t" $6
+  }
+' "$actions_path" | LC_ALL=C sort -u >"$actual_pairs"
+
+while IFS=$'\t' read -r severity item; do
+  [[ -z "${severity:-}" ]] && continue
+  printf 'FAIL: Missing external readiness action for %s: %s\n' "$severity" "$item"
+  failures=$((failures + 1))
+done < <(comm -23 "$expected_pairs" "$actual_pairs")
+
+while IFS=$'\t' read -r severity item; do
+  [[ -z "${severity:-}" ]] && continue
+  printf 'FAIL: Unexpected external readiness action for %s: %s\n' "$severity" "$item"
+  failures=$((failures + 1))
+done < <(comm -13 "$expected_pairs" "$actual_pairs")
+
 if [[ "$failures" -gt 0 ]]; then
   exit 1
 fi
 
-printf 'External readiness action counts match readiness summary.\n'
+printf 'External readiness actions match readiness summary.\n'

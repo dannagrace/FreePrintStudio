@@ -3080,6 +3080,24 @@ EOF
     printf 'FAIL: External readiness action validator must identify blocker count mismatches\n'
     failures=$((failures + 1))
   fi
+  cat >"$external_actions_tsv" <<'EOF'
+category	severity	owner	field	target	item	next_action	validation_command
+General	blocker	Release owner	FIRST	Config/release.env	First external value is missing	Fix first.	Scripts/check_app_store_readiness.sh
+General	blocker	Release owner	SECOND	Config/release.env	Wrong second external value	Fix second.	Scripts/check_app_store_readiness.sh
+General	warning	Release owner	WARN	App Store Connect	One external warning remains	Check warning.	Scripts/check_app_store_readiness.sh
+EOF
+  if Scripts/validate_external_readiness_actions.sh "$external_actions_readiness" "$external_actions_tsv" >"$external_actions_log" 2>&1; then
+    printf 'FAIL: External readiness action validator must reject item text mismatches when counts match\n'
+    failures=$((failures + 1))
+  elif ! grep -q 'Missing external readiness action for blocker: Second external value is missing' "$external_actions_log"; then
+    printf 'FAIL: External readiness action validator must identify the missing blocker item text\n'
+    failures=$((failures + 1))
+  fi
+  cat >"$external_actions_tsv" <<'EOF'
+category	severity	owner	field	target	item	next_action	validation_command
+General	blocker	Release owner	FIRST	Config/release.env	First external value is missing	Fix first.	Scripts/check_app_store_readiness.sh
+General	warning	Release owner	WARN	App Store Connect	One external warning remains	Check warning.	Scripts/check_app_store_readiness.sh
+EOF
   cat >>"$external_actions_tsv" <<'EOF'
 General	blocker	Release owner	SECOND	Config/release.env	Second external value is missing	Fix second.	Scripts/check_app_store_readiness.sh
 EOF
