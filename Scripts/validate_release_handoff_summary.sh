@@ -62,6 +62,17 @@ require_integer_key() {
   fi
 }
 
+require_signed_integer_key() {
+  local key="$1"
+  local value
+  require_key "$key"
+  value="$(summary_value "$key" 2>/dev/null || true)"
+  if [[ -n "$value" && ! "$value" =~ ^-?[0-9]+$ ]]; then
+    printf 'FAIL: release handoff summary %s must be an integer (got: %s)\n' "$key" "$value"
+    failures=$((failures + 1))
+  fi
+}
+
 readiness_count() {
   local readiness_path="$1"
   local prefix="$2"
@@ -126,6 +137,12 @@ for key in \
   require_integer_key "$key"
 done
 
+for key in \
+  ci_local_readiness_blocker_delta \
+  ci_local_readiness_warning_delta; do
+  require_signed_integer_key "$key"
+done
+
 local_head="$(summary_value "local_head" 2>/dev/null || true)"
 packet_git_commit="$(summary_value "packet_git_commit" 2>/dev/null || true)"
 packet_github_sha="$(summary_value "packet_github_sha" 2>/dev/null || true)"
@@ -154,6 +171,17 @@ fi
 if [[ -s "$readiness_log" ]]; then
   compare_count "readiness_blockers" "$(readiness_count "$readiness_log" "BLOCKED")"
   compare_count "readiness_warnings" "$(readiness_count "$readiness_log" "WARN")"
+fi
+
+ci_readiness_blockers="$(summary_value "ci_readiness_blockers" 2>/dev/null || true)"
+ci_readiness_warnings="$(summary_value "ci_readiness_warnings" 2>/dev/null || true)"
+readiness_blockers="$(summary_value "readiness_blockers" 2>/dev/null || true)"
+readiness_warnings="$(summary_value "readiness_warnings" 2>/dev/null || true)"
+if [[ "$ci_readiness_blockers" =~ ^[0-9]+$ && "$readiness_blockers" =~ ^[0-9]+$ ]]; then
+  compare_count "ci_local_readiness_blocker_delta" "$((readiness_blockers - ci_readiness_blockers))"
+fi
+if [[ "$ci_readiness_warnings" =~ ^[0-9]+$ && "$readiness_warnings" =~ ^[0-9]+$ ]]; then
+  compare_count "ci_local_readiness_warning_delta" "$((readiness_warnings - ci_readiness_warnings))"
 fi
 
 if [[ -s "$external_actions_path" ]]; then

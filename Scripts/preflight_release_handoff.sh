@@ -67,6 +67,8 @@ write_handoff_summary() {
   local external_action_total
   local external_action_blockers
   local external_action_warnings
+  local ci_local_readiness_blocker_delta
+  local ci_local_readiness_warning_delta
 
   packet_git_commit="$(provenance_value git_commit 2>/dev/null || printf 'missing')"
   packet_github_run_url="$(provenance_value github_run_url 2>/dev/null || printf 'missing')"
@@ -78,6 +80,8 @@ write_handoff_summary() {
   external_action_total="$(external_action_count)"
   external_action_blockers="$(external_action_count blocker)"
   external_action_warnings="$(external_action_count warning)"
+  ci_local_readiness_blocker_delta="$((readiness_blockers - ci_readiness_blockers))"
+  ci_local_readiness_warning_delta="$((readiness_warnings - ci_readiness_warnings))"
 
   mkdir -p "$(dirname "$summary_path")"
   {
@@ -102,6 +106,8 @@ write_handoff_summary() {
     printf 'readiness_status\t%s\n' "$readiness_status"
     printf 'readiness_blockers\t%s\n' "$readiness_blockers"
     printf 'readiness_warnings\t%s\n' "$readiness_warnings"
+    printf 'ci_local_readiness_blocker_delta\t%s\n' "$ci_local_readiness_blocker_delta"
+    printf 'ci_local_readiness_warning_delta\t%s\n' "$ci_local_readiness_warning_delta"
   } >"$summary_path"
 }
 
@@ -117,6 +123,8 @@ write_handoff_brief() {
   local external_action_total
   local external_action_blockers
   local external_action_warnings
+  local ci_local_readiness_blocker_delta
+  local ci_local_readiness_warning_delta
 
   packet_git_commit="$(provenance_value git_commit 2>/dev/null || printf 'missing')"
   packet_github_run_url="$(provenance_value github_run_url 2>/dev/null || printf 'missing')"
@@ -128,6 +136,8 @@ write_handoff_brief() {
   external_action_total="$(external_action_count)"
   external_action_blockers="$(external_action_count blocker)"
   external_action_warnings="$(external_action_count warning)"
+  ci_local_readiness_blocker_delta="$((readiness_blockers - ci_readiness_blockers))"
+  ci_local_readiness_warning_delta="$((readiness_warnings - ci_readiness_warnings))"
 
   mkdir -p "$(dirname "$brief_path")"
   {
@@ -145,6 +155,13 @@ write_handoff_brief() {
     printf '| CI packet | %s | %s | `%s` |\n' "$ci_readiness_blockers" "$ci_readiness_warnings" "$ci_readiness_log"
     printf '| Local preflight | %s | %s | `%s` |\n' "$readiness_blockers" "$readiness_warnings" "$readiness_log"
     printf '| External actions | %s | %s | `%s` (%s total) |\n\n' "$external_action_blockers" "$external_action_warnings" "$external_actions_path" "$external_action_total"
+
+    printf '## CI vs Local Readiness Delta\n\n'
+    printf '| Metric | Local - CI |\n'
+    printf '| --- | ---: |\n'
+    printf '| Blockers | %s |\n' "$ci_local_readiness_blocker_delta"
+    printf '| Warnings | %s |\n\n' "$ci_local_readiness_warning_delta"
+    printf 'A non-zero CI/local readiness delta means the local ignored release input files or host state differ from the clean CI packet environment. Use the CI external action manifest for account-owner handoff, and use the local preflight log for this machine.\n\n'
 
     printf '## External Action Summary\n\n'
     if [[ -s "$external_actions_path" ]]; then

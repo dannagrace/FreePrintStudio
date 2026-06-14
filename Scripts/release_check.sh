@@ -3301,10 +3301,13 @@ fi
 check_contains "Scripts/validate_release_handoff_summary.sh" "external_action_blockers" "Release handoff summary validator must check external action blocker counts"
 check_contains "Scripts/validate_release_handoff_summary.sh" "ci_readiness_blockers" "Release handoff summary validator must check CI readiness blocker counts"
 check_contains "Scripts/validate_release_handoff_summary.sh" "readiness_blockers" "Release handoff summary validator must check local readiness blocker counts"
+check_contains "Scripts/validate_release_handoff_summary.sh" "ci_local_readiness_blocker_delta" "Release handoff summary validator must check CI/local blocker deltas"
+check_contains "Scripts/validate_release_handoff_summary.sh" "ci_local_readiness_warning_delta" "Release handoff summary validator must check CI/local warning deltas"
 check_contains "Scripts/validate_release_handoff_summary.sh" "release_input_todo" "Release handoff summary validator must require the generated release input TODO"
 if [[ -x "Scripts/validate_release_handoff_summary.sh" ]]; then
   handoff_summary_test_dir="$(mktemp -d)"
   handoff_summary_path="$handoff_summary_test_dir/release-handoff-summary.tsv"
+  handoff_delta_summary_path="$handoff_summary_test_dir/release-handoff-summary-bad-delta.tsv"
   handoff_ci_readiness_path="$handoff_summary_test_dir/ci-readiness.txt"
   handoff_local_readiness_path="$handoff_summary_test_dir/local-readiness.txt"
   handoff_actions_path="$handoff_summary_test_dir/external-readiness-actions.tsv"
@@ -3348,12 +3351,46 @@ readiness_log	$handoff_local_readiness_path
 readiness_status	1
 readiness_blockers	1
 readiness_warnings	0
+ci_local_readiness_blocker_delta	0
+ci_local_readiness_warning_delta	-1
 EOF
   if Scripts/validate_release_handoff_summary.sh "$handoff_summary_path" >"$handoff_summary_log" 2>&1; then
     printf 'FAIL: Release handoff summary validator must reject mismatched external action blocker counts\n'
     failures=$((failures + 1))
   elif ! grep -q 'external_action_blockers' "$handoff_summary_log"; then
     printf 'FAIL: Release handoff summary validator must explain external_action_blockers mismatches\n'
+    failures=$((failures + 1))
+  fi
+  cat >"$handoff_delta_summary_path" <<EOF
+key	value
+generated_at	2026-06-14T00:00:00Z
+handoff_status	blocked
+local_head	abcdef
+packet_dir	$handoff_summary_test_dir
+packet_git_commit	abcdef
+packet_github_sha	abcdef
+packet_github_run_url	https://github.com/dannagrace/FreePrintStudio/actions/runs/1
+handoff_brief	$handoff_summary_test_dir/release-handoff-brief.md
+release_input_todo	$handoff_input_todo_path
+ci_readiness_log	$handoff_ci_readiness_path
+ci_readiness_blockers	1
+ci_readiness_warnings	1
+external_readiness_actions	$handoff_actions_path
+external_action_total	2
+external_action_blockers	1
+external_action_warnings	1
+readiness_log	$handoff_local_readiness_path
+readiness_status	1
+readiness_blockers	1
+readiness_warnings	0
+ci_local_readiness_blocker_delta	9
+ci_local_readiness_warning_delta	-1
+EOF
+  if Scripts/validate_release_handoff_summary.sh "$handoff_delta_summary_path" >"$handoff_summary_log" 2>&1; then
+    printf 'FAIL: Release handoff summary validator must reject mismatched CI/local blocker deltas\n'
+    failures=$((failures + 1))
+  elif ! grep -q 'ci_local_readiness_blocker_delta' "$handoff_summary_log"; then
+    printf 'FAIL: Release handoff summary validator must explain CI/local blocker delta mismatches\n'
     failures=$((failures + 1))
   fi
   rm -rf "$handoff_summary_test_dir"
@@ -3495,6 +3532,9 @@ check_contains "Scripts/preflight_release_handoff.sh" "external_readiness_action
 check_contains "Scripts/preflight_release_handoff.sh" "external_action_total" "Release handoff summary must record total external action count"
 check_contains "Scripts/preflight_release_handoff.sh" "external_action_blockers" "Release handoff summary must record external action blocker count"
 check_contains "Scripts/preflight_release_handoff.sh" "external_action_warnings" "Release handoff summary must record external action warning count"
+check_contains "Scripts/preflight_release_handoff.sh" "ci_local_readiness_blocker_delta" "Release handoff summary must record the CI/local blocker delta"
+check_contains "Scripts/preflight_release_handoff.sh" "ci_local_readiness_warning_delta" "Release handoff summary must record the CI/local warning delta"
+check_contains "Scripts/preflight_release_handoff.sh" "CI vs Local Readiness Delta" "Release handoff brief must explain CI/local readiness differences"
 check_contains "Scripts/preflight_release_handoff.sh" "External Action Summary" "Release handoff brief must summarize external action categories"
 check_contains "Scripts/preflight_release_handoff.sh" "External Action Detail" "Release handoff brief must include actionable external readiness details"
 check_contains "Scripts/preflight_release_handoff.sh" "next_action" "Release handoff brief must include next action guidance from the external action manifest"
@@ -3514,6 +3554,7 @@ check_contains "README.md" "external action details" "README must document that 
 check_contains "README.md" "external action blocker count" "README must document external action counts in the handoff summary"
 check_contains "README.md" "external-readiness-actions.tsv" "README must document the handoff external readiness action manifest"
 check_contains "README.md" "CI readiness blocker count" "README must document CI readiness counts in the handoff summary"
+check_contains "README.md" "CI/local readiness delta" "README must document CI/local readiness delta tracking in the handoff summary"
 check_contains "AppStore/release-checklist.md" "Scripts/preflight_release_handoff.sh" "Release checklist must document the release handoff preflight"
 check_contains "AppStore/release-checklist.md" "release-handoff-summary.tsv" "Release checklist must document the release handoff summary"
 check_contains "AppStore/release-checklist.md" "Scripts/validate_release_handoff_summary.sh" "Release checklist must document validating the release handoff summary"
@@ -3523,6 +3564,7 @@ check_contains "AppStore/release-checklist.md" "external action details" "Releas
 check_contains "AppStore/release-checklist.md" "external action blocker count" "Release checklist must document external action counts in the handoff summary"
 check_contains "AppStore/release-checklist.md" "external-readiness-actions.tsv" "Release checklist must document the handoff external readiness action manifest"
 check_contains "AppStore/release-checklist.md" "CI readiness blocker count" "Release checklist must document CI readiness counts in the handoff summary"
+check_contains "AppStore/release-checklist.md" "CI/local readiness delta" "Release checklist must document CI/local readiness delta tracking"
 check_contains "FreePrintStudio/Resources/Info.plist" "CFBundleDisplayName" "Info.plist must define display name"
 check_contains "FreePrintStudio/Resources/Info.plist" "ITSAppUsesNonExemptEncryption" "Info.plist must declare non-exempt encryption usage"
 check_plist_raw_value "FreePrintStudio/Resources/Info.plist" "ITSAppUsesNonExemptEncryption" "false" "Info.plist must declare no non-exempt encryption"
