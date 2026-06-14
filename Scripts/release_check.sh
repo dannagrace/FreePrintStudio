@@ -3474,6 +3474,7 @@ if [[ -x "Scripts/generate_release_input_todo.sh" ]]; then
   cat >"$release_input_todo_actions" <<'EOF'
 category	severity	owner	field	target	item	next_action	validation_command
 App Review Contact	blocker	Release owner	APP_REVIEW_CONTACT_EMAIL	Config/release.env	APP_REVIEW_CONTACT_EMAIL is missing	Fill App Review contact fields in untracked Config/release.env, then run Scripts/validate_app_review_contact.sh.	Scripts/validate_app_review_contact.sh
+Manual Verification	blocker	QA/release owner	MANUAL_RELEASE_VERIFICATION_PATH	Config/manual-release-verification.env	Manual release verification evidence file is missing: Config/manual-release-verification.env	Run Scripts/bootstrap_release_inputs.sh, then record real iPhone evidence in untracked Config/manual-release-verification.env.	APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/validate_manual_release_verification.sh
 Manual Verification	blocker	QA/release owner	MANUAL_REAL_IPHONE_MODEL	Config/manual-release-verification.env	Real iPhone model is missing	Record real iPhone evidence in untracked Config/manual-release-verification.env.	APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/validate_manual_release_verification.sh
 Signing	blocker	Apple Developer account holder	DEVELOPMENT_TEAM_ID	Config/release.env or Xcode project settings	Apple Developer Team ID missing	Set DEVELOPMENT_TEAM_ID or configure Xcode.	Scripts/check_code_signing_assets.sh
 Signing	blocker	Apple Developer account holder	Apple Distribution certificate	login keychain	No valid Apple Distribution code signing identity found in the keychain	Install Apple Distribution signing assets and set DEVELOPMENT_TEAM_ID.	Scripts/check_code_signing_assets.sh
@@ -3505,6 +3506,14 @@ EOF
     fi
     if ! grep -q 'MANUAL_REAL_IPHONE_MODEL=' "$release_input_todo_output"; then
       printf 'FAIL: Release input TODO must include fillable manual evidence assignments\n'
+      failures=$((failures + 1))
+    fi
+    if grep -q 'MANUAL_RELEASE_VERIFICATION_PATH=' "$release_input_todo_output"; then
+      printf 'FAIL: Release input TODO must not ask users to fill MANUAL_RELEASE_VERIFICATION_PATH inside the manual evidence file\n'
+      failures=$((failures + 1))
+    fi
+    if ! grep -q 'Scripts/bootstrap_release_inputs.sh' "$release_input_todo_output"; then
+      printf 'FAIL: Release input TODO must guide missing manual evidence files through bootstrap_release_inputs\n'
       failures=$((failures + 1))
     fi
     if ! grep -q '^## Non-env External Actions' "$release_input_todo_output"; then

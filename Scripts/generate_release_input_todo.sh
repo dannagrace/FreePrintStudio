@@ -74,12 +74,25 @@ awk -F '\t' -v output_path="$output_path" -v actions_path="$actions_path" -v gen
       code_text(markdown_cell(validation_command[row])) >>output_path
   }
 
-  function print_env_assignments(target,   row, printed, fields_seen, parts, part_count, part_index, candidate) {
+  function print_env_assignments(target,   row, printed, fields_seen, parts, part_count, part_index, candidate, has_missing_manual_file_action) {
     print "Fill these values in the git-ignored " code_text(target) " file. Leave secrets out of git." >>output_path
+    if (target == "Config/manual-release-verification.env") {
+      for (row = 1; row <= row_count; row += 1) {
+        if (row_matches_env_group(row, target) && field[row] == "MANUAL_RELEASE_VERIFICATION_PATH") {
+          has_missing_manual_file_action = 1
+        }
+      }
+      if (has_missing_manual_file_action) {
+        print "If the file does not exist yet, create it from the private templates with " code_text("Scripts/bootstrap_release_inputs.sh") " before recording evidence." >>output_path
+      }
+    }
     print "" >>output_path
     print "```sh" >>output_path
     for (row = 1; row <= row_count; row += 1) {
       if (!row_matches_env_group(row, target)) {
+        continue
+      }
+      if (target == "Config/manual-release-verification.env" && field[row] == "MANUAL_RELEASE_VERIFICATION_PATH") {
         continue
       }
       if (field[row] ~ /^[A-Z0-9_]+$/) {
