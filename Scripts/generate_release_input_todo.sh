@@ -59,6 +59,20 @@ awk -F '\t' -v output_path="$output_path" -v actions_path="$actions_path" -v gen
     return 0
   }
 
+  function is_manual_evidence_file_setup_row(row) {
+    return target_of[row] == "Config/manual-release-verification.env" && \
+      (field[row] == "manual-release-verification.env file" || \
+       field[row] == "MANUAL_RELEASE_VERIFICATION_PATH" || \
+       item[row] ~ /Manual release verification evidence file/)
+  }
+
+  function display_field(row) {
+    if (is_manual_evidence_file_setup_row(row)) {
+      return "manual-release-verification.env file"
+    }
+    return field[row]
+  }
+
   function print_table_header() {
     print "| Severity | Owner | Field | Item | Next Action | Validation Command |" >>output_path
     print "| --- | --- | --- | --- | --- | --- |" >>output_path
@@ -68,7 +82,7 @@ awk -F '\t' -v output_path="$output_path" -v actions_path="$actions_path" -v gen
     printf "| %s | %s | %s | %s | %s | %s |\n", \
       markdown_cell(severity[row]), \
       markdown_cell(owner[row]), \
-      code_text(markdown_cell(field[row])), \
+      code_text(markdown_cell(display_field(row))), \
       markdown_cell(item[row]), \
       markdown_cell(next_action[row]), \
       code_text(markdown_cell(validation_command[row])) >>output_path
@@ -78,7 +92,7 @@ awk -F '\t' -v output_path="$output_path" -v actions_path="$actions_path" -v gen
     print "Fill these values in the git-ignored " code_text(target) " file. Leave secrets out of git." >>output_path
     if (target == "Config/manual-release-verification.env") {
       for (row = 1; row <= row_count; row += 1) {
-        if (row_matches_env_group(row, target) && field[row] == "MANUAL_RELEASE_VERIFICATION_PATH") {
+        if (row_matches_env_group(row, target) && is_manual_evidence_file_setup_row(row)) {
           has_missing_manual_file_action = 1
         }
       }
@@ -92,7 +106,7 @@ awk -F '\t' -v output_path="$output_path" -v actions_path="$actions_path" -v gen
       if (!row_matches_env_group(row, target)) {
         continue
       }
-      if (target == "Config/manual-release-verification.env" && field[row] == "MANUAL_RELEASE_VERIFICATION_PATH") {
+      if (target == "Config/manual-release-verification.env" && is_manual_evidence_file_setup_row(row)) {
         continue
       }
       if (field[row] ~ /^[A-Z0-9_]+$/) {

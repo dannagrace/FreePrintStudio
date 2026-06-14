@@ -452,7 +452,7 @@ external_action_field_for_item() {
   elif [[ "$item" =~ (APP_PRIVACY_DETAILS_CONFIRMED_IN_APP_STORE_CONNECT|APP_STORE_CONNECT_API_KEY_JSON|ASC_[A-Z0-9_]+|FASTLANE_USER) ]]; then
     field="${BASH_REMATCH[1]}"
   elif [[ "$item" == *"Manual release verification evidence file"* ]]; then
-    field="MANUAL_RELEASE_VERIFICATION_PATH"
+    field="manual-release-verification.env file"
   elif [[ "$item" == *"Developer Team"* ]]; then
     field="DEVELOPMENT_TEAM_ID"
   elif [[ "$item" == *"Apple Distribution"* || "$item" == *"signing identity"* ]]; then
@@ -476,7 +476,7 @@ external_action_target_for_item() {
   local target="Release owner follow-up"
 
   case "$field" in
-    MANUAL_*|MANUAL_RELEASE_VERIFICATION_PATH)
+    MANUAL_*|manual-release-verification.env\ file)
       target="Config/manual-release-verification.env"
       ;;
     APP_REVIEW_CONTACT_*|DEVELOPMENT_TEAM_ID|APP_STORE_BUILD_NUMBER|CONFIRM_SUBMIT_FOR_REVIEW|\

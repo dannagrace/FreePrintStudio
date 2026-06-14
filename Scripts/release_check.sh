@@ -2694,7 +2694,7 @@ check_contains "Scripts/prepare_app_store_submission_packet.sh" "\\[home\\]/" "E
 check_contains "Scripts/prepare_app_store_submission_packet.sh" $'category\tseverity\towner\tfield\ttarget\titem\tnext_action\tvalidation_command' "External readiness actions manifest must include stable TSV headers with fields, target locations, and validation commands"
 check_contains "Scripts/prepare_app_store_submission_packet.sh" "external_action_field_for_item" "External readiness actions must extract the affected release field"
 check_contains "Scripts/prepare_app_store_submission_packet.sh" "external_action_target_for_item" "External readiness actions must map each affected release field to the private file, keychain, profile directory, or App Store Connect target"
-check_contains "Scripts/prepare_app_store_submission_packet.sh" "MANUAL_RELEASE_VERIFICATION_PATH" "External readiness actions must map missing manual evidence files to the manual evidence path"
+check_contains "Scripts/prepare_app_store_submission_packet.sh" "manual-release-verification.env file" "External readiness actions must map missing manual evidence files to file setup instead of a fillable env var"
 check_contains "Scripts/prepare_app_store_submission_packet.sh" "Config/manual-release-verification.env" "External readiness actions must identify manual evidence private file targets"
 check_contains "Scripts/prepare_app_store_submission_packet.sh" "then run FASTLANE_USER=apple-id@example.com CONFIRM_UPLOAD_APP_PRIVACY=1 Scripts/preflight_app_privacy_upload.sh, upload with FASTLANE_USER=apple-id@example.com CONFIRM_UPLOAD_APP_PRIVACY=1 Scripts/run_fastlane.sh ios privacy_details" "External readiness actions must guide App Privacy upload blockers through preflight and upload"
 check_contains "Scripts/prepare_app_store_submission_packet.sh" "then run Scripts/preflight_app_store_archive.sh, then DEVELOPMENT_TEAM_ID=YOURTEAMID ALLOW_PROVISIONING_UPDATES=1 Scripts/archive_app_store.sh" "External readiness actions must guide signing blockers through archive preflight and archive"
@@ -3474,7 +3474,8 @@ if [[ -x "Scripts/generate_release_input_todo.sh" ]]; then
   cat >"$release_input_todo_actions" <<'EOF'
 category	severity	owner	field	target	item	next_action	validation_command
 App Review Contact	blocker	Release owner	APP_REVIEW_CONTACT_EMAIL	Config/release.env	APP_REVIEW_CONTACT_EMAIL is missing	Fill App Review contact fields in untracked Config/release.env, then run Scripts/validate_app_review_contact.sh.	Scripts/validate_app_review_contact.sh
-Manual Verification	blocker	QA/release owner	MANUAL_RELEASE_VERIFICATION_PATH	Config/manual-release-verification.env	Manual release verification evidence file is missing: Config/manual-release-verification.env	Run Scripts/bootstrap_release_inputs.sh, then record real iPhone evidence in untracked Config/manual-release-verification.env.	APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/validate_manual_release_verification.sh
+Manual Verification	blocker	QA/release owner	manual-release-verification.env file	Config/manual-release-verification.env	Manual release verification evidence file is missing: Config/manual-release-verification.env	Run Scripts/bootstrap_release_inputs.sh, then record real iPhone evidence in untracked Config/manual-release-verification.env.	APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/validate_manual_release_verification.sh
+Manual Verification	blocker	QA/release owner	MANUAL_RELEASE_VERIFICATION_PATH	Config/manual-release-verification.env	Manual release verification evidence file is missing: Config/manual-release-verification.env	Legacy manifest entry that should render as file setup, not an env assignment.	APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/validate_manual_release_verification.sh
 Manual Verification	blocker	QA/release owner	MANUAL_REAL_IPHONE_MODEL	Config/manual-release-verification.env	Real iPhone model is missing	Record real iPhone evidence in untracked Config/manual-release-verification.env.	APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/validate_manual_release_verification.sh
 Signing	blocker	Apple Developer account holder	DEVELOPMENT_TEAM_ID	Config/release.env or Xcode project settings	Apple Developer Team ID missing	Set DEVELOPMENT_TEAM_ID or configure Xcode.	Scripts/check_code_signing_assets.sh
 Signing	blocker	Apple Developer account holder	Apple Distribution certificate	login keychain	No valid Apple Distribution code signing identity found in the keychain	Install Apple Distribution signing assets and set DEVELOPMENT_TEAM_ID.	Scripts/check_code_signing_assets.sh
@@ -3508,7 +3509,15 @@ EOF
       printf 'FAIL: Release input TODO must include fillable manual evidence assignments\n'
       failures=$((failures + 1))
     fi
-    if grep -q 'MANUAL_RELEASE_VERIFICATION_PATH=' "$release_input_todo_output"; then
+    if grep -q 'MANUAL_RELEASE_VERIFICATION_PATH' "$release_input_todo_output"; then
+      printf 'FAIL: Release input TODO must not expose MANUAL_RELEASE_VERIFICATION_PATH as a user-facing manual evidence field\n'
+      failures=$((failures + 1))
+    fi
+    if ! grep -q '`manual-release-verification.env file`' "$release_input_todo_output"; then
+      printf 'FAIL: Release input TODO must render missing manual evidence files as file setup actions\n'
+      failures=$((failures + 1))
+    fi
+    if grep -q 'manual-release-verification.env file=' "$release_input_todo_output"; then
       printf 'FAIL: Release input TODO must not ask users to fill MANUAL_RELEASE_VERIFICATION_PATH inside the manual evidence file\n'
       failures=$((failures + 1))
     fi
