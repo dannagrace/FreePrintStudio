@@ -33,6 +33,26 @@ provenance_value() {
     "$packet_dir/release-provenance.tsv"
 }
 
+external_action_count() {
+  local severity="${1:-}"
+  if [[ ! -s "$external_actions_path" ]]; then
+    printf '0'
+    return
+  fi
+  awk -F '\t' -v severity="$severity" '
+    NR == 1 {
+      for (i = 1; i <= NF; i++) {
+        columns[$i] = i
+      }
+      next
+    }
+    $1 != "" && (severity == "" || $(columns["severity"]) == severity) {
+      count += 1
+    }
+    END { print count + 0 }
+  ' "$external_actions_path"
+}
+
 write_handoff_summary() {
   local handoff_status="$1"
   local packet_git_commit
@@ -42,6 +62,9 @@ write_handoff_summary() {
   local ci_readiness_warnings
   local readiness_blockers
   local readiness_warnings
+  local external_action_total
+  local external_action_blockers
+  local external_action_warnings
 
   packet_git_commit="$(provenance_value git_commit 2>/dev/null || printf 'missing')"
   packet_github_run_url="$(provenance_value github_run_url 2>/dev/null || printf 'missing')"
@@ -50,6 +73,9 @@ write_handoff_summary() {
   ci_readiness_warnings="$(grep -c '^WARN:' "$ci_readiness_log" || true)"
   readiness_blockers="$(grep -c '^BLOCKED:' "$readiness_log" || true)"
   readiness_warnings="$(grep -c '^WARN:' "$readiness_log" || true)"
+  external_action_total="$(external_action_count)"
+  external_action_blockers="$(external_action_count blocker)"
+  external_action_warnings="$(external_action_count warning)"
 
   mkdir -p "$(dirname "$summary_path")"
   {
@@ -66,6 +92,9 @@ write_handoff_summary() {
     printf 'ci_readiness_blockers\t%s\n' "$ci_readiness_blockers"
     printf 'ci_readiness_warnings\t%s\n' "$ci_readiness_warnings"
     printf 'external_readiness_actions\t%s\n' "$external_actions_path"
+    printf 'external_action_total\t%s\n' "$external_action_total"
+    printf 'external_action_blockers\t%s\n' "$external_action_blockers"
+    printf 'external_action_warnings\t%s\n' "$external_action_warnings"
     printf 'readiness_log\t%s\n' "$readiness_log"
     printf 'readiness_status\t%s\n' "$readiness_status"
     printf 'readiness_blockers\t%s\n' "$readiness_blockers"
@@ -82,6 +111,9 @@ write_handoff_brief() {
   local ci_readiness_warnings
   local readiness_blockers
   local readiness_warnings
+  local external_action_total
+  local external_action_blockers
+  local external_action_warnings
 
   packet_git_commit="$(provenance_value git_commit 2>/dev/null || printf 'missing')"
   packet_github_run_url="$(provenance_value github_run_url 2>/dev/null || printf 'missing')"
@@ -90,6 +122,9 @@ write_handoff_brief() {
   ci_readiness_warnings="$(grep -c '^WARN:' "$ci_readiness_log" || true)"
   readiness_blockers="$(grep -c '^BLOCKED:' "$readiness_log" || true)"
   readiness_warnings="$(grep -c '^WARN:' "$readiness_log" || true)"
+  external_action_total="$(external_action_count)"
+  external_action_blockers="$(external_action_count blocker)"
+  external_action_warnings="$(external_action_count warning)"
 
   mkdir -p "$(dirname "$brief_path")"
   {
@@ -105,7 +140,8 @@ write_handoff_brief() {
     printf '| Source | Blockers | Warnings | Log |\n'
     printf '| --- | ---: | ---: | --- |\n'
     printf '| CI packet | %s | %s | `%s` |\n' "$ci_readiness_blockers" "$ci_readiness_warnings" "$ci_readiness_log"
-    printf '| Local preflight | %s | %s | `%s` |\n\n' "$readiness_blockers" "$readiness_warnings" "$readiness_log"
+    printf '| Local preflight | %s | %s | `%s` |\n' "$readiness_blockers" "$readiness_warnings" "$readiness_log"
+    printf '| External actions | %s | %s | `%s` (%s total) |\n\n' "$external_action_blockers" "$external_action_warnings" "$external_actions_path" "$external_action_total"
 
     printf '## External Action Summary\n\n'
     if [[ -s "$external_actions_path" ]]; then
