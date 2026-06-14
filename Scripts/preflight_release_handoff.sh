@@ -128,6 +128,36 @@ write_handoff_brief() {
       printf 'No external readiness action manifest was found at `%s`.\n' "$external_actions_path"
     fi
 
+    printf '\n## External Action Detail\n\n'
+    if [[ -s "$external_actions_path" ]]; then
+      printf '| Category | Severity | Field | Item | Next Action | Validation Command |\n'
+      printf '| --- | --- | --- | --- | --- | --- |\n'
+      awk -F '\t' '
+        function markdown_cell(value) {
+          gsub(/\|/, "\\|", value)
+          gsub(/`/, "\\`", value)
+          return value
+        }
+        NR == 1 {
+          for (i = 1; i <= NF; i++) {
+            columns[$i] = i
+          }
+          next
+        }
+        $1 != "" {
+          category = markdown_cell($(columns["category"]))
+          severity = markdown_cell($(columns["severity"]))
+          field = markdown_cell($(columns["field"]))
+          item = markdown_cell($(columns["item"]))
+          next_action = markdown_cell($(columns["next_action"]))
+          validation_command = markdown_cell($(columns["validation_command"]))
+          printf "| %s | %s | `%s` | %s | %s | `%s` |\n", category, severity, field, item, next_action, validation_command
+        }
+      ' "$external_actions_path"
+    else
+      printf 'No external readiness action manifest was found at `%s`.\n' "$external_actions_path"
+    fi
+
     printf '\n## Primary Action Files\n\n'
     printf -- '- Machine summary: `%s`\n' "$summary_path"
     printf -- '- Human brief: `%s`\n' "$brief_path"
