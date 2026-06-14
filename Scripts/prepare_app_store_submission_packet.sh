@@ -24,6 +24,7 @@ FILE_MANIFEST="$PACKET_DIR/file-manifest.tsv"
 SUMMARY_PATH="$PACKET_DIR/SUMMARY.md"
 ACTION_ITEMS_PATH="$PACKET_DIR/ACTION_ITEMS.md"
 EXTERNAL_READINESS_ACTIONS="$PACKET_DIR/external-readiness-actions.tsv"
+RELEASE_INPUT_TODO="$PACKET_DIR/release-input-todo.md"
 
 expected_screenshots=(
   "iphone-main.jpg"
@@ -608,6 +609,7 @@ generated_at="$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
 write_release_provenance
 write_action_items
 write_external_readiness_actions
+Scripts/generate_release_input_todo.sh "$EXTERNAL_READINESS_ACTIONS" "$RELEASE_INPUT_TODO" >/dev/null
 
 cat >"$SUMMARY_PATH" <<EOF
 # FreePrint Studio App Store Submission Packet
@@ -638,6 +640,7 @@ cat >"$SUMMARY_PATH" <<EOF
 - Public pages readiness report for privacy policy and support URL source files, deployed HTTP status, and expected App Store review text.
 - Screenshot privacy metadata validation report for reviewed and Fastlane upload screenshots.
 - Redacted release input status with field-level missing private input tracking.
+- Fillable release input TODO generated from categorized external readiness actions.
 - Reviewed screenshots and Fastlane upload screenshots.
 - PDF export validation manifest, including Test Ruler exact-size evidence.
 - Public privacy and support page source files.
@@ -658,6 +661,7 @@ cat >"$SUMMARY_PATH" <<EOF
 - \`release-provenance.tsv\` with source commit, branch, sanitized remote, worktree status, and GitHub Actions run context when available.
 - \`release-input-status.txt\` with redacted private input readiness and missing field checklist.
 - \`external-readiness-actions.tsv\` with categorized external blockers, affected fields, target locations, validation commands, and warnings for release tracking.
+- \`release-input-todo.md\` with fillable \`Config/release.env\` and \`Config/manual-release-verification.env\` fields plus non-env external actions.
 - \`file-manifest.tsv\` with package file sizes and sha256 checksums.
 - \`readiness.txt\` with the latest App Store readiness audit.
 - \`ACTION_ITEMS.md\` with external account, signing, and App Store Connect follow-up work.
