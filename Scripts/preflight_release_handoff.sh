@@ -8,6 +8,7 @@ packet_dir="${FREEPRINTSTUDIO_HANDOFF_PACKET_DIR:-build/CISubmissionPacket}"
 readiness_log="${FREEPRINTSTUDIO_HANDOFF_READINESS_LOG:-build/release-handoff-readiness.txt}"
 summary_path="${FREEPRINTSTUDIO_HANDOFF_SUMMARY_PATH:-build/release-handoff-summary.tsv}"
 brief_path="${FREEPRINTSTUDIO_HANDOFF_BRIEF_PATH:-build/release-handoff-brief.md}"
+input_todo_path="${FREEPRINTSTUDIO_HANDOFF_INPUT_TODO_PATH:-build/release-input-todo.md}"
 ci_readiness_log="$packet_dir/readiness.txt"
 external_actions_path="$packet_dir/external-readiness-actions.tsv"
 
@@ -24,6 +25,7 @@ Connect account work:
   - runs the App Store readiness audit and surfaces remaining blockers
   - writes build/release-handoff-summary.tsv with CI packet and readiness status
   - writes build/release-handoff-brief.md for release owner handoff
+  - writes build/release-input-todo.md with fillable private release input fields
 EOF
 }
 
@@ -88,6 +90,7 @@ write_handoff_summary() {
     printf 'packet_github_sha\t%s\n' "$packet_github_sha"
     printf 'packet_github_run_url\t%s\n' "$packet_github_run_url"
     printf 'handoff_brief\t%s\n' "$brief_path"
+    printf 'release_input_todo\t%s\n' "$input_todo_path"
     printf 'ci_readiness_log\t%s\n' "$ci_readiness_log"
     printf 'ci_readiness_blockers\t%s\n' "$ci_readiness_blockers"
     printf 'ci_readiness_warnings\t%s\n' "$ci_readiness_warnings"
@@ -197,6 +200,7 @@ write_handoff_brief() {
     printf '\n## Primary Action Files\n\n'
     printf -- '- Machine summary: `%s`\n' "$summary_path"
     printf -- '- Human brief: `%s`\n' "$brief_path"
+    printf -- '- Release input TODO: `%s`\n' "$input_todo_path"
     printf -- '- CI action manifest: `%s`\n' "$external_actions_path"
     printf -- '- CI action checklist: `%s/ACTION_ITEMS.md`\n' "$packet_dir"
     printf -- '- Release input worksheet: `AppStore/release-inputs-worksheet.md`\n'
@@ -233,6 +237,7 @@ local_head="$(git rev-parse HEAD)"
 Scripts/download_latest_submission_packet.sh "$packet_dir"
 Scripts/validate_release_provenance.sh "$packet_dir/release-provenance.tsv" "$local_head"
 Scripts/validate_external_readiness_actions.sh "$packet_dir/readiness.txt" "$external_actions_path"
+Scripts/generate_release_input_todo.sh "$external_actions_path" "$input_todo_path"
 
 mkdir -p "$(dirname "$readiness_log")"
 set +e

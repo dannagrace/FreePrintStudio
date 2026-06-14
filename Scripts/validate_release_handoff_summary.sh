@@ -110,6 +110,7 @@ for key in \
 done
 
 require_file_key "handoff_brief"
+require_file_key "release_input_todo"
 require_file_key "ci_readiness_log"
 require_file_key "external_readiness_actions"
 require_file_key "readiness_log"

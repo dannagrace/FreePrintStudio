@@ -3295,12 +3295,14 @@ fi
 check_contains "Scripts/validate_release_handoff_summary.sh" "external_action_blockers" "Release handoff summary validator must check external action blocker counts"
 check_contains "Scripts/validate_release_handoff_summary.sh" "ci_readiness_blockers" "Release handoff summary validator must check CI readiness blocker counts"
 check_contains "Scripts/validate_release_handoff_summary.sh" "readiness_blockers" "Release handoff summary validator must check local readiness blocker counts"
+check_contains "Scripts/validate_release_handoff_summary.sh" "release_input_todo" "Release handoff summary validator must require the generated release input TODO"
 if [[ -x "Scripts/validate_release_handoff_summary.sh" ]]; then
   handoff_summary_test_dir="$(mktemp -d)"
   handoff_summary_path="$handoff_summary_test_dir/release-handoff-summary.tsv"
   handoff_ci_readiness_path="$handoff_summary_test_dir/ci-readiness.txt"
   handoff_local_readiness_path="$handoff_summary_test_dir/local-readiness.txt"
   handoff_actions_path="$handoff_summary_test_dir/external-readiness-actions.tsv"
+  handoff_input_todo_path="$handoff_summary_test_dir/release-input-todo.md"
   handoff_summary_log="$handoff_summary_test_dir/validation.log"
   cat >"$handoff_ci_readiness_path" <<'EOF'
 BLOCKED: CI blocker
@@ -3317,6 +3319,7 @@ Signing	blocker	Release owner	DEVELOPMENT_TEAM_ID	Config/release.env	Apple Devel
 App Store Connect	warning	Release owner	App Store Connect App Store Connect status	App Store Connect	App record needs verification	verify it	Scripts/check_app_store_connect_state.sh
 EOF
   printf '# Handoff Brief\n' >"$handoff_summary_test_dir/release-handoff-brief.md"
+  printf '# Release Input TODO\n' >"$handoff_input_todo_path"
   cat >"$handoff_summary_path" <<EOF
 key	value
 generated_at	2026-06-14T00:00:00Z
@@ -3327,6 +3330,7 @@ packet_git_commit	abcdef
 packet_github_sha	abcdef
 packet_github_run_url	https://github.com/dannagrace/FreePrintStudio/actions/runs/1
 handoff_brief	$handoff_summary_test_dir/release-handoff-brief.md
+release_input_todo	$handoff_input_todo_path
 ci_readiness_log	$handoff_ci_readiness_path
 ci_readiness_blockers	1
 ci_readiness_warnings	1
@@ -3348,6 +3352,70 @@ EOF
   fi
   rm -rf "$handoff_summary_test_dir"
 fi
+check_file "Scripts/generate_release_input_todo.sh" "Release input TODO generator is required"
+if [[ -f "Scripts/generate_release_input_todo.sh" && ! -x "Scripts/generate_release_input_todo.sh" ]]; then
+  printf 'FAIL: Release input TODO generator must be executable (Scripts/generate_release_input_todo.sh)\n'
+  failures=$((failures + 1))
+fi
+check_contains "Scripts/generate_release_input_todo.sh" "external-readiness-actions.tsv" "Release input TODO generator must document its external readiness action input"
+check_contains "Scripts/generate_release_input_todo.sh" "Config/release.env" "Release input TODO generator must group private release environment fields"
+check_contains "Scripts/generate_release_input_todo.sh" "Config/manual-release-verification.env" "Release input TODO generator must group manual release evidence fields"
+check_contains "Scripts/generate_release_input_todo.sh" "Non-env External Actions" "Release input TODO generator must preserve non-env external actions"
+if [[ -x "Scripts/generate_release_input_todo.sh" ]]; then
+  release_input_todo_test_dir="$(mktemp -d)"
+  release_input_todo_actions="$release_input_todo_test_dir/external-readiness-actions.tsv"
+  release_input_todo_output="$release_input_todo_test_dir/release-input-todo.md"
+  cat >"$release_input_todo_actions" <<'EOF'
+category	severity	owner	field	target	item	next_action	validation_command
+App Review Contact	blocker	Release owner	APP_REVIEW_CONTACT_EMAIL	Config/release.env	APP_REVIEW_CONTACT_EMAIL is missing	Fill App Review contact fields in untracked Config/release.env, then run Scripts/validate_app_review_contact.sh.	Scripts/validate_app_review_contact.sh
+Manual Verification	blocker	QA/release owner	MANUAL_REAL_IPHONE_MODEL	Config/manual-release-verification.env	Real iPhone model is missing	Record real iPhone evidence in untracked Config/manual-release-verification.env.	APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/validate_manual_release_verification.sh
+Signing	blocker	Apple Developer account holder	DEVELOPMENT_TEAM_ID	Config/release.env or Xcode project settings	Apple Developer Team ID missing	Set DEVELOPMENT_TEAM_ID or configure Xcode.	Scripts/check_code_signing_assets.sh
+Signing	blocker	Apple Developer account holder	Apple Distribution certificate	login keychain	No valid Apple Distribution code signing identity found in the keychain	Install Apple Distribution signing assets and set DEVELOPMENT_TEAM_ID.	Scripts/check_code_signing_assets.sh
+EOF
+  if ! Scripts/generate_release_input_todo.sh "$release_input_todo_actions" "$release_input_todo_output" >"$release_input_todo_test_dir/generate.log" 2>&1; then
+    printf 'FAIL: Release input TODO generator must accept an external readiness action manifest fixture\n'
+    sed 's/^/  /' "$release_input_todo_test_dir/generate.log"
+    failures=$((failures + 1))
+  else
+    if ! grep -q '^# FreePrint Studio Release Input TODO' "$release_input_todo_output"; then
+      printf 'FAIL: Release input TODO must have a stable title\n'
+      failures=$((failures + 1))
+    fi
+    if ! grep -q '^## Config/release.env' "$release_input_todo_output"; then
+      printf 'FAIL: Release input TODO must group Config/release.env fields\n'
+      failures=$((failures + 1))
+    fi
+    if ! grep -q 'APP_REVIEW_CONTACT_EMAIL=' "$release_input_todo_output"; then
+      printf 'FAIL: Release input TODO must include fillable release.env assignments\n'
+      failures=$((failures + 1))
+    fi
+    if ! grep -q 'DEVELOPMENT_TEAM_ID=' "$release_input_todo_output"; then
+      printf 'FAIL: Release input TODO must include release.env-compatible signing assignments\n'
+      failures=$((failures + 1))
+    fi
+    if ! grep -q '^## Config/manual-release-verification.env' "$release_input_todo_output"; then
+      printf 'FAIL: Release input TODO must group manual release evidence fields\n'
+      failures=$((failures + 1))
+    fi
+    if ! grep -q 'MANUAL_REAL_IPHONE_MODEL=' "$release_input_todo_output"; then
+      printf 'FAIL: Release input TODO must include fillable manual evidence assignments\n'
+      failures=$((failures + 1))
+    fi
+    if ! grep -q '^## Non-env External Actions' "$release_input_todo_output"; then
+      printf 'FAIL: Release input TODO must retain non-env external actions\n'
+      failures=$((failures + 1))
+    fi
+    if ! grep -q 'Apple Distribution certificate' "$release_input_todo_output"; then
+      printf 'FAIL: Release input TODO must retain signing actions that cannot be filled in env files\n'
+      failures=$((failures + 1))
+    fi
+    if ! grep -q 'Scripts/check_code_signing_assets.sh' "$release_input_todo_output"; then
+      printf 'FAIL: Release input TODO must include validation commands\n'
+      failures=$((failures + 1))
+    fi
+  fi
+  rm -rf "$release_input_todo_test_dir"
+fi
 check_file "Scripts/preflight_release_handoff.sh" "Release handoff preflight script is required"
 if [[ -f "Scripts/preflight_release_handoff.sh" && ! -x "Scripts/preflight_release_handoff.sh" ]]; then
   printf 'FAIL: Release handoff preflight script must be executable (Scripts/preflight_release_handoff.sh)\n'
@@ -3362,8 +3430,11 @@ check_contains "Scripts/preflight_release_handoff.sh" 'Scripts/validate_release_
 check_contains "Scripts/preflight_release_handoff.sh" "release-handoff-summary.tsv" "Release handoff preflight must write a machine-readable summary"
 check_contains "Scripts/preflight_release_handoff.sh" "write_handoff_summary" "Release handoff preflight must generate the handoff summary after readiness audit"
 check_contains "Scripts/preflight_release_handoff.sh" "release-handoff-brief.md" "Release handoff preflight must write a human-readable handoff brief"
+check_contains "Scripts/preflight_release_handoff.sh" "release-input-todo.md" "Release handoff preflight must write a fillable release input TODO"
+check_contains "Scripts/preflight_release_handoff.sh" 'Scripts/generate_release_input_todo.sh "$external_actions_path" "$input_todo_path"' "Release handoff preflight must generate the release input TODO from CI external actions"
 check_contains "Scripts/preflight_release_handoff.sh" "write_handoff_brief" "Release handoff preflight must generate the handoff brief after readiness audit"
 check_contains "Scripts/preflight_release_handoff.sh" "handoff_brief" "Release handoff summary must record the human-readable handoff brief path"
+check_contains "Scripts/preflight_release_handoff.sh" "release_input_todo" "Release handoff summary must record the release input TODO path"
 check_contains "Scripts/preflight_release_handoff.sh" "packet_github_run_url" "Release handoff summary must record the CI packet run URL"
 check_contains "Scripts/preflight_release_handoff.sh" "readiness_blockers" "Release handoff summary must record readiness blocker count"
 check_contains "Scripts/preflight_release_handoff.sh" "readiness_warnings" "Release handoff summary must record readiness warning count"
@@ -3387,6 +3458,7 @@ check_contains "README.md" "Scripts/preflight_release_handoff.sh" "README must d
 check_contains "README.md" "release-handoff-summary.tsv" "README must document the release handoff summary"
 check_contains "README.md" "Scripts/validate_release_handoff_summary.sh" "README must document validating the release handoff summary"
 check_contains "README.md" "release-handoff-brief.md" "README must document the release handoff brief"
+check_contains "README.md" "release-input-todo.md" "README must document the release input TODO"
 check_contains "README.md" "external action details" "README must document that the release handoff brief includes external action details"
 check_contains "README.md" "external action blocker count" "README must document external action counts in the handoff summary"
 check_contains "README.md" "external-readiness-actions.tsv" "README must document the handoff external readiness action manifest"
@@ -3395,6 +3467,7 @@ check_contains "AppStore/release-checklist.md" "Scripts/preflight_release_handof
 check_contains "AppStore/release-checklist.md" "release-handoff-summary.tsv" "Release checklist must document the release handoff summary"
 check_contains "AppStore/release-checklist.md" "Scripts/validate_release_handoff_summary.sh" "Release checklist must document validating the release handoff summary"
 check_contains "AppStore/release-checklist.md" "release-handoff-brief.md" "Release checklist must document the release handoff brief"
+check_contains "AppStore/release-checklist.md" "release-input-todo.md" "Release checklist must document the release input TODO"
 check_contains "AppStore/release-checklist.md" "external action details" "Release checklist must document the handoff brief external action details"
 check_contains "AppStore/release-checklist.md" "external action blocker count" "Release checklist must document external action counts in the handoff summary"
 check_contains "AppStore/release-checklist.md" "external-readiness-actions.tsv" "Release checklist must document the handoff external readiness action manifest"

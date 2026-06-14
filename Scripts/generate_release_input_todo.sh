@@ -1,0 +1,225 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+if [[ "$#" -ne 2 ]]; then
+  printf 'Usage: %s <external-readiness-actions.tsv> <release-input-todo.md>\n' "$0" >&2
+  exit 2
+fi
+
+actions_path="$1"
+output_path="$2"
+
+if [[ ! -s "$actions_path" ]]; then
+  printf 'FAIL: external readiness actions file is missing or empty: %s\n' "$actions_path" >&2
+  exit 1
+fi
+
+mkdir -p "$(dirname "$output_path")"
+
+awk -F '\t' -v output_path="$output_path" -v actions_path="$actions_path" -v generated_at="$(date -u '+%Y-%m-%dT%H:%M:%SZ')" '
+  function fail(message) {
+    print "FAIL: " message >"/dev/stderr"
+    exit 1
+  }
+
+  function markdown_cell(value) {
+    gsub(/\|/, "\\|", value)
+    gsub(/`/, "\\`", value)
+    return value
+  }
+
+  function code_text(value) {
+    gsub(/`/, "\\`", value)
+    return "`" value "`"
+  }
+
+  function target_heading(target) {
+    return "## " target
+  }
+
+  function is_env_target(target) {
+    return target ~ /^Config\/release\.env/ || target == "Config/manual-release-verification.env"
+  }
+
+  function is_release_env_row(row) {
+    return target_of[row] ~ /^Config\/release\.env/
+  }
+
+  function is_manual_evidence_row(row) {
+    return target_of[row] == "Config/manual-release-verification.env"
+  }
+
+  function row_matches_env_group(row, target) {
+    if (target == "Config/release.env") {
+      return is_release_env_row(row)
+    }
+    if (target == "Config/manual-release-verification.env") {
+      return is_manual_evidence_row(row)
+    }
+    return 0
+  }
+
+  function print_table_header() {
+    print "| Severity | Owner | Field | Item | Next Action | Validation Command |" >>output_path
+    print "| --- | --- | --- | --- | --- | --- |" >>output_path
+  }
+
+  function print_table_row(row) {
+    printf "| %s | %s | %s | %s | %s | %s |\n", \
+      markdown_cell(severity[row]), \
+      markdown_cell(owner[row]), \
+      code_text(markdown_cell(field[row])), \
+      markdown_cell(item[row]), \
+      markdown_cell(next_action[row]), \
+      code_text(markdown_cell(validation_command[row])) >>output_path
+  }
+
+  function print_env_assignments(target,   row, printed, fields_seen, parts, part_count, part_index, candidate) {
+    print "Fill these values in the git-ignored " code_text(target) " file. Leave secrets out of git." >>output_path
+    print "" >>output_path
+    print "```sh" >>output_path
+    for (row = 1; row <= row_count; row += 1) {
+      if (!row_matches_env_group(row, target)) {
+        continue
+      }
+      if (field[row] ~ /^[A-Z0-9_]+$/) {
+        if (!(field[row] in fields_seen)) {
+          print field[row] "=" >>output_path
+          fields_seen[field[row]] = 1
+          printed = 1
+        }
+        continue
+      }
+      if (field[row] ~ / or / || field[row] ~ /\//) {
+        print "# Choose the App Store Connect credential option represented by:" >>output_path
+        print "# " field[row] >>output_path
+        part_count = split(field[row], parts, / or |\/+/)
+        for (part_index = 1; part_index <= part_count; part_index += 1) {
+          candidate = parts[part_index]
+          gsub(/^ +| +$/, "", candidate)
+          if (candidate ~ /^[A-Z0-9_]+$/ && !(candidate in fields_seen)) {
+            print candidate "=" >>output_path
+            fields_seen[candidate] = 1
+            printed = 1
+          }
+        }
+      } else {
+        print "# " field[row] >>output_path
+      }
+    }
+    if (!printed) {
+      print "# No direct env assignments were found for this target." >>output_path
+    }
+    print "```" >>output_path
+    print "" >>output_path
+  }
+
+  NR == 1 {
+    for (i = 1; i <= NF; i += 1) {
+      columns[$i] = i
+    }
+    required[1] = "category"
+    required[2] = "severity"
+    required[3] = "owner"
+    required[4] = "field"
+    required[5] = "target"
+    required[6] = "item"
+    required[7] = "next_action"
+    required[8] = "validation_command"
+    for (i = 1; i <= 8; i += 1) {
+      if (!(required[i] in columns)) {
+        fail("external readiness actions file is missing required column: " required[i])
+      }
+    }
+    next
+  }
+
+  $1 != "" {
+    row_count += 1
+    category[row_count] = $(columns["category"])
+    severity[row_count] = $(columns["severity"])
+    owner[row_count] = $(columns["owner"])
+    field[row_count] = $(columns["field"])
+    target_of[row_count] = $(columns["target"])
+    item[row_count] = $(columns["item"])
+    next_action[row_count] = $(columns["next_action"])
+    validation_command[row_count] = $(columns["validation_command"])
+    target_counts[target_of[row_count]] += 1
+    if (!(target_of[row_count] in target_seen)) {
+      target_seen[target_of[row_count]] = 1
+      target_order_count += 1
+      target_order[target_order_count] = target_of[row_count]
+    }
+    if (severity[row_count] == "blocker") {
+      blocker_count += 1
+    } else if (severity[row_count] == "warning") {
+      warning_count += 1
+    }
+  }
+
+  END {
+    if (row_count == 0) {
+      fail("external readiness actions file has no action rows")
+    }
+
+    print "# FreePrint Studio Release Input TODO" >output_path
+    print "" >>output_path
+    print "- Generated At: `" generated_at "`" >>output_path
+    print "- Source: `" actions_path "`" >>output_path
+    print "- External Actions: `" row_count "`" >>output_path
+    print "- Blockers: `" blocker_count + 0 "`" >>output_path
+    print "- Warnings: `" warning_count + 0 "`" >>output_path
+    print "" >>output_path
+    print "## Target Summary" >>output_path
+    print "" >>output_path
+    print "| Target | Actions |" >>output_path
+    print "| --- | ---: |" >>output_path
+    for (target_index = 1; target_index <= target_order_count; target_index += 1) {
+      target = target_order[target_index]
+      printf "| %s | %s |\n", code_text(markdown_cell(target)), target_counts[target] >>output_path
+    }
+
+    env_targets[1] = "Config/release.env"
+    env_targets[2] = "Config/manual-release-verification.env"
+    for (env_index = 1; env_index <= 2; env_index += 1) {
+      target = env_targets[env_index]
+      target_has_rows = 0
+      for (row = 1; row <= row_count; row += 1) {
+        if (row_matches_env_group(row, target)) {
+          target_has_rows = 1
+        }
+      }
+      if (!target_has_rows) {
+        continue
+      }
+      print "" >>output_path
+      print target_heading(target) >>output_path
+      print "" >>output_path
+      print_env_assignments(target)
+      print_table_header()
+      for (row = 1; row <= row_count; row += 1) {
+        if (row_matches_env_group(row, target)) {
+          print_table_row(row)
+        }
+      }
+    }
+
+    print "" >>output_path
+    print "## Non-env External Actions" >>output_path
+    print "" >>output_path
+    print "These cannot be completed by editing env files. Finish them in Keychain, Xcode, App Store Connect, TestFlight, or the named external system, then run the listed validation command." >>output_path
+    print "" >>output_path
+    print_table_header()
+    for (row = 1; row <= row_count; row += 1) {
+      if (!is_env_target(target_of[row])) {
+        print_table_row(row)
+        non_env_count += 1
+      }
+    }
+    if (non_env_count == 0) {
+      print "| info | Release owner | `none` | No non-env external actions were found. | Continue with env validation. | `Scripts/check_app_store_readiness.sh` |" >>output_path
+    }
+  }
+' "$actions_path"
+
+printf 'Release input TODO written: %s\n' "$output_path"
