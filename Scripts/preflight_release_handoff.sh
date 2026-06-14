@@ -242,6 +242,8 @@ if [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
   exit 0
 fi
 
+Scripts/validate_private_release_artifact_ignores.sh
+
 local_status="$(git status --short)"
 if [[ -n "$local_status" ]]; then
   printf 'FAIL: release handoff requires a clean local worktree.\n' >&2

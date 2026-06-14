@@ -113,6 +113,7 @@ Validate that private release settings do not still contain copied placeholder v
 ```sh
 Scripts/bootstrap_release_inputs.sh
 Scripts/bootstrap_release_env.sh
+Scripts/validate_private_release_artifact_ignores.sh
 Scripts/validate_release_env.sh
 ```
 

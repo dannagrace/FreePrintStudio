@@ -1456,6 +1456,57 @@ elif ! grep -q 'DEVELOPMENT_TEAM_ID must be a 10-character Apple Developer Team 
   failures=$((failures + 1))
 fi
 rm -rf "$release_env_invalid_format_test_dir"
+check_file "Scripts/validate_private_release_artifact_ignores.sh" "Private release artifact ignore validator is required"
+if [[ -f "Scripts/validate_private_release_artifact_ignores.sh" && ! -x "Scripts/validate_private_release_artifact_ignores.sh" ]]; then
+  printf 'FAIL: Private release artifact ignore validator must be executable (Scripts/validate_private_release_artifact_ignores.sh)\n'
+  failures=$((failures + 1))
+fi
+check_contains "Scripts/validate_private_release_artifact_ignores.sh" "git check-ignore" "Private artifact ignore validator must verify ignore behavior with git check-ignore"
+check_contains "Scripts/validate_private_release_artifact_ignores.sh" "git ls-files" "Private artifact ignore validator must reject tracked private artifacts"
+check_contains "Scripts/validate_private_release_artifact_ignores.sh" "Config/release.env" "Private artifact ignore validator must protect filled release.env"
+check_contains "Scripts/validate_private_release_artifact_ignores.sh" "Config/manual-release-verification.env" "Private artifact ignore validator must protect manual evidence env"
+check_contains "Scripts/validate_private_release_artifact_ignores.sh" "*.mobileprovision" "Private artifact ignore validator must protect provisioning profiles"
+check_contains "Scripts/validate_private_release_artifact_ignores.sh" "*.xcarchive" "Private artifact ignore validator must protect Xcode archives"
+check_contains "Scripts/validate_private_release_artifact_ignores.sh" "fastlane-api-key.json" "Private artifact ignore validator must protect Fastlane API key JSON"
+if [[ -x "Scripts/validate_private_release_artifact_ignores.sh" ]]; then
+  if ! Scripts/validate_private_release_artifact_ignores.sh >/tmp/freeprintstudio-private-artifact-ignore-current.log 2>&1; then
+    printf 'FAIL: Private release artifact ignore validator must pass on the current repository\n'
+    sed 's/^/  /' /tmp/freeprintstudio-private-artifact-ignore-current.log
+    failures=$((failures + 1))
+  fi
+
+  private_ignore_missing_dir="$(mktemp -d)"
+  git -C "$private_ignore_missing_dir" init -q
+  mkdir -p "$private_ignore_missing_dir/Config"
+  printf 'Config/release.env\n' >"$private_ignore_missing_dir/.gitignore"
+  if FREEPRINTSTUDIO_PRIVATE_ARTIFACT_IGNORE_ROOT="$private_ignore_missing_dir" \
+    Scripts/validate_private_release_artifact_ignores.sh >"$private_ignore_missing_dir/missing-ignore.log" 2>&1; then
+    printf 'FAIL: Private artifact ignore validator must reject missing private artifact ignore patterns\n'
+    failures=$((failures + 1))
+  elif ! grep -q 'AuthKey_TESTKEY123.p8' "$private_ignore_missing_dir/missing-ignore.log"; then
+    printf 'FAIL: Private artifact ignore validator must identify missing App Store Connect key ignore coverage\n'
+    failures=$((failures + 1))
+  fi
+  rm -rf "$private_ignore_missing_dir"
+
+  private_tracked_artifact_dir="$(mktemp -d)"
+  git -C "$private_tracked_artifact_dir" init -q
+  mkdir -p "$private_tracked_artifact_dir/Config"
+  cp .gitignore "$private_tracked_artifact_dir/.gitignore"
+  printf 'APP_REVIEW_CONTACT_EMAIL=private@example.com\n' >"$private_tracked_artifact_dir/Config/release.env"
+  git -C "$private_tracked_artifact_dir" add -f Config/release.env
+  if FREEPRINTSTUDIO_PRIVATE_ARTIFACT_IGNORE_ROOT="$private_tracked_artifact_dir" \
+    Scripts/validate_private_release_artifact_ignores.sh >"$private_tracked_artifact_dir/tracked-private.log" 2>&1; then
+    printf 'FAIL: Private artifact ignore validator must reject tracked private release files\n'
+    failures=$((failures + 1))
+  elif ! grep -q 'Config/release.env' "$private_tracked_artifact_dir/tracked-private.log"; then
+    printf 'FAIL: Private artifact ignore validator must identify the tracked private release file\n'
+    failures=$((failures + 1))
+  fi
+  rm -rf "$private_tracked_artifact_dir"
+fi
+check_contains "README.md" "Scripts/validate_private_release_artifact_ignores.sh" "README must document the private release artifact ignore validator"
+check_contains "AppStore/release-checklist.md" "Scripts/validate_private_release_artifact_ignores.sh" "Release checklist must document the private release artifact ignore validator"
 check_contains "Scripts/check_app_store_readiness.sh" "source Scripts/load_release_env.sh" "Readiness audit must load Config/release.env"
 check_contains "Scripts/check_app_store_readiness.sh" "validate_release_env.sh" "Readiness audit must reject placeholder release environment values"
 check_contains "Scripts/check_app_store_connect_credentials.sh" "source Scripts/load_release_env.sh" "Credential audit must load Config/release.env"
@@ -1718,6 +1769,7 @@ check_contains "Scripts/preflight_app_store_archive.sh" "Scripts/verify_release.
 check_contains "Scripts/preflight_app_store_archive.sh" "Scripts/verify_release.sh store-ready" "Archive preflight must run the full store-ready release gate before signing"
 check_contains "Scripts/preflight_app_store_archive.sh" "source Scripts/load_release_env.sh" "Archive preflight must load private release inputs before checking signing assets"
 check_contains "Scripts/preflight_app_store_archive.sh" "Scripts/validate_release_env.sh" "Archive preflight must validate private release env placeholders"
+check_contains "Scripts/preflight_app_store_archive.sh" "Scripts/validate_private_release_artifact_ignores.sh" "Archive preflight must validate private release artifacts stay ignored before signing"
 check_contains "Scripts/preflight_app_store_archive.sh" "Scripts/print_release_input_status.sh --strict" "Archive preflight must print field-level release input status before signing"
 check_contains "Scripts/preflight_app_store_archive.sh" "Scripts/validate_app_review_contact.sh" "Archive preflight must validate App Review contact details"
 check_contains "Scripts/preflight_app_store_archive.sh" "Scripts/check_code_signing_assets.sh" "Archive preflight must validate signing assets"
@@ -3510,6 +3562,7 @@ if [[ -f "Scripts/preflight_release_handoff.sh" && ! -x "Scripts/preflight_relea
   failures=$((failures + 1))
 fi
 check_contains "Scripts/preflight_release_handoff.sh" "git status --short" "Release handoff preflight must require a clean local worktree"
+check_contains "Scripts/preflight_release_handoff.sh" "Scripts/validate_private_release_artifact_ignores.sh" "Release handoff preflight must validate private release artifacts stay ignored before handoff"
 check_contains "Scripts/preflight_release_handoff.sh" "git rev-parse HEAD" "Release handoff preflight must identify the local source commit"
 check_contains "Scripts/preflight_release_handoff.sh" "Scripts/download_latest_submission_packet.sh" "Release handoff preflight must download and validate the latest CI submission packet"
 check_contains "Scripts/preflight_release_handoff.sh" 'Scripts/validate_release_provenance.sh "$packet_dir/release-provenance.tsv" "$local_head"' "Release handoff preflight must require the CI packet provenance to match the local HEAD"
