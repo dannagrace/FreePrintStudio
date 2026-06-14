@@ -20,6 +20,9 @@ Environment overrides:
   FREEPRINTSTUDIO_ARTIFACT_DOWNLOAD_ATTEMPTS Download attempts, default 3
   FREEPRINTSTUDIO_ARTIFACT_DOWNLOAD_TIMEOUT_SECONDS
                                                Per-attempt artifact download timeout, default 180
+                                               If gh run download stalls, the helper falls back to the
+                                               GitHub artifact API for the same artifact.
+  FREEPRINTSTUDIO_ARTIFACT_DOWNLOAD_METHOD    auto, gh, or api; default auto
 EOF
 }
 
@@ -32,6 +35,10 @@ if ! command -v gh >/dev/null 2>&1; then
   printf 'FAIL: GitHub CLI is required to download the CI submission packet. Install gh and authenticate with GitHub.\n' >&2
   exit 1
 fi
+if ! command -v curl >/dev/null 2>&1; then
+  printf 'FAIL: curl is required for the GitHub artifact API fallback.\n' >&2
+  exit 1
+fi
 
 repo="${FREEPRINTSTUDIO_GITHUB_REPO:-dannagrace/FreePrintStudio}"
 workflow="${FREEPRINTSTUDIO_RELEASE_WORKFLOW:-release.yml}"
@@ -40,6 +47,7 @@ artifact_name="${FREEPRINTSTUDIO_SUBMISSION_PACKET_ARTIFACT:-freeprintstudio-app
 destination="${1:-${FREEPRINTSTUDIO_CI_SUBMISSION_PACKET_DIR:-build/CISubmissionPacket}}"
 download_attempts="${FREEPRINTSTUDIO_ARTIFACT_DOWNLOAD_ATTEMPTS:-3}"
 download_timeout_seconds="${FREEPRINTSTUDIO_ARTIFACT_DOWNLOAD_TIMEOUT_SECONDS:-180}"
+download_method="${FREEPRINTSTUDIO_ARTIFACT_DOWNLOAD_METHOD:-auto}"
 if ! [[ "$download_attempts" =~ ^[1-9][0-9]*$ ]]; then
   printf 'FAIL: FREEPRINTSTUDIO_ARTIFACT_DOWNLOAD_ATTEMPTS must be a positive integer.\n' >&2
   exit 1
@@ -48,6 +56,14 @@ if ! [[ "$download_timeout_seconds" =~ ^[1-9][0-9]*$ ]]; then
   printf 'FAIL: FREEPRINTSTUDIO_ARTIFACT_DOWNLOAD_TIMEOUT_SECONDS must be a positive integer.\n' >&2
   exit 1
 fi
+case "$download_method" in
+  auto|gh|api)
+    ;;
+  *)
+    printf 'FAIL: FREEPRINTSTUDIO_ARTIFACT_DOWNLOAD_METHOD must be auto, gh, or api.\n' >&2
+    exit 1
+    ;;
+esac
 
 run_with_timeout() {
   local timeout_seconds="$1"
@@ -74,6 +90,82 @@ except subprocess.TimeoutExpired:
 
 raise SystemExit(completed.returncode)
 PY
+}
+
+download_with_artifact_api() {
+  local run_id="$1"
+  local artifact_name="$2"
+  local output_dir="$3"
+  local timeout_seconds="$4"
+  local artifact_name_jq
+  local artifact_info
+  local artifact_id
+  local artifact_expired
+  local artifact_zip_url
+  local api_token
+  local zip_path
+
+  artifact_name_jq="$(python3 -c 'import json, sys; print(json.dumps(sys.argv[1]))' "$artifact_name")"
+  if ! artifact_info="$(
+    gh api --method GET "repos/$repo/actions/runs/$run_id/artifacts" \
+      -F per_page=100 \
+      --jq ".artifacts[] | select(.name == $artifact_name_jq) | [.id, .expired] | @tsv"
+  )"; then
+    printf 'GitHub artifact API fallback could not list artifacts for run %s.\n' "$run_id" >&2
+    return 1
+  fi
+
+  artifact_info="${artifact_info%%$'\n'*}"
+  if [[ -z "$artifact_info" ]]; then
+    printf 'GitHub artifact API fallback could not find artifact %s for run %s.\n' "$artifact_name" "$run_id" >&2
+    return 1
+  fi
+
+  IFS=$'\t' read -r artifact_id artifact_expired <<<"$artifact_info"
+  if [[ -z "${artifact_id:-}" || "$artifact_expired" == "true" ]]; then
+    printf 'GitHub artifact API fallback found an unusable artifact record for %s.\n' "$artifact_name" >&2
+    return 1
+  fi
+
+  zip_path="$output_dir/artifact.zip"
+  artifact_zip_url="https://api.github.com/repos/$repo/actions/artifacts/$artifact_id/zip"
+  if ! api_token="$(gh auth token)"; then
+    printf 'GitHub artifact API fallback could not read GitHub CLI auth token.\n' >&2
+    return 1
+  fi
+
+  if ! GITHUB_TOKEN="$api_token" run_with_timeout "$timeout_seconds" bash -c '
+    curl --fail --location --silent --show-error \
+      --header "Authorization: Bearer ${GITHUB_TOKEN}" \
+      --header "Accept: application/vnd.github+json" \
+      --output "$1" \
+      "$2"
+  ' bash "$zip_path" "$artifact_zip_url"; then
+    printf 'GitHub artifact API fallback failed to download artifact archive %s.\n' "$artifact_id" >&2
+    return 1
+  fi
+
+  if ! python3 - "$zip_path" "$output_dir" <<'PY'; then
+import sys
+import zipfile
+from pathlib import Path
+
+zip_path = Path(sys.argv[1])
+output_dir = Path(sys.argv[2]).resolve()
+
+with zipfile.ZipFile(zip_path) as archive:
+    for member in archive.infolist():
+        target = (output_dir / member.filename).resolve()
+        if target != output_dir and output_dir not in target.parents:
+            raise SystemExit(f"Refusing unsafe artifact zip path: {member.filename}")
+    archive.extractall(output_dir)
+PY
+    printf 'GitHub artifact API fallback downloaded an invalid artifact zip for %s.\n' "$artifact_name" >&2
+    return 1
+  fi
+
+  rm -f "$zip_path"
+  return 0
 }
 
 case "$destination" in
@@ -116,12 +208,28 @@ downloaded=0
 for attempt in $(seq 1 "$download_attempts"); do
   printf 'Artifact download attempt %s of %s\n' "$attempt" "$download_attempts"
   rm -rf "$temp_dir"/*
-  if run_with_timeout "$download_timeout_seconds" gh run download "$run_id" \
-    --repo "$repo" \
-    --name "$artifact_name" \
-    --dir "$temp_dir"; then
-    downloaded=1
-    break
+
+  if [[ "$download_method" != "api" ]]; then
+    if run_with_timeout "$download_timeout_seconds" gh run download "$run_id" \
+      --repo "$repo" \
+      --name "$artifact_name" \
+      --dir "$temp_dir"; then
+      downloaded=1
+      break
+    fi
+  fi
+
+  if [[ "$download_method" != "gh" ]]; then
+    if [[ "$download_method" == "api" ]]; then
+      printf 'Using GitHub artifact API download path.\n' >&2
+    else
+      printf 'gh run download did not complete; trying GitHub artifact API fallback.\n' >&2
+    fi
+    rm -rf "$temp_dir"/*
+    if download_with_artifact_api "$run_id" "$artifact_name" "$temp_dir" "$download_timeout_seconds"; then
+      downloaded=1
+      break
+    fi
   fi
 
   if [[ "$attempt" != "$download_attempts" ]]; then
