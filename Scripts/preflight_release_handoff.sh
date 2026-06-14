@@ -238,6 +238,7 @@ Scripts/download_latest_submission_packet.sh "$packet_dir"
 Scripts/validate_release_provenance.sh "$packet_dir/release-provenance.tsv" "$local_head"
 Scripts/validate_external_readiness_actions.sh "$packet_dir/readiness.txt" "$external_actions_path"
 Scripts/generate_release_input_todo.sh "$external_actions_path" "$input_todo_path"
+Scripts/validate_release_input_todo.sh "$external_actions_path" "$input_todo_path"
 
 mkdir -p "$(dirname "$readiness_log")"
 set +e

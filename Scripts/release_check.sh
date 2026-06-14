@@ -3422,6 +3422,51 @@ EOF
   fi
   rm -rf "$release_input_todo_test_dir"
 fi
+check_file "Scripts/validate_release_input_todo.sh" "Release input TODO validator is required"
+if [[ -f "Scripts/validate_release_input_todo.sh" && ! -x "Scripts/validate_release_input_todo.sh" ]]; then
+  printf 'FAIL: Release input TODO validator must be executable (Scripts/validate_release_input_todo.sh)\n'
+  failures=$((failures + 1))
+fi
+check_contains "Scripts/validate_release_input_todo.sh" "External Actions" "Release input TODO validator must verify total action counts"
+check_contains "Scripts/validate_release_input_todo.sh" "Blockers" "Release input TODO validator must verify blocker counts"
+check_contains "Scripts/validate_release_input_todo.sh" "Warnings" "Release input TODO validator must verify warning counts"
+check_contains "Scripts/validate_release_input_todo.sh" "Target Summary" "Release input TODO validator must verify target summary counts"
+check_contains "Scripts/validate_release_input_todo.sh" "Config/release.env" "Release input TODO validator must require private release env guidance"
+check_contains "Scripts/validate_release_input_todo.sh" "Config/manual-release-verification.env" "Release input TODO validator must require manual evidence guidance"
+check_contains "Scripts/validate_app_store_submission_packet.sh" 'Scripts/validate_release_input_todo.sh "$PACKET_DIR/external-readiness-actions.tsv" "$PACKET_DIR/release-input-todo.md"' "Submission packet validator must validate release input TODO against external readiness actions"
+check_contains "Scripts/preflight_release_handoff.sh" 'Scripts/validate_release_input_todo.sh "$external_actions_path" "$input_todo_path"' "Release handoff preflight must validate generated release input TODO"
+if [[ -x "Scripts/generate_release_input_todo.sh" && -x "Scripts/validate_release_input_todo.sh" ]]; then
+  release_input_todo_validator_test_dir="$(mktemp -d)"
+  release_input_todo_validator_actions="$release_input_todo_validator_test_dir/external-readiness-actions.tsv"
+  release_input_todo_validator_output="$release_input_todo_validator_test_dir/release-input-todo.md"
+  release_input_todo_validator_bad="$release_input_todo_validator_test_dir/release-input-todo-bad.md"
+  cat >"$release_input_todo_validator_actions" <<'EOF'
+category	severity	owner	field	target	item	next_action	validation_command
+App Review Contact	blocker	Release owner	APP_REVIEW_CONTACT_EMAIL	Config/release.env	APP_REVIEW_CONTACT_EMAIL is missing	Fill App Review contact fields.	Scripts/validate_app_review_contact.sh
+Manual Verification	blocker	QA/release owner	MANUAL_REAL_IPHONE_MODEL	Config/manual-release-verification.env	Real iPhone model is missing	Record real iPhone evidence.	APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/validate_manual_release_verification.sh
+App Store Connect	warning	App Store Connect account holder	App Store Connect app record	App Store Connect	App record needs account-specific verification.	Verify App Store Connect state.	APP_STORE_CONNECT_SKIP_BUILD_CHECK=1 Scripts/check_app_store_connect_state.sh
+EOF
+  if ! Scripts/generate_release_input_todo.sh "$release_input_todo_validator_actions" "$release_input_todo_validator_output" >"$release_input_todo_validator_test_dir/generate.log" 2>&1; then
+    printf 'FAIL: Release input TODO validator fixture setup must generate a valid TODO\n'
+    sed 's/^/  /' "$release_input_todo_validator_test_dir/generate.log"
+    failures=$((failures + 1))
+  elif ! Scripts/validate_release_input_todo.sh "$release_input_todo_validator_actions" "$release_input_todo_validator_output" >"$release_input_todo_validator_test_dir/validate-good.log" 2>&1; then
+    printf 'FAIL: Release input TODO validator must accept TODO generated from matching external readiness actions\n'
+    sed 's/^/  /' "$release_input_todo_validator_test_dir/validate-good.log"
+    failures=$((failures + 1))
+  else
+    cp "$release_input_todo_validator_output" "$release_input_todo_validator_bad"
+    perl -0pi -e 's/- Blockers: `2`/- Blockers: `1`/' "$release_input_todo_validator_bad"
+    if Scripts/validate_release_input_todo.sh "$release_input_todo_validator_actions" "$release_input_todo_validator_bad" >"$release_input_todo_validator_test_dir/validate-bad.log" 2>&1; then
+      printf 'FAIL: Release input TODO validator must reject blocker count mismatches\n'
+      failures=$((failures + 1))
+    elif ! grep -q 'Blockers' "$release_input_todo_validator_test_dir/validate-bad.log"; then
+      printf 'FAIL: Release input TODO validator must explain blocker count mismatches\n'
+      failures=$((failures + 1))
+    fi
+  fi
+  rm -rf "$release_input_todo_validator_test_dir"
+fi
 check_file "Scripts/preflight_release_handoff.sh" "Release handoff preflight script is required"
 if [[ -f "Scripts/preflight_release_handoff.sh" && ! -x "Scripts/preflight_release_handoff.sh" ]]; then
   printf 'FAIL: Release handoff preflight script must be executable (Scripts/preflight_release_handoff.sh)\n'

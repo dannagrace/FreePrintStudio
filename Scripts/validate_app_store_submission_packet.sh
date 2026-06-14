@@ -212,6 +212,9 @@ require_tsv_column_populated "external-readiness-actions.tsv" 5 "external-readin
 if ! Scripts/validate_external_readiness_actions.sh "$PACKET_DIR/readiness.txt" "$PACKET_DIR/external-readiness-actions.tsv"; then
   failures=$((failures + 1))
 fi
+if ! Scripts/validate_release_input_todo.sh "$PACKET_DIR/external-readiness-actions.tsv" "$PACKET_DIR/release-input-todo.md"; then
+  failures=$((failures + 1))
+fi
 
 require_contains "pdf-export-validation.tsv" "test-ruler-stretch" "Test Ruler PDF validation evidence"
 require_contains "ACTION_ITEMS.md" "## External Values To Provide" "external values checklist"
