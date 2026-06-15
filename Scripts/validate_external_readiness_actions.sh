@@ -64,6 +64,60 @@ expected_target_for_field() {
   esac
 }
 
+expected_category_for_field() {
+  local field="$1"
+  case "$field" in
+    APP_REVIEW_CONTACT_*)
+      printf 'App Review Contact'
+      ;;
+    MANUAL_*|manual-release-verification.env\ file)
+      printf 'Manual Verification'
+      ;;
+    DEVELOPMENT_TEAM_ID|Apple\ Distribution\ certificate|App\ Store\ provisioning\ profile)
+      printf 'Signing'
+      ;;
+    APP_PRIVACY_DETAILS_CONFIRMED_IN_APP_STORE_CONNECT)
+      printf 'App Privacy'
+      ;;
+    APP_STORE_CONNECT_API_KEY_JSON|APP_STORE_CONNECT_API_KEY_JSON\ or\ ASC_KEY_ID/ASC_ISSUER_ID/ASC_KEY_PATH|ASC_*|\
+    App\ Store\ Connect\ app\ record/TestFlight\ status)
+      printf 'App Store Connect'
+      ;;
+    FASTLANE_USER)
+      printf 'App Privacy Upload'
+      ;;
+    GitHub\ Pages\ build_type)
+      printf 'GitHub Pages Source'
+      ;;
+    APP_STORE_BUILD_NUMBER|CONFIRM_SUBMIT_FOR_REVIEW)
+      printf 'App Review Submission'
+      ;;
+  esac
+}
+
+expected_owner_for_field() {
+  local field="$1"
+  case "$field" in
+    APP_REVIEW_CONTACT_*|APP_STORE_BUILD_NUMBER|CONFIRM_SUBMIT_FOR_REVIEW)
+      printf 'Release owner'
+      ;;
+    MANUAL_*|manual-release-verification.env\ file)
+      printf 'QA/release owner'
+      ;;
+    DEVELOPMENT_TEAM_ID|Apple\ Distribution\ certificate|App\ Store\ provisioning\ profile)
+      printf 'Apple Developer account holder'
+      ;;
+    APP_PRIVACY_DETAILS_CONFIRMED_IN_APP_STORE_CONNECT|APP_STORE_CONNECT_API_KEY_JSON|\
+    APP_STORE_CONNECT_API_KEY_JSON\ or\ ASC_KEY_ID/ASC_ISSUER_ID/ASC_KEY_PATH|ASC_*|FASTLANE_USER|\
+    App\ Store\ Connect\ app\ record/TestFlight\ status)
+      printf 'App Store Connect account holder'
+      ;;
+    GitHub\ Pages\ build_type)
+      printf 'Repository administrator'
+      ;;
+  esac
+}
+
 expected_validation_command_for_field() {
   local field="$1"
   case "$field" in
@@ -191,6 +245,20 @@ while IFS=$'\t' read -r category severity owner field target item next_action va
   if [[ -n "$expected_target" && "$target" != "$expected_target" ]]; then
     printf 'FAIL: External readiness action target mismatch for %s (expected %s; got %s)\n' \
       "$field" "$expected_target" "$target"
+    failures=$((failures + 1))
+  fi
+
+  expected_category="$(expected_category_for_field "$field")"
+  if [[ -n "$expected_category" && "$category" != "$expected_category" ]]; then
+    printf 'FAIL: External readiness action category mismatch for %s (expected %s; got %s)\n' \
+      "$field" "$expected_category" "$category"
+    failures=$((failures + 1))
+  fi
+
+  expected_owner="$(expected_owner_for_field "$field")"
+  if [[ -n "$expected_owner" && "$owner" != "$expected_owner" ]]; then
+    printf 'FAIL: External readiness action owner mismatch for %s (expected %s; got %s)\n' \
+      "$field" "$expected_owner" "$owner"
     failures=$((failures + 1))
   fi
 

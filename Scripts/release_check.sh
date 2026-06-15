@@ -3552,6 +3552,21 @@ EOF
     failures=$((failures + 1))
   fi
   cat >"$external_actions_readiness" <<'EOF'
+BLOCKED: APP_REVIEW_CONTACT_EMAIL is missing
+Summary: 1 blocker(s), 0 warning(s).
+EOF
+  cat >"$external_actions_tsv" <<'EOF'
+category	severity	owner	field	target	item	next_action	validation_command
+General	blocker	QA/release owner	APP_REVIEW_CONTACT_EMAIL	Config/release.env	APP_REVIEW_CONTACT_EMAIL is missing	Fix contact.	Scripts/validate_app_review_contact.sh
+EOF
+  if Scripts/validate_external_readiness_actions.sh "$external_actions_readiness" "$external_actions_tsv" >"$external_actions_log" 2>&1; then
+    printf 'FAIL: External readiness action validator must reject known field category and owner mismatches\n'
+    failures=$((failures + 1))
+  elif ! grep -q 'category mismatch for APP_REVIEW_CONTACT_EMAIL' "$external_actions_log"; then
+    printf 'FAIL: External readiness action validator must identify known field category mismatches\n'
+    failures=$((failures + 1))
+  fi
+  cat >"$external_actions_readiness" <<'EOF'
 BLOCKED: First external value is missing
 BLOCKED: Second external value is missing
 WARN: One external warning remains
