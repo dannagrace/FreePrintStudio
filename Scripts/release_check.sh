@@ -3536,6 +3536,27 @@ EOF
     printf 'FAIL: External readiness action validator must identify the missing blocker item text\n'
     failures=$((failures + 1))
   fi
+  cat >"$external_actions_readiness" <<'EOF'
+BLOCKED: APP_REVIEW_CONTACT_EMAIL is missing
+Summary: 1 blocker(s), 0 warning(s).
+EOF
+  cat >"$external_actions_tsv" <<'EOF'
+category	severity	owner	field	target	item	next_action	validation_command
+App Review Contact	blocker	Release owner	APP_REVIEW_CONTACT_EMAIL	App Store Connect	APP_REVIEW_CONTACT_EMAIL is missing	Fix contact.	Scripts/check_app_store_readiness.sh
+EOF
+  if Scripts/validate_external_readiness_actions.sh "$external_actions_readiness" "$external_actions_tsv" >"$external_actions_log" 2>&1; then
+    printf 'FAIL: External readiness action validator must reject known field target and validation command mismatches\n'
+    failures=$((failures + 1))
+  elif ! grep -q 'target mismatch for APP_REVIEW_CONTACT_EMAIL' "$external_actions_log"; then
+    printf 'FAIL: External readiness action validator must identify known field target mismatches\n'
+    failures=$((failures + 1))
+  fi
+  cat >"$external_actions_readiness" <<'EOF'
+BLOCKED: First external value is missing
+BLOCKED: Second external value is missing
+WARN: One external warning remains
+Summary: 2 blocker(s), 1 warning(s).
+EOF
   cat >"$external_actions_tsv" <<'EOF'
 category	severity	owner	field	target	item	next_action	validation_command
 General	blocker	Release owner	FIRST	Config/release.env	First external value is missing	Fix first.	Scripts/check_app_store_readiness.sh
