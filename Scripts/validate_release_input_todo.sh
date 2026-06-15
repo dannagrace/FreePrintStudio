@@ -59,6 +59,7 @@ trap 'rm -rf "$temp_dir"' EXIT
 expected_targets="$temp_dir/expected-targets.tsv"
 actual_targets="$temp_dir/actual-targets.tsv"
 target_diff="$temp_dir/target-diff.txt"
+expected_action_details="$temp_dir/expected-action-details.tsv"
 
 awk -F '\t' '
   NR == 1 {
@@ -109,6 +110,25 @@ awk -F '\t' '
   exit 1
 }
 
+awk -F '\t' '
+  NR == 1 {
+    for (i = 1; i <= NF; i += 1) {
+      columns[$i] = i
+    }
+    next
+  }
+  $1 != "" {
+    field = $(columns["field"])
+    target = $(columns["target"])
+    item = $(columns["item"])
+    if (target == "Config/manual-release-verification.env" && \
+      (field == "MANUAL_RELEASE_VERIFICATION_PATH" || item ~ /Manual release verification evidence file/)) {
+      field = "manual-release-verification.env file"
+    }
+    print field "\t" item "\t" $(columns["validation_command"])
+  }
+' "$actions_path" >"$expected_action_details"
+
 expected_total="$(awk -F '\t' '$1 == "total" { print $2 }' "$temp_dir/action-summary.tsv")"
 expected_blockers="$(awk -F '\t' '$1 == "blockers" { print $2 }' "$temp_dir/action-summary.tsv")"
 expected_warnings="$(awk -F '\t' '$1 == "warnings" { print $2 }' "$temp_dir/action-summary.tsv")"
@@ -150,6 +170,22 @@ if ! diff -u "$expected_targets" "$actual_targets" >"$target_diff"; then
   fail "Target Summary counts do not match external-readiness-actions.tsv"
   sed 's/^/  /' "$target_diff"
 fi
+
+while IFS=$'\t' read -r expected_field expected_item expected_validation_command; do
+  [[ -n "${expected_field:-}${expected_item:-}${expected_validation_command:-}" ]] || continue
+
+  if ! grep -qF "$expected_field" "$todo_path"; then
+    fail "action field is missing from release input TODO: $expected_field"
+  fi
+
+  if ! grep -qF "$expected_item" "$todo_path"; then
+    fail "action item is missing from release input TODO: $expected_item"
+  fi
+
+  if ! grep -qF "$expected_validation_command" "$todo_path"; then
+    fail "action validation command is missing from release input TODO: $expected_validation_command"
+  fi
+done <"$expected_action_details"
 
 if [[ "$failures" -gt 0 ]]; then
   exit 1

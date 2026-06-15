@@ -3925,6 +3925,15 @@ EOF
       printf 'FAIL: Release input TODO validator must explain blocker count mismatches\n'
       failures=$((failures + 1))
     fi
+    cp "$release_input_todo_validator_output" "$release_input_todo_validator_bad"
+    perl -0pi -e 's/\| blocker \| QA\/release owner \| `MANUAL_REAL_IPHONE_MODEL` \| Real iPhone model is missing \| Record real iPhone evidence\. \| `APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts\/validate_manual_release_verification\.sh` \|\n//' "$release_input_todo_validator_bad"
+    if Scripts/validate_release_input_todo.sh "$release_input_todo_validator_actions" "$release_input_todo_validator_bad" >"$release_input_todo_validator_test_dir/validate-missing-row.log" 2>&1; then
+      printf 'FAIL: Release input TODO validator must reject missing action detail rows even when counts match\n'
+      failures=$((failures + 1))
+    elif ! grep -q 'Real iPhone model is missing' "$release_input_todo_validator_test_dir/validate-missing-row.log"; then
+      printf 'FAIL: Release input TODO validator must identify the missing action detail row\n'
+      failures=$((failures + 1))
+    fi
   fi
   rm -rf "$release_input_todo_validator_test_dir"
 fi
