@@ -3581,6 +3581,22 @@ EOF
       printf 'FAIL: Release input TODO must include validation commands\n'
       failures=$((failures + 1))
     fi
+    if ! grep -q '^## Final Submission Guards' "$release_input_todo_output"; then
+      printf 'FAIL: Release input TODO must include final App Review submission guard fields\n'
+      failures=$((failures + 1))
+    fi
+    if ! grep -q 'APP_STORE_BUILD_NUMBER=' "$release_input_todo_output"; then
+      printf 'FAIL: Release input TODO must include a fillable selected App Store build guard\n'
+      failures=$((failures + 1))
+    fi
+    if ! grep -q 'CONFIRM_SUBMIT_FOR_REVIEW=' "$release_input_todo_output"; then
+      printf 'FAIL: Release input TODO must include a fillable final review submission confirmation guard\n'
+      failures=$((failures + 1))
+    fi
+    if ! grep -q 'APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER CONFIRM_SUBMIT_FOR_REVIEW=1 Scripts/run_fastlane.sh ios submit_review' "$release_input_todo_output"; then
+      printf 'FAIL: Release input TODO must include the guarded final App Review submission command\n'
+      failures=$((failures + 1))
+    fi
   fi
   rm -rf "$release_input_todo_test_dir"
 fi

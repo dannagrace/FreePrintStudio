@@ -88,6 +88,23 @@ awk -F '\t' -v output_path="$output_path" -v actions_path="$actions_path" -v gen
       code_text(markdown_cell(validation_command[row])) >>output_path
   }
 
+  function print_final_submission_guards() {
+    print "" >>output_path
+    print "## Final Submission Guards" >>output_path
+    print "" >>output_path
+    print "Set these only after the uploaded build has processed, App Store Connect metadata is final, and manual evidence was recorded for the same build." >>output_path
+    print "" >>output_path
+    print "```sh" >>output_path
+    print "APP_STORE_BUILD_NUMBER=" >>output_path
+    print "CONFIRM_SUBMIT_FOR_REVIEW=" >>output_path
+    print "```" >>output_path
+    print "" >>output_path
+    print "| Guard | Purpose | Validation Command |" >>output_path
+    print "| --- | --- | --- |" >>output_path
+    print "| `APP_STORE_BUILD_NUMBER` | Processed App Store Connect build selected for App Review. | `APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/preflight_app_review_submission.sh` |" >>output_path
+    print "| `CONFIRM_SUBMIT_FOR_REVIEW=1` | Explicit final confirmation before Fastlane submits the selected build for review. | `APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER CONFIRM_SUBMIT_FOR_REVIEW=1 Scripts/run_fastlane.sh ios submit_review` |" >>output_path
+  }
+
   function print_env_assignments(target,   row, printed, fields_seen, parts, part_count, part_index, candidate, has_missing_manual_file_action) {
     print "Fill these values in the git-ignored " code_text(target) " file. Leave secrets out of git." >>output_path
     if (target == "Config/manual-release-verification.env") {
@@ -230,6 +247,8 @@ awk -F '\t' -v output_path="$output_path" -v actions_path="$actions_path" -v gen
         }
       }
     }
+
+    print_final_submission_guards()
 
     print "" >>output_path
     print "## Non-env External Actions" >>output_path
