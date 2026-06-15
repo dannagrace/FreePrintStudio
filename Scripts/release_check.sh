@@ -3573,8 +3573,11 @@ check_contains "Scripts/prepare_app_store_submission_packet.sh" "release-input-s
 check_contains "Scripts/prepare_app_store_submission_packet.sh" "write_release_input_status" "Submission packet generator must write the redacted release input status output"
 check_contains "Scripts/prepare_app_store_submission_packet.sh" "release-input-todo.md" "Submission packet generator must include the fillable release input TODO"
 check_contains "Scripts/prepare_app_store_submission_packet.sh" 'Scripts/generate_release_input_todo.sh "$EXTERNAL_READINESS_ACTIONS" "$RELEASE_INPUT_TODO"' "Submission packet generator must build the release input TODO from external readiness actions"
+check_contains "Scripts/prepare_app_store_submission_packet.sh" "owner-action-briefs" "Submission packet generator must include per-owner action briefs"
+check_contains "Scripts/prepare_app_store_submission_packet.sh" 'Scripts/generate_release_owner_action_briefs.sh "$EXTERNAL_READINESS_ACTIONS" "$OWNER_ACTION_BRIEFS_DIR"' "Submission packet generator must build per-owner action briefs from external readiness actions"
 check_contains "Scripts/prepare_app_store_submission_packet.sh" '\\`release-input-status.txt\\`' "Submission packet summary must reference the redacted release input status output"
 check_contains "Scripts/prepare_app_store_submission_packet.sh" '\\`release-input-todo.md\\`' "Submission packet summary must reference the release input TODO"
+check_contains "Scripts/prepare_app_store_submission_packet.sh" '\\`owner-action-briefs/\\`' "Submission packet summary must reference per-owner action briefs"
 check_contains "Scripts/prepare_app_store_submission_packet.sh" '\\`Config/release.env.example\\`' "Submission packet summary must reference the private release environment template"
 check_contains "Scripts/verify_release.sh" "review-report" "Release verification must expose App Review submission readiness report generation"
 check_contains "README.md" "Scripts/verify_release.sh review-report" "README must document the App Review submission readiness report command"
@@ -3596,6 +3599,8 @@ check_contains "Scripts/validate_app_store_submission_packet.sh" "files/Config/r
 check_contains "Scripts/validate_app_store_submission_packet.sh" "DEVELOPMENT_TEAM_ID" "Submission packet validator must check the release environment template content"
 check_contains "Scripts/validate_app_store_submission_packet.sh" "release-input-status.txt" "Submission packet validator must require redacted release input status"
 check_contains "Scripts/validate_app_store_submission_packet.sh" "release-input-todo.md" "Submission packet validator must require the release input TODO"
+check_contains "Scripts/validate_app_store_submission_packet.sh" "owner-action-briefs/index.md" "Submission packet validator must require the per-owner action brief index"
+check_contains "Scripts/validate_app_store_submission_packet.sh" 'Scripts/validate_release_owner_action_briefs.sh "$PACKET_DIR/external-readiness-actions.tsv" "$PACKET_DIR/owner-action-briefs"' "Submission packet validator must validate per-owner action briefs against external readiness actions"
 check_contains "Scripts/validate_app_store_submission_packet.sh" "FreePrint Studio Release Input TODO" "Submission packet validator must check release input TODO content"
 check_contains "Scripts/validate_app_store_submission_packet.sh" "DEVELOPMENT_TEAM_ID=" "Submission packet validator must check release input TODO signing field"
 check_contains "Scripts/validate_app_store_submission_packet.sh" "Missing Release Input Fields" "Submission packet validator must require release input missing field tracking"
@@ -4267,6 +4272,88 @@ EOF
   fi
   rm -rf "$release_input_todo_validator_test_dir"
 fi
+check_file "Scripts/generate_release_owner_action_briefs.sh" "Release owner action brief generator is required"
+if [[ -f "Scripts/generate_release_owner_action_briefs.sh" && ! -x "Scripts/generate_release_owner_action_briefs.sh" ]]; then
+  printf 'FAIL: Release owner action brief generator must be executable (Scripts/generate_release_owner_action_briefs.sh)\n'
+  failures=$((failures + 1))
+fi
+check_file "Scripts/validate_release_owner_action_briefs.sh" "Release owner action brief validator is required"
+if [[ -f "Scripts/validate_release_owner_action_briefs.sh" && ! -x "Scripts/validate_release_owner_action_briefs.sh" ]]; then
+  printf 'FAIL: Release owner action brief validator must be executable (Scripts/validate_release_owner_action_briefs.sh)\n'
+  failures=$((failures + 1))
+fi
+check_contains "Scripts/generate_release_owner_action_briefs.sh" "owner-action-briefs" "Release owner action brief generator must document the owner-action-briefs output"
+check_contains "Scripts/generate_release_owner_action_briefs.sh" "Owner Action Briefs" "Release owner action brief generator must write a stable index title"
+check_contains "Scripts/generate_release_owner_action_briefs.sh" "Validation Commands" "Release owner action brief generator must group validation commands per owner"
+check_contains "Scripts/validate_release_owner_action_briefs.sh" "Owner action brief count mismatch" "Release owner action brief validator must compare owner counts"
+check_contains "Scripts/validate_release_owner_action_briefs.sh" "action detail row is missing or mismatched" "Release owner action brief validator must verify action detail rows"
+check_contains "Scripts/preflight_release_handoff.sh" 'Scripts/generate_release_owner_action_briefs.sh "$external_actions_path" "$owner_action_dir"' "Release handoff preflight must generate per-owner action briefs"
+check_contains "Scripts/preflight_release_handoff.sh" 'Scripts/validate_release_owner_action_briefs.sh "$external_actions_path" "$owner_action_dir"' "Release handoff preflight must validate per-owner action briefs"
+check_contains "Scripts/preflight_release_handoff.sh" "owner_action_dir" "Release handoff summary must record the per-owner action brief directory"
+if [[ -x "Scripts/generate_release_owner_action_briefs.sh" && -x "Scripts/validate_release_owner_action_briefs.sh" ]]; then
+  owner_brief_test_dir="$(mktemp -d)"
+  owner_brief_actions="$owner_brief_test_dir/external-readiness-actions.tsv"
+  owner_brief_output_dir="$owner_brief_test_dir/owner-action-briefs"
+  owner_brief_log="$owner_brief_test_dir/validation.log"
+  cat >"$owner_brief_actions" <<'EOF'
+category	severity	owner	field	target	item	next_action	validation_command
+App Review Contact	blocker	Release owner	APP_REVIEW_CONTACT_EMAIL	Config/release.env	APP_REVIEW_CONTACT_EMAIL is missing	Fill App Review contact fields.	Scripts/validate_app_review_contact.sh
+Manual Verification	blocker	QA/release owner	MANUAL_REAL_IPHONE_MODEL	Config/manual-release-verification.env	Real iPhone model is missing	Record real iPhone evidence.	APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/validate_manual_release_verification.sh
+Manual Verification	blocker	QA/release owner	MANUAL_REAL_IPHONE_IOS_VERSION	Config/manual-release-verification.env	Real iPhone iOS version is missing	Record real iPhone evidence.	APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/validate_manual_release_verification.sh
+App Store Connect	warning	App Store Connect account holder	App Store Connect app record	App Store Connect	App record needs account-specific verification.	Verify App Store Connect state.	APP_STORE_CONNECT_SKIP_BUILD_CHECK=1 Scripts/check_app_store_connect_state.sh
+EOF
+  if ! Scripts/generate_release_owner_action_briefs.sh "$owner_brief_actions" "$owner_brief_output_dir" >"$owner_brief_test_dir/generate.log" 2>&1; then
+    printf 'FAIL: Release owner action brief generator must accept an external readiness action manifest fixture\n'
+    sed 's/^/  /' "$owner_brief_test_dir/generate.log"
+    failures=$((failures + 1))
+  elif ! Scripts/validate_release_owner_action_briefs.sh "$owner_brief_actions" "$owner_brief_output_dir" >"$owner_brief_log" 2>&1; then
+    printf 'FAIL: Release owner action brief validator must accept matching generated owner action briefs\n'
+    sed 's/^/  /' "$owner_brief_log"
+    failures=$((failures + 1))
+  else
+    if ! grep -q '^# FreePrint Studio Release Owner Action Briefs' "$owner_brief_output_dir/index.md"; then
+      printf 'FAIL: Release owner action brief index must have a stable title\n'
+      failures=$((failures + 1))
+    fi
+    if ! grep -Fq '| QA/release owner | [qa-release-owner.md](qa-release-owner.md) | 2 | 2 | 0 |' "$owner_brief_output_dir/index.md"; then
+      printf 'FAIL: Release owner action brief index must count QA/release owner actions\n'
+      failures=$((failures + 1))
+    fi
+    if ! grep -q '^# QA/release owner Release Actions' "$owner_brief_output_dir/qa-release-owner.md"; then
+      printf 'FAIL: Release owner action brief generator must create a QA/release owner file\n'
+      failures=$((failures + 1))
+    fi
+    if ! grep -Fq '| Manual Verification | blocker | `MANUAL_REAL_IPHONE_MODEL` | `Config/manual-release-verification.env` | Real iPhone model is missing | Record real iPhone evidence. | `APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/validate_manual_release_verification.sh` |' "$owner_brief_output_dir/qa-release-owner.md"; then
+      printf 'FAIL: Release owner action brief detail must include QA owner action rows\n'
+      failures=$((failures + 1))
+    fi
+    if ! grep -q '^## Validation Commands' "$owner_brief_output_dir/qa-release-owner.md"; then
+      printf 'FAIL: Release owner action brief must include owner-scoped validation commands\n'
+      failures=$((failures + 1))
+    fi
+    owner_brief_bad_dir="$owner_brief_test_dir/owner-action-briefs-bad"
+    cp -R "$owner_brief_output_dir" "$owner_brief_bad_dir"
+    perl -0pi -e 's/- Actions: `2`/- Actions: `1`/' "$owner_brief_bad_dir/qa-release-owner.md"
+    if Scripts/validate_release_owner_action_briefs.sh "$owner_brief_actions" "$owner_brief_bad_dir" >"$owner_brief_log" 2>&1; then
+      printf 'FAIL: Release owner action brief validator must reject owner count mismatches\n'
+      failures=$((failures + 1))
+    elif ! grep -q 'Owner action brief count mismatch' "$owner_brief_log"; then
+      printf 'FAIL: Release owner action brief validator must identify owner count mismatches\n'
+      failures=$((failures + 1))
+    fi
+    owner_brief_bad_dir="$owner_brief_test_dir/owner-action-briefs-missing-row"
+    cp -R "$owner_brief_output_dir" "$owner_brief_bad_dir"
+    perl -0pi -e 's/^\| Manual Verification \| blocker \| `MANUAL_REAL_IPHONE_MODEL` \| `Config\/manual-release-verification\.env` \| Real iPhone model is missing \| Record real iPhone evidence\. \| `APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts\/validate_manual_release_verification\.sh` \|\n//m' "$owner_brief_bad_dir/qa-release-owner.md"
+    if Scripts/validate_release_owner_action_briefs.sh "$owner_brief_actions" "$owner_brief_bad_dir" >"$owner_brief_log" 2>&1; then
+      printf 'FAIL: Release owner action brief validator must reject missing owner action detail rows\n'
+      failures=$((failures + 1))
+    elif ! grep -q 'MANUAL_REAL_IPHONE_MODEL' "$owner_brief_log"; then
+      printf 'FAIL: Release owner action brief validator must identify missing owner action detail rows\n'
+      failures=$((failures + 1))
+    fi
+  fi
+  rm -rf "$owner_brief_test_dir"
+fi
 check_file "Scripts/preflight_release_handoff.sh" "Release handoff preflight script is required"
 if [[ -f "Scripts/preflight_release_handoff.sh" && ! -x "Scripts/preflight_release_handoff.sh" ]]; then
   printf 'FAIL: Release handoff preflight script must be executable (Scripts/preflight_release_handoff.sh)\n'
@@ -4317,6 +4404,7 @@ check_contains "README.md" "Scripts/validate_release_handoff_summary.sh" "README
 check_contains "README.md" "Scripts/validate_release_handoff_brief.sh" "README must document validating the release handoff brief"
 check_contains "README.md" "release-handoff-brief.md" "README must document the release handoff brief"
 check_contains "README.md" "release-input-todo.md" "README must document the release input TODO"
+check_contains "README.md" "owner-action-briefs" "README must document per-owner action brief handoff files"
 check_contains "README.md" "Owner Summary" "README must document the release input TODO owner summary"
 check_contains "README.md" "handoff brief Owner Summary" "README must document the handoff brief owner summary"
 check_contains "README.md" "external action details" "README must document that the release handoff brief includes external action details"
@@ -4331,6 +4419,7 @@ check_contains "AppStore/release-checklist.md" "Scripts/validate_release_handoff
 check_contains "AppStore/release-checklist.md" "Scripts/validate_release_handoff_brief.sh" "Release checklist must document validating the release handoff brief"
 check_contains "AppStore/release-checklist.md" "release-handoff-brief.md" "Release checklist must document the release handoff brief"
 check_contains "AppStore/release-checklist.md" "release-input-todo.md" "Release checklist must document the release input TODO"
+check_contains "AppStore/release-checklist.md" "owner-action-briefs" "Release checklist must document per-owner action brief handoff files"
 check_contains "AppStore/release-checklist.md" "Owner Summary" "Release checklist must document the release input TODO owner summary"
 check_contains "AppStore/release-checklist.md" "handoff brief Owner Summary" "Release checklist must document the handoff brief owner summary"
 check_contains "AppStore/release-checklist.md" "external action details" "Release checklist must document the handoff brief external action details"

@@ -1,0 +1,206 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+if [[ "$#" -ne 2 ]]; then
+  printf 'Usage: %s <external-readiness-actions.tsv> <owner-action-briefs-dir>\n' "$0" >&2
+  exit 2
+fi
+
+actions_path="$1"
+output_dir="$2"
+
+if [[ ! -s "$actions_path" ]]; then
+  printf 'FAIL: external readiness actions file is missing or empty: %s\n' "$actions_path" >&2
+  exit 1
+fi
+
+mkdir -p "$output_dir"
+find "$output_dir" -maxdepth 1 -type f -name '*.md' -delete
+
+awk -F '\t' -v output_dir="$output_dir" -v actions_path="$actions_path" -v generated_at="$(date -u '+%Y-%m-%dT%H:%M:%SZ')" '
+  function fail(message) {
+    print "FAIL: " message >"/dev/stderr"
+    exit 1
+  }
+
+  function markdown_cell(value) {
+    gsub(/\|/, "\\|", value)
+    gsub(/`/, "\\`", value)
+    return value
+  }
+
+  function code_text(value) {
+    gsub(/`/, "\\`", value)
+    return "`" value "`"
+  }
+
+  function owner_slug(value, slug) {
+    slug = tolower(value)
+    gsub(/[^a-z0-9]+/, "-", slug)
+    gsub(/^-+|-+$/, "", slug)
+    if (slug == "") {
+      slug = "owner"
+    }
+    return slug
+  }
+
+  function owner_file(owner_name) {
+    return owner_slug(owner_name) ".md"
+  }
+
+  function print_detail_header(path) {
+    print "| Category | Severity | Field | Target | Item | Next Action | Validation Command |" >>path
+    print "| --- | --- | --- | --- | --- | --- | --- |" >>path
+  }
+
+  function print_detail_row(row, path) {
+    printf "| %s | %s | %s | %s | %s | %s | %s |\n", \
+      markdown_cell(category[row]), \
+      markdown_cell(severity[row]), \
+      code_text(markdown_cell(field[row])), \
+      code_text(markdown_cell(target[row])), \
+      markdown_cell(item[row]), \
+      markdown_cell(next_action[row]), \
+      code_text(markdown_cell(validation_command[row])) >>path
+  }
+
+  NR == 1 {
+    for (i = 1; i <= NF; i += 1) {
+      columns[$i] = i
+    }
+    required[1] = "category"
+    required[2] = "severity"
+    required[3] = "owner"
+    required[4] = "field"
+    required[5] = "target"
+    required[6] = "item"
+    required[7] = "next_action"
+    required[8] = "validation_command"
+    for (i = 1; i <= 8; i += 1) {
+      if (!(required[i] in columns)) {
+        fail("external readiness actions file is missing required column: " required[i])
+      }
+    }
+    next
+  }
+
+  $1 != "" {
+    row_count += 1
+    category[row_count] = $(columns["category"])
+    severity[row_count] = $(columns["severity"])
+    owner[row_count] = $(columns["owner"])
+    field[row_count] = $(columns["field"])
+    target[row_count] = $(columns["target"])
+    item[row_count] = $(columns["item"])
+    next_action[row_count] = $(columns["next_action"])
+    validation_command[row_count] = $(columns["validation_command"])
+
+    owner_counts[owner[row_count]] += 1
+    if (!(owner[row_count] in owner_seen)) {
+      owner_seen[owner[row_count]] = 1
+      owner_order_count += 1
+      owner_order[owner_order_count] = owner[row_count]
+    }
+    if (severity[row_count] == "blocker") {
+      owner_blocker_counts[owner[row_count]] += 1
+    } else if (severity[row_count] == "warning") {
+      owner_warning_counts[owner[row_count]] += 1
+    }
+  }
+
+  END {
+    if (row_count == 0) {
+      fail("external readiness actions file has no action rows")
+    }
+
+    index_path = output_dir "/index.md"
+    print "# FreePrint Studio Release Owner Action Briefs" >index_path
+    print "" >>index_path
+    print "- Generated At: `" generated_at "`" >>index_path
+    print "- Source: `" actions_path "`" >>index_path
+    print "" >>index_path
+    print "## Owner Summary" >>index_path
+    print "" >>index_path
+    print "| Owner | File | Actions | Blockers | Warnings |" >>index_path
+    print "| --- | --- | ---: | ---: | ---: |" >>index_path
+
+    for (owner_index = 1; owner_index <= owner_order_count; owner_index += 1) {
+      owner_name = owner_order[owner_index]
+      file_name = owner_file(owner_name)
+      printf "| %s | [%s](%s) | %s | %s | %s |\n", \
+        markdown_cell(owner_name), \
+        file_name, \
+        file_name, \
+        owner_counts[owner_name], \
+        owner_blocker_counts[owner_name] + 0, \
+        owner_warning_counts[owner_name] + 0 >>index_path
+
+      owner_path = output_dir "/" file_name
+      print "# " owner_name " Release Actions" >owner_path
+      print "" >>owner_path
+      print "- Generated At: `" generated_at "`" >>owner_path
+      print "- Source: `" actions_path "`" >>owner_path
+      print "- Actions: `" owner_counts[owner_name] "`" >>owner_path
+      print "- Blockers: `" owner_blocker_counts[owner_name] + 0 "`" >>owner_path
+      print "- Warnings: `" owner_warning_counts[owner_name] + 0 "`" >>owner_path
+      print "" >>owner_path
+      print "## Action Summary" >>owner_path
+      print "" >>owner_path
+      print "| Category | Severity | Count |" >>owner_path
+      print "| --- | --- | ---: |" >>owner_path
+
+      delete summary_counts
+      delete summary_order
+      summary_order_count = 0
+      for (row = 1; row <= row_count; row += 1) {
+        if (owner[row] != owner_name) {
+          continue
+        }
+        summary_key = category[row] SUBSEP severity[row]
+        summary_counts[summary_key] += 1
+        if (!(summary_key in summary_seen)) {
+          summary_seen[summary_key] = 1
+          summary_order_count += 1
+          summary_order[summary_order_count] = summary_key
+        }
+      }
+      for (summary_index = 1; summary_index <= summary_order_count; summary_index += 1) {
+        split(summary_order[summary_index], summary_parts, SUBSEP)
+        printf "| %s | %s | %s |\n", \
+          markdown_cell(summary_parts[1]), \
+          markdown_cell(summary_parts[2]), \
+          summary_counts[summary_order[summary_index]] >>owner_path
+      }
+      delete summary_seen
+
+      print "" >>owner_path
+      print "## Action Detail" >>owner_path
+      print "" >>owner_path
+      print_detail_header(owner_path)
+      for (row = 1; row <= row_count; row += 1) {
+        if (owner[row] == owner_name) {
+          print_detail_row(row, owner_path)
+        }
+      }
+
+      print "" >>owner_path
+      print "## Validation Commands" >>owner_path
+      print "" >>owner_path
+      print "```sh" >>owner_path
+      delete command_seen
+      for (row = 1; row <= row_count; row += 1) {
+        if (owner[row] != owner_name) {
+          continue
+        }
+        command = validation_command[row]
+        if (!(command in command_seen)) {
+          print command >>owner_path
+          command_seen[command] = 1
+        }
+      }
+      print "```" >>owner_path
+    }
+  }
+' "$actions_path"
+
+printf 'Release owner action briefs written: %s\n' "$output_dir"
