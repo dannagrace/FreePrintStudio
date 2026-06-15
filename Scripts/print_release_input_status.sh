@@ -277,10 +277,13 @@ printf '== Release Input Status ==\n'
 printf 'This redacted status intentionally does not print private values.\n'
 
 printf '\n== Private Files ==\n'
+release_env_exists=0
 if [[ -f "$release_env_path" ]]; then
+  release_env_exists=1
   mark_ok "Config/release.env exists"
 else
   mark_missing "Config/release.env is missing; run Scripts/bootstrap_release_inputs.sh"
+  record_missing_field "RELEASE_ENV_PATH" "Config/release.env" "Scripts/bootstrap_release_inputs.sh && Scripts/validate_release_env.sh"
 fi
 if file_is_ignored "$release_env_path"; then
   mark_ok "Config/release.env is git-ignored"
@@ -322,6 +325,8 @@ if [[ "$release_source_status" -ne 0 ]]; then
     mark_missing "Config/release.env is not a valid shell env file"
     sed 's/^/  /' /tmp/freeprintstudio-release-input-status-env.log
   fi
+elif [[ "$release_env_exists" -ne 1 ]]; then
+  mark_missing "Release environment validation is blocked until Config/release.env exists"
 elif Scripts/validate_release_env.sh >/tmp/freeprintstudio-release-input-status-release-env.log 2>&1; then
   mark_ok "Release environment validation passes"
 else

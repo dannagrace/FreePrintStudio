@@ -1298,6 +1298,25 @@ if grep -q "$release_input_status_missing_fields_dir" "$release_input_status_mis
   failures=$((failures + 1))
 fi
 rm -rf "$release_input_status_missing_fields_dir"
+release_input_status_missing_release_env_dir="$(mktemp -d)"
+release_input_status_missing_release_env="$release_input_status_missing_release_env_dir/missing-release.env"
+release_input_status_missing_release_manual="$release_input_status_missing_release_env_dir/manual-release-verification.env"
+release_input_status_missing_release_log="$release_input_status_missing_release_env_dir/status.log"
+: >"$release_input_status_missing_release_manual"
+RELEASE_ENV_PATH="$release_input_status_missing_release_env" \
+  MANUAL_RELEASE_VERIFICATION_PATH="$release_input_status_missing_release_manual" \
+  Scripts/print_release_input_status.sh >"$release_input_status_missing_release_log" 2>&1 || true
+if grep -q 'OK: Release environment validation passes' "$release_input_status_missing_release_log"; then
+  printf 'FAIL: Release input status must not mark a missing release.env as validation passing\n'
+  failures=$((failures + 1))
+elif ! grep -q 'MISSING_FIELD: RELEASE_ENV_PATH | file: Config/release.env | validate: Scripts/bootstrap_release_inputs.sh && Scripts/validate_release_env.sh' "$release_input_status_missing_release_log"; then
+  printf 'FAIL: Release input status missing field checklist must include missing release.env remediation\n'
+  failures=$((failures + 1))
+elif grep -Fq "$release_input_status_missing_release_env_dir" "$release_input_status_missing_release_log"; then
+  printf 'FAIL: Release input status must not print the full missing release.env path\n'
+  failures=$((failures + 1))
+fi
+rm -rf "$release_input_status_missing_release_env_dir"
 release_input_status_loose_release_env_dir="$(mktemp -d)"
 release_input_status_loose_release_env="$release_input_status_loose_release_env_dir/release.env"
 release_input_status_loose_release_log="$release_input_status_loose_release_env_dir/status.log"
