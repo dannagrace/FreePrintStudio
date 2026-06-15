@@ -60,6 +60,7 @@ expected_targets="$temp_dir/expected-targets.tsv"
 actual_targets="$temp_dir/actual-targets.tsv"
 target_diff="$temp_dir/target-diff.txt"
 expected_action_details="$temp_dir/expected-action-details.tsv"
+expected_action_rows="$temp_dir/expected-action-rows.tsv"
 
 awk -F '\t' '
   NR == 1 {
@@ -110,7 +111,18 @@ awk -F '\t' '
   exit 1
 }
 
-awk -F '\t' '
+awk -F '\t' -v expected_action_rows="$expected_action_rows" '
+  function markdown_cell(value) {
+    gsub(/\|/, "\\|", value)
+    gsub(/`/, "\\`", value)
+    return value
+  }
+
+  function code_text(value) {
+    gsub(/`/, "\\`", value)
+    return "`" value "`"
+  }
+
   NR == 1 {
     for (i = 1; i <= NF; i += 1) {
       columns[$i] = i
@@ -126,6 +138,15 @@ awk -F '\t' '
       field = "manual-release-verification.env file"
     }
     print field "\t" item "\t" $(columns["validation_command"])
+    printf "%s\t%s\t| %s | %s | %s | %s | %s | %s |\n", \
+      field, \
+      item, \
+      markdown_cell($(columns["severity"])), \
+      markdown_cell($(columns["owner"])), \
+      code_text(markdown_cell(field)), \
+      markdown_cell(item), \
+      markdown_cell($(columns["next_action"])), \
+      code_text(markdown_cell($(columns["validation_command"]))) >expected_action_rows
   }
 ' "$actions_path" >"$expected_action_details"
 
@@ -186,6 +207,14 @@ while IFS=$'\t' read -r expected_field expected_item expected_validation_command
     fail "action validation command is missing from release input TODO: $expected_validation_command"
   fi
 done <"$expected_action_details"
+
+while IFS=$'\t' read -r expected_field expected_item expected_row; do
+  [[ -n "${expected_row:-}" ]] || continue
+
+  if ! grep -Fxq "$expected_row" "$todo_path"; then
+    fail "action detail row is missing or mismatched in release input TODO: $expected_field - $expected_item"
+  fi
+done <"$expected_action_rows"
 
 if [[ "$failures" -gt 0 ]]; then
   exit 1

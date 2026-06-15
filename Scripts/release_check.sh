@@ -3905,6 +3905,7 @@ if [[ -x "Scripts/generate_release_input_todo.sh" && -x "Scripts/validate_releas
 category	severity	owner	field	target	item	next_action	validation_command
 App Review Contact	blocker	Release owner	APP_REVIEW_CONTACT_EMAIL	Config/release.env	APP_REVIEW_CONTACT_EMAIL is missing	Fill App Review contact fields.	Scripts/validate_app_review_contact.sh
 Manual Verification	blocker	QA/release owner	MANUAL_REAL_IPHONE_MODEL	Config/manual-release-verification.env	Real iPhone model is missing	Record real iPhone evidence.	APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/validate_manual_release_verification.sh
+Manual Verification	blocker	QA/release owner	MANUAL_REAL_IPHONE_IOS_VERSION	Config/manual-release-verification.env	Real iPhone iOS version is missing	Record real iPhone evidence.	APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/validate_manual_release_verification.sh
 App Store Connect	warning	App Store Connect account holder	App Store Connect app record	App Store Connect	App record needs account-specific verification.	Verify App Store Connect state.	APP_STORE_CONNECT_SKIP_BUILD_CHECK=1 Scripts/check_app_store_connect_state.sh
 EOF
   if ! Scripts/generate_release_input_todo.sh "$release_input_todo_validator_actions" "$release_input_todo_validator_output" >"$release_input_todo_validator_test_dir/generate.log" 2>&1; then
@@ -3917,7 +3918,7 @@ EOF
     failures=$((failures + 1))
   else
     cp "$release_input_todo_validator_output" "$release_input_todo_validator_bad"
-    perl -0pi -e 's/- Blockers: `2`/- Blockers: `1`/' "$release_input_todo_validator_bad"
+    perl -0pi -e 's/- Blockers: `3`/- Blockers: `2`/' "$release_input_todo_validator_bad"
     if Scripts/validate_release_input_todo.sh "$release_input_todo_validator_actions" "$release_input_todo_validator_bad" >"$release_input_todo_validator_test_dir/validate-bad.log" 2>&1; then
       printf 'FAIL: Release input TODO validator must reject blocker count mismatches\n'
       failures=$((failures + 1))
@@ -3932,6 +3933,15 @@ EOF
       failures=$((failures + 1))
     elif ! grep -q 'Real iPhone model is missing' "$release_input_todo_validator_test_dir/validate-missing-row.log"; then
       printf 'FAIL: Release input TODO validator must identify the missing action detail row\n'
+      failures=$((failures + 1))
+    fi
+    cp "$release_input_todo_validator_output" "$release_input_todo_validator_bad"
+    perl -0pi -e 's/(\| blocker \| QA\/release owner \| `MANUAL_REAL_IPHONE_MODEL` \| Real iPhone model is missing \| Record real iPhone evidence\. \| )`APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts\/validate_manual_release_verification\.sh`/$1`Scripts\/validate_app_review_contact.sh`/' "$release_input_todo_validator_bad"
+    if Scripts/validate_release_input_todo.sh "$release_input_todo_validator_actions" "$release_input_todo_validator_bad" >"$release_input_todo_validator_test_dir/validate-mismatched-row.log" 2>&1; then
+      printf 'FAIL: Release input TODO validator must reject action detail rows with mismatched validation commands\n'
+      failures=$((failures + 1))
+    elif ! grep -q 'MANUAL_REAL_IPHONE_MODEL' "$release_input_todo_validator_test_dir/validate-mismatched-row.log"; then
+      printf 'FAIL: Release input TODO validator must identify the mismatched action detail row\n'
       failures=$((failures + 1))
     fi
   fi
