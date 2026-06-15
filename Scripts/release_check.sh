@@ -1421,6 +1421,75 @@ do
   fi
 done
 rm -rf "$release_input_status_archive_scope_dir"
+release_input_status_review_scope_ready_dir="$(mktemp -d)"
+release_input_status_review_scope_ready_env="$release_input_status_review_scope_ready_dir/release.env"
+release_input_status_review_scope_ready_manual="$release_input_status_review_scope_ready_dir/manual-release-verification.env"
+release_input_status_review_scope_ready_key="$release_input_status_review_scope_ready_dir/fastlane-api-key.json"
+release_input_status_review_scope_ready_log="$release_input_status_review_scope_ready_dir/status.log"
+today="$(date +%F)"
+cat >"$release_input_status_review_scope_ready_key" <<'EOF'
+{
+  "key_id": "ABCDEF1234",
+  "issuer_id": "12345678-1234-1234-1234-1234567890ab",
+  "key": "-----BEGIN PRIVATE KEY-----\napp-review-scope-test\n-----END PRIVATE KEY-----"
+}
+EOF
+chmod 600 "$release_input_status_review_scope_ready_key"
+cat >"$release_input_status_review_scope_ready_env" <<EOF
+APP_REVIEW_CONTACT_FIRST_NAME=Release
+APP_REVIEW_CONTACT_LAST_NAME=Owner
+APP_REVIEW_CONTACT_PHONE=+14155552671
+APP_REVIEW_CONTACT_EMAIL=release-owner@freeprintstudio.test
+APP_STORE_CONNECT_API_KEY_JSON="$release_input_status_review_scope_ready_key"
+APP_PRIVACY_DETAILS_CONFIRMED_IN_APP_STORE_CONNECT=1
+APP_STORE_BUILD_NUMBER=42
+CONFIRM_SUBMIT_FOR_REVIEW=1
+EOF
+chmod 600 "$release_input_status_review_scope_ready_env"
+cat >"$release_input_status_review_scope_ready_manual" <<EOF
+MANUAL_VERIFIER_NAME="Release Tester"
+MANUAL_REAL_IPHONE_MODEL="iPhone 15"
+MANUAL_REAL_IPHONE_IOS_VERSION="18.5"
+MANUAL_REAL_IPHONE_TEST_DATE="$today"
+MANUAL_REAL_IPHONE_PHOTOS_IMPORT="pass"
+MANUAL_REAL_IPHONE_PDF_EXPORT="pass"
+MANUAL_REAL_IPHONE_PRINT_SHEET="pass"
+MANUAL_AIRPRINT_TEST_DATE="$today"
+MANUAL_AIRPRINT_PRINTER="Production AirPrint validation"
+MANUAL_AIRPRINT_EXACT_SIZE="pass"
+MANUAL_AIRPRINT_RULER_TARGET_INCHES="6"
+MANUAL_AIRPRINT_RULER_MEASURED_INCHES="6.00"
+MANUAL_TESTFLIGHT_BUILD_NUMBER="42"
+MANUAL_TESTFLIGHT_DEVICE="iPhone 15"
+MANUAL_TESTFLIGHT_TEST_DATE="$today"
+MANUAL_TESTFLIGHT_INSTALL="pass"
+MANUAL_TESTFLIGHT_PRINT_WORKFLOW="pass"
+MANUAL_IPAD_TESTFLIGHT_DEVICE="iPad Pro 13-inch"
+MANUAL_IPAD_TESTFLIGHT_TEST_DATE="$today"
+MANUAL_IPAD_TESTFLIGHT_INSTALL="pass"
+MANUAL_IPAD_TESTFLIGHT_LAYOUT="pass"
+MANUAL_IPAD_TESTFLIGHT_PRINT_WORKFLOW="pass"
+EOF
+chmod 600 "$release_input_status_review_scope_ready_manual"
+if ! RELEASE_ENV_PATH="$release_input_status_review_scope_ready_env" \
+  MANUAL_RELEASE_VERIFICATION_PATH="$release_input_status_review_scope_ready_manual" \
+  Scripts/print_release_input_status.sh --strict --scope app-review-submission >"$release_input_status_review_scope_ready_log" 2>&1; then
+  printf 'FAIL: App Review submission release input status scope must pass when final submission inputs are configured without local signing assets\n'
+  sed 's/^/  /' "$release_input_status_review_scope_ready_log"
+  failures=$((failures + 1))
+fi
+for deferred_review_scope_field in \
+  "MISSING_FIELD: DEVELOPMENT_TEAM_ID" \
+  "MISSING_FIELD: Apple Distribution certificate" \
+  "MISSING_FIELD: App Store provisioning profile"
+do
+  if grep -q "$deferred_review_scope_field" "$release_input_status_review_scope_ready_log"; then
+    printf 'FAIL: App Review submission release input status scope must defer post-upload signing field %s\n' "$deferred_review_scope_field"
+    failures=$((failures + 1))
+  fi
+done
+check_contains "Scripts/preflight_app_review_submission.sh" "Scripts/print_release_input_status.sh --strict --scope app-review-submission" "App Review preflight must scope release input status to final submission requirements"
+rm -rf "$release_input_status_review_scope_ready_dir"
 release_input_status_manual_validation_dir="$(mktemp -d)"
 release_input_status_manual_validation_env="$release_input_status_manual_validation_dir/release.env"
 release_input_status_manual_validation_evidence="$release_input_status_manual_validation_dir/manual-release-verification.env"
@@ -2771,6 +2840,7 @@ check_contains "README.md" "is a placeholder; replace it with the processed buil
 check_contains "README.md" "leaving it in place is expected to fail locally" "README must explain that selected-build placeholder commands fail locally"
 check_contains "README.md" "AppStore/release-inputs-worksheet.md" "README must reference the release input worksheet"
 check_contains "README.md" "same APP_STORE_BUILD_NUMBER" "README must document that manual TestFlight evidence must match the selected App Store build"
+check_contains "README.md" "--scope app-review-submission" "README must document App Review submission-scoped release input status"
 check_contains "README.md" "Scripts/run_fastlane.sh ios submit_review" "README must document the guarded App Review submission command"
 check_contains "README.md" "re-runs manual release evidence validation" "README must document that final App Review submission revalidates manual evidence"
 check_contains "README.md" "APP_REVIEW_CONTACT_EMAIL" "README must document private App Review contact variables"
@@ -2835,6 +2905,7 @@ check_contains "AppStore/release-checklist.md" "Scripts/validate_app_review_cont
 check_contains "AppStore/release-checklist.md" "Scripts/validate_manual_release_verification.sh" "Release checklist must include manual release verification evidence validation"
 check_contains "AppStore/release-checklist.md" "AppStore/release-inputs-worksheet.md" "Release checklist must reference the release input worksheet"
 check_contains "AppStore/release-checklist.md" "same APP_STORE_BUILD_NUMBER" "Release checklist must require manual TestFlight evidence for the selected App Store build"
+check_contains "AppStore/release-checklist.md" "--scope app-review-submission" "Release checklist must document App Review submission-scoped release input status"
 check_contains "AppStore/release-checklist.md" "Scripts/run_fastlane.sh ios submit_review" "Release checklist must include the guarded App Review submission command"
 check_contains "AppStore/release-checklist.md" "re-runs manual release evidence validation" "Release checklist must document that final App Review submission revalidates manual evidence"
 check_contains "AppStore/release-checklist.md" "APP_REVIEW_CONTACT_EMAIL" "Release checklist must include App Review contact configuration"

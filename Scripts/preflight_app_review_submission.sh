@@ -57,7 +57,7 @@ run_build_number_step() {
   printf '\n'
 }
 
-run_step "Release input status" Scripts/print_release_input_status.sh --strict
+run_step "Release input status" Scripts/print_release_input_status.sh --strict --scope app-review-submission
 run_step "Private release environment" Scripts/validate_release_env.sh
 run_build_number_step
 run_step "App Store metadata" Scripts/validate_app_store_metadata.sh
