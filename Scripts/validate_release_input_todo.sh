@@ -163,6 +163,9 @@ require_contains "Warnings" "Warnings"
 require_contains "Config/release.env" "Config/release.env guidance"
 require_contains 'If the file does not exist yet, create it from the private templates with `Scripts/bootstrap_release_inputs.sh` before filling release values.' "Config/release.env bootstrap guidance"
 require_contains "Config/manual-release-verification.env" "Config/manual-release-verification.env guidance"
+if grep -qF $'manual-release-verification.env file\t' "$expected_action_details"; then
+  require_contains 'If the file does not exist yet, create it from the private templates with `Scripts/bootstrap_release_inputs.sh` before recording evidence.' "Config/manual-release-verification.env bootstrap guidance"
+fi
 require_contains "## Final Submission Guards" "Final Submission Guards section"
 require_contains "APP_STORE_BUILD_NUMBER=" "selected App Store build guard"
 require_contains "CONFIRM_SUBMIT_FOR_REVIEW=" "final review submission confirmation guard"
