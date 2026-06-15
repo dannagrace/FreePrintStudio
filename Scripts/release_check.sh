@@ -3979,6 +3979,7 @@ if [[ -f "Scripts/validate_release_handoff_brief.sh" && ! -x "Scripts/validate_r
   printf 'FAIL: Release handoff brief validator must be executable (Scripts/validate_release_handoff_brief.sh)\n'
   failures=$((failures + 1))
 fi
+check_contains "Scripts/validate_release_handoff_brief.sh" "Owner Summary" "Release handoff brief validator must verify owner summary counts"
 check_contains "Scripts/preflight_release_handoff.sh" 'Scripts/validate_release_handoff_brief.sh "$external_actions_path" "$brief_path"' "Release handoff preflight must validate generated handoff briefs"
 if [[ -x "Scripts/validate_release_handoff_brief.sh" ]]; then
   handoff_brief_test_dir="$(mktemp -d)"
@@ -4000,6 +4001,13 @@ EOF
 | --- | --- | ---: |
 | App Store Connect | warning | 1 |
 | Signing | blocker | 1 |
+
+## Owner Summary
+
+| Owner | Actions | Blockers | Warnings |
+| --- | ---: | ---: | ---: |
+| Apple Developer account holder | 1 | 1 | 0 |
+| App Store Connect account holder | 1 | 0 | 1 |
 
 ## External Action Detail
 
@@ -4029,6 +4037,15 @@ EOF
     failures=$((failures + 1))
   elif ! grep -q 'External Action Summary count mismatch' "$handoff_brief_log"; then
     printf 'FAIL: Release handoff brief validator must identify external action summary count mismatches\n'
+    failures=$((failures + 1))
+  fi
+  cp "$handoff_brief_path" "$handoff_brief_bad"
+  perl -0pi -e 's/\| Apple Developer account holder \| 1 \| 1 \| 0 \|/\| Apple Developer account holder \| 2 \| 2 \| 0 \|/' "$handoff_brief_bad"
+  if Scripts/validate_release_handoff_brief.sh "$handoff_brief_actions" "$handoff_brief_bad" >"$handoff_brief_log" 2>&1; then
+    printf 'FAIL: Release handoff brief validator must reject owner summary count mismatches\n'
+    failures=$((failures + 1))
+  elif ! grep -q 'Owner Summary count mismatch' "$handoff_brief_log"; then
+    printf 'FAIL: Release handoff brief validator must identify owner summary count mismatches\n'
     failures=$((failures + 1))
   fi
   rm -rf "$handoff_brief_test_dir"
@@ -4274,6 +4291,7 @@ check_contains "Scripts/preflight_release_handoff.sh" "ci_local_readiness_blocke
 check_contains "Scripts/preflight_release_handoff.sh" "ci_local_readiness_warning_delta" "Release handoff summary must record the CI/local warning delta"
 check_contains "Scripts/preflight_release_handoff.sh" "CI vs Local Readiness Delta" "Release handoff brief must explain CI/local readiness differences"
 check_contains "Scripts/preflight_release_handoff.sh" "External Action Summary" "Release handoff brief must summarize external action categories"
+check_contains "Scripts/preflight_release_handoff.sh" "Owner Summary" "Release handoff brief must summarize external actions by owner"
 check_contains "Scripts/preflight_release_handoff.sh" "External Action Detail" "Release handoff brief must include actionable external readiness details"
 check_contains "Scripts/preflight_release_handoff.sh" "next_action" "Release handoff brief must include next action guidance from the external action manifest"
 check_contains "Scripts/preflight_release_handoff.sh" "validation_command" "Release handoff brief must include validation commands from the external action manifest"
@@ -4290,6 +4308,7 @@ check_contains "README.md" "Scripts/validate_release_handoff_brief.sh" "README m
 check_contains "README.md" "release-handoff-brief.md" "README must document the release handoff brief"
 check_contains "README.md" "release-input-todo.md" "README must document the release input TODO"
 check_contains "README.md" "Owner Summary" "README must document the release input TODO owner summary"
+check_contains "README.md" "handoff brief Owner Summary" "README must document the handoff brief owner summary"
 check_contains "README.md" "external action details" "README must document that the release handoff brief includes external action details"
 check_contains "README.md" "external action blocker count" "README must document external action counts in the handoff summary"
 check_contains "README.md" "external-readiness-actions.tsv" "README must document the handoff external readiness action manifest"
@@ -4302,6 +4321,7 @@ check_contains "AppStore/release-checklist.md" "Scripts/validate_release_handoff
 check_contains "AppStore/release-checklist.md" "release-handoff-brief.md" "Release checklist must document the release handoff brief"
 check_contains "AppStore/release-checklist.md" "release-input-todo.md" "Release checklist must document the release input TODO"
 check_contains "AppStore/release-checklist.md" "Owner Summary" "Release checklist must document the release input TODO owner summary"
+check_contains "AppStore/release-checklist.md" "handoff brief Owner Summary" "Release checklist must document the handoff brief owner summary"
 check_contains "AppStore/release-checklist.md" "external action details" "Release checklist must document the handoff brief external action details"
 check_contains "AppStore/release-checklist.md" "external action blocker count" "Release checklist must document external action counts in the handoff summary"
 check_contains "AppStore/release-checklist.md" "external-readiness-actions.tsv" "Release checklist must document the handoff external readiness action manifest"

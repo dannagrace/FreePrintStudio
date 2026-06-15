@@ -184,6 +184,39 @@ write_handoff_brief() {
       printf 'No external readiness action manifest was found at `%s`.\n' "$external_actions_path"
     fi
 
+    printf '\n## Owner Summary\n\n'
+    if [[ -s "$external_actions_path" ]]; then
+      printf '| Owner | Actions | Blockers | Warnings |\n'
+      printf '| --- | ---: | ---: | ---: |\n'
+      awk -F '\t' '
+        NR == 1 {
+          for (i = 1; i <= NF; i++) {
+            columns[$i] = i
+          }
+          next
+        }
+        $1 != "" {
+          owner = $(columns["owner"])
+          severity = $(columns["severity"])
+          owner_counts[owner] += 1
+          if (severity == "blocker") {
+            owner_blocker_counts[owner] += 1
+          } else if (severity == "warning") {
+            owner_warning_counts[owner] += 1
+          }
+        }
+        END {
+          for (owner in owner_counts) {
+            print owner "\t" owner_counts[owner] "\t" owner_blocker_counts[owner] + 0 "\t" owner_warning_counts[owner] + 0
+          }
+        }
+      ' "$external_actions_path" \
+        | LC_ALL=C sort \
+        | awk -F '\t' '{ printf "| %s | %s | %s | %s |\n", $1, $2, $3, $4 }'
+    else
+      printf 'No external readiness action manifest was found at `%s`.\n' "$external_actions_path"
+    fi
+
     printf '\n## External Action Detail\n\n'
     if [[ -s "$external_actions_path" ]]; then
       printf '| Category | Severity | Field | Item | Next Action | Validation Command |\n'
