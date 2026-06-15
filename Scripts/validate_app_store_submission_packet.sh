@@ -129,6 +129,7 @@ require_no_forbidden_private_artifacts() {
     # Block private inputs such as Config/release.env, AuthKey_*.p8, and fastlane-api-key.json.
     case "$relative_path" in
       release.env|*/release.env|manual-release-verification.env|*/manual-release-verification.env|\
+      release.env.bak.*|*/release.env.bak.*|manual-release-verification.env.bak.*|*/manual-release-verification.env.bak.*|\
       AuthKey_*.p8|*/AuthKey_*.p8|*.p8|*.p12|*.mobileprovision|*.provisionprofile|*.ipa|*.xcarchive|*.xcarchive/*|\
       fastlane-api-key.json|*/fastlane-api-key.json)
         forbidden_paths+="$relative_path"$'\n'

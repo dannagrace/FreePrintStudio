@@ -3645,6 +3645,8 @@ check_contains "Scripts/validate_app_store_submission_packet.sh" "Manual verifie
 check_contains "Scripts/validate_app_store_submission_packet.sh" "/Users/" "Submission packet validator must reject leaked absolute local paths"
 check_contains "Scripts/validate_app_store_submission_packet.sh" "require_no_forbidden_private_artifacts" "Submission packet validator must reject private release artifacts by filename"
 check_contains "Scripts/validate_app_store_submission_packet.sh" "Config/release.env" "Submission packet validator must reject filled private release.env files"
+check_contains "Scripts/validate_app_store_submission_packet.sh" "release.env.bak.*" "Submission packet validator must reject release.env backup files"
+check_contains "Scripts/validate_app_store_submission_packet.sh" "manual-release-verification.env.bak.*" "Submission packet validator must reject manual evidence backup files"
 check_contains "Scripts/validate_app_store_submission_packet.sh" "AuthKey_" "Submission packet validator must reject App Store Connect private key files"
 check_contains "Scripts/validate_app_store_submission_packet.sh" "fastlane-api-key.json" "Submission packet validator must reject Fastlane API key JSON files"
 check_contains "Scripts/validate_app_store_submission_packet.sh" "require_no_private_key_material" "Submission packet validator must reject private key material embedded in packaged text"
