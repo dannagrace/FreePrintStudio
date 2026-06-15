@@ -1298,6 +1298,27 @@ if grep -q "$release_input_status_missing_fields_dir" "$release_input_status_mis
   failures=$((failures + 1))
 fi
 rm -rf "$release_input_status_missing_fields_dir"
+release_input_status_loose_release_env_dir="$(mktemp -d)"
+release_input_status_loose_release_env="$release_input_status_loose_release_env_dir/release.env"
+release_input_status_loose_release_log="$release_input_status_loose_release_env_dir/status.log"
+printf '%s\n' 'APP_STORE_BUILD_NUMBER=42' >"$release_input_status_loose_release_env"
+chmod 644 "$release_input_status_loose_release_env"
+RELEASE_ENV_PATH="$release_input_status_loose_release_env" \
+  Scripts/print_release_input_status.sh >"$release_input_status_loose_release_log" 2>&1 || true
+if ! grep -q 'Config/release.env permissions are too broad' "$release_input_status_loose_release_log"; then
+  printf 'FAIL: Release input status must identify broad release.env permissions\n'
+  failures=$((failures + 1))
+elif ! grep -q 'chmod 600 Config/release.env' "$release_input_status_loose_release_log"; then
+  printf 'FAIL: Release input status broad release.env output should include chmod 600 guidance\n'
+  failures=$((failures + 1))
+elif ! grep -q 'MISSING_FIELD: RELEASE_ENV_PATH permissions | file: Config/release.env | validate: chmod 600 Config/release.env && Scripts/validate_release_env.sh' "$release_input_status_loose_release_log"; then
+  printf 'FAIL: Release input status missing field checklist must include release.env permission remediation\n'
+  failures=$((failures + 1))
+elif grep -Fq "$release_input_status_loose_release_env" "$release_input_status_loose_release_log"; then
+  printf 'FAIL: Release input status must not print the full loose release.env path\n'
+  failures=$((failures + 1))
+fi
+rm -rf "$release_input_status_loose_release_env_dir"
 release_input_status_metadata_scope_dir="$(mktemp -d)"
 release_input_status_metadata_scope_env="$release_input_status_metadata_scope_dir/release.env"
 release_input_status_metadata_scope_manual="$release_input_status_metadata_scope_dir/manual-release-verification.env"

@@ -312,8 +312,16 @@ source Scripts/load_release_env.sh >/tmp/freeprintstudio-release-input-status-en
 release_source_status="$?"
 set -e
 if [[ "$release_source_status" -ne 0 ]]; then
-  mark_missing "Config/release.env is not a valid shell env file"
-  sed 's/^/  /' /tmp/freeprintstudio-release-input-status-env.log
+  if grep -q 'Release environment permissions are too broad' /tmp/freeprintstudio-release-input-status-env.log; then
+    mark_missing "Config/release.env permissions are too broad; run chmod 600 Config/release.env"
+    record_missing_field "RELEASE_ENV_PATH permissions" "Config/release.env" "chmod 600 Config/release.env && Scripts/validate_release_env.sh"
+  elif grep -q 'Release environment permissions could not be checked' /tmp/freeprintstudio-release-input-status-env.log; then
+    mark_missing "Config/release.env permissions could not be checked"
+    record_missing_field "RELEASE_ENV_PATH permissions" "Config/release.env" "chmod 600 Config/release.env && Scripts/validate_release_env.sh"
+  else
+    mark_missing "Config/release.env is not a valid shell env file"
+    sed 's/^/  /' /tmp/freeprintstudio-release-input-status-env.log
+  fi
 elif Scripts/validate_release_env.sh >/tmp/freeprintstudio-release-input-status-release-env.log 2>&1; then
   mark_ok "Release environment validation passes"
 else
