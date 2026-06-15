@@ -56,6 +56,22 @@ ensure_repo_private_path() {
   fi
 }
 
+backup_existing_private_file() {
+  local target_path="$1"
+  local label="$2"
+  local backup_path
+
+  if [[ ! -e "$target_path" ]]; then
+    return
+  fi
+
+  umask 077
+  backup_path="$(mktemp "${target_path}.bak.XXXXXX")"
+  cp "$target_path" "$backup_path"
+  chmod 600 "$backup_path"
+  printf 'Backed up existing private %s: %s\n' "$label" "$backup_path"
+}
+
 copy_private_template() {
   local source_path="$1"
   local target_path="$2"
@@ -68,6 +84,9 @@ copy_private_template() {
   fi
 
   mkdir -p "$(dirname "$target_path")"
+  if [[ -e "$target_path" && "$force" == "1" ]]; then
+    backup_existing_private_file "$target_path" "$label"
+  fi
   umask 077
   cp "$source_path" "$target_path"
   chmod 600 "$target_path"

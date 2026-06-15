@@ -1043,6 +1043,7 @@ fi
 check_contains "Scripts/bootstrap_release_env.sh" "Config/release.env" "Release environment bootstrap must target the untracked release.env file"
 check_contains "Scripts/bootstrap_release_env.sh" "git check-ignore" "Release environment bootstrap must verify release.env stays ignored"
 check_contains "Scripts/bootstrap_release_env.sh" "chmod 600" "Release environment bootstrap must protect private release.env permissions"
+check_contains "Scripts/bootstrap_release_env.sh" "backup_existing_private_file" "Release environment bootstrap must back up existing private values before --force overwrite"
 check_file "Scripts/bootstrap_release_inputs.sh" "Combined private release input bootstrap script is required"
 if [[ ! -x "Scripts/bootstrap_release_inputs.sh" ]]; then
   printf 'FAIL: Combined private release input bootstrap script must be executable (Scripts/bootstrap_release_inputs.sh)\n'
@@ -1052,8 +1053,49 @@ check_contains "Scripts/bootstrap_release_inputs.sh" "Scripts/bootstrap_release_
 check_contains "Scripts/bootstrap_release_inputs.sh" "Config/manual-release-verification.env" "Combined private release input bootstrap must create the manual verification evidence file"
 check_contains "Scripts/bootstrap_release_inputs.sh" "git check-ignore" "Combined private release input bootstrap must verify private files stay ignored"
 check_contains "Scripts/bootstrap_release_inputs.sh" "chmod 600" "Combined private release input bootstrap must protect private release input files"
+check_contains "Scripts/bootstrap_release_inputs.sh" "backup_existing_private_file" "Combined private release input bootstrap must back up existing manual evidence before --force overwrite"
 check_not_contains "Scripts/bootstrap_release_inputs.sh" "APP_STORE_BUILD_NUMBER=<" "Combined private release input bootstrap must use shell-safe selected build placeholders"
 check_contains "Scripts/bootstrap_release_inputs.sh" "APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/validate_manual_release_verification.sh" "Combined private release input bootstrap must validate manual evidence against the selected App Store build"
+bootstrap_force_test_dir="$PWD/build/bootstrap-force-test"
+rm -rf "$bootstrap_force_test_dir"
+mkdir -p "$bootstrap_force_test_dir"
+bootstrap_force_release_env="$bootstrap_force_test_dir/release.env"
+bootstrap_force_manual_env="$bootstrap_force_test_dir/manual-release-verification.env"
+bootstrap_force_log="$bootstrap_force_test_dir/bootstrap.log"
+printf '%s\n' 'APP_REVIEW_CONTACT_EMAIL=private@example.com' >"$bootstrap_force_release_env"
+printf '%s\n' 'MANUAL_VERIFIER_NAME=Private Tester' >"$bootstrap_force_manual_env"
+chmod 600 "$bootstrap_force_release_env" "$bootstrap_force_manual_env"
+if ! RELEASE_ENV_PATH="$bootstrap_force_release_env" \
+  MANUAL_RELEASE_VERIFICATION_PATH="$bootstrap_force_manual_env" \
+  Scripts/bootstrap_release_inputs.sh --force >"$bootstrap_force_log" 2>&1; then
+  printf 'FAIL: Combined private release input bootstrap --force should complete for ignored private fixture paths\n'
+  sed 's/^/  /' "$bootstrap_force_log"
+  failures=$((failures + 1))
+else
+  bootstrap_force_release_backup="$(find "$bootstrap_force_test_dir" -maxdepth 1 -type f -name 'release.env.bak.*' | sort | head -n 1)"
+  bootstrap_force_manual_backup="$(find "$bootstrap_force_test_dir" -maxdepth 1 -type f -name 'manual-release-verification.env.bak.*' | sort | head -n 1)"
+  if [[ -z "$bootstrap_force_release_backup" ]]; then
+    printf 'FAIL: Release environment bootstrap --force must create a release.env backup\n'
+    failures=$((failures + 1))
+  elif ! grep -q 'APP_REVIEW_CONTACT_EMAIL=private@example.com' "$bootstrap_force_release_backup"; then
+    printf 'FAIL: Release environment bootstrap --force backup must preserve existing release.env values\n'
+    failures=$((failures + 1))
+  elif [[ "$(stat -f '%Lp' "$bootstrap_force_release_backup")" != "600" ]]; then
+    printf 'FAIL: Release environment bootstrap --force backup must use 600 permissions\n'
+    failures=$((failures + 1))
+  fi
+  if [[ -z "$bootstrap_force_manual_backup" ]]; then
+    printf 'FAIL: Combined private release input bootstrap --force must create a manual evidence backup\n'
+    failures=$((failures + 1))
+  elif ! grep -q 'MANUAL_VERIFIER_NAME=Private Tester' "$bootstrap_force_manual_backup"; then
+    printf 'FAIL: Combined private release input bootstrap --force backup must preserve existing manual evidence values\n'
+    failures=$((failures + 1))
+  elif [[ "$(stat -f '%Lp' "$bootstrap_force_manual_backup")" != "600" ]]; then
+    printf 'FAIL: Combined private release input bootstrap --force backup must use 600 permissions\n'
+    failures=$((failures + 1))
+  fi
+fi
+rm -rf "$bootstrap_force_test_dir"
 check_file "Scripts/print_release_input_status.sh" "Redacted release input status script is required"
 if [[ ! -x "Scripts/print_release_input_status.sh" ]]; then
   printf 'FAIL: Redacted release input status script must be executable (Scripts/print_release_input_status.sh)\n'

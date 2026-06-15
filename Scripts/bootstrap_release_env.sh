@@ -85,6 +85,22 @@ CONFIRM_SUBMIT_FOR_REVIEW=
 EOF
 }
 
+backup_existing_private_file() {
+  local target_path="$1"
+  local label="$2"
+  local backup_path
+
+  if [[ ! -e "$target_path" ]]; then
+    return
+  fi
+
+  umask 077
+  backup_path="$(mktemp "${target_path}.bak.XXXXXX")"
+  cp "$target_path" "$backup_path"
+  chmod 600 "$backup_path"
+  printf 'Backed up existing private %s: %s\n' "$label" "$backup_path"
+}
+
 if [[ "$print_only" == "1" ]]; then
   write_template
   exit 0
@@ -110,6 +126,9 @@ if [[ -e "$release_env_path" && "$force" != "1" ]]; then
 fi
 
 mkdir -p "$(dirname "$release_env_path")"
+if [[ -e "$release_env_path" && "$force" == "1" ]]; then
+  backup_existing_private_file "$release_env_path" "release environment"
+fi
 umask 077
 write_template >"$release_env_path"
 chmod 600 "$release_env_path"
