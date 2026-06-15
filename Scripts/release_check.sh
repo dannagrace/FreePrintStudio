@@ -3930,6 +3930,10 @@ EOF
       printf 'FAIL: Release input TODO must group Config/release.env fields\n'
       failures=$((failures + 1))
     fi
+    if ! grep -q 'create it from the private templates with `Scripts/bootstrap_release_inputs.sh` before filling release values' "$release_input_todo_output"; then
+      printf 'FAIL: Release input TODO must guide missing release.env files through bootstrap_release_inputs\n'
+      failures=$((failures + 1))
+    fi
     if ! grep -q 'APP_REVIEW_CONTACT_EMAIL=' "$release_input_todo_output"; then
       printf 'FAIL: Release input TODO must include fillable release.env assignments\n'
       failures=$((failures + 1))
