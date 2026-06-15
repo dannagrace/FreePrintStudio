@@ -213,6 +213,9 @@ require_tsv_column_populated "external-readiness-actions.tsv" 5 "external-readin
 if ! Scripts/validate_external_readiness_actions.sh "$PACKET_DIR/readiness.txt" "$PACKET_DIR/external-readiness-actions.tsv"; then
   failures=$((failures + 1))
 fi
+if ! Scripts/validate_release_action_items.sh "$PACKET_DIR/readiness.txt" "$PACKET_DIR/external-readiness-actions.tsv" "$PACKET_DIR/ACTION_ITEMS.md"; then
+  failures=$((failures + 1))
+fi
 if ! Scripts/validate_release_input_todo.sh "$PACKET_DIR/external-readiness-actions.tsv" "$PACKET_DIR/release-input-todo.md"; then
   failures=$((failures + 1))
 fi

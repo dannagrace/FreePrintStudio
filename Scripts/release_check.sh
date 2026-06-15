@@ -3695,6 +3695,83 @@ EOF
   fi
   rm -rf "$external_actions_count_test_dir"
 fi
+check_file "Scripts/validate_release_action_items.sh" "Release action items validator is required"
+if [[ -f "Scripts/validate_release_action_items.sh" && ! -x "Scripts/validate_release_action_items.sh" ]]; then
+  printf 'FAIL: Release action items validator must be executable (Scripts/validate_release_action_items.sh)\n'
+  failures=$((failures + 1))
+fi
+check_contains "Scripts/validate_app_store_submission_packet.sh" 'Scripts/validate_release_action_items.sh "$PACKET_DIR/readiness.txt" "$PACKET_DIR/external-readiness-actions.tsv" "$PACKET_DIR/ACTION_ITEMS.md"' "Submission packet validator must validate ACTION_ITEMS.md against readiness and external actions"
+if [[ -x "Scripts/validate_release_action_items.sh" ]]; then
+  release_action_items_test_dir="$(mktemp -d)"
+  release_action_items_readiness="$release_action_items_test_dir/readiness.txt"
+  release_action_items_actions="$release_action_items_test_dir/external-readiness-actions.tsv"
+  release_action_items_output="$release_action_items_test_dir/ACTION_ITEMS.md"
+  release_action_items_bad="$release_action_items_test_dir/ACTION_ITEMS-bad.md"
+  release_action_items_log="$release_action_items_test_dir/validation.log"
+  cat >"$release_action_items_readiness" <<'EOF'
+BLOCKED: First release value is missing
+BLOCKED: Second release value is missing
+WARN: One external warning remains
+Summary: 2 blocker(s), 1 warning(s).
+EOF
+  cat >"$release_action_items_actions" <<'EOF'
+category	severity	owner	field	target	item	next_action	validation_command
+General	blocker	Release owner	FIRST	Config/release.env	First release value is missing	Fix first.	Scripts/check_app_store_readiness.sh
+General	blocker	Release owner	SECOND	Config/release.env	Second release value is missing	Fix second.	Scripts/check_app_store_readiness.sh
+General	warning	Release owner	WARN	App Store Connect	One external warning remains	Check warning.	Scripts/check_app_store_readiness.sh
+EOF
+  cat >"$release_action_items_output" <<'EOF'
+# FreePrint Studio Release Action Items
+
+- Generated At: 2026-06-15T00:00:00Z
+- Readiness Exit Code: 1
+- Readiness Blockers: 2
+- Readiness Warnings: 1
+
+## Readiness Blockers
+
+- First release value is missing
+- Second release value is missing
+
+## Readiness Warnings
+
+- One external warning remains
+
+## External Values To Provide
+
+- Fill private release values.
+
+## Command Order
+
+```sh
+Scripts/bootstrap_release_inputs.sh
+```
+EOF
+  if ! Scripts/validate_release_action_items.sh "$release_action_items_readiness" "$release_action_items_actions" "$release_action_items_output" >"$release_action_items_log" 2>&1; then
+    printf 'FAIL: Release action items validator must accept matching ACTION_ITEMS.md fixtures\n'
+    sed 's/^/  /' "$release_action_items_log"
+    failures=$((failures + 1))
+  fi
+  cp "$release_action_items_output" "$release_action_items_bad"
+  perl -0pi -e 's/^- Second release value is missing\n//m' "$release_action_items_bad"
+  if Scripts/validate_release_action_items.sh "$release_action_items_readiness" "$release_action_items_actions" "$release_action_items_bad" >"$release_action_items_log" 2>&1; then
+    printf 'FAIL: Release action items validator must reject missing action item bullets\n'
+    failures=$((failures + 1))
+  elif ! grep -q 'Second release value is missing' "$release_action_items_log"; then
+    printf 'FAIL: Release action items validator must identify missing action item bullets\n'
+    failures=$((failures + 1))
+  fi
+  cp "$release_action_items_output" "$release_action_items_bad"
+  perl -0pi -e 's/- Readiness Blockers: 2/- Readiness Blockers: 1/' "$release_action_items_bad"
+  if Scripts/validate_release_action_items.sh "$release_action_items_readiness" "$release_action_items_actions" "$release_action_items_bad" >"$release_action_items_log" 2>&1; then
+    printf 'FAIL: Release action items validator must reject blocker count mismatches\n'
+    failures=$((failures + 1))
+  elif ! grep -q 'Readiness Blockers count mismatch' "$release_action_items_log"; then
+    printf 'FAIL: Release action items validator must identify blocker count mismatches\n'
+    failures=$((failures + 1))
+  fi
+  rm -rf "$release_action_items_test_dir"
+fi
 check_contains "Scripts/validate_app_store_submission_packet.sh" "file-manifest.tsv" "Submission packet validator must require the file manifest"
 check_contains "Scripts/validate_app_store_submission_packet.sh" "pdf-export-validation.tsv" "Submission packet validator must require PDF validation evidence"
 check_contains "Scripts/validate_app_store_submission_packet.sh" "screenshots.tsv" "Submission packet validator must require screenshot evidence"
