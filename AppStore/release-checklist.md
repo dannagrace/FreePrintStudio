@@ -11,7 +11,7 @@
 - Run `Scripts/verify_release.sh questionnaires`; it calls `Scripts/validate_app_store_questionnaires.sh` to validate age rating, App Privacy, accessibility label, and export compliance drafts against app declarations.
 - Run `Scripts/bootstrap_release_inputs.sh` before filling private Apple signing, App Review contact, App Store Connect, and manual verification evidence files.
 - Use `AppStore/release-inputs-worksheet.md` while collecting private Apple Developer signing values, App Review contact details, App Store Connect credentials, and real-device evidence.
-- Run `Scripts/validate_private_release_artifact_ignores.sh` before filling private values and before release handoff; it verifies private release inputs, App Store Connect keys, signing files, provisioning profiles, IPA files, and Xcode archives stay ignored and untracked.
+- Run `Scripts/validate_private_release_artifact_ignores.sh` before filling private values and before release handoff; it verifies private release inputs, backups, App Store Connect keys, signing files, provisioning profiles, IPA files, and Xcode archives stay ignored, untracked, and restricted to owner-only permissions.
 - Run `Scripts/print_release_input_status.sh` to view redacted progress for private release inputs without printing real values.
 - Run `Scripts/print_release_input_status.sh --strict` before release handoff so missing required inputs and final submission guards fail locally.
 - Run `Scripts/bootstrap_release_env.sh` before filling private Apple signing, App Review contact, and App Store Connect values in `Config/release.env`.

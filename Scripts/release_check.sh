@@ -1830,9 +1830,30 @@ if [[ -x "Scripts/validate_private_release_artifact_ignores.sh" ]]; then
     failures=$((failures + 1))
   fi
   rm -rf "$private_tracked_artifact_dir"
+
+  private_loose_artifact_dir="$(mktemp -d)"
+  git -C "$private_loose_artifact_dir" init -q
+  mkdir -p "$private_loose_artifact_dir/Config"
+  cp .gitignore "$private_loose_artifact_dir/.gitignore"
+  printf 'APP_REVIEW_CONTACT_EMAIL=private@example.com\n' >"$private_loose_artifact_dir/Config/release.env.bak.TEST"
+  chmod 644 "$private_loose_artifact_dir/Config/release.env.bak.TEST"
+  if FREEPRINTSTUDIO_PRIVATE_ARTIFACT_IGNORE_ROOT="$private_loose_artifact_dir" \
+    Scripts/validate_private_release_artifact_ignores.sh >"$private_loose_artifact_dir/loose-private.log" 2>&1; then
+    printf 'FAIL: Private artifact ignore validator must reject broad private artifact permissions\n'
+    failures=$((failures + 1))
+  elif ! grep -q 'Config/release.env.bak.TEST permissions are too broad' "$private_loose_artifact_dir/loose-private.log"; then
+    printf 'FAIL: Private artifact ignore validator must identify the broad private artifact path\n'
+    failures=$((failures + 1))
+  elif ! grep -q 'chmod 600' "$private_loose_artifact_dir/loose-private.log"; then
+    printf 'FAIL: Private artifact ignore validator broad-permission output should include chmod 600 guidance\n'
+    failures=$((failures + 1))
+  fi
+  rm -rf "$private_loose_artifact_dir"
 fi
 check_contains "README.md" "Scripts/validate_private_release_artifact_ignores.sh" "README must document the private release artifact ignore validator"
+check_contains "README.md" "ignored, untracked, and restricted to owner-only permissions" "README must document private artifact permission validation"
 check_contains "AppStore/release-checklist.md" "Scripts/validate_private_release_artifact_ignores.sh" "Release checklist must document the private release artifact ignore validator"
+check_contains "AppStore/release-checklist.md" "ignored, untracked, and restricted to owner-only permissions" "Release checklist must document private artifact permission validation"
 check_contains "Scripts/check_app_store_readiness.sh" "source Scripts/load_release_env.sh" "Readiness audit must load Config/release.env"
 check_contains "Scripts/check_app_store_readiness.sh" "validate_release_env.sh" "Readiness audit must reject placeholder release environment values"
 check_contains "Scripts/check_app_store_connect_credentials.sh" "source Scripts/load_release_env.sh" "Credential audit must load Config/release.env"

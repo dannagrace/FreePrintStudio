@@ -118,6 +118,7 @@ Scripts/validate_release_env.sh
 ```
 
 Use `AppStore/release-inputs-worksheet.md` while collecting private Apple Developer signing values, App Review contact details, App Store Connect credentials, and manual real-device evidence. Keep filled values only in the git-ignored local files created by `Scripts/bootstrap_release_inputs.sh`.
+`Scripts/validate_private_release_artifact_ignores.sh` verifies private release inputs, backups, credentials, signing assets, provisioning profiles, IPA files, and archives are ignored, untracked, and restricted to owner-only permissions.
 
 Print a redacted summary of private release input progress without exposing real values:
 

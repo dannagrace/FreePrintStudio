@@ -53,10 +53,50 @@ required_ignored_samples=(
   "Config/fastlane-api-key.json"
 )
 
+private_permission_patterns=(
+  "Config/release.env"
+  "Config/release.env.bak.*"
+  "Config/manual-release-verification.env"
+  "Config/manual-release-verification.env.bak.*"
+  "fastlane-api-key.json"
+  "Config/fastlane-api-key.json"
+  "*.p8"
+  "*.p12"
+  "*.cer"
+  "*.mobileprovision"
+  "*.provisionprofile"
+  "*.ipa"
+)
+
 for sample_path in "${required_ignored_samples[@]}"; do
   if ! git check-ignore -q -- "$sample_path"; then
     fail "private release artifact sample is not ignored by git: $sample_path"
   fi
+done
+
+check_private_artifact_permissions() {
+  local path="$1"
+  local relative_path
+  local mode
+
+  [[ -f "$path" ]] || return
+  relative_path="${path#./}"
+
+  mode="$(stat -f '%Lp' "$path" 2>/dev/null || true)"
+  if [[ -z "$mode" ]]; then
+    fail "$relative_path permissions could not be checked"
+    return
+  fi
+
+  if (( (8#$mode & 8#077) != 0 )); then
+    fail "$relative_path permissions are too broad; run chmod 600 $relative_path"
+  fi
+}
+
+for pattern in "${private_permission_patterns[@]}"; do
+  while IFS= read -r -d '' private_path; do
+    check_private_artifact_permissions "$private_path"
+  done < <(find . -path "./$pattern" -type f -print0 2>/dev/null)
 done
 
 tracked_private_paths="$(
