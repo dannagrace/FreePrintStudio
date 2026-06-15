@@ -325,7 +325,7 @@ Scripts/preflight_metadata_upload.sh
 ASC_KEY_ID=XXXXXXXXXX ASC_ISSUER_ID=00000000-0000-0000-0000-000000000000 ASC_KEY_PATH=/secure/AuthKey_XXXXXXXXXX.p8 Scripts/run_fastlane.sh ios metadata
 ```
 
-The metadata preflight starts with `Scripts/print_release_input_status.sh --strict`, so missing release inputs are shown as field-level action items before metadata, screenshot, public page, App Review contact, and App Store Connect credential checks.
+The metadata preflight starts with `Scripts/print_release_input_status.sh --strict --scope metadata-upload`, so metadata-required release inputs are shown as field-level action items before metadata, screenshot, public page, App Review contact, and App Store Connect credential checks without blocking on later TestFlight evidence or final submission guards.
 The Fastlane metadata, App Privacy Details, and final review-submission lanes run the local App Store questionnaire validation before uploading or submitting.
 The metadata lane uses App Store Connect API credentials so it fails before `deliver` can fall back to an interactive Apple ID session.
 

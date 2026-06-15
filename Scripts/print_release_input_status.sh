@@ -8,6 +8,7 @@ release_env_path="${RELEASE_ENV_PATH:-$ROOT_DIR/Config/release.env}"
 manual_evidence_path="${MANUAL_RELEASE_VERIFICATION_PATH:-$ROOT_DIR/Config/manual-release-verification.env}"
 DEFAULT_AIRPRINT_RULER_TARGET_INCHES="${MANUAL_AIRPRINT_RULER_TARGET_DEFAULT_INCHES:-6}"
 strict=0
+scope="all"
 missing_count=0
 missing_fields=()
 
@@ -19,6 +20,7 @@ Prints a redacted App Store release input status summary. It does not print priv
 
 Options:
   --strict  exit nonzero when required private inputs or signing assets are missing
+  --scope   limit strict missing fields to a release phase (all, metadata-upload)
 EOF
 }
 
@@ -26,6 +28,15 @@ while [[ $# -gt 0 ]]; do
   case "$1" in
     --strict)
       strict=1
+      ;;
+    --scope)
+      if [[ $# -lt 2 ]]; then
+        printf 'Missing value for --scope\n\n' >&2
+        usage >&2
+        exit 1
+      fi
+      scope="$2"
+      shift
       ;;
     -h|--help)
       usage
@@ -39,6 +50,35 @@ while [[ $# -gt 0 ]]; do
   esac
   shift
 done
+
+case "$scope" in
+  all|metadata-upload)
+    ;;
+  *)
+    printf 'Unknown --scope value: %s\n\n' "$scope" >&2
+    usage >&2
+    exit 1
+    ;;
+esac
+
+scope_requires() {
+  local section="$1"
+
+  case "$scope" in
+    all)
+      return 0
+      ;;
+    metadata-upload)
+      case "$section" in
+        private-release-env|app-review-contact|app-store-connect)
+          return 0
+          ;;
+      esac
+      ;;
+  esac
+
+  return 1
+}
 
 trimmed_value() {
   local value="$1"
@@ -215,15 +255,19 @@ else
   mark_missing "Config/release.env is not git-ignored"
 fi
 
-if [[ -f "$manual_evidence_path" ]]; then
-  mark_ok "Config/manual-release-verification.env exists"
+if scope_requires "manual-release-evidence"; then
+  if [[ -f "$manual_evidence_path" ]]; then
+    mark_ok "Config/manual-release-verification.env exists"
+  else
+    mark_missing "Config/manual-release-verification.env is missing; run Scripts/bootstrap_release_inputs.sh"
+  fi
+  if file_is_ignored "$manual_evidence_path"; then
+    mark_ok "Config/manual-release-verification.env is git-ignored"
+  else
+    mark_missing "Config/manual-release-verification.env is not git-ignored"
+  fi
 else
-  mark_missing "Config/manual-release-verification.env is missing; run Scripts/bootstrap_release_inputs.sh"
-fi
-if file_is_ignored "$manual_evidence_path"; then
-  mark_ok "Config/manual-release-verification.env is git-ignored"
-else
-  mark_missing "Config/manual-release-verification.env is not git-ignored"
+  mark_optional "Config/manual-release-verification.env is deferred for this release input status scope"
 fi
 
 set +e
@@ -265,32 +309,36 @@ if (( contact_ready == 4 )); then
 fi
 
 printf '\n== Signing Inputs ==\n'
-project_team_id="$(setting_value DEVELOPMENT_TEAM)"
-team_ready=0
-if { is_set "${DEVELOPMENT_TEAM_ID:-}" && matches_format "$DEVELOPMENT_TEAM_ID" '^[A-Z0-9]{10}$'; } \
-  || { is_set "$project_team_id" && matches_format "$project_team_id" '^[A-Z0-9]{10}$'; }; then
-  team_ready=1
-fi
-status_count "DEVELOPMENT_TEAM_ID or Xcode DEVELOPMENT_TEAM configured" "$team_ready" 1
-if (( team_ready == 0 )); then
-  record_missing_field "DEVELOPMENT_TEAM_ID" "Config/release.env or Xcode project settings" "Scripts/check_code_signing_assets.sh"
-fi
+if scope_requires "signing"; then
+  project_team_id="$(setting_value DEVELOPMENT_TEAM)"
+  team_ready=0
+  if { is_set "${DEVELOPMENT_TEAM_ID:-}" && matches_format "$DEVELOPMENT_TEAM_ID" '^[A-Z0-9]{10}$'; } \
+    || { is_set "$project_team_id" && matches_format "$project_team_id" '^[A-Z0-9]{10}$'; }; then
+    team_ready=1
+  fi
+  status_count "DEVELOPMENT_TEAM_ID or Xcode DEVELOPMENT_TEAM configured" "$team_ready" 1
+  if (( team_ready == 0 )); then
+    record_missing_field "DEVELOPMENT_TEAM_ID" "Config/release.env or Xcode project settings" "Scripts/check_code_signing_assets.sh"
+  fi
 
-identity_log="$(security find-identity -v -p codesigning 2>/dev/null || true)"
-if grep -q "Apple Distribution" <<<"$identity_log"; then
-  mark_ok "Apple Distribution signing identity is installed"
-else
-  mark_missing "Apple Distribution signing identity is missing"
-  record_missing_field "Apple Distribution certificate" "login keychain" "Scripts/check_code_signing_assets.sh"
-fi
+  identity_log="$(security find-identity -v -p codesigning 2>/dev/null || true)"
+  if grep -q "Apple Distribution" <<<"$identity_log"; then
+    mark_ok "Apple Distribution signing identity is installed"
+  else
+    mark_missing "Apple Distribution signing identity is missing"
+    record_missing_field "Apple Distribution certificate" "login keychain" "Scripts/check_code_signing_assets.sh"
+  fi
 
-profiles_dir="$HOME/Library/MobileDevice/Provisioning Profiles"
-if [[ -d "$profiles_dir" ]] \
-  && find "$profiles_dir" -maxdepth 1 -type f \( -name '*.mobileprovision' -o -name '*.provisionprofile' \) -print -quit 2>/dev/null | grep -q .; then
-  mark_ok "Provisioning profile files are installed"
+  profiles_dir="$HOME/Library/MobileDevice/Provisioning Profiles"
+  if [[ -d "$profiles_dir" ]] \
+    && find "$profiles_dir" -maxdepth 1 -type f \( -name '*.mobileprovision' -o -name '*.provisionprofile' \) -print -quit 2>/dev/null | grep -q .; then
+    mark_ok "Provisioning profile files are installed"
+  else
+    mark_missing "Provisioning profile files are missing"
+    record_missing_field "App Store provisioning profile" "~/Library/MobileDevice/Provisioning Profiles" "Scripts/check_code_signing_assets.sh"
+  fi
 else
-  mark_missing "Provisioning profile files are missing"
-  record_missing_field "App Store provisioning profile" "~/Library/MobileDevice/Provisioning Profiles" "Scripts/check_code_signing_assets.sh"
+  mark_optional "Signing inputs are deferred for this release input status scope"
 fi
 
 printf '\n== App Store Connect Inputs ==\n'
@@ -333,41 +381,51 @@ else
   mark_optional "FASTLANE_USER is not configured; manual App Privacy Details confirmation is allowed"
 fi
 
-app_privacy_connect_confirmation="$(trimmed_value "${APP_PRIVACY_DETAILS_CONFIRMED_IN_APP_STORE_CONNECT:-}")"
-if [[ "$app_privacy_connect_confirmation" == "1" ]]; then
-  mark_ok "APP_PRIVACY_DETAILS_CONFIRMED_IN_APP_STORE_CONNECT is set after App Store Connect verification"
-elif is_set "$app_privacy_connect_confirmation"; then
-  mark_missing "APP_PRIVACY_DETAILS_CONFIRMED_IN_APP_STORE_CONNECT must be 1 after App Store Connect matches AppStore/app_privacy_details.json"
-  record_missing_field "APP_PRIVACY_DETAILS_CONFIRMED_IN_APP_STORE_CONNECT" "Config/release.env" "Scripts/validate_app_privacy_connect_entry.sh"
+if scope_requires "app-privacy-connect-confirmation"; then
+  app_privacy_connect_confirmation="$(trimmed_value "${APP_PRIVACY_DETAILS_CONFIRMED_IN_APP_STORE_CONNECT:-}")"
+  if [[ "$app_privacy_connect_confirmation" == "1" ]]; then
+    mark_ok "APP_PRIVACY_DETAILS_CONFIRMED_IN_APP_STORE_CONNECT is set after App Store Connect verification"
+  elif is_set "$app_privacy_connect_confirmation"; then
+    mark_missing "APP_PRIVACY_DETAILS_CONFIRMED_IN_APP_STORE_CONNECT must be 1 after App Store Connect matches AppStore/app_privacy_details.json"
+    record_missing_field "APP_PRIVACY_DETAILS_CONFIRMED_IN_APP_STORE_CONNECT" "Config/release.env" "Scripts/validate_app_privacy_connect_entry.sh"
+  else
+    mark_missing "APP_PRIVACY_DETAILS_CONFIRMED_IN_APP_STORE_CONNECT is missing; confirm App Privacy Details in App Store Connect before final App Review submission"
+    record_missing_field "APP_PRIVACY_DETAILS_CONFIRMED_IN_APP_STORE_CONNECT" "Config/release.env" "Scripts/validate_app_privacy_connect_entry.sh"
+  fi
 else
-  mark_missing "APP_PRIVACY_DETAILS_CONFIRMED_IN_APP_STORE_CONNECT is missing; confirm App Privacy Details in App Store Connect before final App Review submission"
-  record_missing_field "APP_PRIVACY_DETAILS_CONFIRMED_IN_APP_STORE_CONNECT" "Config/release.env" "Scripts/validate_app_privacy_connect_entry.sh"
+  mark_optional "App Privacy Details App Store Connect confirmation is deferred for this release input status scope"
 fi
 
 printf '\n== Final Submission Guards ==\n'
-if is_set "${APP_STORE_BUILD_NUMBER:-}"; then
-  if looks_like_placeholder "${APP_STORE_BUILD_NUMBER:-}"; then
-    mark_missing "APP_STORE_BUILD_NUMBER still uses a placeholder value; replace PROCESSED_BUILD_NUMBER with the processed App Store Connect build before final App Review submission"
-    record_missing_field "APP_STORE_BUILD_NUMBER" "Config/release.env" "APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/preflight_app_review_submission.sh"
+if scope_requires "final-submission"; then
+  if is_set "${APP_STORE_BUILD_NUMBER:-}"; then
+    if looks_like_placeholder "${APP_STORE_BUILD_NUMBER:-}"; then
+      mark_missing "APP_STORE_BUILD_NUMBER still uses a placeholder value; replace PROCESSED_BUILD_NUMBER with the processed App Store Connect build before final App Review submission"
+      record_missing_field "APP_STORE_BUILD_NUMBER" "Config/release.env" "APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/preflight_app_review_submission.sh"
+    else
+      mark_ok "APP_STORE_BUILD_NUMBER is configured for final App Review submission"
+    fi
   else
-    mark_ok "APP_STORE_BUILD_NUMBER is configured for final App Review submission"
+    mark_missing "APP_STORE_BUILD_NUMBER is missing; set it to the processed App Store Connect build before final App Review submission"
+    record_missing_field "APP_STORE_BUILD_NUMBER" "Config/release.env" "APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/preflight_app_review_submission.sh"
+  fi
+
+  confirm_submit_for_review="$(trimmed_value "${CONFIRM_SUBMIT_FOR_REVIEW:-}")"
+  if [[ "$confirm_submit_for_review" == "1" ]]; then
+    mark_ok "CONFIRM_SUBMIT_FOR_REVIEW is set to 1 for guarded final App Review submission"
+  else
+    mark_missing "CONFIRM_SUBMIT_FOR_REVIEW is not set to 1; set only after final preflight passes"
+    record_missing_field "CONFIRM_SUBMIT_FOR_REVIEW" "Config/release.env" "APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/preflight_app_review_submission.sh"
   fi
 else
-  mark_missing "APP_STORE_BUILD_NUMBER is missing; set it to the processed App Store Connect build before final App Review submission"
-  record_missing_field "APP_STORE_BUILD_NUMBER" "Config/release.env" "APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/preflight_app_review_submission.sh"
-fi
-
-confirm_submit_for_review="$(trimmed_value "${CONFIRM_SUBMIT_FOR_REVIEW:-}")"
-if [[ "$confirm_submit_for_review" == "1" ]]; then
-  mark_ok "CONFIRM_SUBMIT_FOR_REVIEW is set to 1 for guarded final App Review submission"
-else
-  mark_missing "CONFIRM_SUBMIT_FOR_REVIEW is not set to 1; set only after final preflight passes"
-  record_missing_field "CONFIRM_SUBMIT_FOR_REVIEW" "Config/release.env" "APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/preflight_app_review_submission.sh"
+  mark_optional "Final submission guards are deferred for this release input status scope"
 fi
 
 printf '\n== Manual Release Evidence ==\n'
 manual_source_status=1
-if [[ -f "$manual_evidence_path" ]]; then
+if ! scope_requires "manual-release-evidence"; then
+  mark_optional "Manual release evidence is deferred for this release input status scope"
+elif [[ -f "$manual_evidence_path" ]]; then
   if manual_permission_message="$(manual_evidence_permissions_ok "$manual_evidence_path" 2>&1)"; then
     set +e
     set -a
@@ -391,7 +449,7 @@ fi
 manual_ready=0
 manual_validation_ran=0
 manual_validation_passed=0
-if [[ "$manual_source_status" -eq 0 ]]; then
+if scope_requires "manual-release-evidence" && [[ "$manual_source_status" -eq 0 ]]; then
   for name in \
     MANUAL_VERIFIER_NAME \
     MANUAL_REAL_IPHONE_MODEL \
@@ -441,27 +499,29 @@ if [[ "$manual_source_status" -eq 0 ]]; then
     fi
   fi
 fi
-if (( manual_ready == 22 )); then
-  if (( manual_validation_passed == 1 )); then
-    mark_ok "Manual real-device, AirPrint, iPad, and TestFlight evidence ready: 22/22"
-    mark_ok "Manual release evidence validation passes"
-  elif (( manual_validation_ran == 1 )); then
-    mark_missing "Manual release evidence validation fails"
+if scope_requires "manual-release-evidence"; then
+  if (( manual_ready == 22 )); then
+    if (( manual_validation_passed == 1 )); then
+      mark_ok "Manual real-device, AirPrint, iPad, and TestFlight evidence ready: 22/22"
+      mark_ok "Manual release evidence validation passes"
+    elif (( manual_validation_ran == 1 )); then
+      mark_missing "Manual release evidence validation fails"
+    else
+      mark_missing "Manual real-device, AirPrint, iPad, and TestFlight evidence ready: 22/22"
+    fi
   else
-    mark_missing "Manual real-device, AirPrint, iPad, and TestFlight evidence ready: 22/22"
+    status_count "Manual real-device, AirPrint, iPad, and TestFlight evidence ready" "$manual_ready" 22
   fi
-else
-  status_count "Manual real-device, AirPrint, iPad, and TestFlight evidence ready" "$manual_ready" 22
-fi
 
-if is_set "${APP_STORE_BUILD_NUMBER:-}" && is_set "${MANUAL_TESTFLIGHT_BUILD_NUMBER:-}"; then
-  if looks_like_placeholder "${APP_STORE_BUILD_NUMBER:-}" || looks_like_placeholder "${MANUAL_TESTFLIGHT_BUILD_NUMBER:-}"; then
-    mark_missing "APP_STORE_BUILD_NUMBER or MANUAL_TESTFLIGHT_BUILD_NUMBER still uses a placeholder value"
-  elif [[ "$APP_STORE_BUILD_NUMBER" == "$MANUAL_TESTFLIGHT_BUILD_NUMBER" ]]; then
-    mark_ok "MANUAL_TESTFLIGHT_BUILD_NUMBER matches selected APP_STORE_BUILD_NUMBER"
-  else
-    mark_missing "MANUAL_TESTFLIGHT_BUILD_NUMBER does not match selected APP_STORE_BUILD_NUMBER"
-    record_missing_field "MANUAL_TESTFLIGHT_BUILD_NUMBER" "Config/manual-release-verification.env" "APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/validate_manual_release_verification.sh"
+  if is_set "${APP_STORE_BUILD_NUMBER:-}" && is_set "${MANUAL_TESTFLIGHT_BUILD_NUMBER:-}"; then
+    if looks_like_placeholder "${APP_STORE_BUILD_NUMBER:-}" || looks_like_placeholder "${MANUAL_TESTFLIGHT_BUILD_NUMBER:-}"; then
+      mark_missing "APP_STORE_BUILD_NUMBER or MANUAL_TESTFLIGHT_BUILD_NUMBER still uses a placeholder value"
+    elif [[ "$APP_STORE_BUILD_NUMBER" == "$MANUAL_TESTFLIGHT_BUILD_NUMBER" ]]; then
+      mark_ok "MANUAL_TESTFLIGHT_BUILD_NUMBER matches selected APP_STORE_BUILD_NUMBER"
+    else
+      mark_missing "MANUAL_TESTFLIGHT_BUILD_NUMBER does not match selected APP_STORE_BUILD_NUMBER"
+      record_missing_field "MANUAL_TESTFLIGHT_BUILD_NUMBER" "Config/manual-release-verification.env" "APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/validate_manual_release_verification.sh"
+    fi
   fi
 fi
 

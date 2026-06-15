@@ -1253,6 +1253,73 @@ if grep -q "$release_input_status_missing_fields_dir" "$release_input_status_mis
   failures=$((failures + 1))
 fi
 rm -rf "$release_input_status_missing_fields_dir"
+release_input_status_metadata_scope_dir="$(mktemp -d)"
+release_input_status_metadata_scope_env="$release_input_status_metadata_scope_dir/release.env"
+release_input_status_metadata_scope_manual="$release_input_status_metadata_scope_dir/manual-release-verification.env"
+release_input_status_metadata_scope_log="$release_input_status_metadata_scope_dir/status.log"
+: >"$release_input_status_metadata_scope_env"
+: >"$release_input_status_metadata_scope_manual"
+RELEASE_ENV_PATH="$release_input_status_metadata_scope_env" \
+  MANUAL_RELEASE_VERIFICATION_PATH="$release_input_status_metadata_scope_manual" \
+  Scripts/print_release_input_status.sh --strict --scope metadata-upload >"$release_input_status_metadata_scope_log" 2>&1 || true
+for expected_metadata_scope_field in \
+  "MISSING_FIELD: APP_REVIEW_CONTACT_FIRST_NAME" \
+  "MISSING_FIELD: APP_STORE_CONNECT_API_KEY_JSON or ASC_KEY_ID/ASC_ISSUER_ID/ASC_KEY_PATH"
+do
+  if ! grep -q "$expected_metadata_scope_field" "$release_input_status_metadata_scope_log"; then
+    printf 'FAIL: Metadata release input status scope must keep required field %s\n' "$expected_metadata_scope_field"
+    failures=$((failures + 1))
+  fi
+done
+for deferred_metadata_scope_field in \
+  "MISSING_FIELD: DEVELOPMENT_TEAM_ID" \
+  "MISSING_FIELD: Apple Distribution certificate" \
+  "MISSING_FIELD: App Store provisioning profile" \
+  "MISSING_FIELD: APP_PRIVACY_DETAILS_CONFIRMED_IN_APP_STORE_CONNECT" \
+  "MISSING_FIELD: APP_STORE_BUILD_NUMBER" \
+  "MISSING_FIELD: CONFIRM_SUBMIT_FOR_REVIEW" \
+  "MISSING_FIELD: MANUAL_REAL_IPHONE_PHOTOS_IMPORT" \
+  "MISSING_FIELD: MANUAL_IPAD_TESTFLIGHT_PRINT_WORKFLOW"
+do
+  if grep -q "$deferred_metadata_scope_field" "$release_input_status_metadata_scope_log"; then
+    printf 'FAIL: Metadata release input status scope must defer non-metadata field %s\n' "$deferred_metadata_scope_field"
+    failures=$((failures + 1))
+  fi
+done
+check_contains "Scripts/preflight_metadata_upload.sh" "Scripts/print_release_input_status.sh --strict --scope metadata-upload" "Metadata upload preflight must scope release input status to metadata requirements"
+rm -rf "$release_input_status_metadata_scope_dir"
+release_input_status_metadata_scope_ready_dir="$PWD/build/release-input-status-metadata-scope-ready"
+release_input_status_metadata_scope_ready_env="$release_input_status_metadata_scope_ready_dir/release.env"
+release_input_status_metadata_scope_ready_key="$release_input_status_metadata_scope_ready_dir/fastlane-api-key.json"
+release_input_status_metadata_scope_ready_log="$release_input_status_metadata_scope_ready_dir/status.log"
+rm -rf "$release_input_status_metadata_scope_ready_dir"
+mkdir -p "$release_input_status_metadata_scope_ready_dir"
+cat >"$release_input_status_metadata_scope_ready_key" <<'EOF'
+{
+  "key_id": "ABCDEF1234",
+  "issuer_id": "12345678-1234-1234-1234-1234567890ab",
+  "key": "-----BEGIN PRIVATE KEY-----\nmetadata-scope-test\n-----END PRIVATE KEY-----"
+}
+EOF
+chmod 600 "$release_input_status_metadata_scope_ready_key"
+cat >"$release_input_status_metadata_scope_ready_env" <<EOF
+APP_REVIEW_CONTACT_FIRST_NAME=Release
+APP_REVIEW_CONTACT_LAST_NAME=Owner
+APP_REVIEW_CONTACT_PHONE=+14155552671
+APP_REVIEW_CONTACT_EMAIL=release-owner@freeprintstudio.test
+APP_STORE_CONNECT_API_KEY_JSON="$release_input_status_metadata_scope_ready_key"
+EOF
+chmod 600 "$release_input_status_metadata_scope_ready_env"
+if ! RELEASE_ENV_PATH="$release_input_status_metadata_scope_ready_env" \
+  Scripts/print_release_input_status.sh --strict --scope metadata-upload >"$release_input_status_metadata_scope_ready_log" 2>&1; then
+  printf 'FAIL: Metadata release input status scope must pass when metadata upload inputs are configured\n'
+  sed 's/^/  /' "$release_input_status_metadata_scope_ready_log"
+  failures=$((failures + 1))
+elif grep -q 'Manual real-device, AirPrint, iPad, and TestFlight evidence ready: 0/22' "$release_input_status_metadata_scope_ready_log"; then
+  printf 'FAIL: Metadata release input status scope must not count deferred manual evidence against strict readiness\n'
+  failures=$((failures + 1))
+fi
+rm -rf "$release_input_status_metadata_scope_ready_dir"
 release_input_status_manual_validation_dir="$(mktemp -d)"
 release_input_status_manual_validation_env="$release_input_status_manual_validation_dir/release.env"
 release_input_status_manual_validation_evidence="$release_input_status_manual_validation_dir/manual-release-verification.env"
@@ -2570,6 +2637,7 @@ check_contains "Scripts/verify_release.sh" "review-preflight" "Release verificat
 check_contains "README.md" "Scripts/run_fastlane.sh ios upload_testflight" "README must document the TestFlight upload command"
 check_contains "README.md" "ASC_KEY_ID=XXXXXXXXXX ASC_ISSUER_ID=00000000-0000-0000-0000-000000000000 ASC_KEY_PATH=/secure/AuthKey_XXXXXXXXXX.p8 Scripts/run_fastlane.sh ios metadata" "README metadata upload command must require App Store Connect API credentials"
 check_contains "README.md" "Scripts/preflight_metadata_upload.sh" "README must document the metadata upload preflight command"
+check_contains "README.md" "--scope metadata-upload" "README must document metadata-scoped release input status"
 check_contains "README.md" "Scripts/preflight_testflight_upload_dependencies.sh" "README must document the TestFlight upload dependency preflight command"
 check_contains "README.md" "Scripts/preflight_testflight_upload.sh" "README must document the TestFlight upload preflight command"
 check_contains "README.md" "Scripts/run_fastlane.sh ios app_store_connect_state" "README must document the App Store Connect state preflight command"
@@ -2632,6 +2700,7 @@ check_contains "README.md" "DEVELOPMENT_TEAM_ID=YOURTEAMID ALLOW_PROVISIONING_UP
 check_contains "AppStore/release-checklist.md" "Scripts/run_fastlane.sh ios upload_testflight" "Release checklist must include the TestFlight upload command"
 check_contains "AppStore/release-checklist.md" "configure App Store Connect API credentials, then run \`Scripts/run_fastlane.sh ios metadata\`" "Release checklist metadata automation must require App Store Connect API credentials"
 check_contains "AppStore/release-checklist.md" "Scripts/preflight_metadata_upload.sh" "Release checklist must include the metadata upload preflight command"
+check_contains "AppStore/release-checklist.md" "--scope metadata-upload" "Release checklist must document metadata-scoped release input status"
 check_contains "AppStore/release-checklist.md" "Scripts/preflight_testflight_upload_dependencies.sh" "Release checklist must include the TestFlight upload dependency preflight command"
 check_contains "AppStore/release-checklist.md" "Scripts/preflight_testflight_upload.sh" "Release checklist must include the TestFlight upload preflight command"
 check_contains "AppStore/release-checklist.md" "Scripts/run_fastlane.sh ios app_store_connect_state" "Release checklist must include the App Store Connect state preflight command"

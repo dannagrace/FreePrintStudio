@@ -38,7 +38,7 @@ run_app_version_step() {
   printf '\n'
 }
 
-run_step "Release input status" Scripts/print_release_input_status.sh --strict
+run_step "Release input status" Scripts/print_release_input_status.sh --strict --scope metadata-upload
 run_step "Private release environment" Scripts/validate_release_env.sh
 run_step "App Store metadata" Scripts/validate_app_store_metadata.sh
 run_step "Screenshot sync" Scripts/validate_screenshot_sync.sh
