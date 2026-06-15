@@ -24,7 +24,7 @@ run_step() {
   printf '\n'
 }
 
-run_step "Release input status" Scripts/print_release_input_status.sh --strict
+run_step "Release input status" Scripts/print_release_input_status.sh --strict --scope testflight-upload
 run_step "Private release environment" Scripts/validate_release_env.sh
 run_step "App Store Connect credentials" Scripts/check_app_store_connect_credentials.sh
 run_step "App Store Connect app and version" env APP_STORE_CONNECT_SKIP_BUILD_CHECK=1 Scripts/check_app_store_connect_state.sh

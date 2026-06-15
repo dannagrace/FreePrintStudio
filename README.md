@@ -371,7 +371,7 @@ Scripts/preflight_testflight_upload.sh
 ASC_KEY_ID=XXXXXXXXXX ASC_ISSUER_ID=00000000-0000-0000-0000-000000000000 ASC_KEY_PATH=/secure/AuthKey_XXXXXXXXXX.p8 Scripts/run_fastlane.sh ios upload_testflight
 ```
 
-Both TestFlight preflights start with `Scripts/print_release_input_status.sh --strict`, so signing, App Store Connect, and manual device-evidence gaps are listed before archive fallback or IPA upload checks continue.
+Both TestFlight preflights start with `Scripts/print_release_input_status.sh --strict --scope testflight-upload`, so TestFlight-upload release inputs are listed before archive fallback or IPA upload checks continue without blocking on later App Review contact, App Privacy confirmation, manual device evidence, or final submission guards.
 If the exported IPA lives outside the default `build/AppStoreExport/` folder, pass `IPA_PATH=/absolute/path/to/FreePrintStudio.ipa`.
 
 After the build has processed in App Store Connect, verify the app record, version, and selected TestFlight build:

@@ -38,7 +38,7 @@ run_app_version_step() {
   printf '\n'
 }
 
-run_step "Release input status" Scripts/print_release_input_status.sh --strict
+run_step "Release input status" Scripts/print_release_input_status.sh --strict --scope testflight-upload
 run_step "App Store Connect credentials" Scripts/check_app_store_connect_credentials.sh
 run_step "Signed App Store export" Scripts/validate_app_store_export.sh
 run_app_version_step

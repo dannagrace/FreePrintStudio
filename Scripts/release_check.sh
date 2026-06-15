@@ -1351,6 +1351,46 @@ do
 done
 check_contains "Scripts/preflight_app_privacy_upload.sh" "Scripts/print_release_input_status.sh --strict --scope app-privacy-upload" "App Privacy Details upload preflight must scope release input status to privacy upload requirements"
 rm -rf "$release_input_status_privacy_scope_ready_dir"
+release_input_status_testflight_scope_ready_dir="$(mktemp -d)"
+release_input_status_testflight_scope_ready_env="$release_input_status_testflight_scope_ready_dir/release.env"
+release_input_status_testflight_scope_ready_key="$release_input_status_testflight_scope_ready_dir/fastlane-api-key.json"
+release_input_status_testflight_scope_ready_log="$release_input_status_testflight_scope_ready_dir/status.log"
+cat >"$release_input_status_testflight_scope_ready_key" <<'EOF'
+{
+  "key_id": "ABCDEF1234",
+  "issuer_id": "12345678-1234-1234-1234-1234567890ab",
+  "key": "-----BEGIN PRIVATE KEY-----\ntestflight-scope-test\n-----END PRIVATE KEY-----"
+}
+EOF
+chmod 600 "$release_input_status_testflight_scope_ready_key"
+cat >"$release_input_status_testflight_scope_ready_env" <<EOF
+APP_STORE_CONNECT_API_KEY_JSON="$release_input_status_testflight_scope_ready_key"
+EOF
+chmod 600 "$release_input_status_testflight_scope_ready_env"
+if ! RELEASE_ENV_PATH="$release_input_status_testflight_scope_ready_env" \
+  Scripts/print_release_input_status.sh --strict --scope testflight-upload >"$release_input_status_testflight_scope_ready_log" 2>&1; then
+  printf 'FAIL: TestFlight release input status scope must pass when TestFlight upload inputs are configured\n'
+  sed 's/^/  /' "$release_input_status_testflight_scope_ready_log"
+  failures=$((failures + 1))
+fi
+for deferred_testflight_scope_field in \
+  "MISSING_FIELD: APP_REVIEW_CONTACT_FIRST_NAME" \
+  "MISSING_FIELD: DEVELOPMENT_TEAM_ID" \
+  "MISSING_FIELD: Apple Distribution certificate" \
+  "MISSING_FIELD: APP_PRIVACY_DETAILS_CONFIRMED_IN_APP_STORE_CONNECT" \
+  "MISSING_FIELD: APP_STORE_BUILD_NUMBER" \
+  "MISSING_FIELD: CONFIRM_SUBMIT_FOR_REVIEW" \
+  "MISSING_FIELD: MANUAL_REAL_IPHONE_PHOTOS_IMPORT" \
+  "MISSING_FIELD: MANUAL_IPAD_TESTFLIGHT_PRINT_WORKFLOW"
+do
+  if grep -q "$deferred_testflight_scope_field" "$release_input_status_testflight_scope_ready_log"; then
+    printf 'FAIL: TestFlight release input status scope must defer non-TestFlight-upload field %s\n' "$deferred_testflight_scope_field"
+    failures=$((failures + 1))
+  fi
+done
+check_contains "Scripts/preflight_testflight_upload_dependencies.sh" "Scripts/print_release_input_status.sh --strict --scope testflight-upload" "TestFlight dependency preflight must scope release input status to TestFlight upload requirements"
+check_contains "Scripts/preflight_testflight_upload.sh" "Scripts/print_release_input_status.sh --strict --scope testflight-upload" "TestFlight upload preflight must scope release input status to TestFlight upload requirements"
+rm -rf "$release_input_status_testflight_scope_ready_dir"
 release_input_status_manual_validation_dir="$(mktemp -d)"
 release_input_status_manual_validation_env="$release_input_status_manual_validation_dir/release.env"
 release_input_status_manual_validation_evidence="$release_input_status_manual_validation_dir/manual-release-verification.env"
@@ -2671,6 +2711,7 @@ check_contains "README.md" "Scripts/preflight_metadata_upload.sh" "README must d
 check_contains "README.md" "--scope metadata-upload" "README must document metadata-scoped release input status"
 check_contains "README.md" "Scripts/preflight_testflight_upload_dependencies.sh" "README must document the TestFlight upload dependency preflight command"
 check_contains "README.md" "Scripts/preflight_testflight_upload.sh" "README must document the TestFlight upload preflight command"
+check_contains "README.md" "--scope testflight-upload" "README must document TestFlight-scoped release input status"
 check_contains "README.md" "Scripts/run_fastlane.sh ios app_store_connect_state" "README must document the App Store Connect state preflight command"
 check_contains "README.md" "Scripts/preflight_app_review_submission.sh" "README must document the App Review submission preflight command"
 check_contains "README.md" "Scripts/run_fastlane.sh ios privacy_details" "README must document the App Privacy Details upload command"
@@ -2735,6 +2776,7 @@ check_contains "AppStore/release-checklist.md" "Scripts/preflight_metadata_uploa
 check_contains "AppStore/release-checklist.md" "--scope metadata-upload" "Release checklist must document metadata-scoped release input status"
 check_contains "AppStore/release-checklist.md" "Scripts/preflight_testflight_upload_dependencies.sh" "Release checklist must include the TestFlight upload dependency preflight command"
 check_contains "AppStore/release-checklist.md" "Scripts/preflight_testflight_upload.sh" "Release checklist must include the TestFlight upload preflight command"
+check_contains "AppStore/release-checklist.md" "--scope testflight-upload" "Release checklist must document TestFlight-scoped release input status"
 check_contains "AppStore/release-checklist.md" "Scripts/run_fastlane.sh ios app_store_connect_state" "Release checklist must include the App Store Connect state preflight command"
 check_contains "AppStore/release-checklist.md" "Scripts/preflight_app_review_submission.sh" "Release checklist must include the App Review submission preflight command"
 check_contains "AppStore/release-checklist.md" "Scripts/run_fastlane.sh ios privacy_details" "Release checklist must include the App Privacy Details upload command"
