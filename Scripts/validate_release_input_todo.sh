@@ -59,6 +59,9 @@ trap 'rm -rf "$temp_dir"' EXIT
 expected_targets="$temp_dir/expected-targets.tsv"
 actual_targets="$temp_dir/actual-targets.tsv"
 target_diff="$temp_dir/target-diff.txt"
+expected_owners="$temp_dir/expected-owners.tsv"
+actual_owners="$temp_dir/actual-owners.tsv"
+owner_diff="$temp_dir/owner-diff.txt"
 expected_action_details="$temp_dir/expected-action-details.tsv"
 expected_action_rows="$temp_dir/expected-action-rows.tsv"
 
@@ -87,11 +90,15 @@ awk -F '\t' '
     total += 1
     severity = $(columns["severity"])
     target = $(columns["target"])
+    owner = $(columns["owner"])
     target_counts[target] += 1
+    owner_counts[owner] += 1
     if (severity == "blocker") {
       blockers += 1
+      owner_blocker_counts[owner] += 1
     } else if (severity == "warning") {
       warnings += 1
+      owner_warning_counts[owner] += 1
     }
   }
   END {
@@ -104,6 +111,9 @@ awk -F '\t' '
     printf "warnings\t%s\n", warnings + 0
     for (target in target_counts) {
       printf "target\t%s\t%s\n", target, target_counts[target]
+    }
+    for (owner in owner_counts) {
+      printf "owner\t%s\t%s\t%s\t%s\n", owner, owner_counts[owner], owner_blocker_counts[owner] + 0, owner_warning_counts[owner] + 0
     }
   }
 ' "$actions_path" >"$temp_dir/action-summary.tsv" || {
@@ -154,9 +164,11 @@ expected_total="$(awk -F '\t' '$1 == "total" { print $2 }' "$temp_dir/action-sum
 expected_blockers="$(awk -F '\t' '$1 == "blockers" { print $2 }' "$temp_dir/action-summary.tsv")"
 expected_warnings="$(awk -F '\t' '$1 == "warnings" { print $2 }' "$temp_dir/action-summary.tsv")"
 awk -F '\t' '$1 == "target" { print $2 "\t" $3 }' "$temp_dir/action-summary.tsv" | LC_ALL=C sort >"$expected_targets"
+awk -F '\t' '$1 == "owner" { print $2 "\t" $3 "\t" $4 "\t" $5 }' "$temp_dir/action-summary.tsv" | LC_ALL=C sort >"$expected_owners"
 
 require_contains "# FreePrint Studio Release Input TODO" "release input TODO title"
 require_contains "## Target Summary" "Target Summary"
+require_contains "## Owner Summary" "Owner Summary"
 require_contains "External Actions" "External Actions"
 require_contains "Blockers" "Blockers"
 require_contains "Warnings" "Warnings"
@@ -194,6 +206,26 @@ awk '
 if ! diff -u "$expected_targets" "$actual_targets" >"$target_diff"; then
   fail "Target Summary counts do not match external-readiness-actions.tsv"
   sed 's/^/  /' "$target_diff"
+fi
+
+awk '
+  /^## Owner Summary$/ {
+    in_summary = 1
+    next
+  }
+  in_summary && /^## / {
+    in_summary = 0
+  }
+  in_summary {
+    print
+  }
+' "$todo_path" \
+  | sed -nE 's/^\| `([^`]*)` \| ([0-9]+) \| ([0-9]+) \| ([0-9]+) \|$/\1	\2	\3	\4/p' \
+  | LC_ALL=C sort >"$actual_owners"
+
+if ! diff -u "$expected_owners" "$actual_owners" >"$owner_diff"; then
+  fail "Owner Summary counts do not match external-readiness-actions.tsv"
+  sed 's/^/  /' "$owner_diff"
 fi
 
 while IFS=$'\t' read -r expected_field expected_item expected_validation_command; do

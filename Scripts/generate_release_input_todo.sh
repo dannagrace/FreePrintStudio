@@ -197,10 +197,18 @@ awk -F '\t' -v output_path="$output_path" -v actions_path="$actions_path" -v gen
       target_order_count += 1
       target_order[target_order_count] = target_of[row_count]
     }
+    owner_counts[owner[row_count]] += 1
+    if (!(owner[row_count] in owner_seen)) {
+      owner_seen[owner[row_count]] = 1
+      owner_order_count += 1
+      owner_order[owner_order_count] = owner[row_count]
+    }
     if (severity[row_count] == "blocker") {
       blocker_count += 1
+      owner_blocker_counts[owner[row_count]] += 1
     } else if (severity[row_count] == "warning") {
       warning_count += 1
+      owner_warning_counts[owner[row_count]] += 1
     }
   }
 
@@ -224,6 +232,20 @@ awk -F '\t' -v output_path="$output_path" -v actions_path="$actions_path" -v gen
     for (target_index = 1; target_index <= target_order_count; target_index += 1) {
       target = target_order[target_index]
       printf "| %s | %s |\n", code_text(markdown_cell(target)), target_counts[target] >>output_path
+    }
+
+    print "" >>output_path
+    print "## Owner Summary" >>output_path
+    print "" >>output_path
+    print "| Owner | Actions | Blockers | Warnings |" >>output_path
+    print "| --- | ---: | ---: | ---: |" >>output_path
+    for (owner_index = 1; owner_index <= owner_order_count; owner_index += 1) {
+      owner_name = owner_order[owner_index]
+      printf "| %s | %s | %s | %s |\n", \
+        code_text(markdown_cell(owner_name)), \
+        owner_counts[owner_name], \
+        owner_blocker_counts[owner_name] + 0, \
+        owner_warning_counts[owner_name] + 0 >>output_path
     }
 
     env_targets[1] = "Config/release.env"

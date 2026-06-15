@@ -4041,6 +4041,7 @@ fi
 check_contains "Scripts/generate_release_input_todo.sh" "external-readiness-actions.tsv" "Release input TODO generator must document its external readiness action input"
 check_contains "Scripts/generate_release_input_todo.sh" "Config/release.env" "Release input TODO generator must group private release environment fields"
 check_contains "Scripts/generate_release_input_todo.sh" "Config/manual-release-verification.env" "Release input TODO generator must group manual release evidence fields"
+check_contains "Scripts/generate_release_input_todo.sh" "Owner Summary" "Release input TODO generator must summarize external actions by owner"
 check_contains "Scripts/generate_release_input_todo.sh" "Non-env External Actions" "Release input TODO generator must preserve non-env external actions"
 if [[ -x "Scripts/generate_release_input_todo.sh" ]]; then
   release_input_todo_test_dir="$(mktemp -d)"
@@ -4066,6 +4067,18 @@ EOF
     fi
     if ! grep -q '^## Config/release.env' "$release_input_todo_output"; then
       printf 'FAIL: Release input TODO must group Config/release.env fields\n'
+      failures=$((failures + 1))
+    fi
+    if ! grep -q '^## Owner Summary' "$release_input_todo_output"; then
+      printf 'FAIL: Release input TODO must summarize actions by owner for release handoff\n'
+      failures=$((failures + 1))
+    fi
+    if ! grep -q '| `Apple Developer account holder` | 2 | 2 | 0 |' "$release_input_todo_output"; then
+      printf 'FAIL: Release input TODO owner summary must count Apple Developer actions\n'
+      failures=$((failures + 1))
+    fi
+    if ! grep -q '| `QA/release owner` | 3 | 3 | 0 |' "$release_input_todo_output"; then
+      printf 'FAIL: Release input TODO owner summary must count QA/release owner actions\n'
       failures=$((failures + 1))
     fi
     if ! grep -q 'create it from the private templates with `Scripts/bootstrap_release_inputs.sh` before filling release values' "$release_input_todo_output"; then
@@ -4144,6 +4157,7 @@ check_contains "Scripts/validate_release_input_todo.sh" "External Actions" "Rele
 check_contains "Scripts/validate_release_input_todo.sh" "Blockers" "Release input TODO validator must verify blocker counts"
 check_contains "Scripts/validate_release_input_todo.sh" "Warnings" "Release input TODO validator must verify warning counts"
 check_contains "Scripts/validate_release_input_todo.sh" "Target Summary" "Release input TODO validator must verify target summary counts"
+check_contains "Scripts/validate_release_input_todo.sh" "Owner Summary" "Release input TODO validator must verify owner summary counts"
 check_contains "Scripts/validate_release_input_todo.sh" "Config/release.env" "Release input TODO validator must require private release env guidance"
 check_contains "Scripts/validate_release_input_todo.sh" "Config/manual-release-verification.env" "Release input TODO validator must require manual evidence guidance"
 check_contains "Scripts/validate_app_store_submission_packet.sh" 'Scripts/validate_release_input_todo.sh "$PACKET_DIR/external-readiness-actions.tsv" "$PACKET_DIR/release-input-todo.md"' "Submission packet validator must validate release input TODO against external readiness actions"
@@ -4195,6 +4209,15 @@ EOF
       failures=$((failures + 1))
     elif ! grep -q 'Blockers' "$release_input_todo_validator_test_dir/validate-bad.log"; then
       printf 'FAIL: Release input TODO validator must explain blocker count mismatches\n'
+      failures=$((failures + 1))
+    fi
+    cp "$release_input_todo_validator_output" "$release_input_todo_validator_bad"
+    perl -0pi -e 's/\| `QA\/release owner` \| 3 \| 3 \| 0 \|/\| `QA\/release owner` \| 2 \| 2 \| 0 \|/' "$release_input_todo_validator_bad"
+    if Scripts/validate_release_input_todo.sh "$release_input_todo_validator_actions" "$release_input_todo_validator_bad" >"$release_input_todo_validator_test_dir/validate-owner-summary.log" 2>&1; then
+      printf 'FAIL: Release input TODO validator must reject owner summary count mismatches\n'
+      failures=$((failures + 1))
+    elif ! grep -q 'Owner Summary counts' "$release_input_todo_validator_test_dir/validate-owner-summary.log"; then
+      printf 'FAIL: Release input TODO validator must identify owner summary count mismatches\n'
       failures=$((failures + 1))
     fi
     cp "$release_input_todo_validator_output" "$release_input_todo_validator_bad"
@@ -4266,6 +4289,7 @@ check_contains "README.md" "Scripts/validate_release_handoff_summary.sh" "README
 check_contains "README.md" "Scripts/validate_release_handoff_brief.sh" "README must document validating the release handoff brief"
 check_contains "README.md" "release-handoff-brief.md" "README must document the release handoff brief"
 check_contains "README.md" "release-input-todo.md" "README must document the release input TODO"
+check_contains "README.md" "Owner Summary" "README must document the release input TODO owner summary"
 check_contains "README.md" "external action details" "README must document that the release handoff brief includes external action details"
 check_contains "README.md" "external action blocker count" "README must document external action counts in the handoff summary"
 check_contains "README.md" "external-readiness-actions.tsv" "README must document the handoff external readiness action manifest"
@@ -4277,6 +4301,7 @@ check_contains "AppStore/release-checklist.md" "Scripts/validate_release_handoff
 check_contains "AppStore/release-checklist.md" "Scripts/validate_release_handoff_brief.sh" "Release checklist must document validating the release handoff brief"
 check_contains "AppStore/release-checklist.md" "release-handoff-brief.md" "Release checklist must document the release handoff brief"
 check_contains "AppStore/release-checklist.md" "release-input-todo.md" "Release checklist must document the release input TODO"
+check_contains "AppStore/release-checklist.md" "Owner Summary" "Release checklist must document the release input TODO owner summary"
 check_contains "AppStore/release-checklist.md" "external action details" "Release checklist must document the handoff brief external action details"
 check_contains "AppStore/release-checklist.md" "external action blocker count" "Release checklist must document external action counts in the handoff summary"
 check_contains "AppStore/release-checklist.md" "external-readiness-actions.tsv" "Release checklist must document the handoff external readiness action manifest"
