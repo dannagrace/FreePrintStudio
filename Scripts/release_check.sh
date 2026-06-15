@@ -1391,6 +1391,36 @@ done
 check_contains "Scripts/preflight_testflight_upload_dependencies.sh" "Scripts/print_release_input_status.sh --strict --scope testflight-upload" "TestFlight dependency preflight must scope release input status to TestFlight upload requirements"
 check_contains "Scripts/preflight_testflight_upload.sh" "Scripts/print_release_input_status.sh --strict --scope testflight-upload" "TestFlight upload preflight must scope release input status to TestFlight upload requirements"
 rm -rf "$release_input_status_testflight_scope_ready_dir"
+release_input_status_archive_scope_dir="$(mktemp -d)"
+release_input_status_archive_scope_env="$release_input_status_archive_scope_dir/release.env"
+release_input_status_archive_scope_log="$release_input_status_archive_scope_dir/status.log"
+: >"$release_input_status_archive_scope_env"
+chmod 600 "$release_input_status_archive_scope_env"
+RELEASE_ENV_PATH="$release_input_status_archive_scope_env" \
+  Scripts/print_release_input_status.sh --strict --scope app-store-archive >"$release_input_status_archive_scope_log" 2>&1 || true
+if grep -q "Unknown --scope value: app-store-archive" "$release_input_status_archive_scope_log"; then
+  printf 'FAIL: App Store archive release input status scope must be supported\n'
+  failures=$((failures + 1))
+fi
+if grep -q "Signing inputs are deferred for this release input status scope" "$release_input_status_archive_scope_log"; then
+  printf 'FAIL: App Store archive release input status scope must require signing inputs\n'
+  failures=$((failures + 1))
+fi
+for deferred_archive_scope_field in \
+  "MISSING_FIELD: APP_REVIEW_CONTACT_FIRST_NAME" \
+  "MISSING_FIELD: APP_STORE_CONNECT_API_KEY_JSON or ASC_KEY_ID/ASC_ISSUER_ID/ASC_KEY_PATH" \
+  "MISSING_FIELD: APP_PRIVACY_DETAILS_CONFIRMED_IN_APP_STORE_CONNECT" \
+  "MISSING_FIELD: APP_STORE_BUILD_NUMBER" \
+  "MISSING_FIELD: CONFIRM_SUBMIT_FOR_REVIEW" \
+  "MISSING_FIELD: MANUAL_REAL_IPHONE_PHOTOS_IMPORT" \
+  "MISSING_FIELD: MANUAL_IPAD_TESTFLIGHT_PRINT_WORKFLOW"
+do
+  if grep -q "$deferred_archive_scope_field" "$release_input_status_archive_scope_log"; then
+    printf 'FAIL: App Store archive release input status scope must defer non-archive field %s\n' "$deferred_archive_scope_field"
+    failures=$((failures + 1))
+  fi
+done
+rm -rf "$release_input_status_archive_scope_dir"
 release_input_status_manual_validation_dir="$(mktemp -d)"
 release_input_status_manual_validation_env="$release_input_status_manual_validation_dir/release.env"
 release_input_status_manual_validation_evidence="$release_input_status_manual_validation_dir/manual-release-verification.env"
@@ -1950,10 +1980,10 @@ check_contains "Scripts/preflight_app_store_archive.sh" "Scripts/verify_release.
 check_contains "Scripts/preflight_app_store_archive.sh" "source Scripts/load_release_env.sh" "Archive preflight must load private release inputs before checking signing assets"
 check_contains "Scripts/preflight_app_store_archive.sh" "Scripts/validate_release_env.sh" "Archive preflight must validate private release env placeholders"
 check_contains "Scripts/preflight_app_store_archive.sh" "Scripts/validate_private_release_artifact_ignores.sh" "Archive preflight must validate private release artifacts stay ignored before signing"
-check_contains "Scripts/preflight_app_store_archive.sh" "Scripts/print_release_input_status.sh --strict" "Archive preflight must print field-level release input status before signing"
-check_contains "Scripts/preflight_app_store_archive.sh" "Scripts/validate_app_review_contact.sh" "Archive preflight must validate App Review contact details"
+check_contains "Scripts/preflight_app_store_archive.sh" "Scripts/print_release_input_status.sh --strict --scope app-store-archive" "Archive preflight must scope release input status to archive requirements"
+check_not_contains "Scripts/preflight_app_store_archive.sh" "Scripts/validate_app_review_contact.sh" "Archive preflight must not require App Review contact before archive creation"
 check_contains "Scripts/preflight_app_store_archive.sh" "Scripts/check_code_signing_assets.sh" "Archive preflight must validate signing assets"
-check_contains "Scripts/preflight_app_store_archive.sh" "Scripts/check_app_store_readiness.sh" "Archive preflight must finish with the full readiness audit"
+check_not_contains "Scripts/preflight_app_store_archive.sh" "Scripts/check_app_store_readiness.sh" "Archive preflight must not run the full readiness audit before TestFlight evidence exists"
 check_contains "Scripts/preflight_app_store_archive.sh" "App Store archive preflight passed" "Archive preflight must print a clear success message"
 check_not_contains "Scripts/preflight_app_store_archive.sh" "DEVELOPMENT_TEAM_ID=<" "Archive preflight success command must use a shell-safe Team ID placeholder"
 check_contains "Scripts/preflight_app_store_archive.sh" "DEVELOPMENT_TEAM_ID=YOURTEAMID ALLOW_PROVISIONING_UPDATES=1 Scripts/archive_app_store.sh" "Archive preflight success command must show the guarded archive command"
@@ -1961,7 +1991,7 @@ if ! python3 - <<'PY'
 from pathlib import Path
 
 source = Path("Scripts/preflight_app_store_archive.sh").read_text()
-status_index = source.find('run_step "Release input status" Scripts/print_release_input_status.sh --strict')
+status_index = source.find('run_step "Release input status" Scripts/print_release_input_status.sh --strict --scope app-store-archive')
 store_ready_index = source.find('run_step "Local store-ready release gate" Scripts/verify_release.sh store-ready')
 if status_index == -1 or store_ready_index == -1 or status_index > store_ready_index:
     raise SystemExit(1)
@@ -2751,6 +2781,7 @@ check_contains "README.md" "Scripts/validate_app_icon_set.sh" "README must docum
 check_contains "README.md" "Scripts/validate_app_store_export.sh" "README must document App Store archive/export validation"
 check_contains "README.md" "Scripts/preflight_app_store_archive.sh" "README must document App Store archive preflight validation"
 check_contains "README.md" 'Scripts/verify_release.sh store-ready`' "README archive preflight docs must say it runs the full store-ready gate"
+check_contains "README.md" "--scope app-store-archive" "README archive preflight docs must document archive-scoped release input status"
 check_contains "README.md" "Scripts/validate_app_store_questionnaires.sh" "README must document App Store questionnaire consistency validation"
 check_contains "README.md" "Scripts/verify_release.sh questionnaires" "README must document the questionnaire release command"
 check_contains "README.md" "Fastlane metadata, App Privacy Details, and final review-submission lanes run the local App Store questionnaire validation" "README must document Fastlane questionnaire validation gates"
@@ -2814,6 +2845,7 @@ check_contains "AppStore/release-checklist.md" "Scripts/validate_app_icon_set.sh
 check_contains "AppStore/release-checklist.md" "Scripts/validate_app_store_export.sh" "Release checklist must include App Store archive/export validation"
 check_contains "AppStore/release-checklist.md" "Scripts/preflight_app_store_archive.sh" "Release checklist must include App Store archive preflight validation"
 check_contains "AppStore/release-checklist.md" 'Scripts/verify_release.sh store-ready`' "Release checklist archive preflight must say it runs the full store-ready gate"
+check_contains "AppStore/release-checklist.md" "--scope app-store-archive" "Release checklist archive preflight must document archive-scoped release input status"
 check_contains "AppStore/release-checklist.md" "Scripts/validate_app_store_questionnaires.sh" "Release checklist must include App Store questionnaire consistency validation"
 check_contains "AppStore/release-checklist.md" "Scripts/verify_release.sh questionnaires" "Release checklist must include the questionnaire release command"
 check_contains "AppStore/release-checklist.md" "Scripts/validate_simulator_workflow.sh" "Release checklist must include simulator workflow validation"

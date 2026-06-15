@@ -24,13 +24,11 @@ run_step() {
   printf '\n'
 }
 
-run_step "Release input status" Scripts/print_release_input_status.sh --strict
+run_step "Release input status" Scripts/print_release_input_status.sh --strict --scope app-store-archive
 run_step "Private release artifact ignores" Scripts/validate_private_release_artifact_ignores.sh
 run_step "Local store-ready release gate" Scripts/verify_release.sh store-ready
 run_step "Private release environment" Scripts/validate_release_env.sh
-run_step "App Review contact" Scripts/validate_app_review_contact.sh
 run_step "Code signing assets" Scripts/check_code_signing_assets.sh
-run_step "App Store readiness audit" Scripts/check_app_store_readiness.sh
 
 if (( failures > 0 )); then
   printf 'App Store archive preflight blocked with %d failed step(s).\n' "$failures"

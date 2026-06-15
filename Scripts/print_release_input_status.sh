@@ -20,7 +20,7 @@ Prints a redacted App Store release input status summary. It does not print priv
 
 Options:
   --strict  exit nonzero when required private inputs or signing assets are missing
-  --scope   limit strict missing fields to a release phase (all, metadata-upload, app-privacy-upload, testflight-upload)
+  --scope   limit strict missing fields to a release phase (all, metadata-upload, app-privacy-upload, app-store-archive, testflight-upload)
 EOF
 }
 
@@ -52,7 +52,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 case "$scope" in
-  all|metadata-upload|app-privacy-upload|testflight-upload)
+  all|metadata-upload|app-privacy-upload|app-store-archive|testflight-upload)
     ;;
   *)
     printf 'Unknown --scope value: %s\n\n' "$scope" >&2
@@ -71,6 +71,13 @@ scope_requires() {
     metadata-upload)
       case "$section" in
         private-release-env|app-review-contact|app-store-connect)
+          return 0
+          ;;
+      esac
+      ;;
+    app-store-archive)
+      case "$section" in
+        private-release-env|signing)
           return 0
           ;;
       esac
