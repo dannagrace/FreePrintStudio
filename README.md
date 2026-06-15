@@ -347,7 +347,7 @@ FASTLANE_USER=apple-id@example.com CONFIRM_UPLOAD_APP_PRIVACY=1 Scripts/prefligh
 FASTLANE_USER=apple-id@example.com CONFIRM_UPLOAD_APP_PRIVACY=1 Scripts/run_fastlane.sh ios privacy_details
 ```
 
-The App Privacy upload preflight starts with `Scripts/print_release_input_status.sh --strict`, so missing private release inputs are visible before the explicit upload confirmation and Fastlane Apple ID checks.
+The App Privacy upload preflight starts with `Scripts/print_release_input_status.sh --strict --scope app-privacy-upload`, so privacy-upload inputs are checked without blocking on later metadata, signing, TestFlight evidence, or final submission guards.
 Set `APP_PRIVACY_SKIP_PUBLISH=1` to upload the App Privacy Details without publishing them.
 After Fastlane upload or manual App Store Connect entry, confirm the live App Privacy Details match `AppStore/app_privacy_details.json`:
 

@@ -1320,6 +1320,37 @@ elif grep -q 'Manual real-device, AirPrint, iPad, and TestFlight evidence ready:
   failures=$((failures + 1))
 fi
 rm -rf "$release_input_status_metadata_scope_ready_dir"
+release_input_status_privacy_scope_ready_dir="$(mktemp -d)"
+release_input_status_privacy_scope_ready_env="$release_input_status_privacy_scope_ready_dir/release.env"
+release_input_status_privacy_scope_ready_log="$release_input_status_privacy_scope_ready_dir/status.log"
+cat >"$release_input_status_privacy_scope_ready_env" <<'EOF'
+FASTLANE_USER=release-owner@freeprintstudio.test
+CONFIRM_UPLOAD_APP_PRIVACY=1
+EOF
+chmod 600 "$release_input_status_privacy_scope_ready_env"
+if ! RELEASE_ENV_PATH="$release_input_status_privacy_scope_ready_env" \
+  Scripts/print_release_input_status.sh --strict --scope app-privacy-upload >"$release_input_status_privacy_scope_ready_log" 2>&1; then
+  printf 'FAIL: App Privacy release input status scope must pass when privacy upload inputs are configured\n'
+  sed 's/^/  /' "$release_input_status_privacy_scope_ready_log"
+  failures=$((failures + 1))
+fi
+for deferred_privacy_scope_field in \
+  "MISSING_FIELD: APP_REVIEW_CONTACT_FIRST_NAME" \
+  "MISSING_FIELD: APP_STORE_CONNECT_API_KEY_JSON or ASC_KEY_ID/ASC_ISSUER_ID/ASC_KEY_PATH" \
+  "MISSING_FIELD: DEVELOPMENT_TEAM_ID" \
+  "MISSING_FIELD: Apple Distribution certificate" \
+  "MISSING_FIELD: APP_PRIVACY_DETAILS_CONFIRMED_IN_APP_STORE_CONNECT" \
+  "MISSING_FIELD: APP_STORE_BUILD_NUMBER" \
+  "MISSING_FIELD: CONFIRM_SUBMIT_FOR_REVIEW" \
+  "MISSING_FIELD: MANUAL_REAL_IPHONE_PHOTOS_IMPORT"
+do
+  if grep -q "$deferred_privacy_scope_field" "$release_input_status_privacy_scope_ready_log"; then
+    printf 'FAIL: App Privacy release input status scope must defer non-privacy field %s\n' "$deferred_privacy_scope_field"
+    failures=$((failures + 1))
+  fi
+done
+check_contains "Scripts/preflight_app_privacy_upload.sh" "Scripts/print_release_input_status.sh --strict --scope app-privacy-upload" "App Privacy Details upload preflight must scope release input status to privacy upload requirements"
+rm -rf "$release_input_status_privacy_scope_ready_dir"
 release_input_status_manual_validation_dir="$(mktemp -d)"
 release_input_status_manual_validation_env="$release_input_status_manual_validation_dir/release.env"
 release_input_status_manual_validation_evidence="$release_input_status_manual_validation_dir/manual-release-verification.env"
@@ -2644,6 +2675,7 @@ check_contains "README.md" "Scripts/run_fastlane.sh ios app_store_connect_state"
 check_contains "README.md" "Scripts/preflight_app_review_submission.sh" "README must document the App Review submission preflight command"
 check_contains "README.md" "Scripts/run_fastlane.sh ios privacy_details" "README must document the App Privacy Details upload command"
 check_contains "README.md" "Scripts/preflight_app_privacy_upload.sh" "README must document the App Privacy Details upload preflight command"
+check_contains "README.md" "--scope app-privacy-upload" "README must document App Privacy scoped release input status"
 check_contains "README.md" "Scripts/validate_app_privacy_details.sh" "README must document App Privacy Details validation"
 check_contains "README.md" "Scripts/validate_privacy_surface.sh" "README must document privacy surface validation"
 check_contains "README.md" "Scripts/validate_release_env.sh" "README must document release environment placeholder validation"
@@ -2707,6 +2739,7 @@ check_contains "AppStore/release-checklist.md" "Scripts/run_fastlane.sh ios app_
 check_contains "AppStore/release-checklist.md" "Scripts/preflight_app_review_submission.sh" "Release checklist must include the App Review submission preflight command"
 check_contains "AppStore/release-checklist.md" "Scripts/run_fastlane.sh ios privacy_details" "Release checklist must include the App Privacy Details upload command"
 check_contains "AppStore/release-checklist.md" "Scripts/preflight_app_privacy_upload.sh" "Release checklist must include the App Privacy Details upload preflight command"
+check_contains "AppStore/release-checklist.md" "--scope app-privacy-upload" "Release checklist must document App Privacy scoped release input status"
 check_contains "AppStore/release-checklist.md" "Scripts/validate_app_privacy_details.sh" "Release checklist must include App Privacy Details validation"
 check_contains "AppStore/release-checklist.md" "Scripts/validate_privacy_surface.sh" "Release checklist must include privacy surface validation"
 check_contains "AppStore/release-checklist.md" "Scripts/validate_release_env.sh" "Release checklist must include release environment placeholder validation"

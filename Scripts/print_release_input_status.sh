@@ -20,7 +20,7 @@ Prints a redacted App Store release input status summary. It does not print priv
 
 Options:
   --strict  exit nonzero when required private inputs or signing assets are missing
-  --scope   limit strict missing fields to a release phase (all, metadata-upload)
+  --scope   limit strict missing fields to a release phase (all, metadata-upload, app-privacy-upload)
 EOF
 }
 
@@ -52,7 +52,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 case "$scope" in
-  all|metadata-upload)
+  all|metadata-upload|app-privacy-upload)
     ;;
   *)
     printf 'Unknown --scope value: %s\n\n' "$scope" >&2
@@ -71,6 +71,13 @@ scope_requires() {
     metadata-upload)
       case "$section" in
         private-release-env|app-review-contact|app-store-connect)
+          return 0
+          ;;
+      esac
+      ;;
+    app-privacy-upload)
+      case "$section" in
+        private-release-env)
           return 0
           ;;
       esac
@@ -222,6 +229,11 @@ file_is_ignored() {
   git check-ignore -q "$relative_path" 2>/dev/null
 }
 
+file_is_outside_repo() {
+  local path="$1"
+  [[ "$path" != "$ROOT_DIR/"* ]]
+}
+
 setting_value() {
   local key="$1"
   xcodebuild \
@@ -251,6 +263,8 @@ else
 fi
 if file_is_ignored "$release_env_path"; then
   mark_ok "Config/release.env is git-ignored"
+elif file_is_outside_repo "$release_env_path"; then
+  mark_ok "Configured release.env path is outside this repository"
 else
   mark_missing "Config/release.env is not git-ignored"
 fi
@@ -263,6 +277,8 @@ if scope_requires "manual-release-evidence"; then
   fi
   if file_is_ignored "$manual_evidence_path"; then
     mark_ok "Config/manual-release-verification.env is git-ignored"
+  elif file_is_outside_repo "$manual_evidence_path"; then
+    mark_ok "Configured manual release verification path is outside this repository"
   else
     mark_missing "Config/manual-release-verification.env is not git-ignored"
   fi
@@ -285,27 +301,31 @@ else
 fi
 
 printf '\n== App Review Contact ==\n'
-contact_ready=0
-for name in \
-  APP_REVIEW_CONTACT_FIRST_NAME \
-  APP_REVIEW_CONTACT_LAST_NAME \
-  APP_REVIEW_CONTACT_PHONE \
-  APP_REVIEW_CONTACT_EMAIL
-do
-  if is_set "${!name:-}"; then
-    contact_ready=$((contact_ready + 1))
-  else
-    record_missing_field "$name" "Config/release.env" "Scripts/validate_app_review_contact.sh"
+if scope_requires "app-review-contact"; then
+  contact_ready=0
+  for name in \
+    APP_REVIEW_CONTACT_FIRST_NAME \
+    APP_REVIEW_CONTACT_LAST_NAME \
+    APP_REVIEW_CONTACT_PHONE \
+    APP_REVIEW_CONTACT_EMAIL
+  do
+    if is_set "${!name:-}"; then
+      contact_ready=$((contact_ready + 1))
+    else
+      record_missing_field "$name" "Config/release.env" "Scripts/validate_app_review_contact.sh"
+    fi
+  done
+  status_count "App Review contact fields configured" "$contact_ready" 4
+  if (( contact_ready == 4 )); then
+    if Scripts/validate_app_review_contact.sh >/tmp/freeprintstudio-release-input-status-contact.log 2>&1; then
+      mark_ok "App Review contact format validation passes"
+    else
+      mark_missing "App Review contact format validation fails"
+      sed 's/^/  /' /tmp/freeprintstudio-release-input-status-contact.log
+    fi
   fi
-done
-status_count "App Review contact fields configured" "$contact_ready" 4
-if (( contact_ready == 4 )); then
-  if Scripts/validate_app_review_contact.sh >/tmp/freeprintstudio-release-input-status-contact.log 2>&1; then
-    mark_ok "App Review contact format validation passes"
-  else
-    mark_missing "App Review contact format validation fails"
-    sed 's/^/  /' /tmp/freeprintstudio-release-input-status-contact.log
-  fi
+else
+  mark_optional "App Review contact fields are deferred for this release input status scope"
 fi
 
 printf '\n== Signing Inputs ==\n'
@@ -342,37 +362,41 @@ else
 fi
 
 printf '\n== App Store Connect Inputs ==\n'
-asc_credentials_ready_for_validation=0
-if is_set "${APP_STORE_CONNECT_API_KEY_JSON:-}"; then
-  if [[ -f "${APP_STORE_CONNECT_API_KEY_JSON:-}" ]]; then
-    mark_ok "APP_STORE_CONNECT_API_KEY_JSON is configured"
-    asc_credentials_ready_for_validation=1
+if scope_requires "app-store-connect"; then
+  asc_credentials_ready_for_validation=0
+  if is_set "${APP_STORE_CONNECT_API_KEY_JSON:-}"; then
+    if [[ -f "${APP_STORE_CONNECT_API_KEY_JSON:-}" ]]; then
+      mark_ok "APP_STORE_CONNECT_API_KEY_JSON is configured"
+      asc_credentials_ready_for_validation=1
+    else
+      mark_missing "APP_STORE_CONNECT_API_KEY_JSON is set but the file is missing"
+      record_missing_field "APP_STORE_CONNECT_API_KEY_JSON" "Config/release.env" "Scripts/check_app_store_connect_credentials.sh"
+    fi
   else
-    mark_missing "APP_STORE_CONNECT_API_KEY_JSON is set but the file is missing"
-    record_missing_field "APP_STORE_CONNECT_API_KEY_JSON" "Config/release.env" "Scripts/check_app_store_connect_credentials.sh"
+    asc_triplet_ready=0
+    for name in ASC_KEY_ID ASC_ISSUER_ID ASC_KEY_PATH; do
+      if is_set "${!name:-}"; then
+        asc_triplet_ready=$((asc_triplet_ready + 1))
+      fi
+    done
+    if (( asc_triplet_ready == 3 )) && [[ -f "${ASC_KEY_PATH:-}" ]]; then
+      mark_ok "ASC_KEY_ID, ASC_ISSUER_ID, and ASC_KEY_PATH are configured"
+      asc_credentials_ready_for_validation=1
+    else
+      mark_missing "App Store Connect API credentials configured: $asc_triplet_ready/3"
+      record_missing_field "APP_STORE_CONNECT_API_KEY_JSON or ASC_KEY_ID/ASC_ISSUER_ID/ASC_KEY_PATH" "Config/release.env" "Scripts/check_app_store_connect_credentials.sh"
+    fi
+  fi
+
+  if (( asc_credentials_ready_for_validation == 1 )); then
+    if Scripts/check_app_store_connect_credentials.sh >/tmp/freeprintstudio-release-input-status-asc.log 2>&1; then
+      mark_ok "App Store Connect API credential validation passes"
+    else
+      mark_missing "App Store Connect API credential validation fails"
+    fi
   fi
 else
-  asc_triplet_ready=0
-  for name in ASC_KEY_ID ASC_ISSUER_ID ASC_KEY_PATH; do
-    if is_set "${!name:-}"; then
-      asc_triplet_ready=$((asc_triplet_ready + 1))
-    fi
-  done
-  if (( asc_triplet_ready == 3 )) && [[ -f "${ASC_KEY_PATH:-}" ]]; then
-    mark_ok "ASC_KEY_ID, ASC_ISSUER_ID, and ASC_KEY_PATH are configured"
-    asc_credentials_ready_for_validation=1
-  else
-    mark_missing "App Store Connect API credentials configured: $asc_triplet_ready/3"
-    record_missing_field "APP_STORE_CONNECT_API_KEY_JSON or ASC_KEY_ID/ASC_ISSUER_ID/ASC_KEY_PATH" "Config/release.env" "Scripts/check_app_store_connect_credentials.sh"
-  fi
-fi
-
-if (( asc_credentials_ready_for_validation == 1 )); then
-  if Scripts/check_app_store_connect_credentials.sh >/tmp/freeprintstudio-release-input-status-asc.log 2>&1; then
-    mark_ok "App Store Connect API credential validation passes"
-  else
-    mark_missing "App Store Connect API credential validation fails"
-  fi
+  mark_optional "App Store Connect API credentials are deferred for this release input status scope"
 fi
 
 if is_set "${FASTLANE_USER:-}"; then
