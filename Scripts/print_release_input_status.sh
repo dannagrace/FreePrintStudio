@@ -605,7 +605,9 @@ printf 'APP_STORE_BUILD_NUMBER=%s Scripts/run_fastlane.sh ios app_store_connect_
 printf 'APP_STORE_BUILD_NUMBER=%s Scripts/preflight_app_review_submission.sh\n' "$selected_app_store_build"
 printf 'APP_STORE_BUILD_NUMBER=%s CONFIRM_SUBMIT_FOR_REVIEW=1 Scripts/run_fastlane.sh ios submit_review\n' "$selected_app_store_build"
 
-printf '\nSummary: %d missing required release input item(s).\n' "$missing_count"
-if (( strict == 1 && missing_count > 0 )); then
+missing_field_count="${#missing_fields[@]}"
+printf '\nSummary: %d missing required release input check(s), %d missing field/action item(s).\n' \
+  "$missing_count" "$missing_field_count"
+if (( strict == 1 && (missing_count > 0 || missing_field_count > 0) )); then
   exit 1
 fi

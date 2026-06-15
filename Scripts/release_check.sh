@@ -1175,6 +1175,8 @@ check_contains "Scripts/print_release_input_status.sh" "APP_STORE_BUILD_NUMBER=%
 check_contains "Scripts/print_release_input_status.sh" "APP_STORE_BUILD_NUMBER=%s CONFIRM_SUBMIT_FOR_REVIEW=1 Scripts/run_fastlane.sh ios submit_review" "Release input status next commands must include the guarded final App Review submission"
 check_contains "Scripts/print_release_input_status.sh" "Missing Release Input Fields" "Release input status must print a field-level missing input checklist"
 check_contains "Scripts/print_release_input_status.sh" "MISSING_FIELD:" "Release input status must label individual missing input fields without private values"
+check_contains "Scripts/print_release_input_status.sh" "missing_field_count=" "Release input status must count field-level missing inputs separately from grouped missing checks"
+check_contains "Scripts/print_release_input_status.sh" "missing field/action item" "Release input status summary must distinguish field-level action items from grouped missing checks"
 check_contains "Scripts/print_release_input_status.sh" "APP_REVIEW_CONTACT_FIRST_NAME" "Release input status missing field checklist must include App Review contact fields"
 check_contains "Scripts/print_release_input_status.sh" "MANUAL_REAL_IPHONE_PHOTOS_IMPORT" "Release input status missing field checklist must include manual result fields"
 check_contains "Scripts/print_release_input_status.sh" "Apple Distribution certificate" "Release input status missing field checklist must include signing certificate status"
