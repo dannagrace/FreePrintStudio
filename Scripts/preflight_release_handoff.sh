@@ -219,8 +219,8 @@ write_handoff_brief() {
 
     printf '\n## External Action Detail\n\n'
     if [[ -s "$external_actions_path" ]]; then
-      printf '| Category | Severity | Field | Item | Next Action | Validation Command |\n'
-      printf '| --- | --- | --- | --- | --- | --- |\n'
+      printf '| Owner | Category | Severity | Field | Item | Next Action | Validation Command |\n'
+      printf '| --- | --- | --- | --- | --- | --- | --- |\n'
       awk -F '\t' '
         function markdown_cell(value) {
           gsub(/\|/, "\\|", value)
@@ -234,13 +234,14 @@ write_handoff_brief() {
           next
         }
         $1 != "" {
+          owner = markdown_cell($(columns["owner"]))
           category = markdown_cell($(columns["category"]))
           severity = markdown_cell($(columns["severity"]))
           field = markdown_cell($(columns["field"]))
           item = markdown_cell($(columns["item"]))
           next_action = markdown_cell($(columns["next_action"]))
           validation_command = markdown_cell($(columns["validation_command"]))
-          printf "| %s | %s | `%s` | %s | %s | `%s` |\n", category, severity, field, item, next_action, validation_command
+          printf "| %s | %s | %s | `%s` | %s | %s | `%s` |\n", owner, category, severity, field, item, next_action, validation_command
         }
       ' "$external_actions_path"
     else

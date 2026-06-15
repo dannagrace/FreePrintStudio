@@ -90,6 +90,7 @@ awk -F '\t' -v expected_details="$expected_details" '
       owner_warning_counts[owner] += 1
     }
     print \
+      owner "\t" \
       category "\t" \
       severity "\t" \
       $(columns["field"]) "\t" \
@@ -162,9 +163,9 @@ if ! diff -u "$expected_owner_summary" "$actual_owner_summary" >"$owner_summary_
   sed 's/^/  /' "$owner_summary_diff"
 fi
 
-while IFS=$'\t' read -r category severity field item next_action validation_command; do
-  [[ -n "${category:-}${severity:-}${field:-}${item:-}${next_action:-}${validation_command:-}" ]] || continue
-  expected_row="| $(markdown_cell "$category") | $(markdown_cell "$severity") | \`$(markdown_cell "$field")\` | $(markdown_cell "$item") | $(markdown_cell "$next_action") | \`$(markdown_cell "$validation_command")\` |"
+while IFS=$'\t' read -r owner category severity field item next_action validation_command; do
+  [[ -n "${owner:-}${category:-}${severity:-}${field:-}${item:-}${next_action:-}${validation_command:-}" ]] || continue
+  expected_row="| $(markdown_cell "$owner") | $(markdown_cell "$category") | $(markdown_cell "$severity") | \`$(markdown_cell "$field")\` | $(markdown_cell "$item") | $(markdown_cell "$next_action") | \`$(markdown_cell "$validation_command")\` |"
   if ! grep -Fxq "$expected_row" "$brief_path"; then
     fail "external action detail row is missing or mismatched in release handoff brief: $field - $item"
   fi
