@@ -101,6 +101,59 @@ backup_existing_private_file() {
   printf 'Backed up existing private %s: %s\n' "$label" "$backup_path"
 }
 
+sync_missing_template_assignments() {
+  local target_path="$1"
+  local label="$2"
+  local template_path
+  local missing_path
+  local missing_count
+
+  template_path="$(mktemp)"
+  missing_path="$(mktemp)"
+  write_template >"$template_path"
+
+  awk '
+    FNR == NR {
+      line = $0
+      sub(/^[[:space:]]+/, "", line)
+      if (line ~ /^[A-Za-z_][A-Za-z0-9_]*=/) {
+        key = line
+        sub(/=.*/, "", key)
+        existing[key] = 1
+      }
+      next
+    }
+    {
+      line = $0
+      sub(/^[[:space:]]+/, "", line)
+      if (line ~ /^[A-Za-z_][A-Za-z0-9_]*=/) {
+        key = line
+        sub(/=.*/, "", key)
+        if (!(key in existing)) {
+          print $0
+        }
+      }
+    }
+  ' "$target_path" "$template_path" >"$missing_path"
+
+  missing_count="$(wc -l <"$missing_path" | tr -d '[:space:]')"
+  if [[ "$missing_count" -gt 0 ]]; then
+    backup_existing_private_file "$target_path" "$label"
+    {
+      printf '\n# Added by Scripts/bootstrap_release_env.sh to sync newer release inputs.\n'
+      while IFS= read -r line; do
+        printf '%s\n' "$line"
+      done <"$missing_path"
+    } >>"$target_path"
+    chmod 600 "$target_path"
+    printf 'Updated private %s with %s missing template key(s): %s\n' "$label" "$missing_count" "$target_path"
+  else
+    printf '%s already exists and is up to date: %s\n' "$label" "$target_path"
+  fi
+
+  rm -f "$template_path" "$missing_path"
+}
+
 if [[ "$print_only" == "1" ]]; then
   write_template
   exit 0
@@ -121,7 +174,8 @@ fi
 
 if [[ -e "$release_env_path" && "$force" != "1" ]]; then
   printf 'Release environment already exists: %s\n' "$release_env_path"
-  printf 'Leaving it unchanged. Use --force only after backing up private values.\n'
+  sync_missing_template_assignments "$release_env_path" "release environment"
+  printf 'Use --force only to replace the full private file after backing up values.\n'
   exit 0
 fi
 

@@ -20,7 +20,9 @@ is_private_release_artifact_path() {
   local tracked_path="$1"
 
   [[ "$tracked_path" == "Config/release.env" ]] && return 0
+  [[ "$tracked_path" == Config/release.env.bak.* ]] && return 0
   [[ "$tracked_path" == "Config/manual-release-verification.env" ]] && return 0
+  [[ "$tracked_path" == Config/manual-release-verification.env.bak.* ]] && return 0
   [[ "$tracked_path" == "fastlane-api-key.json" ]] && return 0
   [[ "$tracked_path" == "Config/fastlane-api-key.json" ]] && return 0
   [[ "$tracked_path" == *.p8 ]] && return 0
@@ -37,7 +39,9 @@ is_private_release_artifact_path() {
 
 required_ignored_samples=(
   "Config/release.env"
+  "Config/release.env.bak.TEST"
   "Config/manual-release-verification.env"
+  "Config/manual-release-verification.env.bak.TEST"
   "AuthKey_TESTKEY123.p8"
   "Certificates/AppleDistribution.p12"
   "Certificates/AppleDistribution.cer"

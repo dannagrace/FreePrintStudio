@@ -72,6 +72,56 @@ backup_existing_private_file() {
   printf 'Backed up existing private %s: %s\n' "$label" "$backup_path"
 }
 
+sync_missing_template_assignments() {
+  local source_path="$1"
+  local target_path="$2"
+  local label="$3"
+  local missing_path
+  local missing_count
+
+  missing_path="$(mktemp)"
+  awk '
+    FNR == NR {
+      line = $0
+      sub(/^[[:space:]]+/, "", line)
+      if (line ~ /^[A-Za-z_][A-Za-z0-9_]*=/) {
+        key = line
+        sub(/=.*/, "", key)
+        existing[key] = 1
+      }
+      next
+    }
+    {
+      line = $0
+      sub(/^[[:space:]]+/, "", line)
+      if (line ~ /^[A-Za-z_][A-Za-z0-9_]*=/) {
+        key = line
+        sub(/=.*/, "", key)
+        if (!(key in existing)) {
+          print $0
+        }
+      }
+    }
+  ' "$target_path" "$source_path" >"$missing_path"
+
+  missing_count="$(wc -l <"$missing_path" | tr -d '[:space:]')"
+  if [[ "$missing_count" -gt 0 ]]; then
+    backup_existing_private_file "$target_path" "$label"
+    {
+      printf '\n# Added by Scripts/bootstrap_release_inputs.sh to sync newer release inputs.\n'
+      while IFS= read -r line; do
+        printf '%s\n' "$line"
+      done <"$missing_path"
+    } >>"$target_path"
+    chmod 600 "$target_path"
+    printf 'Updated private %s with %s missing template key(s): %s\n' "$label" "$missing_count" "$target_path"
+  else
+    printf '%s already exists and is up to date: %s\n' "$label" "$target_path"
+  fi
+
+  rm -f "$missing_path"
+}
+
 copy_private_template() {
   local source_path="$1"
   local target_path="$2"
@@ -79,7 +129,8 @@ copy_private_template() {
 
   if [[ -e "$target_path" && "$force" != "1" ]]; then
     printf '%s already exists: %s\n' "$label" "$target_path"
-    printf 'Leaving it unchanged. Use --force only after backing up private values.\n'
+    sync_missing_template_assignments "$source_path" "$target_path" "$label"
+    printf 'Use --force only to replace the full private file after backing up values.\n'
     return
   fi
 

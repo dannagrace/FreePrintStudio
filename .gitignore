@@ -16,6 +16,8 @@ xcuserdata/
 fastlane-api-key.json
 Config/fastlane-api-key.json
 Config/release.env
+Config/release.env.bak.*
 Config/manual-release-verification.env
+Config/manual-release-verification.env.bak.*
 fastlane/README.md
 fastlane/report.xml

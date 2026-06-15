@@ -466,6 +466,8 @@ check_contains "Config/release.env.example" "CONFIRM_UPLOAD_APP_PRIVACY" "Releas
 check_contains "Config/release.env.example" "CONFIRM_SUBMIT_FOR_REVIEW" "Release environment template must document the final App Review submission guard"
 check_contains ".gitignore" "Config/release.env" "Filled release environment files must stay untracked"
 check_contains ".gitignore" "Config/manual-release-verification.env" "Manual release verification evidence must stay untracked"
+check_contains ".gitignore" "Config/release.env.bak.*" "Release environment backups must stay untracked"
+check_contains ".gitignore" "Config/manual-release-verification.env.bak.*" "Manual release verification backups must stay untracked"
 check_contains ".gitignore" "*.p8" "App Store Connect private keys must stay untracked"
 check_contains ".gitignore" "fastlane-api-key.json" "App Store Connect API JSON secrets must stay untracked"
 check_contains ".gitignore" "*.ipa" "Exported App Store IPA files must stay untracked"
@@ -1096,6 +1098,49 @@ else
   fi
 fi
 rm -rf "$bootstrap_force_test_dir"
+bootstrap_sync_test_dir="$PWD/build/bootstrap-sync-test"
+rm -rf "$bootstrap_sync_test_dir"
+mkdir -p "$bootstrap_sync_test_dir"
+bootstrap_sync_release_env="$bootstrap_sync_test_dir/release.env"
+bootstrap_sync_manual_env="$bootstrap_sync_test_dir/manual-release-verification.env"
+bootstrap_sync_log="$bootstrap_sync_test_dir/bootstrap.log"
+cat >"$bootstrap_sync_release_env" <<'EOF'
+APP_REVIEW_CONTACT_EMAIL=private@example.com
+EOF
+cat >"$bootstrap_sync_manual_env" <<'EOF'
+MANUAL_VERIFIER_NAME="Private Tester"
+MANUAL_REAL_IPHONE_MODEL="iPhone 15"
+EOF
+chmod 600 "$bootstrap_sync_release_env" "$bootstrap_sync_manual_env"
+if ! RELEASE_ENV_PATH="$bootstrap_sync_release_env" \
+  MANUAL_RELEASE_VERIFICATION_PATH="$bootstrap_sync_manual_env" \
+  Scripts/bootstrap_release_inputs.sh >"$bootstrap_sync_log" 2>&1; then
+  printf 'FAIL: Combined private release input bootstrap should update existing ignored private fixture paths\n'
+  sed 's/^/  /' "$bootstrap_sync_log"
+  failures=$((failures + 1))
+else
+  if ! grep -q '^APP_REVIEW_CONTACT_EMAIL=private@example.com$' "$bootstrap_sync_release_env"; then
+    printf 'FAIL: Release input bootstrap must preserve existing release.env values while syncing new keys\n'
+    failures=$((failures + 1))
+  fi
+  if ! grep -q '^APP_PRIVACY_DETAILS_CONFIRMED_IN_APP_STORE_CONNECT=$' "$bootstrap_sync_release_env"; then
+    printf 'FAIL: Release input bootstrap must append missing release.env template keys\n'
+    failures=$((failures + 1))
+  fi
+  if ! grep -q '^MANUAL_VERIFIER_NAME="Private Tester"$' "$bootstrap_sync_manual_env"; then
+    printf 'FAIL: Release input bootstrap must preserve existing manual evidence values while syncing new keys\n'
+    failures=$((failures + 1))
+  fi
+  if ! grep -q '^MANUAL_AIRPRINT_RULER_MEASURED_INCHES=""$' "$bootstrap_sync_manual_env"; then
+    printf 'FAIL: Release input bootstrap must append missing AirPrint ruler evidence keys\n'
+    failures=$((failures + 1))
+  fi
+  if ! grep -q '^MANUAL_IPAD_TESTFLIGHT_LAYOUT=""$' "$bootstrap_sync_manual_env"; then
+    printf 'FAIL: Release input bootstrap must append missing iPad evidence keys\n'
+    failures=$((failures + 1))
+  fi
+fi
+rm -rf "$bootstrap_sync_test_dir"
 check_file "Scripts/print_release_input_status.sh" "Redacted release input status script is required"
 if [[ ! -x "Scripts/print_release_input_status.sh" ]]; then
   printf 'FAIL: Redacted release input status script must be executable (Scripts/print_release_input_status.sh)\n'
@@ -1744,6 +1789,8 @@ check_contains "Scripts/validate_private_release_artifact_ignores.sh" "git check
 check_contains "Scripts/validate_private_release_artifact_ignores.sh" "git ls-files" "Private artifact ignore validator must reject tracked private artifacts"
 check_contains "Scripts/validate_private_release_artifact_ignores.sh" "Config/release.env" "Private artifact ignore validator must protect filled release.env"
 check_contains "Scripts/validate_private_release_artifact_ignores.sh" "Config/manual-release-verification.env" "Private artifact ignore validator must protect manual evidence env"
+check_contains "Scripts/validate_private_release_artifact_ignores.sh" "Config/release.env.bak.TEST" "Private artifact ignore validator must protect release.env backups"
+check_contains "Scripts/validate_private_release_artifact_ignores.sh" "Config/manual-release-verification.env.bak.TEST" "Private artifact ignore validator must protect manual evidence backups"
 check_contains "Scripts/validate_private_release_artifact_ignores.sh" "*.mobileprovision" "Private artifact ignore validator must protect provisioning profiles"
 check_contains "Scripts/validate_private_release_artifact_ignores.sh" "*.xcarchive" "Private artifact ignore validator must protect Xcode archives"
 check_contains "Scripts/validate_private_release_artifact_ignores.sh" "fastlane-api-key.json" "Private artifact ignore validator must protect Fastlane API key JSON"
