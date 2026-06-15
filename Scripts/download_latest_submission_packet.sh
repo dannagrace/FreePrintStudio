@@ -175,19 +175,30 @@ case "$destination" in
     ;;
 esac
 
-run_info="$(
-  gh run list \
-    --repo "$repo" \
-    --workflow "$workflow" \
-    --branch "$branch" \
-    --status success \
-    --limit 1 \
-    --json databaseId,headSha,url \
-    --jq '.[0] | [.databaseId, .headSha, .url] | @tsv'
-)"
+run_info=""
+for attempt in $(seq 1 "$download_attempts"); do
+  printf 'Run metadata attempt %s of %s\n' "$attempt" "$download_attempts" >&2
+  if run_info="$(
+    run_with_timeout "$download_timeout_seconds" gh run list \
+      --repo "$repo" \
+      --workflow "$workflow" \
+      --branch "$branch" \
+      --status success \
+      --limit 1 \
+      --json databaseId,headSha,url \
+      --jq '.[0] | [.databaseId, .headSha, .url] | @tsv'
+  )" && [[ -n "$run_info" ]]; then
+    break
+  fi
+
+  run_info=""
+  if [[ "$attempt" != "$download_attempts" ]]; then
+    sleep "$attempt"
+  fi
+done
 
 if [[ -z "$run_info" ]]; then
-  printf 'FAIL: No successful Release Gates run found for %s on %s.\n' "$repo" "$branch" >&2
+  printf 'FAIL: No successful Release Gates run found for %s on %s after %s attempt(s).\n' "$repo" "$branch" "$download_attempts" >&2
   exit 1
 fi
 

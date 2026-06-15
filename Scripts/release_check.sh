@@ -3332,6 +3332,8 @@ if [[ -f "Scripts/download_latest_submission_packet.sh" && ! -x "Scripts/downloa
   failures=$((failures + 1))
 fi
 check_contains "Scripts/download_latest_submission_packet.sh" "gh run list" "Latest CI submission packet download helper must find the latest successful Release Gates run"
+check_contains "Scripts/download_latest_submission_packet.sh" "Run metadata attempt" "Latest CI submission packet download helper must retry latest successful run metadata lookups"
+check_contains "Scripts/download_latest_submission_packet.sh" 'run_with_timeout "$download_timeout_seconds" gh run list' "Latest CI submission packet download helper must bound latest successful run metadata lookups"
 check_contains "Scripts/download_latest_submission_packet.sh" "gh run download" "Latest CI submission packet download helper must download the GitHub Actions artifact"
 check_contains "Scripts/download_latest_submission_packet.sh" "freeprintstudio-app-store-submission-packet" "Latest CI submission packet download helper must use the release artifact name"
 check_contains "Scripts/download_latest_submission_packet.sh" "validate_app_store_submission_packet.sh" "Latest CI submission packet download helper must validate the downloaded packet"
