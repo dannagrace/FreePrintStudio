@@ -4032,6 +4032,15 @@ EOF
     failures=$((failures + 1))
   else
     cp "$release_input_todo_validator_output" "$release_input_todo_validator_bad"
+    perl -0pi -e 's/^If the file does not exist yet, create it from the private templates with `Scripts\/bootstrap_release_inputs\.sh` before filling release values\.\n\n//m' "$release_input_todo_validator_bad"
+    if Scripts/validate_release_input_todo.sh "$release_input_todo_validator_actions" "$release_input_todo_validator_bad" >"$release_input_todo_validator_test_dir/validate-missing-release-env-bootstrap.log" 2>&1; then
+      printf 'FAIL: Release input TODO validator must reject missing release.env bootstrap guidance\n'
+      failures=$((failures + 1))
+    elif ! grep -q 'Config/release.env bootstrap guidance' "$release_input_todo_validator_test_dir/validate-missing-release-env-bootstrap.log"; then
+      printf 'FAIL: Release input TODO validator must identify missing release.env bootstrap guidance\n'
+      failures=$((failures + 1))
+    fi
+    cp "$release_input_todo_validator_output" "$release_input_todo_validator_bad"
     perl -0pi -e 's/- Blockers: `3`/- Blockers: `2`/' "$release_input_todo_validator_bad"
     if Scripts/validate_release_input_todo.sh "$release_input_todo_validator_actions" "$release_input_todo_validator_bad" >"$release_input_todo_validator_test_dir/validate-bad.log" 2>&1; then
       printf 'FAIL: Release input TODO validator must reject blocker count mismatches\n'
