@@ -4366,9 +4366,12 @@ if [[ -f "Scripts/validate_private_release_input_templates.sh" && ! -x "Scripts/
 fi
 check_contains "Scripts/generate_private_release_input_templates.sh" "private-release-input-templates" "Private release input template generator must document its output directory"
 check_contains "Scripts/generate_private_release_input_templates.sh" "Private Release Input Templates" "Private release input template generator must write a stable index title"
+check_contains "Scripts/generate_private_release_input_templates.sh" "Scripts/install_private_release_input_templates.sh" "Private release input template generator must direct operators to the safe installer"
 check_contains "Scripts/generate_private_release_input_templates.sh" 'MANUAL_AIRPRINT_RULER_TARGET_INCHES="6"' "Private release input template generator must preserve the ruler target default"
 check_contains "Scripts/validate_private_release_input_templates.sh" "Private release input template count mismatch" "Private release input template validator must compare env assignment counts"
 check_contains "Scripts/validate_private_release_input_templates.sh" "template assignment is missing" "Private release input template validator must verify generated env assignments"
+check_contains "Scripts/validate_private_release_input_templates.sh" "safe installer command" "Private release input template validator must require safe installer guidance"
+check_contains "Scripts/validate_private_release_input_templates.sh" "unsafe manual copy instructions" "Private release input template validator must reject unsafe manual copy guidance"
 check_contains "Scripts/prepare_app_store_submission_packet.sh" "private-release-input-templates" "Submission packet generator must include private release input templates"
 check_contains "Scripts/prepare_app_store_submission_packet.sh" 'Scripts/generate_private_release_input_templates.sh "$EXTERNAL_READINESS_ACTIONS" "$PRIVATE_RELEASE_INPUT_TEMPLATES_DIR"' "Submission packet generator must generate private release input templates from external readiness actions"
 check_contains "Scripts/prepare_app_store_submission_packet.sh" '\\`private-release-input-templates/\\`' "Submission packet summary must reference private release input templates"
@@ -4421,6 +4424,14 @@ EOF
       printf 'FAIL: Private release input template index must have a stable title\n'
       failures=$((failures + 1))
     fi
+    if ! grep -q 'Scripts/install_private_release_input_templates.sh --source-dir private-release-input-templates --target-dir Config' "$private_template_output_dir/index.md"; then
+      printf 'FAIL: Private release input template index must use the safe installer command\n'
+      failures=$((failures + 1))
+    fi
+    if grep -q 'cp private-release-input-templates/' "$private_template_output_dir/index.md"; then
+      printf 'FAIL: Private release input template index must not recommend unsafe manual copy commands\n'
+      failures=$((failures + 1))
+    fi
     if ! grep -Fq '| `release.env` | [release.env](release.env) | 5 |' "$private_template_output_dir/index.md"; then
       printf 'FAIL: Private release input template index must count release.env assignments\n'
       failures=$((failures + 1))
@@ -4471,6 +4482,16 @@ EOF
       failures=$((failures + 1))
     elif ! grep -q 'MANUAL_REAL_IPHONE_MODEL' "$private_template_log"; then
       printf 'FAIL: Private release input template validator must identify missing env assignments\n'
+      failures=$((failures + 1))
+    fi
+    private_template_bad_dir="$private_template_test_dir/private-release-input-templates-manual-copy"
+    cp -R "$private_template_output_dir" "$private_template_bad_dir"
+    perl -0pi -e 's#Scripts/install_private_release_input_templates\.sh --source-dir private-release-input-templates --target-dir Config#cp private-release-input-templates/release.env Config/release.env\\ncp private-release-input-templates/manual-release-verification.env Config/manual-release-verification.env#m' "$private_template_bad_dir/index.md"
+    if Scripts/validate_private_release_input_templates.sh "$private_template_actions" "$private_template_bad_dir" >"$private_template_log" 2>&1; then
+      printf 'FAIL: Private release input template validator must reject manual copy guidance\n'
+      failures=$((failures + 1))
+    elif ! grep -q 'unsafe manual copy instructions' "$private_template_log"; then
+      printf 'FAIL: Private release input template validator must identify unsafe manual copy guidance\n'
       failures=$((failures + 1))
     fi
   fi

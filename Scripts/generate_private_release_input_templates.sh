@@ -83,7 +83,7 @@ awk -F '\t' -v output_dir="$output_dir" -v actions_path="$actions_path" -v gener
     print "# FreePrint Studio " label "." >path
     print "# Generated At: " generated_at >>path
     print "# Source: " actions_path >>path
-    print "# Copy this file to Config/" label " and fill real private values locally." >>path
+    print "# Install this starter with Scripts/install_private_release_input_templates.sh, then fill real private values locally." >>path
     print "# Keep filled values out of git." >>path
     print "" >>path
 
@@ -146,7 +146,7 @@ awk -F '\t' -v output_dir="$output_dir" -v actions_path="$actions_path" -v gener
     print "- Source: `" actions_path "`" >>index_path
     print "- Output: `private-release-input-templates/`" >>index_path
     print "" >>index_path
-    print "These files are blank private-input starters generated from the current external readiness actions. Copy them into `Config/`, fill real values locally, and keep the filled files out of git." >>index_path
+    print "These files are blank private-input starters generated from the current external readiness actions. Install them with `Scripts/install_private_release_input_templates.sh` so existing private values are backed up, missing keys are appended, and installed files keep owner-only permissions. Fill real values locally and keep the filled files out of git." >>index_path
     print "" >>index_path
     print "## Templates" >>index_path
     print "" >>index_path
@@ -158,9 +158,7 @@ awk -F '\t' -v output_dir="$output_dir" -v actions_path="$actions_path" -v gener
     print "## Usage" >>index_path
     print "" >>index_path
     print "```sh" >>index_path
-    print "cp private-release-input-templates/release.env Config/release.env" >>index_path
-    print "cp private-release-input-templates/manual-release-verification.env Config/manual-release-verification.env" >>index_path
-    print "chmod 600 Config/release.env Config/manual-release-verification.env" >>index_path
+    print "Scripts/install_private_release_input_templates.sh --source-dir private-release-input-templates --target-dir Config" >>index_path
     print "Scripts/print_release_input_status.sh --strict" >>index_path
     print "APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/validate_manual_release_verification.sh" >>index_path
     print "```" >>index_path

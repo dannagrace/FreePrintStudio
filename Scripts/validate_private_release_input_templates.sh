@@ -42,6 +42,19 @@ require_contains() {
   fi
 }
 
+require_not_contains() {
+  local path="$1"
+  local pattern="$2"
+  local description="$3"
+  if [[ ! -f "$path" ]]; then
+    fail "$description could not be checked because file is missing: $path"
+    return
+  fi
+  if grep -qF "$pattern" "$path"; then
+    fail "$description is present in $path"
+  fi
+}
+
 temp_dir="$(mktemp -d)"
 trap 'rm -rf "$temp_dir"' EXIT
 
@@ -152,6 +165,8 @@ require_file "$manual_env_path" "manual-release-verification.env private input t
 
 require_contains "$index_path" "# FreePrint Studio Private Release Input Templates" "private release input template index title"
 require_contains "$index_path" "private-release-input-templates/" "private release input template output directory reference"
+require_contains "$index_path" "Scripts/install_private_release_input_templates.sh --source-dir private-release-input-templates --target-dir Config" "safe installer command"
+require_not_contains "$index_path" "cp private-release-input-templates/" "unsafe manual copy instructions"
 
 while IFS=$'\t' read -r template_name expected_count; do
   [[ -z "$template_name" ]] && continue
