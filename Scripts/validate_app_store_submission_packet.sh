@@ -126,6 +126,11 @@ require_no_forbidden_private_artifacts() {
 
   while IFS= read -r -d '' file_path; do
     relative_path="${file_path#"$PACKET_DIR/"}"
+    case "$relative_path" in
+      private-release-input-templates/release.env|private-release-input-templates/manual-release-verification.env)
+        continue
+        ;;
+    esac
     # Block private inputs such as Config/release.env, AuthKey_*.p8, and fastlane-api-key.json.
     case "$relative_path" in
       release.env|*/release.env|manual-release-verification.env|*/manual-release-verification.env|\
