@@ -268,6 +268,7 @@ write_handoff_brief() {
 
     printf '## Next Commands\n\n'
     printf '```sh\n'
+    printf 'Scripts/install_private_release_input_templates.sh\n'
     printf 'Scripts/bootstrap_release_inputs.sh\n'
     printf 'Scripts/print_release_input_status.sh --strict\n'
     printf 'Scripts/check_app_store_readiness.sh\n'

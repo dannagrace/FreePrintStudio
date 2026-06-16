@@ -4376,6 +4376,19 @@ check_contains "Scripts/validate_app_store_submission_packet.sh" "private-releas
 check_contains "Scripts/validate_app_store_submission_packet.sh" 'Scripts/validate_private_release_input_templates.sh "$PACKET_DIR/external-readiness-actions.tsv" "$PACKET_DIR/private-release-input-templates"' "Submission packet validator must validate private release input templates against external readiness actions"
 check_contains "Scripts/validate_app_store_submission_packet.sh" 'private-release-input-templates/release.env' "Submission packet validator must allow generated blank release.env templates"
 check_contains "Scripts/validate_app_store_submission_packet.sh" 'private-release-input-templates/manual-release-verification.env' "Submission packet validator must allow generated blank manual evidence templates"
+check_file "Scripts/install_private_release_input_templates.sh" "Private release input template installer is required"
+if [[ -f "Scripts/install_private_release_input_templates.sh" && ! -x "Scripts/install_private_release_input_templates.sh" ]]; then
+  printf 'FAIL: Private release input template installer must be executable (Scripts/install_private_release_input_templates.sh)\n'
+  failures=$((failures + 1))
+fi
+check_contains "Scripts/install_private_release_input_templates.sh" "private-release-input-templates" "Private release input template installer must default to generated handoff templates"
+check_contains "Scripts/install_private_release_input_templates.sh" "git check-ignore" "Private release input template installer must verify installed private files stay ignored"
+check_contains "Scripts/install_private_release_input_templates.sh" "chmod 600" "Private release input template installer must protect installed private input files"
+check_contains "Scripts/install_private_release_input_templates.sh" "backup_existing_private_file" "Private release input template installer must back up existing private values before changing files"
+check_contains "Scripts/install_private_release_input_templates.sh" "sync_missing_template_assignments" "Private release input template installer must preserve existing private values while adding missing template keys"
+check_contains "Scripts/preflight_release_handoff.sh" "Scripts/install_private_release_input_templates.sh" "Release handoff brief must include the private input template installer command"
+check_contains "README.md" "Scripts/install_private_release_input_templates.sh" "README must document installing private release input templates"
+check_contains "AppStore/release-checklist.md" "Scripts/install_private_release_input_templates.sh" "Release checklist must document installing private release input templates"
 check_contains "Scripts/preflight_release_handoff.sh" 'Scripts/generate_private_release_input_templates.sh "$external_actions_path" "$private_template_dir"' "Release handoff preflight must generate private release input templates"
 check_contains "Scripts/preflight_release_handoff.sh" 'Scripts/validate_private_release_input_templates.sh "$external_actions_path" "$private_template_dir"' "Release handoff preflight must validate private release input templates"
 check_contains "Scripts/preflight_release_handoff.sh" "private_template_dir" "Release handoff summary must record the private release input template directory"
@@ -4462,6 +4475,69 @@ EOF
     fi
   fi
   rm -rf "$private_template_test_dir"
+fi
+if [[ -x "Scripts/generate_private_release_input_templates.sh" && -x "Scripts/install_private_release_input_templates.sh" ]]; then
+  install_template_test_dir="$PWD/build/release-check-private-template-install"
+  install_template_actions="$install_template_test_dir/external-readiness-actions.tsv"
+  install_template_source_dir="$install_template_test_dir/source/private-release-input-templates"
+  install_template_target_dir="$install_template_test_dir/Config"
+  install_template_sync_target_dir="$install_template_test_dir/ConfigSync"
+  install_template_log="$install_template_test_dir/install.log"
+  rm -rf "$install_template_test_dir"
+  mkdir -p "$install_template_test_dir/source"
+  cat >"$install_template_actions" <<'EOF'
+category	severity	owner	field	target	item	next_action	validation_command
+App Review Contact	blocker	Release owner	APP_REVIEW_CONTACT_EMAIL	Config/release.env	APP_REVIEW_CONTACT_EMAIL is missing	Fill App Review contact fields.	Scripts/validate_app_review_contact.sh
+App Store Connect	blocker	App Store Connect account holder	APP_STORE_CONNECT_API_KEY_JSON or ASC_KEY_ID/ASC_ISSUER_ID/ASC_KEY_PATH	Config/release.env	Fastlane App Store Connect API credentials are not configured	Configure App Store Connect credentials.	Scripts/check_app_store_connect_credentials.sh
+Manual Verification	blocker	QA/release owner	MANUAL_REAL_IPHONE_MODEL	Config/manual-release-verification.env	Real iPhone model is missing	Record real iPhone evidence.	APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/validate_manual_release_verification.sh
+Manual Verification	blocker	QA/release owner	MANUAL_AIRPRINT_RULER_MEASURED_INCHES	Config/manual-release-verification.env	AirPrint ruler measured length is missing	Record AirPrint evidence.	APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/validate_manual_release_verification.sh
+EOF
+  if ! Scripts/generate_private_release_input_templates.sh "$install_template_actions" "$install_template_source_dir" >"$install_template_test_dir/generate.log" 2>&1; then
+    printf 'FAIL: Private release input template installer fixture setup must generate templates\n'
+    sed 's/^/  /' "$install_template_test_dir/generate.log"
+    failures=$((failures + 1))
+  elif ! Scripts/install_private_release_input_templates.sh --source-dir "$install_template_source_dir" --target-dir "$install_template_target_dir" >"$install_template_log" 2>&1; then
+    printf 'FAIL: Private release input template installer must install generated templates into ignored target files\n'
+    sed 's/^/  /' "$install_template_log"
+    failures=$((failures + 1))
+  else
+    if ! grep -q '^APP_REVIEW_CONTACT_EMAIL=""' "$install_template_target_dir/release.env"; then
+      printf 'FAIL: Private release input template installer must create release.env from generated template\n'
+      failures=$((failures + 1))
+    fi
+    if ! grep -q '^MANUAL_AIRPRINT_RULER_TARGET_INCHES="6"' "$install_template_target_dir/manual-release-verification.env"; then
+      printf 'FAIL: Private release input template installer must create manual evidence file with ruler target default\n'
+      failures=$((failures + 1))
+    fi
+    release_env_mode="$(stat -f '%Lp' "$install_template_target_dir/release.env" 2>/dev/null || true)"
+    manual_env_mode="$(stat -f '%Lp' "$install_template_target_dir/manual-release-verification.env" 2>/dev/null || true)"
+    if [[ "$release_env_mode" != "600" || "$manual_env_mode" != "600" ]]; then
+      printf 'FAIL: Private release input template installer must chmod installed files to 600 (release=%s manual=%s)\n' "$release_env_mode" "$manual_env_mode"
+      failures=$((failures + 1))
+    fi
+  fi
+  mkdir -p "$install_template_sync_target_dir"
+  printf 'APP_REVIEW_CONTACT_EMAIL="real@example.com"\n' >"$install_template_sync_target_dir/release.env"
+  chmod 600 "$install_template_sync_target_dir/release.env"
+  if ! Scripts/install_private_release_input_templates.sh --source-dir "$install_template_source_dir" --target-dir "$install_template_sync_target_dir" >"$install_template_test_dir/install-sync.log" 2>&1; then
+    printf 'FAIL: Private release input template installer must sync missing keys into existing private files\n'
+    sed 's/^/  /' "$install_template_test_dir/install-sync.log"
+    failures=$((failures + 1))
+  else
+    if ! grep -q '^APP_REVIEW_CONTACT_EMAIL="real@example.com"' "$install_template_sync_target_dir/release.env"; then
+      printf 'FAIL: Private release input template installer must preserve existing private values\n'
+      failures=$((failures + 1))
+    fi
+    if ! grep -q '^ASC_KEY_ID=""' "$install_template_sync_target_dir/release.env"; then
+      printf 'FAIL: Private release input template installer must append missing release env keys\n'
+      failures=$((failures + 1))
+    fi
+    if ! compgen -G "$install_template_sync_target_dir/release.env.bak.*" >/dev/null; then
+      printf 'FAIL: Private release input template installer must back up existing release.env before appending missing keys\n'
+      failures=$((failures + 1))
+    fi
+  fi
+  rm -rf "$install_template_test_dir"
 fi
 check_file "Scripts/preflight_release_handoff.sh" "Release handoff preflight script is required"
 if [[ -f "Scripts/preflight_release_handoff.sh" && ! -x "Scripts/preflight_release_handoff.sh" ]]; then
