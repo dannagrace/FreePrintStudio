@@ -268,8 +268,7 @@ write_handoff_brief() {
 
     printf '## Next Commands\n\n'
     printf '```sh\n'
-    printf 'Scripts/install_private_release_input_templates.sh\n'
-    printf 'Scripts/bootstrap_release_inputs.sh\n'
+    printf 'Scripts/install_private_release_input_templates.sh --source-dir build/private-release-input-templates --target-dir Config\n'
     printf 'Scripts/print_release_input_status.sh --strict\n'
     printf 'Scripts/check_app_store_readiness.sh\n'
     printf 'APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/validate_manual_release_verification.sh\n'

@@ -318,7 +318,7 @@ Replace `PROCESSED_BUILD_NUMBER` with the processed App Store Connect build numb
 
 ```sh
 Scripts/verify_release.sh store-ready
-Scripts/bootstrap_release_inputs.sh
+Scripts/install_private_release_input_templates.sh --source-dir build/AppStoreSubmissionPacket/private-release-input-templates --target-dir Config
 Scripts/print_release_input_status.sh --strict
 Scripts/verify_release.sh contact-report
 Scripts/verify_release.sh manual-evidence-form
@@ -329,7 +329,6 @@ Scripts/verify_release.sh asc-state-report
 Scripts/verify_release.sh review-report
 Scripts/verify_release.sh public-pages-report
 Scripts/verify_release.sh public-pages
-Scripts/bootstrap_release_env.sh
 Scripts/check_app_store_readiness.sh
 Scripts/preflight_metadata_upload.sh
 ASC_KEY_ID=XXXXXXXXXX ASC_ISSUER_ID=00000000-0000-0000-0000-000000000000 ASC_KEY_PATH=/secure/AuthKey_XXXXXXXXXX.p8 Scripts/run_fastlane.sh ios metadata
@@ -680,7 +679,7 @@ Replace \`PROCESSED_BUILD_NUMBER\` with the processed App Store Connect build nu
 
 \`\`\`sh
 Scripts/verify_release.sh store-ready
-Scripts/bootstrap_release_inputs.sh
+Scripts/install_private_release_input_templates.sh --source-dir build/AppStoreSubmissionPacket/private-release-input-templates --target-dir Config
 Scripts/print_release_input_status.sh --strict
 Scripts/verify_release.sh contact-report
 Scripts/verify_release.sh manual-evidence-form
@@ -691,7 +690,6 @@ Scripts/verify_release.sh asc-state-report
 Scripts/verify_release.sh review-report
 Scripts/verify_release.sh public-pages-report
 Scripts/verify_release.sh public-pages
-Scripts/bootstrap_release_env.sh
 Scripts/check_app_store_readiness.sh
 Scripts/preflight_metadata_upload.sh
 ASC_KEY_ID=XXXXXXXXXX ASC_ISSUER_ID=00000000-0000-0000-0000-000000000000 ASC_KEY_PATH=/secure/AuthKey_XXXXXXXXXX.p8 Scripts/run_fastlane.sh ios metadata
