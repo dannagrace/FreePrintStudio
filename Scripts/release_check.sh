@@ -4112,8 +4112,12 @@ EOF
       printf 'FAIL: Release input TODO owner summary must count QA/release owner actions\n'
       failures=$((failures + 1))
     fi
-    if ! grep -q 'create it from the private templates with `Scripts/bootstrap_release_inputs.sh` before filling release values' "$release_input_todo_output"; then
-      printf 'FAIL: Release input TODO must guide missing release.env files through bootstrap_release_inputs\n'
+    if ! grep -q 'install or sync it from the current private templates with `Scripts/install_private_release_input_templates.sh` before filling release values' "$release_input_todo_output"; then
+      printf 'FAIL: Release input TODO must guide missing release.env files through the safe private template installer\n'
+      failures=$((failures + 1))
+    fi
+    if grep -q 'create it from the private templates with `Scripts/bootstrap_release_inputs.sh` before filling release values' "$release_input_todo_output"; then
+      printf 'FAIL: Release input TODO must not use stale release.env bootstrap guidance when generated private templates are available\n'
       failures=$((failures + 1))
     fi
     if ! grep -q 'APP_REVIEW_CONTACT_EMAIL=' "$release_input_todo_output"; then
@@ -4144,8 +4148,12 @@ EOF
       printf 'FAIL: Release input TODO must not ask users to fill MANUAL_RELEASE_VERIFICATION_PATH inside the manual evidence file\n'
       failures=$((failures + 1))
     fi
-    if ! grep -q 'Scripts/bootstrap_release_inputs.sh' "$release_input_todo_output"; then
-      printf 'FAIL: Release input TODO must guide missing manual evidence files through bootstrap_release_inputs\n'
+    if ! grep -q 'install or sync it from the current private templates with `Scripts/install_private_release_input_templates.sh` before recording evidence' "$release_input_todo_output"; then
+      printf 'FAIL: Release input TODO must guide missing manual evidence files through the safe private template installer\n'
+      failures=$((failures + 1))
+    fi
+    if grep -q 'create it from the private templates with `Scripts/bootstrap_release_inputs.sh` before recording evidence' "$release_input_todo_output"; then
+      printf 'FAIL: Release input TODO must not use stale manual evidence bootstrap guidance when generated private templates are available\n'
       failures=$((failures + 1))
     fi
     if ! grep -q '^## Non-env External Actions' "$release_input_todo_output"; then
@@ -4191,6 +4199,8 @@ check_contains "Scripts/validate_release_input_todo.sh" "Target Summary" "Releas
 check_contains "Scripts/validate_release_input_todo.sh" "Owner Summary" "Release input TODO validator must verify owner summary counts"
 check_contains "Scripts/validate_release_input_todo.sh" "Config/release.env" "Release input TODO validator must require private release env guidance"
 check_contains "Scripts/validate_release_input_todo.sh" "Config/manual-release-verification.env" "Release input TODO validator must require manual evidence guidance"
+check_contains "Scripts/generate_release_input_todo.sh" "Scripts/install_private_release_input_templates.sh" "Release input TODO generator must direct operators to the safe private template installer"
+check_contains "Scripts/validate_release_input_todo.sh" "private template installer guidance" "Release input TODO validator must require safe private template installer guidance"
 check_contains "Scripts/validate_app_store_submission_packet.sh" 'Scripts/validate_release_input_todo.sh "$PACKET_DIR/external-readiness-actions.tsv" "$PACKET_DIR/release-input-todo.md"' "Submission packet validator must validate release input TODO against external readiness actions"
 check_contains "Scripts/preflight_release_handoff.sh" 'Scripts/validate_release_input_todo.sh "$external_actions_path" "$input_todo_path"' "Release handoff preflight must validate generated release input TODO"
 if [[ -x "Scripts/generate_release_input_todo.sh" && -x "Scripts/validate_release_input_todo.sh" ]]; then
@@ -4216,21 +4226,21 @@ EOF
     failures=$((failures + 1))
   else
     cp "$release_input_todo_validator_output" "$release_input_todo_validator_bad"
-    perl -0pi -e 's/^If the file does not exist yet, create it from the private templates with `Scripts\/bootstrap_release_inputs\.sh` before filling release values\.\n\n//m' "$release_input_todo_validator_bad"
+    perl -0pi -e 's/^If the file does not exist yet, install or sync it from the current private templates with `Scripts\/install_private_release_input_templates\.sh` before filling release values\.\n\n//m' "$release_input_todo_validator_bad"
     if Scripts/validate_release_input_todo.sh "$release_input_todo_validator_actions" "$release_input_todo_validator_bad" >"$release_input_todo_validator_test_dir/validate-missing-release-env-bootstrap.log" 2>&1; then
-      printf 'FAIL: Release input TODO validator must reject missing release.env bootstrap guidance\n'
+      printf 'FAIL: Release input TODO validator must reject missing release.env installer guidance\n'
       failures=$((failures + 1))
-    elif ! grep -q 'Config/release.env bootstrap guidance' "$release_input_todo_validator_test_dir/validate-missing-release-env-bootstrap.log"; then
-      printf 'FAIL: Release input TODO validator must identify missing release.env bootstrap guidance\n'
+    elif ! grep -q 'Config/release.env private template installer guidance' "$release_input_todo_validator_test_dir/validate-missing-release-env-bootstrap.log"; then
+      printf 'FAIL: Release input TODO validator must identify missing release.env installer guidance\n'
       failures=$((failures + 1))
     fi
     cp "$release_input_todo_validator_output" "$release_input_todo_validator_bad"
-    perl -0pi -e 's/^If the file does not exist yet, create it from the private templates with `Scripts\/bootstrap_release_inputs\.sh` before recording evidence\.\n\n//m' "$release_input_todo_validator_bad"
+    perl -0pi -e 's/^If the file does not exist yet, install or sync it from the current private templates with `Scripts\/install_private_release_input_templates\.sh` before recording evidence\.\n\n//m' "$release_input_todo_validator_bad"
     if Scripts/validate_release_input_todo.sh "$release_input_todo_validator_actions" "$release_input_todo_validator_bad" >"$release_input_todo_validator_test_dir/validate-missing-manual-bootstrap.log" 2>&1; then
-      printf 'FAIL: Release input TODO validator must reject missing manual evidence bootstrap guidance\n'
+      printf 'FAIL: Release input TODO validator must reject missing manual evidence installer guidance\n'
       failures=$((failures + 1))
-    elif ! grep -q 'Config/manual-release-verification.env bootstrap guidance' "$release_input_todo_validator_test_dir/validate-missing-manual-bootstrap.log"; then
-      printf 'FAIL: Release input TODO validator must identify missing manual evidence bootstrap guidance\n'
+    elif ! grep -q 'Config/manual-release-verification.env private template installer guidance' "$release_input_todo_validator_test_dir/validate-missing-manual-bootstrap.log"; then
+      printf 'FAIL: Release input TODO validator must identify missing manual evidence installer guidance\n'
       failures=$((failures + 1))
     fi
     cp "$release_input_todo_validator_output" "$release_input_todo_validator_bad"
