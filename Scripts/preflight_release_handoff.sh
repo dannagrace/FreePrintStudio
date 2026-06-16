@@ -10,6 +10,7 @@ summary_path="${FREEPRINTSTUDIO_HANDOFF_SUMMARY_PATH:-build/release-handoff-summ
 brief_path="${FREEPRINTSTUDIO_HANDOFF_BRIEF_PATH:-build/release-handoff-brief.md}"
 input_todo_path="${FREEPRINTSTUDIO_HANDOFF_INPUT_TODO_PATH:-build/release-input-todo.md}"
 owner_action_dir="${FREEPRINTSTUDIO_HANDOFF_OWNER_ACTION_DIR:-build/release-owner-actions}"
+private_template_dir="${FREEPRINTSTUDIO_HANDOFF_PRIVATE_TEMPLATE_DIR:-build/private-release-input-templates}"
 ci_readiness_log="$packet_dir/readiness.txt"
 external_actions_path="$packet_dir/external-readiness-actions.tsv"
 
@@ -28,6 +29,7 @@ Connect account work:
   - writes build/release-handoff-brief.md for release owner handoff
   - writes build/release-input-todo.md with fillable private release input fields
   - writes build/release-owner-actions/ with per-owner action briefs
+  - writes build/private-release-input-templates/ with blank private env starters
 EOF
 }
 
@@ -98,6 +100,7 @@ write_handoff_summary() {
     printf 'handoff_brief\t%s\n' "$brief_path"
     printf 'release_input_todo\t%s\n' "$input_todo_path"
     printf 'owner_action_dir\t%s\n' "$owner_action_dir"
+    printf 'private_template_dir\t%s\n' "$private_template_dir"
     printf 'ci_readiness_log\t%s\n' "$ci_readiness_log"
     printf 'ci_readiness_blockers\t%s\n' "$ci_readiness_blockers"
     printf 'ci_readiness_warnings\t%s\n' "$ci_readiness_warnings"
@@ -256,6 +259,7 @@ write_handoff_brief() {
     printf -- '- Human brief: `%s`\n' "$brief_path"
     printf -- '- Release input TODO: `%s`\n' "$input_todo_path"
     printf -- '- Per-owner action briefs: `%s`\n' "$owner_action_dir"
+    printf -- '- Private release input templates: `%s`\n' "$private_template_dir"
     printf -- '- CI action manifest: `%s`\n' "$external_actions_path"
     printf -- '- CI action checklist: `%s/ACTION_ITEMS.md`\n' "$packet_dir"
     printf -- '- Release input worksheet: `AppStore/release-inputs-worksheet.md`\n'
@@ -298,6 +302,8 @@ Scripts/generate_release_input_todo.sh "$external_actions_path" "$input_todo_pat
 Scripts/validate_release_input_todo.sh "$external_actions_path" "$input_todo_path"
 Scripts/generate_release_owner_action_briefs.sh "$external_actions_path" "$owner_action_dir"
 Scripts/validate_release_owner_action_briefs.sh "$external_actions_path" "$owner_action_dir"
+Scripts/generate_private_release_input_templates.sh "$external_actions_path" "$private_template_dir"
+Scripts/validate_private_release_input_templates.sh "$external_actions_path" "$private_template_dir"
 
 mkdir -p "$(dirname "$readiness_log")"
 set +e

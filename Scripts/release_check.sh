@@ -4354,6 +4354,113 @@ EOF
   fi
   rm -rf "$owner_brief_test_dir"
 fi
+check_file "Scripts/generate_private_release_input_templates.sh" "Private release input template generator is required"
+if [[ -f "Scripts/generate_private_release_input_templates.sh" && ! -x "Scripts/generate_private_release_input_templates.sh" ]]; then
+  printf 'FAIL: Private release input template generator must be executable (Scripts/generate_private_release_input_templates.sh)\n'
+  failures=$((failures + 1))
+fi
+check_file "Scripts/validate_private_release_input_templates.sh" "Private release input template validator is required"
+if [[ -f "Scripts/validate_private_release_input_templates.sh" && ! -x "Scripts/validate_private_release_input_templates.sh" ]]; then
+  printf 'FAIL: Private release input template validator must be executable (Scripts/validate_private_release_input_templates.sh)\n'
+  failures=$((failures + 1))
+fi
+check_contains "Scripts/generate_private_release_input_templates.sh" "private-release-input-templates" "Private release input template generator must document its output directory"
+check_contains "Scripts/generate_private_release_input_templates.sh" "Private Release Input Templates" "Private release input template generator must write a stable index title"
+check_contains "Scripts/generate_private_release_input_templates.sh" 'MANUAL_AIRPRINT_RULER_TARGET_INCHES="6"' "Private release input template generator must preserve the ruler target default"
+check_contains "Scripts/validate_private_release_input_templates.sh" "Private release input template count mismatch" "Private release input template validator must compare env assignment counts"
+check_contains "Scripts/validate_private_release_input_templates.sh" "template assignment is missing" "Private release input template validator must verify generated env assignments"
+check_contains "Scripts/prepare_app_store_submission_packet.sh" "private-release-input-templates" "Submission packet generator must include private release input templates"
+check_contains "Scripts/prepare_app_store_submission_packet.sh" 'Scripts/generate_private_release_input_templates.sh "$EXTERNAL_READINESS_ACTIONS" "$PRIVATE_RELEASE_INPUT_TEMPLATES_DIR"' "Submission packet generator must generate private release input templates from external readiness actions"
+check_contains "Scripts/prepare_app_store_submission_packet.sh" '\\`private-release-input-templates/\\`' "Submission packet summary must reference private release input templates"
+check_contains "Scripts/validate_app_store_submission_packet.sh" "private-release-input-templates/index.md" "Submission packet validator must require the private release input template index"
+check_contains "Scripts/validate_app_store_submission_packet.sh" 'Scripts/validate_private_release_input_templates.sh "$PACKET_DIR/external-readiness-actions.tsv" "$PACKET_DIR/private-release-input-templates"' "Submission packet validator must validate private release input templates against external readiness actions"
+check_contains "Scripts/preflight_release_handoff.sh" 'Scripts/generate_private_release_input_templates.sh "$external_actions_path" "$private_template_dir"' "Release handoff preflight must generate private release input templates"
+check_contains "Scripts/preflight_release_handoff.sh" 'Scripts/validate_private_release_input_templates.sh "$external_actions_path" "$private_template_dir"' "Release handoff preflight must validate private release input templates"
+check_contains "Scripts/preflight_release_handoff.sh" "private_template_dir" "Release handoff summary must record the private release input template directory"
+check_contains "README.md" "private-release-input-templates" "README must document private release input template handoff files"
+check_contains "AppStore/release-checklist.md" "private-release-input-templates" "Release checklist must document private release input template handoff files"
+if [[ -x "Scripts/generate_private_release_input_templates.sh" && -x "Scripts/validate_private_release_input_templates.sh" ]]; then
+  private_template_test_dir="$(mktemp -d)"
+  private_template_actions="$private_template_test_dir/external-readiness-actions.tsv"
+  private_template_output_dir="$private_template_test_dir/private-release-input-templates"
+  private_template_log="$private_template_test_dir/validation.log"
+  cat >"$private_template_actions" <<'EOF'
+category	severity	owner	field	target	item	next_action	validation_command
+App Review Contact	blocker	Release owner	APP_REVIEW_CONTACT_EMAIL	Config/release.env	APP_REVIEW_CONTACT_EMAIL is missing	Fill App Review contact fields.	Scripts/validate_app_review_contact.sh
+App Store Connect	blocker	App Store Connect account holder	APP_STORE_CONNECT_API_KEY_JSON or ASC_KEY_ID/ASC_ISSUER_ID/ASC_KEY_PATH	Config/release.env	Fastlane App Store Connect API credentials are not configured	Configure App Store Connect credentials.	Scripts/check_app_store_connect_credentials.sh
+Manual Verification	blocker	QA/release owner	manual-release-verification.env file	Config/manual-release-verification.env	Manual release verification evidence file is missing: Config/manual-release-verification.env	Run Scripts/bootstrap_release_inputs.sh, then record evidence.	APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/validate_manual_release_verification.sh
+Manual Verification	blocker	QA/release owner	MANUAL_REAL_IPHONE_MODEL	Config/manual-release-verification.env	Real iPhone model is missing	Record real iPhone evidence.	APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/validate_manual_release_verification.sh
+Manual Verification	blocker	QA/release owner	MANUAL_AIRPRINT_RULER_MEASURED_INCHES	Config/manual-release-verification.env	AirPrint ruler measured length is missing	Record AirPrint evidence.	APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/validate_manual_release_verification.sh
+Signing	blocker	Apple Developer account holder	Apple Distribution certificate	login keychain	No valid Apple Distribution code signing identity found in the keychain	Install Apple Distribution signing assets.	Scripts/check_code_signing_assets.sh
+EOF
+  if ! Scripts/generate_private_release_input_templates.sh "$private_template_actions" "$private_template_output_dir" >"$private_template_test_dir/generate.log" 2>&1; then
+    printf 'FAIL: Private release input template generator must accept an external readiness action manifest fixture\n'
+    sed 's/^/  /' "$private_template_test_dir/generate.log"
+    failures=$((failures + 1))
+  elif ! Scripts/validate_private_release_input_templates.sh "$private_template_actions" "$private_template_output_dir" >"$private_template_log" 2>&1; then
+    printf 'FAIL: Private release input template validator must accept matching generated templates\n'
+    sed 's/^/  /' "$private_template_log"
+    failures=$((failures + 1))
+  else
+    if ! grep -q '^# FreePrint Studio Private Release Input Templates' "$private_template_output_dir/index.md"; then
+      printf 'FAIL: Private release input template index must have a stable title\n'
+      failures=$((failures + 1))
+    fi
+    if ! grep -Fq '| `release.env` | [release.env](release.env) | 5 |' "$private_template_output_dir/index.md"; then
+      printf 'FAIL: Private release input template index must count release.env assignments\n'
+      failures=$((failures + 1))
+    fi
+    if ! grep -Fq '| `manual-release-verification.env` | [manual-release-verification.env](manual-release-verification.env) | 3 |' "$private_template_output_dir/index.md"; then
+      printf 'FAIL: Private release input template index must count manual evidence assignments including ruler target default\n'
+      failures=$((failures + 1))
+    fi
+    if ! grep -q '^APP_REVIEW_CONTACT_EMAIL=""' "$private_template_output_dir/release.env"; then
+      printf 'FAIL: Private release input template must include blank App Review contact assignments\n'
+      failures=$((failures + 1))
+    fi
+    if ! grep -q '^APP_STORE_CONNECT_API_KEY_JSON=""' "$private_template_output_dir/release.env"; then
+      printf 'FAIL: Private release input template must expand App Store Connect JSON credential assignment\n'
+      failures=$((failures + 1))
+    fi
+    if ! grep -q '^ASC_KEY_ID=""' "$private_template_output_dir/release.env"; then
+      printf 'FAIL: Private release input template must expand App Store Connect key id assignment\n'
+      failures=$((failures + 1))
+    fi
+    if ! grep -q '^MANUAL_REAL_IPHONE_MODEL=""' "$private_template_output_dir/manual-release-verification.env"; then
+      printf 'FAIL: Private release input template must include blank manual evidence assignments\n'
+      failures=$((failures + 1))
+    fi
+    if ! grep -q '^MANUAL_AIRPRINT_RULER_TARGET_INCHES="6"' "$private_template_output_dir/manual-release-verification.env"; then
+      printf 'FAIL: Private release input template must include the AirPrint ruler target default\n'
+      failures=$((failures + 1))
+    fi
+    if grep -q 'manual-release-verification.env file=' "$private_template_output_dir/manual-release-verification.env"; then
+      printf 'FAIL: Private release input template must not expose file setup actions as env assignments\n'
+      failures=$((failures + 1))
+    fi
+    private_template_bad_dir="$private_template_test_dir/private-release-input-templates-bad"
+    cp -R "$private_template_output_dir" "$private_template_bad_dir"
+    perl -0pi -e 's/\| `release\.env` \| \[release\.env\]\(release\.env\) \| 5 \|/\| `release.env` | [release.env](release.env) | 3 |/' "$private_template_bad_dir/index.md"
+    if Scripts/validate_private_release_input_templates.sh "$private_template_actions" "$private_template_bad_dir" >"$private_template_log" 2>&1; then
+      printf 'FAIL: Private release input template validator must reject count mismatches\n'
+      failures=$((failures + 1))
+    elif ! grep -q 'Private release input template count mismatch' "$private_template_log"; then
+      printf 'FAIL: Private release input template validator must identify count mismatches\n'
+      failures=$((failures + 1))
+    fi
+    private_template_bad_dir="$private_template_test_dir/private-release-input-templates-missing-assignment"
+    cp -R "$private_template_output_dir" "$private_template_bad_dir"
+    perl -0pi -e 's/^MANUAL_REAL_IPHONE_MODEL=""\n//m' "$private_template_bad_dir/manual-release-verification.env"
+    if Scripts/validate_private_release_input_templates.sh "$private_template_actions" "$private_template_bad_dir" >"$private_template_log" 2>&1; then
+      printf 'FAIL: Private release input template validator must reject missing env assignments\n'
+      failures=$((failures + 1))
+    elif ! grep -q 'MANUAL_REAL_IPHONE_MODEL' "$private_template_log"; then
+      printf 'FAIL: Private release input template validator must identify missing env assignments\n'
+      failures=$((failures + 1))
+    fi
+  fi
+  rm -rf "$private_template_test_dir"
+fi
 check_file "Scripts/preflight_release_handoff.sh" "Release handoff preflight script is required"
 if [[ -f "Scripts/preflight_release_handoff.sh" && ! -x "Scripts/preflight_release_handoff.sh" ]]; then
   printf 'FAIL: Release handoff preflight script must be executable (Scripts/preflight_release_handoff.sh)\n'

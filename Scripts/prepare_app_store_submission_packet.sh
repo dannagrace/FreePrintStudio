@@ -26,6 +26,7 @@ ACTION_ITEMS_PATH="$PACKET_DIR/ACTION_ITEMS.md"
 EXTERNAL_READINESS_ACTIONS="$PACKET_DIR/external-readiness-actions.tsv"
 RELEASE_INPUT_TODO="$PACKET_DIR/release-input-todo.md"
 OWNER_ACTION_BRIEFS_DIR="$PACKET_DIR/owner-action-briefs"
+PRIVATE_RELEASE_INPUT_TEMPLATES_DIR="$PACKET_DIR/private-release-input-templates"
 
 expected_screenshots=(
   "iphone-main.jpg"
@@ -612,6 +613,7 @@ write_action_items
 write_external_readiness_actions
 Scripts/generate_release_input_todo.sh "$EXTERNAL_READINESS_ACTIONS" "$RELEASE_INPUT_TODO" >/dev/null
 Scripts/generate_release_owner_action_briefs.sh "$EXTERNAL_READINESS_ACTIONS" "$OWNER_ACTION_BRIEFS_DIR" >/dev/null
+Scripts/generate_private_release_input_templates.sh "$EXTERNAL_READINESS_ACTIONS" "$PRIVATE_RELEASE_INPUT_TEMPLATES_DIR" >/dev/null
 
 cat >"$SUMMARY_PATH" <<EOF
 # FreePrint Studio App Store Submission Packet
@@ -644,6 +646,7 @@ cat >"$SUMMARY_PATH" <<EOF
 - Redacted release input status with field-level missing private input tracking.
 - Fillable release input TODO generated from categorized external readiness actions.
 - Per-owner action briefs generated from categorized external readiness actions.
+- Blank private release input templates generated from categorized external readiness actions.
 - Reviewed screenshots and Fastlane upload screenshots.
 - PDF export validation manifest, including Test Ruler exact-size evidence.
 - Public privacy and support page source files.
@@ -666,6 +669,7 @@ cat >"$SUMMARY_PATH" <<EOF
 - \`external-readiness-actions.tsv\` with categorized external blockers, affected fields, target locations, validation commands, and warnings for release tracking.
 - \`release-input-todo.md\` with fillable \`Config/release.env\` and \`Config/manual-release-verification.env\` fields plus non-env external actions.
 - \`owner-action-briefs/\` with one focused action file per release owner plus an index.
+- \`private-release-input-templates/\` with blank \`release.env\` and \`manual-release-verification.env\` starters generated from current external actions.
 - \`file-manifest.tsv\` with package file sizes and sha256 checksums.
 - \`readiness.txt\` with the latest App Store readiness audit.
 - \`ACTION_ITEMS.md\` with external account, signing, and App Store Connect follow-up work.

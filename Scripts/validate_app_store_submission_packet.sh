@@ -183,6 +183,7 @@ required_files=(
   "release-input-status.txt"
   "release-input-todo.md"
   "owner-action-briefs/index.md"
+  "private-release-input-templates/index.md"
   "readiness.txt"
   "screenshots.tsv"
   "screenshot-privacy-metadata-report.txt"
@@ -223,6 +224,9 @@ fi
 if ! Scripts/validate_release_owner_action_briefs.sh "$PACKET_DIR/external-readiness-actions.tsv" "$PACKET_DIR/owner-action-briefs"; then
   failures=$((failures + 1))
 fi
+if ! Scripts/validate_private_release_input_templates.sh "$PACKET_DIR/external-readiness-actions.tsv" "$PACKET_DIR/private-release-input-templates"; then
+  failures=$((failures + 1))
+fi
 
 require_contains "pdf-export-validation.tsv" "test-ruler-stretch" "Test Ruler PDF validation evidence"
 require_contains "ACTION_ITEMS.md" "## External Values To Provide" "external values checklist"
@@ -236,6 +240,7 @@ require_contains "files/Config/release.env.example" "CONFIRM_SUBMIT_FOR_REVIEW" 
 require_contains "SUMMARY.md" "release-input-status.txt" "summary redacted release input status reference"
 require_contains "SUMMARY.md" "release-input-todo.md" "summary release input TODO reference"
 require_contains "SUMMARY.md" "owner-action-briefs/" "summary per-owner action brief reference"
+require_contains "SUMMARY.md" "private-release-input-templates/" "summary private release input template reference"
 require_contains "release-input-status.txt" "== Release Input Status ==" "redacted release input status header"
 require_contains "release-input-status.txt" "== Missing Release Input Fields ==" "release input missing field checklist"
 require_contains "release-input-status.txt" "MISSING_FIELD:" "release input field-level missing item output"
@@ -245,6 +250,7 @@ require_contains "release-input-todo.md" "DEVELOPMENT_TEAM_ID=" "release input T
 require_contains "release-input-todo.md" "Config/manual-release-verification.env" "release input TODO manual evidence group"
 require_contains "release-input-todo.md" "Non-env External Actions" "release input TODO non-env action group"
 require_contains "owner-action-briefs/index.md" "FreePrint Studio Release Owner Action Briefs" "owner action brief index title"
+require_contains "private-release-input-templates/index.md" "FreePrint Studio Private Release Input Templates" "private release input template index title"
 require_contains "SUMMARY.md" "release-provenance.tsv" "summary release provenance reference"
 require_tsv_key "release-provenance.tsv" "git_commit" "release provenance source commit"
 require_tsv_key "release-provenance.tsv" "git_branch" "release provenance branch"
@@ -331,6 +337,7 @@ required_file_manifest_entries=(
   "SUMMARY.md"
   "external-readiness-actions.tsv"
   "owner-action-briefs/index.md"
+  "private-release-input-templates/index.md"
   "pdf-export-validation.tsv"
   "public-pages-readiness-report.md"
   "release-input-todo.md"
