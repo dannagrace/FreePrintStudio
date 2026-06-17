@@ -1158,6 +1158,9 @@ check_contains "Scripts/print_release_input_status.sh" "CONFIRM_SUBMIT_FOR_REVIE
 check_contains "Scripts/print_release_input_status.sh" "git check-ignore" "Release input status must confirm private files stay ignored"
 check_contains "Scripts/print_release_input_status.sh" "--strict" "Release input status must offer a strict mode for handoff gating"
 check_contains "Scripts/print_release_input_status.sh" "does not print private values" "Release input status must explicitly avoid printing private values"
+check_contains "Scripts/print_release_input_status.sh" "Scripts/install_private_release_input_templates.sh --source-dir build/private-release-input-templates --target-dir Config" "Release input status next commands must install generated private input templates safely"
+check_not_contains "Scripts/print_release_input_status.sh" "Scripts/bootstrap_release_inputs.sh" "Release input status must not send operators through stale bootstrap_release_inputs"
+check_not_contains "Scripts/print_release_input_status.sh" "Scripts/bootstrap_release_env.sh" "Release input status must not send operators through stale bootstrap_release_env"
 check_contains "Scripts/print_release_input_status.sh" "Scripts/check_app_store_connect_credentials.sh" "Release input status must run strict App Store Connect credential validation"
 check_contains "Scripts/print_release_input_status.sh" "APP_STORE_BUILD_NUMBER=%s Scripts/validate_manual_release_verification.sh" "Release input status next commands must validate manual evidence against the selected App Store build"
 check_contains "Scripts/print_release_input_status.sh" "Scripts/preflight_metadata_upload.sh" "Release input status next commands must include the metadata upload preflight"
@@ -1311,8 +1314,11 @@ RELEASE_ENV_PATH="$release_input_status_missing_release_env" \
 if grep -q 'OK: Release environment validation passes' "$release_input_status_missing_release_log"; then
   printf 'FAIL: Release input status must not mark a missing release.env as validation passing\n'
   failures=$((failures + 1))
-elif ! grep -q 'MISSING_FIELD: RELEASE_ENV_PATH | file: Config/release.env | validate: Scripts/bootstrap_release_inputs.sh && Scripts/validate_release_env.sh' "$release_input_status_missing_release_log"; then
+elif ! grep -q 'MISSING_FIELD: RELEASE_ENV_PATH | file: Config/release.env | validate: Scripts/install_private_release_input_templates.sh --source-dir build/private-release-input-templates --target-dir Config && Scripts/validate_release_env.sh' "$release_input_status_missing_release_log"; then
   printf 'FAIL: Release input status missing field checklist must include missing release.env remediation\n'
+  failures=$((failures + 1))
+elif grep -q 'Scripts/bootstrap_release_inputs.sh' "$release_input_status_missing_release_log"; then
+  printf 'FAIL: Release input status missing release.env remediation must not use stale bootstrap_release_inputs\n'
   failures=$((failures + 1))
 elif grep -Fq "$release_input_status_missing_release_env_dir" "$release_input_status_missing_release_log"; then
   printf 'FAIL: Release input status must not print the full missing release.env path\n'

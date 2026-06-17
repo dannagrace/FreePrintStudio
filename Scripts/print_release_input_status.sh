@@ -276,14 +276,16 @@ setting_value() {
 printf '== Release Input Status ==\n'
 printf 'This redacted status intentionally does not print private values.\n'
 
+private_template_install_command="Scripts/install_private_release_input_templates.sh --source-dir build/private-release-input-templates --target-dir Config"
+
 printf '\n== Private Files ==\n'
 release_env_exists=0
 if [[ -f "$release_env_path" ]]; then
   release_env_exists=1
   mark_ok "Config/release.env exists"
 else
-  mark_missing "Config/release.env is missing; run Scripts/bootstrap_release_inputs.sh"
-  record_missing_field "RELEASE_ENV_PATH" "Config/release.env" "Scripts/bootstrap_release_inputs.sh && Scripts/validate_release_env.sh"
+  mark_missing "Config/release.env is missing; run $private_template_install_command"
+  record_missing_field "RELEASE_ENV_PATH" "Config/release.env" "$private_template_install_command && Scripts/validate_release_env.sh"
 fi
 if file_is_ignored "$release_env_path"; then
   mark_ok "Config/release.env is git-ignored"
@@ -297,7 +299,7 @@ if scope_requires "manual-release-evidence"; then
   if [[ -f "$manual_evidence_path" ]]; then
     mark_ok "Config/manual-release-verification.env exists"
   else
-    mark_missing "Config/manual-release-verification.env is missing; run Scripts/bootstrap_release_inputs.sh"
+    mark_missing "Config/manual-release-verification.env is missing; run $private_template_install_command"
   fi
   if file_is_ignored "$manual_evidence_path"; then
     mark_ok "Config/manual-release-verification.env is git-ignored"
@@ -587,7 +589,7 @@ print_missing_fields
 
 printf '\n== Next Commands ==\n'
 selected_app_store_build="${APP_STORE_BUILD_NUMBER:-PROCESSED_BUILD_NUMBER}"
-printf 'Scripts/bootstrap_release_inputs.sh\n'
+printf '%s\n' "$private_template_install_command"
 printf 'Scripts/validate_release_env.sh\n'
 printf 'APP_STORE_BUILD_NUMBER=%s Scripts/validate_manual_release_verification.sh\n' "$selected_app_store_build"
 printf 'Scripts/check_app_store_readiness.sh\n'
