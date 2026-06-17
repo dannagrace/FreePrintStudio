@@ -222,6 +222,7 @@ cat >"$output_path" <<EOF
 ## Account-Dependent Checks
 
 Replace \`PROCESSED_BUILD_NUMBER\` with the processed App Store Connect build number before running selected-build commands; local validators intentionally reject that placeholder.
+Replace apple-id@example.com with the App Store Connect Apple ID before running Fastlane Apple ID commands.
 
 | Check | Command | When To Run |
 | --- | --- | --- |

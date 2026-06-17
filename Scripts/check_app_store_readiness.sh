@@ -349,6 +349,7 @@ printf '\nSummary: %d blocker(s), %d warning(s).\n' "$failures" "$warnings"
 if (( failures > 0 )); then
   printf '\nNext signed archive command after fixing blockers:\n'
   printf '  DEVELOPMENT_TEAM_ID=YOURTEAMID ALLOW_PROVISIONING_UPDATES=1 Scripts/archive_app_store.sh\n'
+  printf '  Replace YOURTEAMID with the Apple Developer Team ID before running signing or archive commands.\n'
   exit 1
 fi
 
