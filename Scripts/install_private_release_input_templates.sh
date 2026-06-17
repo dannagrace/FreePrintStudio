@@ -210,3 +210,4 @@ printf '  2. Record real iPhone, AirPrint, iPad, and TestFlight evidence in %s a
 printf '  3. Run Scripts/print_release_input_status.sh --strict\n'
 printf '  4. Run Scripts/validate_release_env.sh\n'
 printf '  5. Run APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/validate_manual_release_verification.sh\n'
+printf '     Replace PROCESSED_BUILD_NUMBER with the processed App Store Connect build number before running selected-build commands.\n'

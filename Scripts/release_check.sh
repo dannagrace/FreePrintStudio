@@ -4427,6 +4427,7 @@ check_contains "Scripts/install_private_release_input_templates.sh" "git check-i
 check_contains "Scripts/install_private_release_input_templates.sh" "chmod 600" "Private release input template installer must protect installed private input files"
 check_contains "Scripts/install_private_release_input_templates.sh" "backup_existing_private_file" "Private release input template installer must back up existing private values before changing files"
 check_contains "Scripts/install_private_release_input_templates.sh" "sync_missing_template_assignments" "Private release input template installer must preserve existing private values while adding missing template keys"
+check_contains "Scripts/install_private_release_input_templates.sh" "Replace PROCESSED_BUILD_NUMBER with the processed App Store Connect build number before running selected-build commands" "Private release input template installer must warn operators to replace selected-build placeholders"
 check_contains "Scripts/preflight_release_handoff.sh" "Scripts/install_private_release_input_templates.sh" "Release handoff brief must include the private input template installer command"
 check_contains "README.md" "Scripts/install_private_release_input_templates.sh" "README must document installing private release input templates"
 check_contains "AppStore/release-checklist.md" "Scripts/install_private_release_input_templates.sh" "Release checklist must document installing private release input templates"
@@ -4572,6 +4573,10 @@ EOF
     manual_env_mode="$(stat -f '%Lp' "$install_template_target_dir/manual-release-verification.env" 2>/dev/null || true)"
     if [[ "$release_env_mode" != "600" || "$manual_env_mode" != "600" ]]; then
       printf 'FAIL: Private release input template installer must chmod installed files to 600 (release=%s manual=%s)\n' "$release_env_mode" "$manual_env_mode"
+      failures=$((failures + 1))
+    fi
+    if ! grep -q 'Replace PROCESSED_BUILD_NUMBER with the processed App Store Connect build number before running selected-build commands' "$install_template_log"; then
+      printf 'FAIL: Private release input template installer output must warn operators to replace selected-build placeholders\n'
       failures=$((failures + 1))
     fi
   fi
