@@ -51,6 +51,8 @@ trap 'rm -rf "$temp_dir"' EXIT
 expected_owners="$temp_dir/expected-owners.tsv"
 expected_details="$temp_dir/expected-details.tsv"
 selected_build_placeholder_guidance="Replace PROCESSED_BUILD_NUMBER with the processed App Store Connect build number before running selected-build commands."
+team_id_placeholder_guidance="Replace YOURTEAMID with the Apple Developer Team ID before running signing or archive commands."
+fastlane_apple_id_placeholder_guidance="Replace apple-id@example.com with the App Store Connect Apple ID before running Fastlane Apple ID commands."
 
 awk -F '\t' -v expected_owners="$expected_owners" -v expected_details="$expected_details" '
   function fail(message) {
@@ -107,11 +109,19 @@ awk -F '\t' -v expected_owners="$expected_owners" -v expected_details="$expected
     total += 1
     owner_name = $(columns["owner"])
     severity = $(columns["severity"])
+    next_action = $(columns["next_action"])
     validation_command = $(columns["validation_command"])
+    placeholder_source = next_action " " validation_command
     file_name = owner_file(owner_name)
     owner_counts[owner_name] += 1
-    if (validation_command ~ /PROCESSED_BUILD_NUMBER/) {
+    if (placeholder_source ~ /PROCESSED_BUILD_NUMBER/) {
       owner_selected_build_placeholder[owner_name] = 1
+    }
+    if (placeholder_source ~ /YOURTEAMID/) {
+      owner_team_id_placeholder[owner_name] = 1
+    }
+    if (placeholder_source ~ /apple-id@example\.com/) {
+      owner_fastlane_apple_id_placeholder[owner_name] = 1
     }
     if (!(owner_name in owner_seen)) {
       owner_seen[owner_name] = 1
@@ -129,7 +139,7 @@ awk -F '\t' -v expected_owners="$expected_owners" -v expected_details="$expected
       code_text(markdown_cell($(columns["field"]))) " | " \
       code_text(markdown_cell($(columns["target"]))) " | " \
       markdown_cell($(columns["item"])) " | " \
-      markdown_cell($(columns["next_action"])) " | " \
+      markdown_cell(next_action) " | " \
       code_text(markdown_cell(validation_command)) " |"
     print file_name "\t" $(columns["field"]) "\t" $(columns["item"]) "\t" expected_row >expected_details
   }
@@ -140,7 +150,7 @@ awk -F '\t' -v expected_owners="$expected_owners" -v expected_details="$expected
     }
     for (owner_index = 1; owner_index <= owner_order_count; owner_index += 1) {
       owner_name = owner_order[owner_index]
-      print owner_name "\t" owner_file(owner_name) "\t" owner_counts[owner_name] "\t" owner_blocker_counts[owner_name] + 0 "\t" owner_warning_counts[owner_name] + 0 "\t" owner_selected_build_placeholder[owner_name] + 0 >expected_owners
+      print owner_name "\t" owner_file(owner_name) "\t" owner_counts[owner_name] "\t" owner_blocker_counts[owner_name] + 0 "\t" owner_warning_counts[owner_name] + 0 "\t" owner_selected_build_placeholder[owner_name] + 0 "\t" owner_team_id_placeholder[owner_name] + 0 "\t" owner_fastlane_apple_id_placeholder[owner_name] + 0 >expected_owners
     }
   }
 ' "$actions_path" || {
@@ -151,7 +161,7 @@ index_path="$owner_dir/index.md"
 require_file "$index_path" "owner action brief index"
 require_contains_file "$index_path" "# FreePrint Studio Release Owner Action Briefs" "owner action brief index title"
 
-while IFS=$'\t' read -r owner_name file_name actions blockers warnings selected_build_placeholder; do
+while IFS=$'\t' read -r owner_name file_name actions blockers warnings selected_build_placeholder team_id_placeholder fastlane_apple_id_placeholder; do
   [[ -n "${owner_name:-}${file_name:-}" ]] || continue
   owner_path="$owner_dir/$file_name"
   require_file "$owner_path" "owner action brief for $owner_name"
@@ -166,6 +176,12 @@ while IFS=$'\t' read -r owner_name file_name actions blockers warnings selected_
   require_contains_file "$owner_path" "## Validation Commands" "owner validation commands section for $owner_name"
   if [[ "${selected_build_placeholder:-0}" == "1" ]]; then
     require_contains_file "$owner_path" "$selected_build_placeholder_guidance" "selected-build placeholder replacement guidance for $owner_name"
+  fi
+  if [[ "${team_id_placeholder:-0}" == "1" ]]; then
+    require_contains_file "$owner_path" "$team_id_placeholder_guidance" "Team ID placeholder replacement guidance for $owner_name"
+  fi
+  if [[ "${fastlane_apple_id_placeholder:-0}" == "1" ]]; then
+    require_contains_file "$owner_path" "$fastlane_apple_id_placeholder_guidance" "Fastlane Apple ID placeholder replacement guidance for $owner_name"
   fi
 done <"$expected_owners"
 

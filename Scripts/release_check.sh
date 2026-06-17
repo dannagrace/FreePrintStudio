@@ -4324,9 +4324,13 @@ check_contains "Scripts/generate_release_owner_action_briefs.sh" "owner-action-b
 check_contains "Scripts/generate_release_owner_action_briefs.sh" "Owner Action Briefs" "Release owner action brief generator must write a stable index title"
 check_contains "Scripts/generate_release_owner_action_briefs.sh" "Validation Commands" "Release owner action brief generator must group validation commands per owner"
 check_contains "Scripts/generate_release_owner_action_briefs.sh" "Replace PROCESSED_BUILD_NUMBER with the processed App Store Connect build number before running selected-build commands" "Release owner action brief generator must warn operators to replace selected-build placeholders"
+check_contains "Scripts/generate_release_owner_action_briefs.sh" "Replace YOURTEAMID with the Apple Developer Team ID before running signing or archive commands" "Release owner action brief generator must warn operators to replace Team ID placeholders"
+check_contains "Scripts/generate_release_owner_action_briefs.sh" "Replace apple-id@example.com with the App Store Connect Apple ID before running Fastlane Apple ID commands" "Release owner action brief generator must warn operators to replace Fastlane Apple ID placeholders"
 check_contains "Scripts/validate_release_owner_action_briefs.sh" "Owner action brief count mismatch" "Release owner action brief validator must compare owner counts"
 check_contains "Scripts/validate_release_owner_action_briefs.sh" "action detail row is missing or mismatched" "Release owner action brief validator must verify action detail rows"
 check_contains "Scripts/validate_release_owner_action_briefs.sh" "selected-build placeholder replacement guidance" "Release owner action brief validator must require selected-build placeholder replacement guidance"
+check_contains "Scripts/validate_release_owner_action_briefs.sh" "Team ID placeholder replacement guidance" "Release owner action brief validator must require Team ID placeholder replacement guidance"
+check_contains "Scripts/validate_release_owner_action_briefs.sh" "Fastlane Apple ID placeholder replacement guidance" "Release owner action brief validator must require Fastlane Apple ID placeholder replacement guidance"
 check_contains "Scripts/preflight_release_handoff.sh" 'Scripts/generate_release_owner_action_briefs.sh "$external_actions_path" "$owner_action_dir"' "Release handoff preflight must generate per-owner action briefs"
 check_contains "Scripts/preflight_release_handoff.sh" 'Scripts/validate_release_owner_action_briefs.sh "$external_actions_path" "$owner_action_dir"' "Release handoff preflight must validate per-owner action briefs"
 check_contains "Scripts/preflight_release_handoff.sh" "owner_action_dir" "Release handoff summary must record the per-owner action brief directory"
@@ -4340,6 +4344,8 @@ category	severity	owner	field	target	item	next_action	validation_command
 App Review Contact	blocker	Release owner	APP_REVIEW_CONTACT_EMAIL	Config/release.env	APP_REVIEW_CONTACT_EMAIL is missing	Fill App Review contact fields.	Scripts/validate_app_review_contact.sh
 Manual Verification	blocker	QA/release owner	MANUAL_REAL_IPHONE_MODEL	Config/manual-release-verification.env	Real iPhone model is missing	Record real iPhone evidence.	APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/validate_manual_release_verification.sh
 Manual Verification	blocker	QA/release owner	MANUAL_REAL_IPHONE_IOS_VERSION	Config/manual-release-verification.env	Real iPhone iOS version is missing	Record real iPhone evidence.	APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/validate_manual_release_verification.sh
+Signing	blocker	Apple Developer account holder	DEVELOPMENT_TEAM_ID	Config/release.env or Xcode project settings	Apple Developer Team ID missing	Install signing assets, then run DEVELOPMENT_TEAM_ID=YOURTEAMID ALLOW_PROVISIONING_UPDATES=1 Scripts/archive_app_store.sh.	Scripts/check_code_signing_assets.sh
+App Privacy	blocker	App Store Connect account holder	APP_PRIVACY_DETAILS_CONFIRMED_IN_APP_STORE_CONNECT	Config/release.env	App Privacy confirmation is missing	Run FASTLANE_USER=apple-id@example.com CONFIRM_UPLOAD_APP_PRIVACY=1 Scripts/preflight_app_privacy_upload.sh.	Scripts/validate_app_privacy_connect_entry.sh
 App Store Connect	warning	App Store Connect account holder	App Store Connect app record	App Store Connect	App record needs account-specific verification.	Verify App Store Connect state.	APP_STORE_CONNECT_SKIP_BUILD_CHECK=1 Scripts/check_app_store_connect_state.sh
 EOF
   if ! Scripts/generate_release_owner_action_briefs.sh "$owner_brief_actions" "$owner_brief_output_dir" >"$owner_brief_test_dir/generate.log" 2>&1; then
@@ -4375,6 +4381,14 @@ EOF
       printf 'FAIL: Release owner action brief must warn operators to replace selected-build placeholders\n'
       failures=$((failures + 1))
     fi
+    if ! grep -q 'Replace YOURTEAMID with the Apple Developer Team ID before running signing or archive commands' "$owner_brief_output_dir/apple-developer-account-holder.md"; then
+      printf 'FAIL: Release owner action brief must warn operators to replace Team ID placeholders\n'
+      failures=$((failures + 1))
+    fi
+    if ! grep -q 'Replace apple-id@example.com with the App Store Connect Apple ID before running Fastlane Apple ID commands' "$owner_brief_output_dir/app-store-connect-account-holder.md"; then
+      printf 'FAIL: Release owner action brief must warn operators to replace Fastlane Apple ID placeholders\n'
+      failures=$((failures + 1))
+    fi
     owner_brief_bad_dir="$owner_brief_test_dir/owner-action-briefs-bad"
     cp -R "$owner_brief_output_dir" "$owner_brief_bad_dir"
     perl -0pi -e 's/- Actions: `2`/- Actions: `1`/' "$owner_brief_bad_dir/qa-release-owner.md"
@@ -4403,6 +4417,28 @@ EOF
       failures=$((failures + 1))
     elif ! grep -q 'selected-build placeholder replacement guidance' "$owner_brief_log"; then
       printf 'FAIL: Release owner action brief validator must identify missing selected-build placeholder guidance\n'
+      failures=$((failures + 1))
+    fi
+    owner_brief_bad_dir="$owner_brief_test_dir/owner-action-briefs-missing-team-id-warning"
+    cp -R "$owner_brief_output_dir" "$owner_brief_bad_dir"
+    perl -0pi -e 's/^Replace YOURTEAMID with the Apple Developer Team ID before running signing or archive commands\.\n//m' "$owner_brief_bad_dir/apple-developer-account-holder.md"
+    if Scripts/validate_release_owner_action_briefs.sh "$owner_brief_actions" "$owner_brief_bad_dir" >"$owner_brief_log" 2>&1; then
+      printf 'FAIL: Release owner action brief validator must reject missing Team ID placeholder guidance\n'
+      failures=$((failures + 1))
+    elif ! grep -q 'Team ID placeholder replacement guidance' "$owner_brief_log"; then
+      printf 'FAIL: Release owner action brief validator must identify missing Team ID placeholder guidance\n'
+      failures=$((failures + 1))
+    fi
+    owner_brief_bad_dir="$owner_brief_test_dir/owner-action-briefs-missing-fastlane-user-warning"
+    cp -R "$owner_brief_output_dir" "$owner_brief_bad_dir"
+    grep -vFx 'Replace apple-id@example.com with the App Store Connect Apple ID before running Fastlane Apple ID commands.' \
+      "$owner_brief_bad_dir/app-store-connect-account-holder.md" >"$owner_brief_bad_dir/app-store-connect-account-holder.md.tmp"
+    mv "$owner_brief_bad_dir/app-store-connect-account-holder.md.tmp" "$owner_brief_bad_dir/app-store-connect-account-holder.md"
+    if Scripts/validate_release_owner_action_briefs.sh "$owner_brief_actions" "$owner_brief_bad_dir" >"$owner_brief_log" 2>&1; then
+      printf 'FAIL: Release owner action brief validator must reject missing Fastlane Apple ID placeholder guidance\n'
+      failures=$((failures + 1))
+    elif ! grep -q 'Fastlane Apple ID placeholder replacement guidance' "$owner_brief_log"; then
+      printf 'FAIL: Release owner action brief validator must identify missing Fastlane Apple ID placeholder guidance\n'
       failures=$((failures + 1))
     fi
   fi

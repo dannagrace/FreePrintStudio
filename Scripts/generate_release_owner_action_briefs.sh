@@ -96,8 +96,15 @@ awk -F '\t' -v output_dir="$output_dir" -v actions_path="$actions_path" -v gener
     validation_command[row_count] = $(columns["validation_command"])
 
     owner_counts[owner[row_count]] += 1
-    if (validation_command[row_count] ~ /PROCESSED_BUILD_NUMBER/) {
+    placeholder_source = next_action[row_count] " " validation_command[row_count]
+    if (placeholder_source ~ /PROCESSED_BUILD_NUMBER/) {
       owner_selected_build_placeholder[owner[row_count]] = 1
+    }
+    if (placeholder_source ~ /YOURTEAMID/) {
+      owner_team_id_placeholder[owner[row_count]] = 1
+    }
+    if (placeholder_source ~ /apple-id@example\.com/) {
+      owner_fastlane_apple_id_placeholder[owner[row_count]] = 1
     }
     if (!(owner[row_count] in owner_seen)) {
       owner_seen[owner[row_count]] = 1
@@ -205,6 +212,14 @@ awk -F '\t' -v output_dir="$output_dir" -v actions_path="$actions_path" -v gener
       if (owner_selected_build_placeholder[owner_name]) {
         print "" >>owner_path
         print "Replace PROCESSED_BUILD_NUMBER with the processed App Store Connect build number before running selected-build commands." >>owner_path
+      }
+      if (owner_team_id_placeholder[owner_name]) {
+        print "" >>owner_path
+        print "Replace YOURTEAMID with the Apple Developer Team ID before running signing or archive commands." >>owner_path
+      }
+      if (owner_fastlane_apple_id_placeholder[owner_name]) {
+        print "" >>owner_path
+        print "Replace apple-id@example.com with the App Store Connect Apple ID before running Fastlane Apple ID commands." >>owner_path
       }
     }
   }
