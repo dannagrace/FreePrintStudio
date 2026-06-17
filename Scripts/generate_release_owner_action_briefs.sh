@@ -96,6 +96,9 @@ awk -F '\t' -v output_dir="$output_dir" -v actions_path="$actions_path" -v gener
     validation_command[row_count] = $(columns["validation_command"])
 
     owner_counts[owner[row_count]] += 1
+    if (validation_command[row_count] ~ /PROCESSED_BUILD_NUMBER/) {
+      owner_selected_build_placeholder[owner[row_count]] = 1
+    }
     if (!(owner[row_count] in owner_seen)) {
       owner_seen[owner[row_count]] = 1
       owner_order_count += 1
@@ -199,6 +202,10 @@ awk -F '\t' -v output_dir="$output_dir" -v actions_path="$actions_path" -v gener
         }
       }
       print "```" >>owner_path
+      if (owner_selected_build_placeholder[owner_name]) {
+        print "" >>owner_path
+        print "Replace PROCESSED_BUILD_NUMBER with the processed App Store Connect build number before running selected-build commands." >>owner_path
+      }
     }
   }
 ' "$actions_path"

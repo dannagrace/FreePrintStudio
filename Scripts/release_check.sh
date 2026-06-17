@@ -4323,8 +4323,10 @@ fi
 check_contains "Scripts/generate_release_owner_action_briefs.sh" "owner-action-briefs" "Release owner action brief generator must document the owner-action-briefs output"
 check_contains "Scripts/generate_release_owner_action_briefs.sh" "Owner Action Briefs" "Release owner action brief generator must write a stable index title"
 check_contains "Scripts/generate_release_owner_action_briefs.sh" "Validation Commands" "Release owner action brief generator must group validation commands per owner"
+check_contains "Scripts/generate_release_owner_action_briefs.sh" "Replace PROCESSED_BUILD_NUMBER with the processed App Store Connect build number before running selected-build commands" "Release owner action brief generator must warn operators to replace selected-build placeholders"
 check_contains "Scripts/validate_release_owner_action_briefs.sh" "Owner action brief count mismatch" "Release owner action brief validator must compare owner counts"
 check_contains "Scripts/validate_release_owner_action_briefs.sh" "action detail row is missing or mismatched" "Release owner action brief validator must verify action detail rows"
+check_contains "Scripts/validate_release_owner_action_briefs.sh" "selected-build placeholder replacement guidance" "Release owner action brief validator must require selected-build placeholder replacement guidance"
 check_contains "Scripts/preflight_release_handoff.sh" 'Scripts/generate_release_owner_action_briefs.sh "$external_actions_path" "$owner_action_dir"' "Release handoff preflight must generate per-owner action briefs"
 check_contains "Scripts/preflight_release_handoff.sh" 'Scripts/validate_release_owner_action_briefs.sh "$external_actions_path" "$owner_action_dir"' "Release handoff preflight must validate per-owner action briefs"
 check_contains "Scripts/preflight_release_handoff.sh" "owner_action_dir" "Release handoff summary must record the per-owner action brief directory"
@@ -4369,6 +4371,10 @@ EOF
       printf 'FAIL: Release owner action brief must include owner-scoped validation commands\n'
       failures=$((failures + 1))
     fi
+    if ! grep -q 'Replace PROCESSED_BUILD_NUMBER with the processed App Store Connect build number before running selected-build commands' "$owner_brief_output_dir/qa-release-owner.md"; then
+      printf 'FAIL: Release owner action brief must warn operators to replace selected-build placeholders\n'
+      failures=$((failures + 1))
+    fi
     owner_brief_bad_dir="$owner_brief_test_dir/owner-action-briefs-bad"
     cp -R "$owner_brief_output_dir" "$owner_brief_bad_dir"
     perl -0pi -e 's/- Actions: `2`/- Actions: `1`/' "$owner_brief_bad_dir/qa-release-owner.md"
@@ -4387,6 +4393,16 @@ EOF
       failures=$((failures + 1))
     elif ! grep -q 'MANUAL_REAL_IPHONE_MODEL' "$owner_brief_log"; then
       printf 'FAIL: Release owner action brief validator must identify missing owner action detail rows\n'
+      failures=$((failures + 1))
+    fi
+    owner_brief_bad_dir="$owner_brief_test_dir/owner-action-briefs-missing-placeholder-warning"
+    cp -R "$owner_brief_output_dir" "$owner_brief_bad_dir"
+    perl -0pi -e 's/^Replace PROCESSED_BUILD_NUMBER with the processed App Store Connect build number before running selected-build commands\.\n//m' "$owner_brief_bad_dir/qa-release-owner.md"
+    if Scripts/validate_release_owner_action_briefs.sh "$owner_brief_actions" "$owner_brief_bad_dir" >"$owner_brief_log" 2>&1; then
+      printf 'FAIL: Release owner action brief validator must reject missing selected-build placeholder guidance\n'
+      failures=$((failures + 1))
+    elif ! grep -q 'selected-build placeholder replacement guidance' "$owner_brief_log"; then
+      printf 'FAIL: Release owner action brief validator must identify missing selected-build placeholder guidance\n'
       failures=$((failures + 1))
     fi
   fi
