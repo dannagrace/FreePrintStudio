@@ -522,6 +522,8 @@ check_contains "Scripts/validate_manual_release_verification.sh" "PROCESSED_BUIL
 check_contains "Scripts/validate_manual_release_verification.sh" "Selected App Store build still looks like a placeholder" "Manual verification script must validate the selected App Store build before comparing evidence"
 check_contains "Scripts/validate_manual_release_verification.sh" "permissions are too broad" "Manual verification must reject overly broad manual evidence file permissions before sourcing private values"
 check_contains "Scripts/validate_manual_release_verification.sh" "chmod 600" "Manual verification must explain how to fix broad manual evidence file permissions"
+check_contains "Scripts/validate_manual_release_verification.sh" "Scripts/install_private_release_input_templates.sh --source-dir build/private-release-input-templates --target-dir Config" "Manual verification missing-file guidance must install generated private input templates safely"
+check_not_contains "Scripts/validate_manual_release_verification.sh" "manual-release-verification.env.example" "Manual verification missing-file guidance must not send operators through stale example-file copy steps"
 manual_release_missing_evidence_test_dir="$(mktemp -d)"
 manual_release_missing_evidence_log="$manual_release_missing_evidence_test_dir/manual-release-verification-missing.log"
 if MANUAL_RELEASE_VERIFICATION_PATH="$manual_release_missing_evidence_test_dir/missing.env" \
@@ -532,6 +534,14 @@ elif ! grep -q 'MANUAL_REAL_IPHONE_PHOTOS_IMPORT' "$manual_release_missing_evide
   || ! grep -q 'MANUAL_TESTFLIGHT_PRINT_WORKFLOW' "$manual_release_missing_evidence_log" \
   || ! grep -q 'MANUAL_IPAD_TESTFLIGHT_PRINT_WORKFLOW' "$manual_release_missing_evidence_log"; then
   printf 'FAIL: Manual verification missing-file output must list required manual evidence fields\n'
+  failures=$((failures + 1))
+fi
+if ! grep -q 'Scripts/install_private_release_input_templates.sh --source-dir build/private-release-input-templates --target-dir Config' "$manual_release_missing_evidence_log"; then
+  printf 'FAIL: Manual verification missing-file output must guide operators through the safe private template installer\n'
+  failures=$((failures + 1))
+fi
+if grep -q 'manual-release-verification.env.example' "$manual_release_missing_evidence_log"; then
+  printf 'FAIL: Manual verification missing-file output must not suggest copying stale example files\n'
   failures=$((failures + 1))
 fi
 rm -rf "$manual_release_missing_evidence_test_dir"

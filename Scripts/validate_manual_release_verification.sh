@@ -297,7 +297,8 @@ validate_required_evidence_values() {
 
 if [[ ! -f "$EVIDENCE_PATH" ]]; then
   block "Manual release verification evidence file is missing: Config/manual-release-verification.env"
-  printf '  Copy Config/manual-release-verification.env.example to Config/manual-release-verification.env after real-device testing.\n'
+  printf '  Install or sync generated private templates first: Scripts/install_private_release_input_templates.sh --source-dir build/private-release-input-templates --target-dir Config\n'
+  printf '  Then record real-device, AirPrint, iPad, and TestFlight evidence in Config/manual-release-verification.env before rerunning this validator.\n'
   validate_required_evidence_values
   printf '\nManual release verification evidence failed with %d issue(s).\n' "$failures"
   exit 1
