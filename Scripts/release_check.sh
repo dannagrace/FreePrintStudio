@@ -4030,6 +4030,8 @@ if [[ -f "Scripts/validate_release_handoff_brief.sh" && ! -x "Scripts/validate_r
   failures=$((failures + 1))
 fi
 check_contains "Scripts/validate_release_handoff_brief.sh" "Owner Summary" "Release handoff brief validator must verify owner summary counts"
+check_contains "Scripts/validate_release_handoff_brief.sh" "Team ID placeholder replacement guidance" "Release handoff brief validator must require Team ID placeholder replacement guidance"
+check_contains "Scripts/validate_release_handoff_brief.sh" "Fastlane Apple ID placeholder replacement guidance" "Release handoff brief validator must require Fastlane Apple ID placeholder replacement guidance"
 check_contains "Scripts/preflight_release_handoff.sh" 'Scripts/validate_release_handoff_brief.sh "$external_actions_path" "$brief_path"' "Release handoff preflight must validate generated handoff briefs"
 if [[ -x "Scripts/validate_release_handoff_brief.sh" ]]; then
   handoff_brief_test_dir="$(mktemp -d)"
@@ -4786,6 +4788,8 @@ check_contains "Scripts/preflight_release_handoff.sh" "next_action" "Release han
 check_contains "Scripts/preflight_release_handoff.sh" "validation_command" "Release handoff brief must include validation commands from the external action manifest"
 check_contains "Scripts/preflight_release_handoff.sh" "Next Commands" "Release handoff brief must include next validation commands"
 check_contains "Scripts/preflight_release_handoff.sh" "Scripts/install_private_release_input_templates.sh --source-dir build/private-release-input-templates --target-dir Config" "Release handoff brief must install generated private input templates safely"
+check_contains "Scripts/preflight_release_handoff.sh" "Replace YOURTEAMID with the Apple Developer Team ID before running signing or archive commands." "Release handoff brief must warn operators to replace Team ID placeholders"
+check_contains "Scripts/preflight_release_handoff.sh" "Replace apple-id@example.com with the App Store Connect Apple ID before running Fastlane Apple ID commands." "Release handoff brief must warn operators to replace Fastlane Apple ID placeholders"
 check_not_contains "Scripts/preflight_release_handoff.sh" "Scripts/bootstrap_release_inputs.sh" "Release handoff brief must not send operators through stale bootstrap_release_inputs after generating private templates"
 check_not_contains "Scripts/preflight_release_handoff.sh" "printf '-" "Release handoff brief must not use printf formats that start with a dash"
 check_contains "Scripts/preflight_release_handoff.sh" "ci_readiness_log" "Release handoff summary must record the CI packet readiness log path"

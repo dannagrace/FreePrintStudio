@@ -31,6 +31,15 @@ require_contains() {
   fi
 }
 
+require_placeholder_guidance() {
+  local placeholder="$1"
+  local guidance="$2"
+  local description="$3"
+  if grep -qF "$placeholder" "$brief_path" && ! grep -qF "$guidance" "$brief_path"; then
+    fail "$description is missing from release handoff brief"
+  fi
+}
+
 markdown_cell() {
   local value="$1"
   value="${value//|/\\|}"
@@ -120,6 +129,18 @@ require_contains "# FreePrint Studio Release Handoff Brief" "release handoff bri
 require_contains "## External Action Summary" "External Action Summary section"
 require_contains "## Owner Summary" "Owner Summary section"
 require_contains "## External Action Detail" "External Action Detail section"
+require_placeholder_guidance \
+  "PROCESSED_BUILD_NUMBER" \
+  "Replace \`PROCESSED_BUILD_NUMBER\` with the processed App Store Connect build selected for review." \
+  "selected-build placeholder replacement guidance"
+require_placeholder_guidance \
+  "YOURTEAMID" \
+  "Replace YOURTEAMID with the Apple Developer Team ID before running signing or archive commands." \
+  "Team ID placeholder replacement guidance"
+require_placeholder_guidance \
+  "apple-id@example.com" \
+  "Replace apple-id@example.com with the App Store Connect Apple ID before running Fastlane Apple ID commands." \
+  "Fastlane Apple ID placeholder replacement guidance"
 
 awk '
   /^## External Action Summary$/ {

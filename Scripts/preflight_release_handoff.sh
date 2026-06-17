@@ -276,6 +276,8 @@ write_handoff_brief() {
     printf 'APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/preflight_app_review_submission.sh\n'
     printf '```\n\n'
     printf 'Replace `PROCESSED_BUILD_NUMBER` with the processed App Store Connect build selected for review.\n'
+    printf 'Replace YOURTEAMID with the Apple Developer Team ID before running signing or archive commands.\n'
+    printf 'Replace apple-id@example.com with the App Store Connect Apple ID before running Fastlane Apple ID commands.\n'
   } >"$brief_path"
 }
 
