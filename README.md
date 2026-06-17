@@ -311,6 +311,8 @@ Scripts/preflight_app_store_archive.sh
 DEVELOPMENT_TEAM_ID=YOURTEAMID ALLOW_PROVISIONING_UPDATES=1 Scripts/archive_app_store.sh
 ```
 
+Replace YOURTEAMID with the Apple Developer Team ID before running signing or archive commands.
+
 The archive script runs the local release gate first, then creates `build/FreePrintStudio.xcarchive` and exports an App Store Connect IPA under `build/AppStoreExport/`.
 After export it runs `Scripts/validate_app_store_export.sh`, which checks the archive metadata, signed app bundle, dSYM, IPA `Payload`, bundle ID, app version, and build number before upload.
 `Config/release.env.example` lists the signing and App Store Connect variables used by the release scripts. Its placeholder assignments are commented out so a copied file cannot accidentally satisfy readiness checks. Keep the filled file and any `AuthKey_*.p8` private key outside git.
@@ -346,6 +348,8 @@ App Privacy Details are represented by `AppStore/app_privacy_details.json`. Afte
 FASTLANE_USER=apple-id@example.com CONFIRM_UPLOAD_APP_PRIVACY=1 Scripts/preflight_app_privacy_upload.sh
 FASTLANE_USER=apple-id@example.com CONFIRM_UPLOAD_APP_PRIVACY=1 Scripts/run_fastlane.sh ios privacy_details
 ```
+
+Replace apple-id@example.com with the App Store Connect Apple ID before running Fastlane Apple ID commands.
 
 The App Privacy upload preflight starts with `Scripts/print_release_input_status.sh --strict --scope app-privacy-upload`, so privacy-upload inputs are checked without blocking on later metadata, signing, TestFlight evidence, or final submission guards.
 Set `APP_PRIVACY_SKIP_PUBLISH=1` to upload the App Privacy Details without publishing them.

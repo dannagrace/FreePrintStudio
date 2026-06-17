@@ -33,6 +33,8 @@ Fill or install these assets before creating the App Store archive:
 - App Store Connect provisioning profile: installed under `~/Library/MobileDevice/Provisioning Profiles` and matching `com.dannagrace.FreePrintStudio`.
 - `ALLOW_PROVISIONING_UPDATES=1`: enable only when Xcode should manage provisioning for the configured team.
 
+Replace YOURTEAMID with the Apple Developer Team ID before running signing or archive commands.
+
 Validate signing before archiving:
 
 ```sh
@@ -86,6 +88,8 @@ FASTLANE_USER=apple-id@example.com CONFIRM_UPLOAD_APP_PRIVACY=1 Scripts/prefligh
 FASTLANE_USER=apple-id@example.com CONFIRM_UPLOAD_APP_PRIVACY=1 Scripts/run_fastlane.sh ios privacy_details
 APP_PRIVACY_DETAILS_CONFIRMED_IN_APP_STORE_CONNECT=1 Scripts/validate_app_privacy_connect_entry.sh
 ```
+
+Replace apple-id@example.com with the App Store Connect Apple ID before running Fastlane Apple ID commands.
 
 ## Manual Release Verification
 

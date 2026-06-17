@@ -60,6 +60,7 @@
 - Set private App Review contact values before metadata upload or submission: `APP_REVIEW_CONTACT_FIRST_NAME`, `APP_REVIEW_CONTACT_LAST_NAME`, `APP_REVIEW_CONTACT_PHONE`, and `APP_REVIEW_CONTACT_EMAIL`.
 - Run `Scripts/preflight_app_store_archive.sh` and fix every failed step before archiving; it starts with `Scripts/print_release_input_status.sh --strict --scope app-store-archive`, then runs `Scripts/verify_release.sh store-ready`, private release inputs, and signing asset checks without requiring later App Review contact, App Store Connect credentials, App Privacy confirmation, TestFlight evidence, or final submission guards.
 - Archive with Xcode 26 or later using `DEVELOPMENT_TEAM_ID=YOURTEAMID ALLOW_PROVISIONING_UPDATES=1 Scripts/archive_app_store.sh`.
+- Replace YOURTEAMID with the Apple Developer Team ID before running signing or archive commands.
 - Confirm `Scripts/archive_app_store.sh` finishes the `Validate Export` step before uploading the IPA.
 - Upload the signed archive or exported IPA to App Store Connect.
 - Add app name, subtitle, description, promotional text, keywords, categories, review notes, and support contact from `AppStore/metadata.md`; the reusable Fastlane copy lives under `fastlane/metadata/en-US`.
@@ -67,6 +68,7 @@
 - Optional automation: run `Scripts/install_release_dependencies.sh` or `brew install fastlane`, configure App Store Connect API credentials, then run `Scripts/run_fastlane.sh ios metadata` to upload App Store metadata and screenshots without submitting for review.
 - App Privacy upload preflight: verify `AppStore/app_privacy_details.json`, then run `FASTLANE_USER=... CONFIRM_UPLOAD_APP_PRIVACY=1 Scripts/preflight_app_privacy_upload.sh`; it starts with `Scripts/print_release_input_status.sh --strict --scope app-privacy-upload` before the upload confirmation and privacy checks, without requiring later metadata, signing, TestFlight evidence, or final submission guards.
 - App Privacy automation: verify `AppStore/app_privacy_details.json`, then run `FASTLANE_USER=... CONFIRM_UPLOAD_APP_PRIVACY=1 Scripts/run_fastlane.sh ios privacy_details`.
+- Replace apple-id@example.com with the App Store Connect Apple ID before running Fastlane Apple ID commands.
 - App Privacy App Store Connect confirmation: after Fastlane upload or manual entry, set `APP_PRIVACY_DETAILS_CONFIRMED_IN_APP_STORE_CONNECT=1` and run `Scripts/validate_app_privacy_connect_entry.sh`.
 - TestFlight upload dependency preflight: before creating or uploading a TestFlight archive, run `Scripts/preflight_testflight_upload_dependencies.sh` to verify private release inputs, App Store Connect API credentials, and the app/version record; it starts with `Scripts/print_release_input_status.sh --strict --scope testflight-upload`.
 - TestFlight upload preflight: after creating the signed export and configuring App Store Connect API credentials, run `Scripts/preflight_testflight_upload.sh`; it starts with `Scripts/print_release_input_status.sh --strict --scope testflight-upload` before IPA and upload checks, without requiring later App Review contact, App Privacy confirmation, manual evidence, or final submission guards.
