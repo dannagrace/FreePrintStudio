@@ -56,7 +56,7 @@
 
 - Create the App Store Connect app record for bundle ID `com.dannagrace.FreePrintStudio`.
 - Configure signing with an Apple Developer Program team in Xcode.
-- Fill local release environment values from `Config/release.env.example`; release scripts automatically load `Config/release.env` when it exists. Keep `Config/release.env` and any `AuthKey_*.p8` private key out of git.
+- Fill local release environment values in the git-ignored `Config/release.env` installed from generated handoff templates; release scripts automatically load `Config/release.env` when it exists. Keep `Config/release.env` and any `AuthKey_*.p8` private key out of git.
 - Set private App Review contact values before metadata upload or submission: `APP_REVIEW_CONTACT_FIRST_NAME`, `APP_REVIEW_CONTACT_LAST_NAME`, `APP_REVIEW_CONTACT_PHONE`, and `APP_REVIEW_CONTACT_EMAIL`.
 - Run `Scripts/preflight_app_store_archive.sh` and fix every failed step before archiving; it starts with `Scripts/print_release_input_status.sh --strict --scope app-store-archive`, then runs `Scripts/verify_release.sh store-ready`, private release inputs, and signing asset checks without requiring later App Review contact, App Store Connect credentials, App Privacy confirmation, TestFlight evidence, or final submission guards.
 - Archive with Xcode 26 or later using `DEVELOPMENT_TEAM_ID=YOURTEAMID ALLOW_PROVISIONING_UPDATES=1 Scripts/archive_app_store.sh`.
