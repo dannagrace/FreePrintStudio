@@ -245,6 +245,7 @@ cat >"$output_path" <<EOF
 - [ ] Run \`Scripts/check_code_signing_assets.sh\`.
 - [ ] Run \`Scripts/preflight_app_store_archive.sh\`.
 - [ ] Create the signed archive with \`DEVELOPMENT_TEAM_ID=YOURTEAMID ALLOW_PROVISIONING_UPDATES=1 Scripts/archive_app_store.sh\`.
+      Replace YOURTEAMID with the Apple Developer Team ID before running signing or archive commands.
 EOF
 
 printf 'Signing readiness report generated: %s\n' "$output_path"
