@@ -3,7 +3,7 @@
 Use this worksheet when collecting the private Apple account, signing, and real-device evidence required before App Store submission. Do not paste secrets, certificates, private keys, phone numbers, or personal contact details into this tracked file. Fill those values only in the git-ignored local files created by:
 
 ```sh
-Scripts/bootstrap_release_inputs.sh
+Scripts/install_private_release_input_templates.sh --source-dir build/private-release-input-templates --target-dir Config
 ```
 
 ## Private File Rules

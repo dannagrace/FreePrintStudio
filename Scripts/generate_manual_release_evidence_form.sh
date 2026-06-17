@@ -127,7 +127,7 @@ Manual notes:
 ## Final Commands
 
 \`\`\`sh
-Scripts/bootstrap_release_inputs.sh
+Scripts/install_private_release_input_templates.sh --source-dir build/private-release-input-templates --target-dir Config
 Scripts/print_release_input_status.sh --strict
 APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/validate_manual_release_verification.sh
 APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/preflight_app_review_submission.sh

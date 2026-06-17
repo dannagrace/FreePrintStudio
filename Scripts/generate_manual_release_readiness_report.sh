@@ -484,7 +484,7 @@ cat >"$output_path" <<EOF
 
 ## Required Next Actions
 
-- [ ] Run \`Scripts/bootstrap_release_inputs.sh\` to create the git-ignored evidence file if it is missing.
+- [ ] Run \`Scripts/install_private_release_input_templates.sh --source-dir build/private-release-input-templates --target-dir Config\` to install the generated git-ignored evidence file if it is missing.
 - [ ] Fill \`Config/manual-release-verification.env\` only after real iPhone, AirPrint, iPad, and TestFlight checks.
 - [ ] Set \`APP_STORE_BUILD_NUMBER\` to the processed build selected in App Store Connect.
 - [ ] Run \`APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/validate_manual_release_verification.sh\`.

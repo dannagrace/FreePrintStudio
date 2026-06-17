@@ -108,16 +108,15 @@ Scripts/verify_release.sh review-ui
 Scripts/validate_review_ui.sh
 ```
 
-Validate that private release settings do not still contain copied placeholder values:
+Install generated private release input templates, then validate that private release settings do not still contain copied placeholder values:
 
 ```sh
-Scripts/bootstrap_release_inputs.sh
-Scripts/bootstrap_release_env.sh
+Scripts/install_private_release_input_templates.sh --source-dir build/private-release-input-templates --target-dir Config
 Scripts/validate_private_release_artifact_ignores.sh
 Scripts/validate_release_env.sh
 ```
 
-Use `AppStore/release-inputs-worksheet.md` while collecting private Apple Developer signing values, App Review contact details, App Store Connect credentials, and manual real-device evidence. Keep filled values only in the git-ignored local files created by `Scripts/bootstrap_release_inputs.sh`.
+Use `AppStore/release-inputs-worksheet.md` while collecting private Apple Developer signing values, App Review contact details, App Store Connect credentials, and manual real-device evidence. Keep filled values only in the git-ignored local files installed by `Scripts/install_private_release_input_templates.sh --source-dir build/private-release-input-templates --target-dir Config`.
 `Scripts/validate_private_release_artifact_ignores.sh` verifies private release inputs, backups, credentials, signing assets, provisioning profiles, IPA files, and archives are ignored, untracked, and restricted to owner-only permissions.
 
 Print a redacted summary of private release input progress without exposing real values:
@@ -256,7 +255,7 @@ Scripts/validate_print_sheet.sh
 Record and validate manual real-device, AirPrint, iPad, and TestFlight evidence before final App Review submission:
 
 ```sh
-Scripts/bootstrap_release_inputs.sh
+Scripts/install_private_release_input_templates.sh --source-dir build/private-release-input-templates --target-dir Config
 Scripts/verify_release.sh manual-evidence-form
 APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/validate_manual_release_verification.sh
 ```
