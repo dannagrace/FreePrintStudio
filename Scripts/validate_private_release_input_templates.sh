@@ -166,6 +166,7 @@ require_file "$manual_env_path" "manual-release-verification.env private input t
 require_contains "$index_path" "# FreePrint Studio Private Release Input Templates" "private release input template index title"
 require_contains "$index_path" "private-release-input-templates/" "private release input template output directory reference"
 require_contains "$index_path" "Scripts/install_private_release_input_templates.sh --source-dir private-release-input-templates --target-dir Config" "safe installer command"
+require_contains "$index_path" "Replace PROCESSED_BUILD_NUMBER with the processed App Store Connect build number before running selected-build commands" "selected-build placeholder replacement guidance"
 require_not_contains "$index_path" "cp private-release-input-templates/" "unsafe manual copy instructions"
 
 while IFS=$'\t' read -r template_name expected_count; do

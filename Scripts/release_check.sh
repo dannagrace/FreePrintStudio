@@ -4410,6 +4410,7 @@ check_contains "Scripts/validate_private_release_input_templates.sh" "Private re
 check_contains "Scripts/validate_private_release_input_templates.sh" "template assignment is missing" "Private release input template validator must verify generated env assignments"
 check_contains "Scripts/validate_private_release_input_templates.sh" "safe installer command" "Private release input template validator must require safe installer guidance"
 check_contains "Scripts/validate_private_release_input_templates.sh" "unsafe manual copy instructions" "Private release input template validator must reject unsafe manual copy guidance"
+check_contains "Scripts/validate_private_release_input_templates.sh" "selected-build placeholder replacement guidance" "Private release input template validator must require selected-build placeholder replacement guidance"
 check_contains "Scripts/prepare_app_store_submission_packet.sh" "private-release-input-templates" "Submission packet generator must include private release input templates"
 check_contains "Scripts/prepare_app_store_submission_packet.sh" 'Scripts/generate_private_release_input_templates.sh "$EXTERNAL_READINESS_ACTIONS" "$PRIVATE_RELEASE_INPUT_TEMPLATES_DIR"' "Submission packet generator must generate private release input templates from external readiness actions"
 check_contains "Scripts/prepare_app_store_submission_packet.sh" '\\`private-release-input-templates/\\`' "Submission packet summary must reference private release input templates"
@@ -4465,6 +4466,10 @@ EOF
     fi
     if ! grep -q 'Scripts/install_private_release_input_templates.sh --source-dir private-release-input-templates --target-dir Config' "$private_template_output_dir/index.md"; then
       printf 'FAIL: Private release input template index must use the safe installer command\n'
+      failures=$((failures + 1))
+    fi
+    if ! grep -q 'Replace PROCESSED_BUILD_NUMBER with the processed App Store Connect build number before running selected-build commands' "$private_template_output_dir/index.md"; then
+      printf 'FAIL: Private release input template index must warn operators to replace selected-build placeholders\n'
       failures=$((failures + 1))
     fi
     if grep -q 'cp private-release-input-templates/' "$private_template_output_dir/index.md"; then
@@ -4531,6 +4536,16 @@ EOF
       failures=$((failures + 1))
     elif ! grep -q 'unsafe manual copy instructions' "$private_template_log"; then
       printf 'FAIL: Private release input template validator must identify unsafe manual copy guidance\n'
+      failures=$((failures + 1))
+    fi
+    private_template_bad_dir="$private_template_test_dir/private-release-input-templates-missing-placeholder-warning"
+    cp -R "$private_template_output_dir" "$private_template_bad_dir"
+    perl -0pi -e 's/^Replace PROCESSED_BUILD_NUMBER with the processed App Store Connect build number before running selected-build commands\.\n//m' "$private_template_bad_dir/index.md"
+    if Scripts/validate_private_release_input_templates.sh "$private_template_actions" "$private_template_bad_dir" >"$private_template_log" 2>&1; then
+      printf 'FAIL: Private release input template validator must reject missing selected-build placeholder guidance\n'
+      failures=$((failures + 1))
+    elif ! grep -q 'selected-build placeholder replacement guidance' "$private_template_log"; then
+      printf 'FAIL: Private release input template validator must identify missing selected-build placeholder guidance\n'
       failures=$((failures + 1))
     fi
   fi

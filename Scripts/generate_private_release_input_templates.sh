@@ -162,6 +162,8 @@ awk -F '\t' -v output_dir="$output_dir" -v actions_path="$actions_path" -v gener
     print "Scripts/print_release_input_status.sh --strict" >>index_path
     print "APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/validate_manual_release_verification.sh" >>index_path
     print "```" >>index_path
+    print "" >>index_path
+    print "Replace PROCESSED_BUILD_NUMBER with the processed App Store Connect build number before running selected-build commands." >>index_path
   }
 ' "$actions_path"
 
