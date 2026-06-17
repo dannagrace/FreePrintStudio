@@ -4102,6 +4102,10 @@ check_contains "Scripts/generate_release_input_todo.sh" "Config/release.env" "Re
 check_contains "Scripts/generate_release_input_todo.sh" "Config/manual-release-verification.env" "Release input TODO generator must group manual release evidence fields"
 check_contains "Scripts/generate_release_input_todo.sh" "Owner Summary" "Release input TODO generator must summarize external actions by owner"
 check_contains "Scripts/generate_release_input_todo.sh" "Non-env External Actions" "Release input TODO generator must preserve non-env external actions"
+check_contains "Scripts/generate_release_input_todo.sh" "Placeholder Replacement Notes" "Release input TODO generator must include placeholder replacement notes"
+check_contains "Scripts/generate_release_input_todo.sh" "Replace PROCESSED_BUILD_NUMBER with the processed App Store Connect build number before running selected-build commands" "Release input TODO generator must warn operators to replace selected-build placeholders"
+check_contains "Scripts/generate_release_input_todo.sh" "Replace YOURTEAMID with the Apple Developer Team ID before running signing or archive commands" "Release input TODO generator must warn operators to replace Team ID placeholders"
+check_contains "Scripts/generate_release_input_todo.sh" "Replace apple-id@example.com with the App Store Connect Apple ID before running Fastlane Apple ID commands" "Release input TODO generator must warn operators to replace Fastlane Apple ID placeholders"
 if [[ -x "Scripts/generate_release_input_todo.sh" ]]; then
   release_input_todo_test_dir="$(mktemp -d)"
   release_input_todo_actions="$release_input_todo_test_dir/external-readiness-actions.tsv"
@@ -4112,8 +4116,9 @@ App Review Contact	blocker	Release owner	APP_REVIEW_CONTACT_EMAIL	Config/release
 Manual Verification	blocker	QA/release owner	manual-release-verification.env file	Config/manual-release-verification.env	Manual release verification evidence file is missing: Config/manual-release-verification.env	Run Scripts/bootstrap_release_inputs.sh, then record real iPhone evidence in untracked Config/manual-release-verification.env.	APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/validate_manual_release_verification.sh
 Manual Verification	blocker	QA/release owner	MANUAL_RELEASE_VERIFICATION_PATH	Config/manual-release-verification.env	Manual release verification evidence file is missing: Config/manual-release-verification.env	Legacy manifest entry that should render as file setup, not an env assignment.	APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/validate_manual_release_verification.sh
 Manual Verification	blocker	QA/release owner	MANUAL_REAL_IPHONE_MODEL	Config/manual-release-verification.env	Real iPhone model is missing	Record real iPhone evidence in untracked Config/manual-release-verification.env.	APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/validate_manual_release_verification.sh
-Signing	blocker	Apple Developer account holder	DEVELOPMENT_TEAM_ID	Config/release.env or Xcode project settings	Apple Developer Team ID missing	Set DEVELOPMENT_TEAM_ID or configure Xcode.	Scripts/check_code_signing_assets.sh
+Signing	blocker	Apple Developer account holder	DEVELOPMENT_TEAM_ID	Config/release.env or Xcode project settings	Apple Developer Team ID missing	Set DEVELOPMENT_TEAM_ID or configure Xcode, then run DEVELOPMENT_TEAM_ID=YOURTEAMID ALLOW_PROVISIONING_UPDATES=1 Scripts/archive_app_store.sh.	Scripts/check_code_signing_assets.sh
 Signing	blocker	Apple Developer account holder	Apple Distribution certificate	login keychain	No valid Apple Distribution code signing identity found in the keychain	Install Apple Distribution signing assets and set DEVELOPMENT_TEAM_ID.	Scripts/check_code_signing_assets.sh
+App Privacy	blocker	App Store Connect account holder	APP_PRIVACY_DETAILS_CONFIRMED_IN_APP_STORE_CONNECT	Config/release.env	App Privacy confirmation is missing	Run FASTLANE_USER=apple-id@example.com CONFIRM_UPLOAD_APP_PRIVACY=1 Scripts/preflight_app_privacy_upload.sh.	Scripts/validate_app_privacy_connect_entry.sh
 EOF
   if ! Scripts/generate_release_input_todo.sh "$release_input_todo_actions" "$release_input_todo_output" >"$release_input_todo_test_dir/generate.log" 2>&1; then
     printf 'FAIL: Release input TODO generator must accept an external readiness action manifest fixture\n'
@@ -4212,6 +4217,22 @@ EOF
       printf 'FAIL: Release input TODO must include the guarded final App Review submission command\n'
       failures=$((failures + 1))
     fi
+    if ! grep -q '^## Placeholder Replacement Notes' "$release_input_todo_output"; then
+      printf 'FAIL: Release input TODO must include placeholder replacement notes\n'
+      failures=$((failures + 1))
+    fi
+    if ! grep -q 'Replace PROCESSED_BUILD_NUMBER with the processed App Store Connect build number before running selected-build commands' "$release_input_todo_output"; then
+      printf 'FAIL: Release input TODO must warn operators to replace selected-build placeholders\n'
+      failures=$((failures + 1))
+    fi
+    if ! grep -q 'Replace YOURTEAMID with the Apple Developer Team ID before running signing or archive commands' "$release_input_todo_output"; then
+      printf 'FAIL: Release input TODO must warn operators to replace Team ID placeholders\n'
+      failures=$((failures + 1))
+    fi
+    if ! grep -q 'Replace apple-id@example.com with the App Store Connect Apple ID before running Fastlane Apple ID commands' "$release_input_todo_output"; then
+      printf 'FAIL: Release input TODO must warn operators to replace Fastlane Apple ID placeholders\n'
+      failures=$((failures + 1))
+    fi
   fi
   rm -rf "$release_input_todo_test_dir"
 fi
@@ -4227,6 +4248,9 @@ check_contains "Scripts/validate_release_input_todo.sh" "Target Summary" "Releas
 check_contains "Scripts/validate_release_input_todo.sh" "Owner Summary" "Release input TODO validator must verify owner summary counts"
 check_contains "Scripts/validate_release_input_todo.sh" "Config/release.env" "Release input TODO validator must require private release env guidance"
 check_contains "Scripts/validate_release_input_todo.sh" "Config/manual-release-verification.env" "Release input TODO validator must require manual evidence guidance"
+check_contains "Scripts/validate_release_input_todo.sh" "selected-build placeholder replacement guidance" "Release input TODO validator must require selected-build placeholder replacement guidance"
+check_contains "Scripts/validate_release_input_todo.sh" "Team ID placeholder replacement guidance" "Release input TODO validator must require Team ID placeholder replacement guidance"
+check_contains "Scripts/validate_release_input_todo.sh" "Fastlane Apple ID placeholder replacement guidance" "Release input TODO validator must require Fastlane Apple ID placeholder replacement guidance"
 check_contains "Scripts/generate_release_input_todo.sh" "Scripts/install_private_release_input_templates.sh" "Release input TODO generator must direct operators to the safe private template installer"
 check_contains "Scripts/validate_release_input_todo.sh" "private template installer guidance" "Release input TODO validator must require safe private template installer guidance"
 check_contains "Scripts/validate_app_store_submission_packet.sh" 'Scripts/validate_release_input_todo.sh "$PACKET_DIR/external-readiness-actions.tsv" "$PACKET_DIR/release-input-todo.md"' "Submission packet validator must validate release input TODO against external readiness actions"
@@ -4242,6 +4266,8 @@ App Review Contact	blocker	Release owner	APP_REVIEW_CONTACT_EMAIL	Config/release
 Manual Verification	blocker	QA/release owner	manual-release-verification.env file	Config/manual-release-verification.env	Manual release verification evidence file is missing: Config/manual-release-verification.env	Run Scripts/bootstrap_release_inputs.sh, then record real iPhone evidence.	APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/validate_manual_release_verification.sh
 Manual Verification	blocker	QA/release owner	MANUAL_REAL_IPHONE_MODEL	Config/manual-release-verification.env	Real iPhone model is missing	Record real iPhone evidence.	APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/validate_manual_release_verification.sh
 Manual Verification	blocker	QA/release owner	MANUAL_REAL_IPHONE_IOS_VERSION	Config/manual-release-verification.env	Real iPhone iOS version is missing	Record real iPhone evidence.	APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/validate_manual_release_verification.sh
+Signing	blocker	Apple Developer account holder	DEVELOPMENT_TEAM_ID	Config/release.env or Xcode project settings	Apple Developer Team ID missing	Run DEVELOPMENT_TEAM_ID=YOURTEAMID ALLOW_PROVISIONING_UPDATES=1 Scripts/archive_app_store.sh.	Scripts/check_code_signing_assets.sh
+App Privacy	blocker	App Store Connect account holder	APP_PRIVACY_DETAILS_CONFIRMED_IN_APP_STORE_CONNECT	Config/release.env	App Privacy confirmation is missing	Run FASTLANE_USER=apple-id@example.com CONFIRM_UPLOAD_APP_PRIVACY=1 Scripts/preflight_app_privacy_upload.sh.	Scripts/validate_app_privacy_connect_entry.sh
 App Store Connect	warning	App Store Connect account holder	App Store Connect app record	App Store Connect	App record needs account-specific verification.	Verify App Store Connect state.	APP_STORE_CONNECT_SKIP_BUILD_CHECK=1 Scripts/check_app_store_connect_state.sh
 EOF
   if ! Scripts/generate_release_input_todo.sh "$release_input_todo_validator_actions" "$release_input_todo_validator_output" >"$release_input_todo_validator_test_dir/generate.log" 2>&1; then
@@ -4272,7 +4298,7 @@ EOF
       failures=$((failures + 1))
     fi
     cp "$release_input_todo_validator_output" "$release_input_todo_validator_bad"
-    perl -0pi -e 's/- Blockers: `4`/- Blockers: `3`/' "$release_input_todo_validator_bad"
+    perl -0pi -e 's/- Blockers: `6`/- Blockers: `5`/' "$release_input_todo_validator_bad"
     if Scripts/validate_release_input_todo.sh "$release_input_todo_validator_actions" "$release_input_todo_validator_bad" >"$release_input_todo_validator_test_dir/validate-bad.log" 2>&1; then
       printf 'FAIL: Release input TODO validator must reject blocker count mismatches\n'
       failures=$((failures + 1))
@@ -4305,6 +4331,39 @@ EOF
       failures=$((failures + 1))
     elif ! grep -q 'MANUAL_REAL_IPHONE_MODEL' "$release_input_todo_validator_test_dir/validate-mismatched-row.log"; then
       printf 'FAIL: Release input TODO validator must identify the mismatched action detail row\n'
+      failures=$((failures + 1))
+    fi
+    cp "$release_input_todo_validator_output" "$release_input_todo_validator_bad"
+    grep -vFx 'Replace PROCESSED_BUILD_NUMBER with the processed App Store Connect build number before running selected-build commands.' \
+      "$release_input_todo_validator_bad" >"$release_input_todo_validator_bad.tmp"
+    mv "$release_input_todo_validator_bad.tmp" "$release_input_todo_validator_bad"
+    if Scripts/validate_release_input_todo.sh "$release_input_todo_validator_actions" "$release_input_todo_validator_bad" >"$release_input_todo_validator_test_dir/validate-missing-selected-build-warning.log" 2>&1; then
+      printf 'FAIL: Release input TODO validator must reject missing selected-build placeholder guidance\n'
+      failures=$((failures + 1))
+    elif ! grep -q 'selected-build placeholder replacement guidance' "$release_input_todo_validator_test_dir/validate-missing-selected-build-warning.log"; then
+      printf 'FAIL: Release input TODO validator must identify missing selected-build placeholder guidance\n'
+      failures=$((failures + 1))
+    fi
+    cp "$release_input_todo_validator_output" "$release_input_todo_validator_bad"
+    grep -vFx 'Replace YOURTEAMID with the Apple Developer Team ID before running signing or archive commands.' \
+      "$release_input_todo_validator_bad" >"$release_input_todo_validator_bad.tmp"
+    mv "$release_input_todo_validator_bad.tmp" "$release_input_todo_validator_bad"
+    if Scripts/validate_release_input_todo.sh "$release_input_todo_validator_actions" "$release_input_todo_validator_bad" >"$release_input_todo_validator_test_dir/validate-missing-team-id-warning.log" 2>&1; then
+      printf 'FAIL: Release input TODO validator must reject missing Team ID placeholder guidance\n'
+      failures=$((failures + 1))
+    elif ! grep -q 'Team ID placeholder replacement guidance' "$release_input_todo_validator_test_dir/validate-missing-team-id-warning.log"; then
+      printf 'FAIL: Release input TODO validator must identify missing Team ID placeholder guidance\n'
+      failures=$((failures + 1))
+    fi
+    cp "$release_input_todo_validator_output" "$release_input_todo_validator_bad"
+    grep -vFx 'Replace apple-id@example.com with the App Store Connect Apple ID before running Fastlane Apple ID commands.' \
+      "$release_input_todo_validator_bad" >"$release_input_todo_validator_bad.tmp"
+    mv "$release_input_todo_validator_bad.tmp" "$release_input_todo_validator_bad"
+    if Scripts/validate_release_input_todo.sh "$release_input_todo_validator_actions" "$release_input_todo_validator_bad" >"$release_input_todo_validator_test_dir/validate-missing-fastlane-user-warning.log" 2>&1; then
+      printf 'FAIL: Release input TODO validator must reject missing Fastlane Apple ID placeholder guidance\n'
+      failures=$((failures + 1))
+    elif ! grep -q 'Fastlane Apple ID placeholder replacement guidance' "$release_input_todo_validator_test_dir/validate-missing-fastlane-user-warning.log"; then
+      printf 'FAIL: Release input TODO validator must identify missing Fastlane Apple ID placeholder guidance\n'
       failures=$((failures + 1))
     fi
   fi

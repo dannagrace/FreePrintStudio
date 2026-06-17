@@ -100,6 +100,13 @@ awk -F '\t' '
       warnings += 1
       owner_warning_counts[owner] += 1
     }
+    placeholder_source = $(columns["next_action"]) " " $(columns["validation_command"])
+    if (placeholder_source ~ /YOURTEAMID/) {
+      has_team_id_placeholder = 1
+    }
+    if (placeholder_source ~ /apple-id@example[.]com/) {
+      has_fastlane_apple_id_placeholder = 1
+    }
   }
   END {
     if (total == 0) {
@@ -114,6 +121,13 @@ awk -F '\t' '
     }
     for (owner in owner_counts) {
       printf "owner\t%s\t%s\t%s\t%s\n", owner, owner_counts[owner], owner_blocker_counts[owner] + 0, owner_warning_counts[owner] + 0
+    }
+    printf "placeholder\tselected_build\t1\n"
+    if (has_team_id_placeholder) {
+      printf "placeholder\tteam_id\t1\n"
+    }
+    if (has_fastlane_apple_id_placeholder) {
+      printf "placeholder\tfastlane_apple_id\t1\n"
     }
   }
 ' "$actions_path" >"$temp_dir/action-summary.tsv" || {
@@ -163,6 +177,9 @@ awk -F '\t' -v expected_action_rows="$expected_action_rows" '
 expected_total="$(awk -F '\t' '$1 == "total" { print $2 }' "$temp_dir/action-summary.tsv")"
 expected_blockers="$(awk -F '\t' '$1 == "blockers" { print $2 }' "$temp_dir/action-summary.tsv")"
 expected_warnings="$(awk -F '\t' '$1 == "warnings" { print $2 }' "$temp_dir/action-summary.tsv")"
+has_selected_build_placeholder="$(awk -F '\t' '$1 == "placeholder" && $2 == "selected_build" { print $3 }' "$temp_dir/action-summary.tsv" | tail -n 1)"
+has_team_id_placeholder="$(awk -F '\t' '$1 == "placeholder" && $2 == "team_id" { print $3 }' "$temp_dir/action-summary.tsv" | tail -n 1)"
+has_fastlane_apple_id_placeholder="$(awk -F '\t' '$1 == "placeholder" && $2 == "fastlane_apple_id" { print $3 }' "$temp_dir/action-summary.tsv" | tail -n 1)"
 awk -F '\t' '$1 == "target" { print $2 "\t" $3 }' "$temp_dir/action-summary.tsv" | LC_ALL=C sort >"$expected_targets"
 awk -F '\t' '$1 == "owner" { print $2 "\t" $3 "\t" $4 "\t" $5 }' "$temp_dir/action-summary.tsv" | LC_ALL=C sort >"$expected_owners"
 
@@ -183,6 +200,16 @@ require_contains "APP_STORE_BUILD_NUMBER=" "selected App Store build guard"
 require_contains "CONFIRM_SUBMIT_FOR_REVIEW=" "final review submission confirmation guard"
 require_contains "APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER CONFIRM_SUBMIT_FOR_REVIEW=1 Scripts/run_fastlane.sh ios submit_review" "guarded final App Review submission command"
 require_contains "## Non-env External Actions" "Non-env External Actions section"
+require_contains "## Placeholder Replacement Notes" "Placeholder Replacement Notes"
+if [[ -n "$has_selected_build_placeholder" ]]; then
+  require_contains "Replace PROCESSED_BUILD_NUMBER with the processed App Store Connect build number before running selected-build commands." "selected-build placeholder replacement guidance"
+fi
+if [[ -n "$has_team_id_placeholder" ]]; then
+  require_contains "Replace YOURTEAMID with the Apple Developer Team ID before running signing or archive commands." "Team ID placeholder replacement guidance"
+fi
+if [[ -n "$has_fastlane_apple_id_placeholder" ]]; then
+  require_contains "Replace apple-id@example.com with the App Store Connect Apple ID before running Fastlane Apple ID commands." "Fastlane Apple ID placeholder replacement guidance"
+fi
 
 compare_count "External Actions" "$expected_total"
 compare_count "Blockers" "$expected_blockers"

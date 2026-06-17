@@ -105,6 +105,19 @@ awk -F '\t' -v output_path="$output_path" -v actions_path="$actions_path" -v gen
     print "| `CONFIRM_SUBMIT_FOR_REVIEW=1` | Explicit final confirmation before Fastlane submits the selected build for review. | `APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER CONFIRM_SUBMIT_FOR_REVIEW=1 Scripts/run_fastlane.sh ios submit_review` |" >>output_path
   }
 
+  function print_placeholder_replacement_notes() {
+    print "" >>output_path
+    print "## Placeholder Replacement Notes" >>output_path
+    print "" >>output_path
+    print "Replace PROCESSED_BUILD_NUMBER with the processed App Store Connect build number before running selected-build commands." >>output_path
+    if (has_team_id_placeholder) {
+      print "Replace YOURTEAMID with the Apple Developer Team ID before running signing or archive commands." >>output_path
+    }
+    if (has_fastlane_apple_id_placeholder) {
+      print "Replace apple-id@example.com with the App Store Connect Apple ID before running Fastlane Apple ID commands." >>output_path
+    }
+  }
+
   function print_env_assignments(target,   row, printed, fields_seen, parts, part_count, part_index, candidate, has_missing_manual_file_action) {
     print "Fill these values in the git-ignored " code_text(target) " file. Leave secrets out of git." >>output_path
     if (target == "Config/release.env") {
@@ -191,6 +204,13 @@ awk -F '\t' -v output_path="$output_path" -v actions_path="$actions_path" -v gen
     item[row_count] = $(columns["item"])
     next_action[row_count] = $(columns["next_action"])
     validation_command[row_count] = $(columns["validation_command"])
+    placeholder_source = next_action[row_count] " " validation_command[row_count]
+    if (placeholder_source ~ /YOURTEAMID/) {
+      has_team_id_placeholder = 1
+    }
+    if (placeholder_source ~ /apple-id@example[.]com/) {
+      has_fastlane_apple_id_placeholder = 1
+    }
     target_counts[target_of[row_count]] += 1
     if (!(target_of[row_count] in target_seen)) {
       target_seen[target_of[row_count]] = 1
@@ -247,6 +267,8 @@ awk -F '\t' -v output_path="$output_path" -v actions_path="$actions_path" -v gen
         owner_blocker_counts[owner_name] + 0, \
         owner_warning_counts[owner_name] + 0 >>output_path
     }
+
+    print_placeholder_replacement_notes()
 
     env_targets[1] = "Config/release.env"
     env_targets[2] = "Config/manual-release-verification.env"
