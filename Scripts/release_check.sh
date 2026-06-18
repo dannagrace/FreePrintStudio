@@ -3508,6 +3508,40 @@ check_contains "Scripts/generate_manual_release_readiness_report.sh" "Scripts/va
 check_contains "Scripts/generate_manual_release_readiness_report.sh" "ios_version_status" "Manual release readiness report must validate real iPhone iOS version format"
 check_contains "Scripts/generate_manual_release_readiness_report.sh" "processed App Store Connect build number" "Manual release readiness report must warn that selected-build placeholders must be replaced"
 check_contains "Scripts/generate_manual_release_readiness_report.sh" "redacted" "Manual release readiness report must avoid printing private manual evidence values"
+check_file "Scripts/validate_manual_release_readiness_report.sh" "Manual release readiness report validator is required"
+if [[ -f "Scripts/validate_manual_release_readiness_report.sh" && ! -x "Scripts/validate_manual_release_readiness_report.sh" ]]; then
+  printf 'FAIL: Manual release readiness report validator must be executable (Scripts/validate_manual_release_readiness_report.sh)\n'
+  failures=$((failures + 1))
+fi
+check_contains "Scripts/validate_app_store_submission_packet.sh" "validate_manual_release_readiness_report.sh" "Submission packet validator must validate manual readiness report coverage"
+if [[ -x "Scripts/validate_manual_release_readiness_report.sh" ]]; then
+  manual_readiness_validator_test_dir="$(mktemp -d)"
+  manual_readiness_actions="$manual_readiness_validator_test_dir/external-readiness-actions.tsv"
+  manual_readiness_report="$manual_readiness_validator_test_dir/manual-release-readiness-report.md"
+  manual_readiness_log="$manual_readiness_validator_test_dir/validation.log"
+  cat >"$manual_readiness_actions" <<'EOF'
+category	severity	owner	field	target	item	next_action	validation_command
+Manual Verification	blocker	QA/release owner	MANUAL_REAL_IPHONE_MODEL	Config/manual-release-verification.env	Real iPhone model is missing	Record real iPhone evidence.	APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/validate_manual_release_verification.sh
+Manual Verification	blocker	QA/release owner	MANUAL_IPAD_TESTFLIGHT_LAYOUT	Config/manual-release-verification.env	iPad TestFlight layout result is missing	Record iPad evidence.	APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/validate_manual_release_verification.sh
+Manual Verification	blocker	QA/release owner	manual-release-verification.env file	Config/manual-release-verification.env	Manual release verification evidence file is missing: Config/manual-release-verification.env	Install the generated template before recording evidence.	APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/validate_manual_release_verification.sh
+EOF
+  MANUAL_RELEASE_VERIFICATION_PATH="$manual_readiness_validator_test_dir/missing-manual-release-verification.env" \
+    Scripts/generate_manual_release_readiness_report.sh "$manual_readiness_report" >/dev/null
+  if ! Scripts/validate_manual_release_readiness_report.sh "$manual_readiness_actions" "$manual_readiness_report" >"$manual_readiness_log" 2>&1; then
+    printf 'FAIL: Manual readiness report validator must accept the generated report for matching manual action fields\n'
+    cat "$manual_readiness_log"
+    failures=$((failures + 1))
+  fi
+  perl -0pi -e 's/^\| iPad layout is usable .*?\n//m' "$manual_readiness_report"
+  if Scripts/validate_manual_release_readiness_report.sh "$manual_readiness_actions" "$manual_readiness_report" >"$manual_readiness_log" 2>&1; then
+    printf 'FAIL: Manual readiness report validator must reject reports missing required manual action fields\n'
+    failures=$((failures + 1))
+  elif ! grep -q 'MANUAL_IPAD_TESTFLIGHT_LAYOUT' "$manual_readiness_log"; then
+    printf 'FAIL: Manual readiness report validator must identify the missing manual action field\n'
+    failures=$((failures + 1))
+  fi
+  rm -rf "$manual_readiness_validator_test_dir"
+fi
 check_contains "Scripts/prepare_app_store_submission_packet.sh" "manual-release-evidence-form.md" "Submission packet generator must include the manual release evidence form"
 check_contains "Scripts/prepare_app_store_submission_packet.sh" "generate_manual_release_evidence_form.sh" "Submission packet generator must generate the manual release evidence form"
 check_contains "Scripts/prepare_app_store_submission_packet.sh" '\\`manual-release-evidence-form.md\\`' "Submission packet summary must reference the manual release evidence form"
