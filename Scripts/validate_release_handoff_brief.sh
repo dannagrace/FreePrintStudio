@@ -126,6 +126,8 @@ awk -F '\t' '$1 != "owner" { print }' "$temp_dir/action-summary.tsv" | LC_ALL=C 
 awk -F '\t' '$1 == "owner" { print $2 "\t" $3 "\t" $4 "\t" $5 }' "$temp_dir/action-summary.tsv" | LC_ALL=C sort >"$expected_owner_summary"
 
 require_contains "# FreePrint Studio Release Handoff Brief" "release handoff brief title"
+require_contains "## CI-only Readiness Detail" "CI-only Readiness Detail section"
+require_contains "## Local-only Readiness Detail" "Local-only Readiness Detail section"
 require_contains "## External Action Summary" "External Action Summary section"
 require_contains "## Owner Summary" "Owner Summary section"
 require_contains "## External Action Detail" "External Action Detail section"

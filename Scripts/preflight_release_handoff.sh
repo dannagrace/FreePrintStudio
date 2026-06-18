@@ -59,6 +59,46 @@ external_action_count() {
   ' "$external_actions_path"
 }
 
+markdown_cell() {
+  local value="$1"
+  value="${value//|/\\|}"
+  value="${value//\`/\\\`}"
+  printf '%s' "$value"
+}
+
+readiness_signal_lines() {
+  local path="$1"
+  if [[ -s "$path" ]]; then
+    grep -E '^(BLOCKED|WARN):' "$path" | LC_ALL=C sort || true
+  fi
+}
+
+write_readiness_delta_section() {
+  local title="$1"
+  local source_path="$2"
+  local comparison_path="$3"
+  local empty_text="$4"
+  local delta_lines
+
+  printf '## %s\n\n' "$title"
+
+  delta_lines="$(comm -23 <(readiness_signal_lines "$source_path") <(readiness_signal_lines "$comparison_path"))"
+  if [[ -z "$delta_lines" ]]; then
+    printf '%s\n\n' "$empty_text"
+    return
+  fi
+
+  printf '| Severity | Item |\n'
+  printf '| --- | --- |\n'
+  while IFS= read -r line; do
+    [[ -n "$line" ]] || continue
+    local severity="${line%%:*}"
+    local item="${line#*: }"
+    printf '| %s | %s |\n' "$(markdown_cell "$severity")" "$(markdown_cell "$item")"
+  done <<<"$delta_lines"
+  printf '\n'
+}
+
 write_handoff_summary() {
   local handoff_status="$1"
   local packet_git_commit
@@ -168,6 +208,16 @@ write_handoff_brief() {
     printf '| Blockers | %s |\n' "$ci_local_readiness_blocker_delta"
     printf '| Warnings | %s |\n\n' "$ci_local_readiness_warning_delta"
     printf 'A non-zero CI/local readiness delta means the local ignored release input files or host state differ from the clean CI packet environment. Use the CI external action manifest for account-owner handoff, and use the local preflight log for this machine.\n\n'
+    write_readiness_delta_section \
+      "CI-only Readiness Detail" \
+      "$ci_readiness_log" \
+      "$readiness_log" \
+      "No CI-only blockers or warnings."
+    write_readiness_delta_section \
+      "Local-only Readiness Detail" \
+      "$readiness_log" \
+      "$ci_readiness_log" \
+      "No local-only blockers or warnings."
 
     printf '## External Action Summary\n\n'
     if [[ -s "$external_actions_path" ]]; then

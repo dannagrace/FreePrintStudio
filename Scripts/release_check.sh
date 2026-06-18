@@ -4049,6 +4049,14 @@ EOF
   cat >"$handoff_brief_path" <<'EOF'
 # FreePrint Studio Release Handoff Brief
 
+## CI-only Readiness Detail
+
+No CI-only blockers or warnings.
+
+## Local-only Readiness Detail
+
+No local-only blockers or warnings.
+
 ## External Action Summary
 
 | Category | Severity | Count |
@@ -4782,6 +4790,8 @@ check_contains "Scripts/preflight_release_handoff.sh" "external_action_warnings"
 check_contains "Scripts/preflight_release_handoff.sh" "ci_local_readiness_blocker_delta" "Release handoff summary must record the CI/local blocker delta"
 check_contains "Scripts/preflight_release_handoff.sh" "ci_local_readiness_warning_delta" "Release handoff summary must record the CI/local warning delta"
 check_contains "Scripts/preflight_release_handoff.sh" "CI vs Local Readiness Delta" "Release handoff brief must explain CI/local readiness differences"
+check_contains "Scripts/preflight_release_handoff.sh" "CI-only Readiness Detail" "Release handoff brief must list readiness lines present only in CI"
+check_contains "Scripts/preflight_release_handoff.sh" "Local-only Readiness Detail" "Release handoff brief must list readiness lines present only in local preflight"
 check_contains "Scripts/preflight_release_handoff.sh" "External Action Summary" "Release handoff brief must summarize external action categories"
 check_contains "Scripts/preflight_release_handoff.sh" "Owner Summary" "Release handoff brief must summarize external actions by owner"
 check_contains "Scripts/preflight_release_handoff.sh" "External Action Detail" "Release handoff brief must include actionable external readiness details"
@@ -4792,6 +4802,8 @@ check_contains "Scripts/preflight_release_handoff.sh" "Next Commands" "Release h
 check_contains "Scripts/preflight_release_handoff.sh" "Scripts/install_private_release_input_templates.sh --source-dir build/private-release-input-templates --target-dir Config" "Release handoff brief must install generated private input templates safely"
 check_contains "Scripts/preflight_release_handoff.sh" "Replace YOURTEAMID with the Apple Developer Team ID before running signing or archive commands." "Release handoff brief must warn operators to replace Team ID placeholders"
 check_contains "Scripts/preflight_release_handoff.sh" "Replace apple-id@example.com with the App Store Connect Apple ID before running Fastlane Apple ID commands." "Release handoff brief must warn operators to replace Fastlane Apple ID placeholders"
+check_contains "Scripts/validate_release_handoff_brief.sh" "CI-only Readiness Detail" "Release handoff brief validator must require CI-only readiness detail section"
+check_contains "Scripts/validate_release_handoff_brief.sh" "Local-only Readiness Detail" "Release handoff brief validator must require local-only readiness detail section"
 check_not_contains "Scripts/preflight_release_handoff.sh" "Scripts/bootstrap_release_inputs.sh" "Release handoff brief must not send operators through stale bootstrap_release_inputs after generating private templates"
 check_not_contains "Scripts/preflight_release_handoff.sh" "printf '-" "Release handoff brief must not use printf formats that start with a dash"
 check_contains "Scripts/preflight_release_handoff.sh" "ci_readiness_log" "Release handoff summary must record the CI packet readiness log path"
