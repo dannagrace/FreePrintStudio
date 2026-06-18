@@ -131,22 +131,28 @@ sync_missing_template_assignments() {
 
   missing_path="$(mktemp)"
   awk '
-    FNR == NR {
-      line = $0
+    function assignment_key(raw_line,   line, key) {
+      line = raw_line
       sub(/^[[:space:]]+/, "", line)
+      sub(/^export[[:space:]]+/, "", line)
       if (line ~ /^[A-Za-z_][A-Za-z0-9_]*=/) {
         key = line
         sub(/=.*/, "", key)
+        return key
+      }
+      return ""
+    }
+
+    FNR == NR {
+      key = assignment_key($0)
+      if (key != "") {
         existing[key] = 1
       }
       next
     }
     {
-      line = $0
-      sub(/^[[:space:]]+/, "", line)
-      if (line ~ /^[A-Za-z_][A-Za-z0-9_]*=/) {
-        key = line
-        sub(/=.*/, "", key)
+      key = assignment_key($0)
+      if (key != "") {
         if (!(key in existing)) {
           print $0
         }

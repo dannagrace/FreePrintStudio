@@ -4891,6 +4891,35 @@ EOF
       failures=$((failures + 1))
     fi
   fi
+  install_template_export_target_dir="$install_template_test_dir/ConfigExport"
+  mkdir -p "$install_template_export_target_dir"
+  {
+    printf 'export APP_REVIEW_CONTACT_EMAIL="real@example.com"\n'
+    printf 'export ASC_KEY_ID="REALKEY123"\n'
+  } >"$install_template_export_target_dir/release.env"
+  chmod 600 "$install_template_export_target_dir/release.env"
+  if ! Scripts/install_private_release_input_templates.sh --source-dir "$install_template_source_dir" --target-dir "$install_template_export_target_dir" >"$install_template_test_dir/install-export-sync.log" 2>&1; then
+    printf 'FAIL: Private release input template installer must sync missing keys into existing exported private files\n'
+    sed 's/^/  /' "$install_template_test_dir/install-export-sync.log"
+    failures=$((failures + 1))
+  else
+    if ! grep -q '^export APP_REVIEW_CONTACT_EMAIL="real@example.com"' "$install_template_export_target_dir/release.env"; then
+      printf 'FAIL: Private release input template installer must preserve existing exported private values\n'
+      failures=$((failures + 1))
+    fi
+    if grep -q '^APP_REVIEW_CONTACT_EMAIL=""' "$install_template_export_target_dir/release.env"; then
+      printf 'FAIL: Private release input template installer must not append duplicate blank keys for existing exported release values\n'
+      failures=$((failures + 1))
+    fi
+    if grep -q '^ASC_KEY_ID=""' "$install_template_export_target_dir/release.env"; then
+      printf 'FAIL: Private release input template installer must not append duplicate blank keys for existing exported App Store Connect values\n'
+      failures=$((failures + 1))
+    fi
+    if ! grep -q '^ASC_ISSUER_ID=""' "$install_template_export_target_dir/release.env"; then
+      printf 'FAIL: Private release input template installer must still append missing keys when existing values use export syntax\n'
+      failures=$((failures + 1))
+    fi
+  fi
   rm -rf "$install_template_test_dir"
 fi
 check_file "Scripts/preflight_release_handoff.sh" "Release handoff preflight script is required"
