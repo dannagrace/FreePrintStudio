@@ -3155,6 +3155,8 @@ check_contains "Scripts/validate_app_store_submission_packet.sh" $'key\tvalue' "
 check_contains "Scripts/validate_app_store_submission_packet.sh" "git_commit" "Submission packet validator must require release provenance source commit"
 check_contains "Scripts/validate_app_store_submission_packet.sh" "git_branch" "Submission packet validator must require release provenance branch"
 check_contains "Scripts/validate_app_store_submission_packet.sh" "git_status" "Submission packet validator must require release provenance worktree status"
+check_contains "Scripts/validate_app_store_submission_packet.sh" "summary Team ID placeholder replacement guidance" "Submission packet validator must require Summary Team ID placeholder replacement guidance"
+check_contains "Scripts/validate_app_store_submission_packet.sh" "summary Fastlane Apple ID placeholder replacement guidance" "Submission packet validator must require Summary Fastlane Apple ID placeholder replacement guidance"
 check_file "Scripts/validate_release_provenance.sh" "Release provenance validator is required"
 if [[ -f "Scripts/validate_release_provenance.sh" && ! -x "Scripts/validate_release_provenance.sh" ]]; then
   printf 'FAIL: Release provenance validator must be executable (Scripts/validate_release_provenance.sh)\n'

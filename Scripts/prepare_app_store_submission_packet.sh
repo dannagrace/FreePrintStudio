@@ -678,6 +678,8 @@ cat >"$SUMMARY_PATH" <<EOF
 ## Next Commands
 
 Replace \`PROCESSED_BUILD_NUMBER\` with the processed App Store Connect build number before running the selected-build commands below. The local release validators intentionally reject \`PROCESSED_BUILD_NUMBER\` so the placeholder cannot reach App Store Connect.
+Replace YOURTEAMID with the Apple Developer Team ID before running signing or archive commands.
+Replace apple-id@example.com with the App Store Connect Apple ID before running Fastlane Apple ID commands.
 
 \`\`\`sh
 Scripts/verify_release.sh store-ready

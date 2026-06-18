@@ -33,6 +33,20 @@ require_contains() {
   fi
 }
 
+require_placeholder_guidance() {
+  local relative_path="$1"
+  local placeholder="$2"
+  local guidance="$3"
+  local description="$4"
+  if [[ ! -s "$PACKET_DIR/$relative_path" ]]; then
+    fail "$description cannot be checked because $PACKET_DIR/$relative_path is missing"
+    return
+  fi
+  if grep -qF "$placeholder" "$PACKET_DIR/$relative_path" && ! grep -qF "$guidance" "$PACKET_DIR/$relative_path"; then
+    fail "$description is missing from $PACKET_DIR/$relative_path"
+  fi
+}
+
 require_tsv_header() {
   local relative_path="$1"
   local expected_header="$2"
@@ -238,6 +252,16 @@ require_contains "ACTION_ITEMS.md" "## External Values To Provide" "external val
 require_contains "ACTION_ITEMS.md" "## Command Order" "release command order"
 require_contains "SUMMARY.md" "ACTION_ITEMS.md" "summary action item reference"
 require_contains "SUMMARY.md" "Config/release.env.example" "summary private release environment template reference"
+require_placeholder_guidance \
+  "SUMMARY.md" \
+  "YOURTEAMID" \
+  "Replace YOURTEAMID with the Apple Developer Team ID before running signing or archive commands." \
+  "summary Team ID placeholder replacement guidance"
+require_placeholder_guidance \
+  "SUMMARY.md" \
+  "apple-id@example.com" \
+  "Replace apple-id@example.com with the App Store Connect Apple ID before running Fastlane Apple ID commands." \
+  "summary Fastlane Apple ID placeholder replacement guidance"
 require_contains "files/Config/release.env.example" "DEVELOPMENT_TEAM_ID" "release environment template Team ID field"
 require_contains "files/Config/release.env.example" "APP_STORE_CONNECT_API_KEY_JSON" "release environment template App Store Connect API JSON field"
 require_contains "files/Config/release.env.example" "APP_REVIEW_CONTACT_EMAIL" "release environment template App Review contact field"
