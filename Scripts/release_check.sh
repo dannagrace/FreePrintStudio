@@ -4034,6 +4034,7 @@ fi
 check_contains "Scripts/validate_release_handoff_brief.sh" "Owner Summary" "Release handoff brief validator must verify owner summary counts"
 check_contains "Scripts/validate_release_handoff_brief.sh" "Readiness Counts" "Release handoff brief validator must verify readiness count rows"
 check_contains "Scripts/validate_release_handoff_brief.sh" "CI Packet SHA" "Release handoff brief validator must verify source metadata rows"
+check_contains "Scripts/validate_release_handoff_brief.sh" "release-provenance.tsv" "Release handoff brief validator must compare source metadata with CI provenance"
 check_contains "Scripts/validate_release_handoff_brief.sh" "Primary Action Files" "Release handoff brief validator must require primary action file references"
 check_contains "Scripts/validate_release_handoff_brief.sh" "Next Commands" "Release handoff brief validator must require next command guidance"
 check_contains "Scripts/validate_release_handoff_brief.sh" "Team ID placeholder replacement guidance" "Release handoff brief validator must require Team ID placeholder replacement guidance"
@@ -4043,6 +4044,7 @@ check_contains "Scripts/preflight_release_handoff.sh" 'Scripts/validate_release_
 if [[ -x "Scripts/validate_release_handoff_brief.sh" ]]; then
   handoff_brief_test_dir="$(mktemp -d)"
   handoff_brief_actions="$handoff_brief_test_dir/external-readiness-actions.tsv"
+  handoff_brief_provenance="$handoff_brief_test_dir/release-provenance.tsv"
   handoff_brief_ci_readiness="$handoff_brief_test_dir/ci-readiness.txt"
   handoff_brief_local_readiness="$handoff_brief_test_dir/local-readiness.txt"
   handoff_brief_path="$handoff_brief_test_dir/release-handoff-brief.md"
@@ -4052,6 +4054,18 @@ if [[ -x "Scripts/validate_release_handoff_brief.sh" ]]; then
 category	severity	owner	field	target	item	next_action	validation_command
 Signing	blocker	Apple Developer account holder	DEVELOPMENT_TEAM_ID	Config/release.env	Apple Developer Team ID missing	fill it	Scripts/check_code_signing_assets.sh
 App Store Connect	warning	App Store Connect account holder	App Store Connect app record	App Store Connect	App record needs verification	verify it	APP_STORE_CONNECT_SKIP_BUILD_CHECK=1 Scripts/check_app_store_connect_state.sh
+EOF
+  cat >"$handoff_brief_provenance" <<'EOF'
+key	value
+generated_at	2026-06-18T16:50:00Z
+git_commit	abcdef
+git_branch	main
+git_remote_origin	https://github.com/dannagrace/FreePrintStudio
+git_status	clean
+git_dirty_count	0
+github_run_url	https://github.com/dannagrace/FreePrintStudio/actions/runs/1
+github_ref	main
+github_sha	abcdef
 EOF
   cat >"$handoff_brief_ci_readiness" <<'EOF'
 BLOCKED: CI-only blocker
@@ -4211,6 +4225,15 @@ EOF
     failures=$((failures + 1))
   elif ! grep -q 'handoff metadata mismatch' "$handoff_brief_log"; then
     printf 'FAIL: Release handoff brief validator must identify source metadata mismatches\n'
+    failures=$((failures + 1))
+  fi
+  cp "$handoff_brief_path" "$handoff_brief_bad"
+  perl -0pi -e 's#^- CI Run: https://github.com/dannagrace/FreePrintStudio/actions/runs/1$#- CI Run: https://github.com/dannagrace/FreePrintStudio/actions/runs/2#m' "$handoff_brief_bad"
+  if Scripts/validate_release_handoff_brief.sh "$handoff_brief_actions" "$handoff_brief_bad" "$handoff_brief_ci_readiness" "$handoff_brief_local_readiness" >"$handoff_brief_log" 2>&1; then
+    printf 'FAIL: Release handoff brief validator must reject source provenance mismatches\n'
+    failures=$((failures + 1))
+  elif ! grep -q 'handoff provenance mismatch' "$handoff_brief_log"; then
+    printf 'FAIL: Release handoff brief validator must identify source provenance mismatches\n'
     failures=$((failures + 1))
   fi
   cp "$handoff_brief_path" "$handoff_brief_bad"

@@ -8,6 +8,8 @@ fi
 
 actions_path="$1"
 brief_path="$2"
+packet_dir="$(cd "$(dirname "$actions_path")" && pwd)"
+provenance_path="$packet_dir/release-provenance.tsv"
 ci_readiness_path="${3:-}"
 local_readiness_path="${4:-}"
 failures=0
@@ -76,6 +78,11 @@ brief_metadata_value() {
   ' "$brief_path"
 }
 
+provenance_value() {
+  local key="$1"
+  awk -F '\t' -v key="$key" 'NR > 1 && $1 == key { print $2; found = 1; exit } END { if (!found) exit 1 }' "$provenance_path"
+}
+
 require_metadata_value() {
   local label="$1"
   local description="$2"
@@ -90,6 +97,10 @@ validate_source_metadata() {
   local local_head
   local packet_commit
   local packet_sha
+  local ci_run
+  local provenance_commit
+  local provenance_sha
+  local provenance_run_url
   require_metadata_value "Generated At" "Generated At metadata"
   require_metadata_value "Handoff Status" "Handoff Status metadata"
   require_metadata_value "Local HEAD" "Local HEAD metadata"
@@ -100,9 +111,28 @@ validate_source_metadata() {
   local_head="$(brief_metadata_value "Local HEAD" 2>/dev/null || true)"
   packet_commit="$(brief_metadata_value "CI Packet Commit" 2>/dev/null || true)"
   packet_sha="$(brief_metadata_value "CI Packet SHA" 2>/dev/null || true)"
+  ci_run="$(brief_metadata_value "CI Run" 2>/dev/null || true)"
   if [[ -n "$local_head" && -n "$packet_commit" && -n "$packet_sha" ]] &&
     [[ "$local_head" != "$packet_commit" || "$local_head" != "$packet_sha" ]]; then
     fail "handoff metadata mismatch: Local HEAD, CI Packet Commit, and CI Packet SHA must match"
+  fi
+
+  if [[ ! -s "$provenance_path" ]]; then
+    fail "release-provenance.tsv is missing or empty next to external readiness actions: $provenance_path"
+    return
+  fi
+
+  provenance_commit="$(provenance_value "git_commit" 2>/dev/null || true)"
+  provenance_sha="$(provenance_value "github_sha" 2>/dev/null || true)"
+  provenance_run_url="$(provenance_value "github_run_url" 2>/dev/null || true)"
+  if [[ -n "$packet_commit" && -n "$provenance_commit" && "$packet_commit" != "$provenance_commit" ]]; then
+    fail "handoff provenance mismatch: CI Packet Commit must match release-provenance.tsv git_commit"
+  fi
+  if [[ -n "$packet_sha" && -n "$provenance_sha" && "$provenance_sha" != "not available" && "$packet_sha" != "$provenance_sha" ]]; then
+    fail "handoff provenance mismatch: CI Packet SHA must match release-provenance.tsv github_sha"
+  fi
+  if [[ -n "$ci_run" && -n "$provenance_run_url" && "$provenance_run_url" != "not available" && "$ci_run" != "$provenance_run_url" ]]; then
+    fail "handoff provenance mismatch: CI Run must match release-provenance.tsv github_run_url"
   fi
 }
 
