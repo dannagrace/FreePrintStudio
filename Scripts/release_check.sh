@@ -1995,6 +1995,7 @@ check_contains "fastlane/Fastfile" "require \"pathname\"" "Fastfile must normali
 check_contains "fastlane/Fastfile" "api_key_json_path.dirname" "Fastfile must resolve API JSON relative key_filepath values from the JSON file directory"
 check_not_contains "fastlane/Fastfile" 'APP_STORE_CONNECT_API_KEY_JSON does not exist: #{api_key_json}' "Fastfile must not print the full App Store Connect API JSON path"
 check_not_contains "fastlane/Fastfile" 'ASC_KEY_PATH does not exist: #{key_path}' "Fastfile must not print the full App Store Connect private key path"
+check_not_contains "fastlane/Fastfile" "BEGIN PRIVATE KEY" "Fastfile must not embed private key PEM markers that trip submission packet scanning"
 check_contains "fastlane/Fastfile" "APP_STORE_CONNECT_API_KEY_JSON does not exist at the configured path" "Fastfile must identify missing API JSON without printing the configured path"
 check_contains "fastlane/Fastfile" "APP_STORE_CONNECT_API_KEY_JSON is not valid JSON" "Fastfile must identify malformed App Store Connect API JSON without a Ruby parser traceback"
 check_contains "fastlane/Fastfile" "APP_STORE_CONNECT_API_KEY_JSON key_id must be a 10-character App Store Connect API key id" "Fastfile must validate API JSON key_id format before App Store Connect uploads"

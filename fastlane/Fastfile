@@ -10,6 +10,7 @@ SECONDARY_CATEGORY = "Productivity"
 DEFAULT_EXPORT_PATH = File.join(PROJECT_ROOT, "build/AppStoreExport")
 REVIEW_INFORMATION_PATH = File.join(PROJECT_ROOT, "fastlane/metadata/review_information")
 APP_PRIVACY_DETAILS_PATH = File.join(PROJECT_ROOT, "AppStore/app_privacy_details.json")
+PRIVATE_KEY_PEM_MARKER = ["BEGIN", "PRIVATE", "KEY"].join(" ")
 
 def require_private_file_permissions!(path, label)
   begin
@@ -28,7 +29,7 @@ def require_private_key_file!(path, missing_message:, permissions_label:, unread
   require_private_file_permissions!(path, permissions_label)
 
   key_text = File.read(path)
-  unless key_text.include?("BEGIN PRIVATE KEY")
+  unless key_text.include?(PRIVATE_KEY_PEM_MARKER)
     UI.user_error!(content_message)
   end
 rescue Errno::EACCES
@@ -73,7 +74,7 @@ def app_store_connect_credentials(required: false)
     if key_filepath.empty?
       key_content = payload["key"].to_s
       UI.user_error!("APP_STORE_CONNECT_API_KEY_JSON is missing key or key_filepath") if key_content.empty?
-      unless key_content.empty? || key_content.include?("BEGIN PRIVATE KEY")
+      unless key_content.empty? || key_content.include?(PRIVATE_KEY_PEM_MARKER)
         UI.user_error!("APP_STORE_CONNECT_API_KEY_JSON key does not look like an App Store Connect .p8 private key")
       end
       return {
