@@ -74,6 +74,9 @@ APP_PRIVACY_SKIP_PUBLISH=
 # Set after Fastlane upload or manual App Store Connect entry matches AppStore/app_privacy_details.json.
 APP_PRIVACY_DETAILS_CONFIRMED_IN_APP_STORE_CONNECT=
 
+# Set after App Store Connect Pricing, Availability, monetization, release option, and phased release match AppStore/commercial-configuration.md.
+APP_STORE_COMMERCIAL_CONFIG_CONFIRMED_IN_APP_STORE_CONNECT=
+
 # Optional overrides.
 IPA_PATH=
 TESTFLIGHT_CHANGELOG=

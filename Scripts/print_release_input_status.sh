@@ -82,11 +82,11 @@ scope_requires() {
           ;;
       esac
       ;;
-    app-review-submission)
-      case "$section" in
-        private-release-env|app-review-contact|app-store-connect|app-privacy-connect-confirmation|final-submission|manual-release-evidence)
-          return 0
-          ;;
+	    app-review-submission)
+	      case "$section" in
+	        private-release-env|app-review-contact|app-store-connect|app-privacy-connect-confirmation|commercial-configuration-confirmation|final-submission|manual-release-evidence)
+	          return 0
+	          ;;
       esac
       ;;
     testflight-upload)
@@ -456,6 +456,22 @@ else
   mark_optional "App Privacy Details App Store Connect confirmation is deferred for this release input status scope"
 fi
 
+printf '\n== Commercial Configuration ==\n'
+if scope_requires "commercial-configuration-confirmation"; then
+  commercial_configuration_confirmation="$(trimmed_value "${APP_STORE_COMMERCIAL_CONFIG_CONFIRMED_IN_APP_STORE_CONNECT:-}")"
+  if [[ "$commercial_configuration_confirmation" == "1" ]]; then
+    mark_ok "APP_STORE_COMMERCIAL_CONFIG_CONFIRMED_IN_APP_STORE_CONNECT is set after App Store Connect commercial configuration verification"
+  elif is_set "$commercial_configuration_confirmation"; then
+    mark_missing "APP_STORE_COMMERCIAL_CONFIG_CONFIRMED_IN_APP_STORE_CONNECT must be 1 after App Store Connect matches AppStore/commercial-configuration.md"
+    record_missing_field "APP_STORE_COMMERCIAL_CONFIG_CONFIRMED_IN_APP_STORE_CONNECT" "Config/release.env" "Scripts/validate_commercial_configuration_connect_entry.sh"
+  else
+    mark_missing "APP_STORE_COMMERCIAL_CONFIG_CONFIRMED_IN_APP_STORE_CONNECT is missing; confirm Pricing, Availability, monetization, release option, and phased release in App Store Connect before final App Review submission"
+    record_missing_field "APP_STORE_COMMERCIAL_CONFIG_CONFIRMED_IN_APP_STORE_CONNECT" "Config/release.env" "Scripts/validate_commercial_configuration_connect_entry.sh"
+  fi
+else
+  mark_optional "Commercial configuration App Store Connect confirmation is deferred for this release input status scope"
+fi
+
 printf '\n== Final Submission Guards ==\n'
 if scope_requires "final-submission"; then
   if is_set "${APP_STORE_BUILD_NUMBER:-}"; then
@@ -599,6 +615,7 @@ printf 'FASTLANE_USER=apple-id@example.com CONFIRM_UPLOAD_APP_PRIVACY=1 Scripts/
 printf 'FASTLANE_USER=apple-id@example.com CONFIRM_UPLOAD_APP_PRIVACY=1 Scripts/run_fastlane.sh ios privacy_details\n'
 printf 'Replace apple-id@example.com with the App Store Connect Apple ID before running Fastlane Apple ID commands.\n'
 printf 'APP_PRIVACY_DETAILS_CONFIRMED_IN_APP_STORE_CONNECT=1 Scripts/validate_app_privacy_connect_entry.sh\n'
+printf 'APP_STORE_COMMERCIAL_CONFIG_CONFIRMED_IN_APP_STORE_CONNECT=1 Scripts/validate_commercial_configuration_connect_entry.sh\n'
 printf 'Scripts/verify_release.sh testflight-dependencies-preflight\n'
 printf 'Scripts/preflight_app_store_archive.sh\n'
 printf 'DEVELOPMENT_TEAM_ID=YOURTEAMID ALLOW_PROVISIONING_UPDATES=1 Scripts/archive_app_store.sh\n'

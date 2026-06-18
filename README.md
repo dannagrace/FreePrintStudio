@@ -301,6 +301,7 @@ Run `Scripts/validate_release_handoff_summary.sh build/release-handoff-summary.t
 Release metadata, screenshot assets, and the remaining App Store Connect checklist live under `AppStore/`.
 
 Use `AppStore/commercial-configuration.md` for App Store Connect pricing, availability, monetization, and manual release settings. The MVP configuration is free, all App Store countries or regions, no in-app purchases, no subscriptions, no advertising, and manual release after approval.
+After applying those settings in App Store Connect, confirm them locally with `APP_STORE_COMMERCIAL_CONFIG_CONFIRMED_IN_APP_STORE_CONNECT=1 Scripts/validate_commercial_configuration_connect_entry.sh`.
 
 Use `AppStore/review-guideline-audit.md` as the App Review self-audit. It maps Apple review, privacy, commerce, metadata, SDK, and final-submission expectations to local evidence and remaining blockers.
 
@@ -359,6 +360,12 @@ After Fastlane upload or manual App Store Connect entry, confirm the live App Pr
 APP_PRIVACY_DETAILS_CONFIRMED_IN_APP_STORE_CONNECT=1 Scripts/validate_app_privacy_connect_entry.sh
 ```
 
+After applying Pricing, Availability, monetization, release option, and phased release from `AppStore/commercial-configuration.md`, confirm the live App Store Connect commercial settings:
+
+```sh
+APP_STORE_COMMERCIAL_CONFIG_CONFIRMED_IN_APP_STORE_CONNECT=1 Scripts/validate_commercial_configuration_connect_entry.sh
+```
+
 Fastlane can also call the local gates and create the signed archive:
 
 ```sh
@@ -390,7 +397,7 @@ Before submitting for App Review, run the final preflight without triggering sub
 APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/preflight_app_review_submission.sh
 ```
 
-The preflight starts with `Scripts/print_release_input_status.sh --strict --scope app-review-submission`, so it prints final-submission field-level missing release inputs before the individual submission gates run without requiring local signing assets after the uploaded build has processed. It requires `MANUAL_TESTFLIGHT_BUILD_NUMBER` in `Config/manual-release-verification.env` to match the same APP_STORE_BUILD_NUMBER, and requires physical iPad TestFlight evidence for the supported iPad build.
+The preflight starts with `Scripts/print_release_input_status.sh --strict --scope app-review-submission`, so it prints final-submission field-level missing release inputs before the individual submission gates run without requiring local signing assets after the uploaded build has processed. It requires commercial configuration confirmation, `MANUAL_TESTFLIGHT_BUILD_NUMBER` in `Config/manual-release-verification.env` to match the same APP_STORE_BUILD_NUMBER, and physical iPad TestFlight evidence for the supported iPad build.
 
 After the uploaded build is processed in App Store Connect and the store listing, privacy details, age rating, screenshots, and review contact details are final, submit the selected build for App Review:
 

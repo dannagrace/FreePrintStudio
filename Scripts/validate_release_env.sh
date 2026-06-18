@@ -52,6 +52,7 @@ tracked_env_names=(
   FASTLANE_ITC_TEAM_ID
   FASTLANE_ITC_TEAM_NAME
   APP_PRIVACY_DETAILS_CONFIRMED_IN_APP_STORE_CONNECT
+  APP_STORE_COMMERCIAL_CONFIG_CONFIRMED_IN_APP_STORE_CONNECT
   IPA_PATH
   APP_STORE_BUILD_NUMBER
 )
@@ -120,6 +121,10 @@ validate_format \
   APP_PRIVACY_DETAILS_CONFIRMED_IN_APP_STORE_CONNECT \
   '^1$' \
   "APP_PRIVACY_DETAILS_CONFIRMED_IN_APP_STORE_CONNECT must be 1 after App Store Connect matches AppStore/app_privacy_details.json"
+validate_format \
+  APP_STORE_COMMERCIAL_CONFIG_CONFIRMED_IN_APP_STORE_CONNECT \
+  '^1$' \
+  "APP_STORE_COMMERCIAL_CONFIG_CONFIRMED_IN_APP_STORE_CONNECT must be 1 after App Store Connect pricing, availability, and release options match AppStore/commercial-configuration.md"
 validate_format \
   APP_STORE_BUILD_NUMBER \
   '^[0-9]+(\.[0-9]+){0,2}$' \

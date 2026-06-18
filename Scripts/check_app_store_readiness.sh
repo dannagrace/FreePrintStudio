@@ -322,6 +322,18 @@ else
   done </tmp/freeprintstudio-app-privacy-connect-entry.log
 fi
 
+if Scripts/validate_commercial_configuration_connect_entry.sh >/tmp/freeprintstudio-commercial-configuration-connect-entry.log 2>&1; then
+  ok "Commercial configuration is confirmed in App Store Connect"
+else
+  while IFS= read -r line; do
+    case "$line" in
+      OK:*) ok "${line#OK: }" ;;
+      BLOCKED:*) block "${line#BLOCKED: }" ;;
+      *) printf '  %s\n' "$line" ;;
+    esac
+  done </tmp/freeprintstudio-commercial-configuration-connect-entry.log
+fi
+
 if [[ -n "${FASTLANE_USER:-}" ]]; then
   ok "FASTLANE_USER configured for App Privacy Details upload automation"
 else

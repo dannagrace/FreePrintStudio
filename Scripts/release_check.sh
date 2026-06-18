@@ -466,6 +466,7 @@ check_contains "Config/release.env.example" "ASC_KEY_ID" "Release environment te
 check_contains "Config/release.env.example" "APP_REVIEW_CONTACT_EMAIL" "Release environment template must document App Review contact variables"
 check_contains "Config/release.env.example" "Replace apple-id@example.com with the App Store Connect Apple ID before running Fastlane Apple ID commands." "Release environment template must warn operators to replace Fastlane Apple ID placeholders"
 check_contains "Config/release.env.example" "CONFIRM_UPLOAD_APP_PRIVACY" "Release environment template must document the App Privacy Details upload guard"
+check_contains "Config/release.env.example" "APP_STORE_COMMERCIAL_CONFIG_CONFIRMED_IN_APP_STORE_CONNECT" "Release environment template must document the App Store Connect commercial configuration confirmation"
 check_contains "Config/release.env.example" "CONFIRM_SUBMIT_FOR_REVIEW" "Release environment template must document the final App Review submission guard"
 check_contains "Config/release.env.example" "Replace PROCESSED_BUILD_NUMBER with the processed App Store Connect build number before running selected-build commands." "Release environment template must warn operators to replace selected-build placeholders"
 check_contains ".gitignore" "Config/release.env" "Filled release environment files must stay untracked"
@@ -1183,6 +1184,10 @@ else
     printf 'FAIL: Release input bootstrap must append missing release.env template keys\n'
     failures=$((failures + 1))
   fi
+  if ! grep -q '^APP_STORE_COMMERCIAL_CONFIG_CONFIRMED_IN_APP_STORE_CONNECT=$' "$bootstrap_sync_release_env"; then
+    printf 'FAIL: Release input bootstrap must append missing commercial configuration confirmation key\n'
+    failures=$((failures + 1))
+  fi
   if ! grep -q '^MANUAL_VERIFIER_NAME="Private Tester"$' "$bootstrap_sync_manual_env"; then
     printf 'FAIL: Release input bootstrap must preserve existing manual evidence values while syncing new keys\n'
     failures=$((failures + 1))
@@ -1210,6 +1215,7 @@ check_contains "Scripts/print_release_input_status.sh" "DEFAULT_AIRPRINT_RULER_T
 check_contains "Scripts/print_release_input_status.sh" "MANUAL_TESTFLIGHT_BUILD_NUMBER" "Release input status must summarize tested TestFlight build evidence"
 check_contains "Scripts/print_release_input_status.sh" "Final Submission Guards" "Release input status must summarize final App Review submission guards"
 check_contains "Scripts/print_release_input_status.sh" "APP_STORE_BUILD_NUMBER is configured" "Release input status must show whether the selected App Store build is configured"
+check_contains "Scripts/print_release_input_status.sh" "APP_STORE_COMMERCIAL_CONFIG_CONFIRMED_IN_APP_STORE_CONNECT" "Release input status must summarize App Store Connect commercial configuration confirmation"
 check_contains "Scripts/print_release_input_status.sh" "CONFIRM_SUBMIT_FOR_REVIEW" "Release input status must show whether explicit App Review submission confirmation is configured"
 check_contains "Scripts/print_release_input_status.sh" "git check-ignore" "Release input status must confirm private files stay ignored"
 check_contains "Scripts/print_release_input_status.sh" "--strict" "Release input status must offer a strict mode for handoff gating"
@@ -1242,6 +1248,7 @@ check_contains "Scripts/print_release_input_status.sh" "APP_REVIEW_CONTACT_FIRST
 check_contains "Scripts/print_release_input_status.sh" "MANUAL_REAL_IPHONE_PHOTOS_IMPORT" "Release input status missing field checklist must include manual result fields"
 check_contains "Scripts/print_release_input_status.sh" "Apple Distribution certificate" "Release input status missing field checklist must include signing certificate status"
 check_contains "Scripts/print_release_input_status.sh" "APP_STORE_CONNECT_API_KEY_JSON or ASC_KEY_ID/ASC_ISSUER_ID/ASC_KEY_PATH" "Release input status missing field checklist must include App Store Connect credential alternatives"
+check_contains "Scripts/print_release_input_status.sh" "Scripts/validate_commercial_configuration_connect_entry.sh" "Release input status missing field checklist must include the commercial configuration confirmation validator"
 check_not_contains "Scripts/print_release_input_status.sh" "APP_STORE_BUILD_NUMBER:-<" "Release input status must use a shell-safe selected-build placeholder when APP_STORE_BUILD_NUMBER is missing"
 check_contains "Scripts/print_release_input_status.sh" "PROCESSED_BUILD_NUMBER" "Release input status must show a selected-build placeholder when APP_STORE_BUILD_NUMBER is missing"
 release_input_placeholder_build_test_dir="$(mktemp -d)"
@@ -1593,6 +1600,7 @@ APP_REVIEW_CONTACT_PHONE=+14155552671
 APP_REVIEW_CONTACT_EMAIL=release-owner@freeprintstudio.test
 APP_STORE_CONNECT_API_KEY_JSON="$release_input_status_review_scope_ready_key"
 APP_PRIVACY_DETAILS_CONFIRMED_IN_APP_STORE_CONNECT=1
+APP_STORE_COMMERCIAL_CONFIG_CONFIRMED_IN_APP_STORE_CONNECT=1
 APP_STORE_BUILD_NUMBER=42
 CONFIRM_SUBMIT_FOR_REVIEW=1
 EOF
@@ -2155,6 +2163,57 @@ elif ! grep -q 'App Privacy Details confirmed in App Store Connect' "$app_privac
   failures=$((failures + 1))
 fi
 rm -rf "$app_privacy_valid_confirmation_test_dir"
+check_file "Scripts/validate_commercial_configuration_connect_entry.sh" "Commercial configuration App Store Connect confirmation validator is required"
+if [[ -f "Scripts/validate_commercial_configuration_connect_entry.sh" && ! -x "Scripts/validate_commercial_configuration_connect_entry.sh" ]]; then
+  printf 'FAIL: Commercial configuration App Store Connect confirmation validator must be executable (Scripts/validate_commercial_configuration_connect_entry.sh)\n'
+  failures=$((failures + 1))
+fi
+check_contains "Scripts/load_release_env.sh" "APP_STORE_COMMERCIAL_CONFIG_CONFIRMED_IN_APP_STORE_CONNECT" "Release environment loader must preserve commercial configuration App Store Connect confirmation"
+check_contains "Scripts/validate_release_env.sh" "APP_STORE_COMMERCIAL_CONFIG_CONFIRMED_IN_APP_STORE_CONNECT" "Release environment validation must reject placeholder commercial configuration confirmations"
+check_contains "Scripts/check_app_store_readiness.sh" "validate_commercial_configuration_connect_entry.sh" "Readiness audit must require commercial configuration confirmation in App Store Connect"
+check_contains "Scripts/preflight_app_review_submission.sh" "validate_commercial_configuration_connect_entry.sh" "App Review submission preflight must require commercial configuration confirmation in App Store Connect"
+check_contains "README.md" "APP_STORE_COMMERCIAL_CONFIG_CONFIRMED_IN_APP_STORE_CONNECT" "README must document commercial configuration App Store Connect confirmation"
+check_contains "AppStore/release-checklist.md" "APP_STORE_COMMERCIAL_CONFIG_CONFIRMED_IN_APP_STORE_CONNECT" "Release checklist must document commercial configuration App Store Connect confirmation"
+check_contains "AppStore/release-inputs-worksheet.md" "APP_STORE_COMMERCIAL_CONFIG_CONFIRMED_IN_APP_STORE_CONNECT" "Release input worksheet must include commercial configuration App Store Connect confirmation"
+commercial_missing_confirmation_test_dir="$(mktemp -d)"
+commercial_missing_confirmation_env="$commercial_missing_confirmation_test_dir/release.env"
+commercial_missing_confirmation_log="$commercial_missing_confirmation_test_dir/commercial-confirmation.log"
+: >"$commercial_missing_confirmation_env"
+chmod 600 "$commercial_missing_confirmation_env"
+if RELEASE_ENV_PATH="$commercial_missing_confirmation_env" Scripts/validate_commercial_configuration_connect_entry.sh >"$commercial_missing_confirmation_log" 2>&1; then
+  printf 'FAIL: Commercial configuration App Store Connect confirmation must be required before App Review submission\n'
+  failures=$((failures + 1))
+elif ! grep -q 'APP_STORE_COMMERCIAL_CONFIG_CONFIRMED_IN_APP_STORE_CONNECT=1' "$commercial_missing_confirmation_log"; then
+  printf 'FAIL: Missing commercial configuration App Store Connect confirmation must name APP_STORE_COMMERCIAL_CONFIG_CONFIRMED_IN_APP_STORE_CONNECT=1\n'
+  failures=$((failures + 1))
+fi
+rm -rf "$commercial_missing_confirmation_test_dir"
+commercial_invalid_confirmation_test_dir="$(mktemp -d)"
+commercial_invalid_confirmation_env="$commercial_invalid_confirmation_test_dir/release.env"
+commercial_invalid_confirmation_log="$commercial_invalid_confirmation_test_dir/commercial-confirmation-invalid.log"
+printf 'APP_STORE_COMMERCIAL_CONFIG_CONFIRMED_IN_APP_STORE_CONNECT=yes\n' >"$commercial_invalid_confirmation_env"
+chmod 600 "$commercial_invalid_confirmation_env"
+if RELEASE_ENV_PATH="$commercial_invalid_confirmation_env" Scripts/validate_commercial_configuration_connect_entry.sh >"$commercial_invalid_confirmation_log" 2>&1; then
+  printf 'FAIL: Commercial configuration App Store Connect confirmation must reject non-1 values\n'
+  failures=$((failures + 1))
+elif ! grep -q 'must be 1 after App Store Connect pricing, availability, and release options match AppStore/commercial-configuration.md' "$commercial_invalid_confirmation_log"; then
+  printf 'FAIL: Invalid commercial configuration App Store Connect confirmation must explain the expected value\n'
+  failures=$((failures + 1))
+fi
+rm -rf "$commercial_invalid_confirmation_test_dir"
+commercial_valid_confirmation_test_dir="$(mktemp -d)"
+commercial_valid_confirmation_env="$commercial_valid_confirmation_test_dir/release.env"
+commercial_valid_confirmation_log="$commercial_valid_confirmation_test_dir/commercial-confirmation-valid.log"
+printf 'APP_STORE_COMMERCIAL_CONFIG_CONFIRMED_IN_APP_STORE_CONNECT=1\n' >"$commercial_valid_confirmation_env"
+chmod 600 "$commercial_valid_confirmation_env"
+if ! RELEASE_ENV_PATH="$commercial_valid_confirmation_env" Scripts/validate_commercial_configuration_connect_entry.sh >"$commercial_valid_confirmation_log" 2>&1; then
+  printf 'FAIL: Commercial configuration App Store Connect confirmation must pass when APP_STORE_COMMERCIAL_CONFIG_CONFIRMED_IN_APP_STORE_CONNECT=1\n'
+  failures=$((failures + 1))
+elif ! grep -q 'Commercial configuration confirmed in App Store Connect' "$commercial_valid_confirmation_log"; then
+  printf 'FAIL: Commercial configuration App Store Connect confirmation success must be explicit\n'
+  failures=$((failures + 1))
+fi
+rm -rf "$commercial_valid_confirmation_test_dir"
 check_file "Scripts/preflight_app_privacy_upload.sh" "App Privacy Details upload preflight script is required"
 if [[ -f "Scripts/preflight_app_privacy_upload.sh" && ! -x "Scripts/preflight_app_privacy_upload.sh" ]]; then
   printf 'FAIL: App Privacy Details upload preflight script must be executable (Scripts/preflight_app_privacy_upload.sh)\n'
@@ -2961,6 +3020,7 @@ check_contains "Scripts/preflight_app_review_submission.sh" "Scripts/validate_sc
 check_contains "Scripts/preflight_app_review_submission.sh" "Scripts/validate_screenshot_privacy.sh" "App Review preflight must validate screenshot privacy metadata"
 check_contains "Scripts/preflight_app_review_submission.sh" "Scripts/validate_privacy_surface.sh" "App Review preflight must validate the privacy surface"
 check_contains "Scripts/preflight_app_review_submission.sh" "Scripts/validate_app_privacy_details.sh" "App Review preflight must validate App Privacy Details"
+check_contains "Scripts/preflight_app_review_submission.sh" "Scripts/validate_commercial_configuration_connect_entry.sh" "App Review preflight must validate commercial configuration confirmation"
 check_contains "Scripts/preflight_app_review_submission.sh" "Scripts/validate_app_store_questionnaires.sh" "App Review preflight must validate questionnaire consistency"
 check_contains "Scripts/preflight_app_review_submission.sh" "Scripts/validate_app_review_contact.sh" "App Review preflight must validate App Review contact details"
 check_contains "Scripts/preflight_app_review_submission.sh" "Scripts/validate_manual_release_verification.sh" "App Review preflight must validate manual release evidence"
@@ -3195,6 +3255,7 @@ check_contains "Scripts/prepare_app_store_submission_packet.sh" "Scripts/run_fas
 check_contains "Scripts/prepare_app_store_submission_packet.sh" "Scripts/preflight_app_privacy_upload.sh" "Submission packet action items must include the App Privacy Details upload preflight"
 check_contains "Scripts/prepare_app_store_submission_packet.sh" "Scripts/run_fastlane.sh ios privacy_details" "Submission packet action items must include App Privacy Details upload"
 check_contains "Scripts/prepare_app_store_submission_packet.sh" "APP_PRIVACY_DETAILS_CONFIRMED_IN_APP_STORE_CONNECT=1 Scripts/validate_app_privacy_connect_entry.sh" "Submission packet action items must include App Privacy Details App Store Connect confirmation"
+check_contains "Scripts/prepare_app_store_submission_packet.sh" "APP_STORE_COMMERCIAL_CONFIG_CONFIRMED_IN_APP_STORE_CONNECT=1 Scripts/validate_commercial_configuration_connect_entry.sh" "Submission packet action items must include commercial configuration App Store Connect confirmation"
 check_contains "Scripts/prepare_app_store_submission_packet.sh" "Scripts/preflight_app_store_archive.sh" "Submission packet action items must include the App Store archive preflight"
 check_not_contains "Scripts/prepare_app_store_submission_packet.sh" "DEVELOPMENT_TEAM_ID=<" "Submission packet archive commands must use shell-safe Team ID placeholders"
 check_contains "Scripts/prepare_app_store_submission_packet.sh" "DEVELOPMENT_TEAM_ID=YOURTEAMID ALLOW_PROVISIONING_UPDATES=1 Scripts/archive_app_store.sh" "Submission packet command order must show the guarded archive command"
@@ -3450,6 +3511,7 @@ check_contains "Scripts/generate_app_store_connect_readiness_report.sh" "Scripts
 check_contains "Scripts/generate_app_store_connect_readiness_report.sh" "Scripts/preflight_app_privacy_upload.sh" "App Store Connect readiness report must include the App Privacy Details upload preflight"
 check_contains "Scripts/generate_app_store_connect_readiness_report.sh" "Scripts/run_fastlane.sh ios privacy_details" "App Store Connect readiness report must include App Privacy Details upload"
 check_contains "Scripts/generate_app_store_connect_readiness_report.sh" "APP_PRIVACY_DETAILS_CONFIRMED_IN_APP_STORE_CONNECT=1 Scripts/validate_app_privacy_connect_entry.sh" "App Store Connect readiness report must include App Privacy Details App Store Connect confirmation"
+check_contains "Scripts/generate_app_store_connect_readiness_report.sh" "APP_STORE_COMMERCIAL_CONFIG_CONFIRMED_IN_APP_STORE_CONNECT=1 Scripts/validate_commercial_configuration_connect_entry.sh" "App Store Connect readiness report must include commercial configuration confirmation"
 check_file "Scripts/generate_app_store_connect_state_report.sh" "App Store Connect state report generator is required"
 if [[ -f "Scripts/generate_app_store_connect_state_report.sh" && ! -x "Scripts/generate_app_store_connect_state_report.sh" ]]; then
   printf 'FAIL: App Store Connect state report generator must be executable (Scripts/generate_app_store_connect_state_report.sh)\n'

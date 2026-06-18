@@ -337,6 +337,7 @@ ASC_KEY_ID=XXXXXXXXXX ASC_ISSUER_ID=00000000-0000-0000-0000-000000000000 ASC_KEY
 FASTLANE_USER=apple-id@example.com CONFIRM_UPLOAD_APP_PRIVACY=1 Scripts/preflight_app_privacy_upload.sh
 FASTLANE_USER=apple-id@example.com CONFIRM_UPLOAD_APP_PRIVACY=1 Scripts/run_fastlane.sh ios privacy_details
 APP_PRIVACY_DETAILS_CONFIRMED_IN_APP_STORE_CONNECT=1 Scripts/validate_app_privacy_connect_entry.sh
+APP_STORE_COMMERCIAL_CONFIG_CONFIRMED_IN_APP_STORE_CONNECT=1 Scripts/validate_commercial_configuration_connect_entry.sh
 Scripts/preflight_testflight_upload_dependencies.sh
 Scripts/preflight_app_store_archive.sh
 DEVELOPMENT_TEAM_ID=YOURTEAMID ALLOW_PROVISIONING_UPDATES=1 Scripts/archive_app_store.sh
@@ -402,6 +403,12 @@ external_action_fields() {
       next_action="Confirm App Privacy Details in App Store Connect match AppStore/app_privacy_details.json, then run FASTLANE_USER=apple-id@example.com CONFIRM_UPLOAD_APP_PRIVACY=1 Scripts/preflight_app_privacy_upload.sh, upload with FASTLANE_USER=apple-id@example.com CONFIRM_UPLOAD_APP_PRIVACY=1 Scripts/run_fastlane.sh ios privacy_details, verify App Store Connect, set APP_PRIVACY_DETAILS_CONFIRMED_IN_APP_STORE_CONNECT=1 in untracked Config/release.env, and run APP_PRIVACY_DETAILS_CONFIRMED_IN_APP_STORE_CONNECT=1 Scripts/validate_app_privacy_connect_entry.sh."
       validation_command="Scripts/validate_app_privacy_connect_entry.sh"
       ;;
+    *APP_STORE_COMMERCIAL_CONFIG_CONFIRMED_IN_APP_STORE_CONNECT*|*"Commercial configuration"*App\ Store\ Connect*|*"Pricing, Availability"*|*"commercial configuration"*)
+      category="Commercial Configuration"
+      owner="App Store Connect account holder"
+      next_action="Apply AppStore/commercial-configuration.md in App Store Connect, verify Pricing, Availability, monetization, release option, and phased release, set APP_STORE_COMMERCIAL_CONFIG_CONFIRMED_IN_APP_STORE_CONNECT=1 in untracked Config/release.env, and run APP_STORE_COMMERCIAL_CONFIG_CONFIRMED_IN_APP_STORE_CONNECT=1 Scripts/validate_commercial_configuration_connect_entry.sh."
+      validation_command="Scripts/validate_commercial_configuration_connect_entry.sh"
+      ;;
     *"FASTLANE_USER is not configured"*)
       category="App Privacy Upload"
       owner="App Store Connect account holder"
@@ -452,7 +459,7 @@ external_action_field_for_item() {
     field="${BASH_REMATCH[1]}"
   elif [[ "$item" =~ (APP_REVIEW_CONTACT_[A-Z_]+) ]]; then
     field="${BASH_REMATCH[1]}"
-  elif [[ "$item" =~ (APP_PRIVACY_DETAILS_CONFIRMED_IN_APP_STORE_CONNECT|APP_STORE_CONNECT_API_KEY_JSON|ASC_[A-Z0-9_]+|FASTLANE_USER) ]]; then
+  elif [[ "$item" =~ (APP_PRIVACY_DETAILS_CONFIRMED_IN_APP_STORE_CONNECT|APP_STORE_COMMERCIAL_CONFIG_CONFIRMED_IN_APP_STORE_CONNECT|APP_STORE_CONNECT_API_KEY_JSON|ASC_[A-Z0-9_]+|FASTLANE_USER) ]]; then
     field="${BASH_REMATCH[1]}"
   elif [[ "$item" == *"Manual release verification evidence file"* ]]; then
     field="manual-release-verification.env file"
@@ -483,7 +490,7 @@ external_action_target_for_item() {
       target="Config/manual-release-verification.env"
       ;;
     APP_REVIEW_CONTACT_*|DEVELOPMENT_TEAM_ID|APP_STORE_BUILD_NUMBER|CONFIRM_SUBMIT_FOR_REVIEW|\
-    APP_PRIVACY_DETAILS_CONFIRMED_IN_APP_STORE_CONNECT|APP_STORE_CONNECT_API_KEY_JSON|FASTLANE_USER|APP_STORE_CONNECT_API_KEY_JSON\ or\ ASC_KEY_ID/ASC_ISSUER_ID/ASC_KEY_PATH)
+    APP_PRIVACY_DETAILS_CONFIRMED_IN_APP_STORE_CONNECT|APP_STORE_COMMERCIAL_CONFIG_CONFIRMED_IN_APP_STORE_CONNECT|APP_STORE_CONNECT_API_KEY_JSON|FASTLANE_USER|APP_STORE_CONNECT_API_KEY_JSON\ or\ ASC_KEY_ID/ASC_ISSUER_ID/ASC_KEY_PATH)
       target="Config/release.env"
       ;;
     Apple\ Distribution\ certificate)
@@ -502,6 +509,9 @@ external_action_target_for_item() {
       target="Config/release.env"
       ;;
     *APP_PRIVACY_DETAILS_CONFIRMED_IN_APP_STORE_CONNECT*)
+      target="Config/release.env"
+      ;;
+    *APP_STORE_COMMERCIAL_CONFIG_CONFIRMED_IN_APP_STORE_CONNECT*|*"Commercial configuration"*|*"commercial configuration"*)
       target="Config/release.env"
       ;;
     *ASC_*|*"App Store Connect API credentials"*|*"API credentials"*|*FASTLANE_USER*)
@@ -700,6 +710,7 @@ ASC_KEY_ID=XXXXXXXXXX ASC_ISSUER_ID=00000000-0000-0000-0000-000000000000 ASC_KEY
 FASTLANE_USER=apple-id@example.com CONFIRM_UPLOAD_APP_PRIVACY=1 Scripts/preflight_app_privacy_upload.sh
 FASTLANE_USER=apple-id@example.com CONFIRM_UPLOAD_APP_PRIVACY=1 Scripts/run_fastlane.sh ios privacy_details
 APP_PRIVACY_DETAILS_CONFIRMED_IN_APP_STORE_CONNECT=1 Scripts/validate_app_privacy_connect_entry.sh
+APP_STORE_COMMERCIAL_CONFIG_CONFIRMED_IN_APP_STORE_CONNECT=1 Scripts/validate_commercial_configuration_connect_entry.sh
 Scripts/preflight_testflight_upload_dependencies.sh
 Scripts/preflight_app_store_archive.sh
 DEVELOPMENT_TEAM_ID=YOURTEAMID ALLOW_PROVISIONING_UPDATES=1 Scripts/archive_app_store.sh

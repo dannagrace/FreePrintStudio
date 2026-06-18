@@ -67,6 +67,11 @@ Final App Privacy Details confirmation:
 - `APP_PRIVACY_DETAILS_CONFIRMED_IN_APP_STORE_CONNECT=1` after Fastlane upload or manual App Store Connect entry matches `AppStore/app_privacy_details.json`.
 - Validate with `Scripts/validate_app_privacy_connect_entry.sh`.
 
+Final commercial configuration confirmation:
+
+- `APP_STORE_COMMERCIAL_CONFIG_CONFIRMED_IN_APP_STORE_CONNECT=1` after App Store Connect Pricing, Availability, monetization, release option, and phased release match `AppStore/commercial-configuration.md`.
+- Validate with `Scripts/validate_commercial_configuration_connect_entry.sh`.
+
 Validate credentials before TestFlight upload or final review submission:
 
 ```sh
@@ -87,6 +92,7 @@ Upload App Privacy Details after reviewing `AppStore/app_privacy_details.json` a
 FASTLANE_USER=apple-id@example.com CONFIRM_UPLOAD_APP_PRIVACY=1 Scripts/preflight_app_privacy_upload.sh
 FASTLANE_USER=apple-id@example.com CONFIRM_UPLOAD_APP_PRIVACY=1 Scripts/run_fastlane.sh ios privacy_details
 APP_PRIVACY_DETAILS_CONFIRMED_IN_APP_STORE_CONNECT=1 Scripts/validate_app_privacy_connect_entry.sh
+APP_STORE_COMMERCIAL_CONFIG_CONFIRMED_IN_APP_STORE_CONNECT=1 Scripts/validate_commercial_configuration_connect_entry.sh
 ```
 
 Replace apple-id@example.com with the App Store Connect Apple ID before running Fastlane Apple ID commands.
@@ -150,7 +156,7 @@ Set these only after the signed build is uploaded, processed, and selected for A
 - `APP_STORE_BUILD_NUMBER`: the processed App Store Connect build to submit.
 - `CONFIRM_SUBMIT_FOR_REVIEW=1`: final guard for `Scripts/run_fastlane.sh ios submit_review`.
 
-Before final submission, confirm metadata upload, screenshot upload, App Privacy Details, and `APP_PRIVACY_DETAILS_CONFIRMED_IN_APP_STORE_CONNECT=1` are complete in App Store Connect.
+Before final submission, confirm metadata upload, screenshot upload, App Privacy Details, `APP_PRIVACY_DETAILS_CONFIRMED_IN_APP_STORE_CONNECT=1`, and `APP_STORE_COMMERCIAL_CONFIG_CONFIRMED_IN_APP_STORE_CONNECT=1` are complete in App Store Connect.
 
 Run the final preflight before submission:
 
