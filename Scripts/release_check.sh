@@ -4033,6 +4033,7 @@ if [[ -f "Scripts/validate_release_handoff_brief.sh" && ! -x "Scripts/validate_r
 fi
 check_contains "Scripts/validate_release_handoff_brief.sh" "Owner Summary" "Release handoff brief validator must verify owner summary counts"
 check_contains "Scripts/validate_release_handoff_brief.sh" "Readiness Counts" "Release handoff brief validator must verify readiness count rows"
+check_contains "Scripts/validate_release_handoff_brief.sh" "CI Packet SHA" "Release handoff brief validator must verify source metadata rows"
 check_contains "Scripts/validate_release_handoff_brief.sh" "Primary Action Files" "Release handoff brief validator must require primary action file references"
 check_contains "Scripts/validate_release_handoff_brief.sh" "Next Commands" "Release handoff brief validator must require next command guidance"
 check_contains "Scripts/validate_release_handoff_brief.sh" "Team ID placeholder replacement guidance" "Release handoff brief validator must require Team ID placeholder replacement guidance"
@@ -4062,6 +4063,13 @@ WARN: shared warning
 EOF
   cat >"$handoff_brief_path" <<'EOF'
 # FreePrint Studio Release Handoff Brief
+
+- Generated At: `2026-06-18T16:51:08Z`
+- Handoff Status: `blocked`
+- Local HEAD: `abcdef`
+- CI Packet Commit: `abcdef`
+- CI Packet SHA: `abcdef`
+- CI Run: https://github.com/dannagrace/FreePrintStudio/actions/runs/1
 
 ## Readiness Counts
 
@@ -4194,6 +4202,15 @@ EOF
     failures=$((failures + 1))
   elif ! grep -q 'CI-only Readiness Detail mismatch' "$handoff_brief_log"; then
     printf 'FAIL: Release handoff brief validator must identify CI-only readiness delta mismatches\n'
+    failures=$((failures + 1))
+  fi
+  cp "$handoff_brief_path" "$handoff_brief_bad"
+  perl -0pi -e 's/^- CI Packet SHA: `abcdef`$/- CI Packet SHA: `fedcba`/m' "$handoff_brief_bad"
+  if Scripts/validate_release_handoff_brief.sh "$handoff_brief_actions" "$handoff_brief_bad" "$handoff_brief_ci_readiness" "$handoff_brief_local_readiness" >"$handoff_brief_log" 2>&1; then
+    printf 'FAIL: Release handoff brief validator must reject source metadata mismatches\n'
+    failures=$((failures + 1))
+  elif ! grep -q 'handoff metadata mismatch' "$handoff_brief_log"; then
+    printf 'FAIL: Release handoff brief validator must identify source metadata mismatches\n'
     failures=$((failures + 1))
   fi
   cp "$handoff_brief_path" "$handoff_brief_bad"

@@ -57,6 +57,55 @@ require_section_contains() {
   fi
 }
 
+brief_metadata_value() {
+  local label="$1"
+  awk -v prefix="- ${label}: " '
+    index($0, prefix) == 1 {
+      value = substr($0, length(prefix) + 1)
+      sub(/^`/, "", value)
+      sub(/`$/, "", value)
+      print value
+      found = 1
+      exit
+    }
+    END {
+      if (!found) {
+        exit 1
+      }
+    }
+  ' "$brief_path"
+}
+
+require_metadata_value() {
+  local label="$1"
+  local description="$2"
+  local value
+  value="$(brief_metadata_value "$label" 2>/dev/null || true)"
+  if [[ -z "$value" ]]; then
+    fail "$description is missing from release handoff brief"
+  fi
+}
+
+validate_source_metadata() {
+  local local_head
+  local packet_commit
+  local packet_sha
+  require_metadata_value "Generated At" "Generated At metadata"
+  require_metadata_value "Handoff Status" "Handoff Status metadata"
+  require_metadata_value "Local HEAD" "Local HEAD metadata"
+  require_metadata_value "CI Packet Commit" "CI Packet Commit metadata"
+  require_metadata_value "CI Packet SHA" "CI Packet SHA metadata"
+  require_metadata_value "CI Run" "CI Run metadata"
+
+  local_head="$(brief_metadata_value "Local HEAD" 2>/dev/null || true)"
+  packet_commit="$(brief_metadata_value "CI Packet Commit" 2>/dev/null || true)"
+  packet_sha="$(brief_metadata_value "CI Packet SHA" 2>/dev/null || true)"
+  if [[ -n "$local_head" && -n "$packet_commit" && -n "$packet_sha" ]] &&
+    [[ "$local_head" != "$packet_commit" || "$local_head" != "$packet_sha" ]]; then
+    fail "handoff metadata mismatch: Local HEAD, CI Packet Commit, and CI Packet SHA must match"
+  fi
+}
+
 require_placeholder_guidance() {
   local placeholder="$1"
   local guidance="$2"
@@ -282,6 +331,7 @@ awk -F '\t' '$1 != "owner" { print }' "$temp_dir/action-summary.tsv" | LC_ALL=C 
 awk -F '\t' '$1 == "owner" { print $2 "\t" $3 "\t" $4 "\t" $5 }' "$temp_dir/action-summary.tsv" | LC_ALL=C sort >"$expected_owner_summary"
 
 require_contains "# FreePrint Studio Release Handoff Brief" "release handoff brief title"
+validate_source_metadata
 require_contains "## Readiness Counts" "Readiness Counts section"
 require_contains "## CI-only Readiness Detail" "CI-only Readiness Detail section"
 require_contains "## Local-only Readiness Detail" "Local-only Readiness Detail section"
