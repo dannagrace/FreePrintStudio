@@ -4035,9 +4035,12 @@ check_contains "Scripts/validate_release_handoff_brief.sh" "Owner Summary" "Rele
 check_contains "Scripts/validate_release_handoff_brief.sh" "Team ID placeholder replacement guidance" "Release handoff brief validator must require Team ID placeholder replacement guidance"
 check_contains "Scripts/validate_release_handoff_brief.sh" "Fastlane Apple ID placeholder replacement guidance" "Release handoff brief validator must require Fastlane Apple ID placeholder replacement guidance"
 check_contains "Scripts/preflight_release_handoff.sh" 'Scripts/validate_release_handoff_brief.sh "$external_actions_path" "$brief_path"' "Release handoff preflight must validate generated handoff briefs"
+check_contains "Scripts/preflight_release_handoff.sh" 'Scripts/validate_release_handoff_brief.sh "$external_actions_path" "$brief_path" "$ci_readiness_log" "$readiness_log"' "Release handoff preflight must validate CI/local readiness delta details"
 if [[ -x "Scripts/validate_release_handoff_brief.sh" ]]; then
   handoff_brief_test_dir="$(mktemp -d)"
   handoff_brief_actions="$handoff_brief_test_dir/external-readiness-actions.tsv"
+  handoff_brief_ci_readiness="$handoff_brief_test_dir/ci-readiness.txt"
+  handoff_brief_local_readiness="$handoff_brief_test_dir/local-readiness.txt"
   handoff_brief_path="$handoff_brief_test_dir/release-handoff-brief.md"
   handoff_brief_bad="$handoff_brief_test_dir/release-handoff-brief-bad.md"
   handoff_brief_log="$handoff_brief_test_dir/validation.log"
@@ -4046,16 +4049,28 @@ category	severity	owner	field	target	item	next_action	validation_command
 Signing	blocker	Apple Developer account holder	DEVELOPMENT_TEAM_ID	Config/release.env	Apple Developer Team ID missing	fill it	Scripts/check_code_signing_assets.sh
 App Store Connect	warning	App Store Connect account holder	App Store Connect app record	App Store Connect	App record needs verification	verify it	APP_STORE_CONNECT_SKIP_BUILD_CHECK=1 Scripts/check_app_store_connect_state.sh
 EOF
+  cat >"$handoff_brief_ci_readiness" <<'EOF'
+BLOCKED: CI-only blocker
+WARN: shared warning
+EOF
+  cat >"$handoff_brief_local_readiness" <<'EOF'
+BLOCKED: Local-only blocker
+WARN: shared warning
+EOF
   cat >"$handoff_brief_path" <<'EOF'
 # FreePrint Studio Release Handoff Brief
 
 ## CI-only Readiness Detail
 
-No CI-only blockers or warnings.
+| Severity | Item |
+| --- | --- |
+| BLOCKED | CI-only blocker |
 
 ## Local-only Readiness Detail
 
-No local-only blockers or warnings.
+| Severity | Item |
+| --- | --- |
+| BLOCKED | Local-only blocker |
 
 ## External Action Summary
 
@@ -4078,14 +4093,14 @@ No local-only blockers or warnings.
 | Apple Developer account holder | Signing | blocker | `DEVELOPMENT_TEAM_ID` | Apple Developer Team ID missing | fill it | `Scripts/check_code_signing_assets.sh` |
 | App Store Connect account holder | App Store Connect | warning | `App Store Connect app record` | App record needs verification | verify it | `APP_STORE_CONNECT_SKIP_BUILD_CHECK=1 Scripts/check_app_store_connect_state.sh` |
 EOF
-  if ! Scripts/validate_release_handoff_brief.sh "$handoff_brief_actions" "$handoff_brief_path" >"$handoff_brief_log" 2>&1; then
+  if ! Scripts/validate_release_handoff_brief.sh "$handoff_brief_actions" "$handoff_brief_path" "$handoff_brief_ci_readiness" "$handoff_brief_local_readiness" >"$handoff_brief_log" 2>&1; then
     printf 'FAIL: Release handoff brief validator must accept matching owner-scoped external action detail fixtures\n'
     sed 's/^/  /' "$handoff_brief_log"
     failures=$((failures + 1))
   fi
   cp "$handoff_brief_path" "$handoff_brief_bad"
   perl -0pi -e 's/^\| Apple Developer account holder \| Signing \| blocker \| `DEVELOPMENT_TEAM_ID` \| Apple Developer Team ID missing \| fill it \| `Scripts\/check_code_signing_assets\.sh` \|\n//m' "$handoff_brief_bad"
-  if Scripts/validate_release_handoff_brief.sh "$handoff_brief_actions" "$handoff_brief_bad" >"$handoff_brief_log" 2>&1; then
+  if Scripts/validate_release_handoff_brief.sh "$handoff_brief_actions" "$handoff_brief_bad" "$handoff_brief_ci_readiness" "$handoff_brief_local_readiness" >"$handoff_brief_log" 2>&1; then
     printf 'FAIL: Release handoff brief validator must reject missing external action detail rows\n'
     failures=$((failures + 1))
   elif ! grep -q 'Apple Developer Team ID missing' "$handoff_brief_log"; then
@@ -4094,7 +4109,7 @@ EOF
   fi
   cp "$handoff_brief_path" "$handoff_brief_bad"
   perl -0pi -e 's/\| Apple Developer account holder \| Signing \| blocker \| `DEVELOPMENT_TEAM_ID` \|/\| Release owner \| Signing \| blocker \| `DEVELOPMENT_TEAM_ID` \|/' "$handoff_brief_bad"
-  if Scripts/validate_release_handoff_brief.sh "$handoff_brief_actions" "$handoff_brief_bad" >"$handoff_brief_log" 2>&1; then
+  if Scripts/validate_release_handoff_brief.sh "$handoff_brief_actions" "$handoff_brief_bad" "$handoff_brief_ci_readiness" "$handoff_brief_local_readiness" >"$handoff_brief_log" 2>&1; then
     printf 'FAIL: Release handoff brief validator must reject owner mismatches in external action detail rows\n'
     failures=$((failures + 1))
   elif ! grep -q 'DEVELOPMENT_TEAM_ID' "$handoff_brief_log"; then
@@ -4103,7 +4118,7 @@ EOF
   fi
   cp "$handoff_brief_path" "$handoff_brief_bad"
   perl -0pi -e 's/\| Signing \| blocker \| 1 \|/\| Signing \| blocker \| 2 \|/' "$handoff_brief_bad"
-  if Scripts/validate_release_handoff_brief.sh "$handoff_brief_actions" "$handoff_brief_bad" >"$handoff_brief_log" 2>&1; then
+  if Scripts/validate_release_handoff_brief.sh "$handoff_brief_actions" "$handoff_brief_bad" "$handoff_brief_ci_readiness" "$handoff_brief_local_readiness" >"$handoff_brief_log" 2>&1; then
     printf 'FAIL: Release handoff brief validator must reject external action summary count mismatches\n'
     failures=$((failures + 1))
   elif ! grep -q 'External Action Summary count mismatch' "$handoff_brief_log"; then
@@ -4112,11 +4127,20 @@ EOF
   fi
   cp "$handoff_brief_path" "$handoff_brief_bad"
   perl -0pi -e 's/\| Apple Developer account holder \| 1 \| 1 \| 0 \|/\| Apple Developer account holder \| 2 \| 2 \| 0 \|/' "$handoff_brief_bad"
-  if Scripts/validate_release_handoff_brief.sh "$handoff_brief_actions" "$handoff_brief_bad" >"$handoff_brief_log" 2>&1; then
+  if Scripts/validate_release_handoff_brief.sh "$handoff_brief_actions" "$handoff_brief_bad" "$handoff_brief_ci_readiness" "$handoff_brief_local_readiness" >"$handoff_brief_log" 2>&1; then
     printf 'FAIL: Release handoff brief validator must reject owner summary count mismatches\n'
     failures=$((failures + 1))
   elif ! grep -q 'Owner Summary count mismatch' "$handoff_brief_log"; then
     printf 'FAIL: Release handoff brief validator must identify owner summary count mismatches\n'
+    failures=$((failures + 1))
+  fi
+  cp "$handoff_brief_path" "$handoff_brief_bad"
+  perl -0pi -e 's/^\| BLOCKED \| CI-only blocker \|\n//m' "$handoff_brief_bad"
+  if Scripts/validate_release_handoff_brief.sh "$handoff_brief_actions" "$handoff_brief_bad" "$handoff_brief_ci_readiness" "$handoff_brief_local_readiness" >"$handoff_brief_log" 2>&1; then
+    printf 'FAIL: Release handoff brief validator must reject missing CI-only readiness delta rows\n'
+    failures=$((failures + 1))
+  elif ! grep -q 'CI-only Readiness Detail mismatch' "$handoff_brief_log"; then
+    printf 'FAIL: Release handoff brief validator must identify CI-only readiness delta mismatches\n'
     failures=$((failures + 1))
   fi
   rm -rf "$handoff_brief_test_dir"

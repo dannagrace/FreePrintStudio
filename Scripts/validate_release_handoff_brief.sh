@@ -1,13 +1,15 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-if [[ "$#" -ne 2 ]]; then
-  printf 'Usage: %s <external-readiness-actions.tsv> <release-handoff-brief.md>\n' "$0" >&2
+if [[ "$#" -ne 2 && "$#" -ne 4 ]]; then
+  printf 'Usage: %s <external-readiness-actions.tsv> <release-handoff-brief.md> [ci-readiness.txt local-readiness.txt]\n' "$0" >&2
   exit 2
 fi
 
 actions_path="$1"
 brief_path="$2"
+ci_readiness_path="${3:-}"
+local_readiness_path="${4:-}"
 failures=0
 
 fail() {
@@ -47,8 +49,80 @@ markdown_cell() {
   printf '%s' "$value"
 }
 
+readiness_signal_lines() {
+  local path="$1"
+  if [[ -s "$path" ]]; then
+    grep -E '^(BLOCKED|WARN):' "$path" | LC_ALL=C sort || true
+  fi
+}
+
+write_expected_readiness_delta_rows() {
+  local source_path="$1"
+  local comparison_path="$2"
+  local line
+  comm -23 <(readiness_signal_lines "$source_path") <(readiness_signal_lines "$comparison_path") |
+    while IFS= read -r line; do
+      [[ -n "$line" ]] || continue
+      local severity="${line%%:*}"
+      local item="${line#*: }"
+      printf '%s\t%s\n' "$(markdown_cell "$severity")" "$(markdown_cell "$item")"
+    done
+}
+
+write_actual_readiness_delta_rows() {
+  local section_title="$1"
+  awk -v section_title="## $section_title" '
+    $0 == section_title {
+      in_section = 1
+      next
+    }
+    in_section && /^## / {
+      in_section = 0
+    }
+    in_section {
+      print
+    }
+  ' "$brief_path" \
+    | sed -nE 's/^\| ([^|]+) \| ([^|]+) \|$/\1	\2/p' \
+    | grep -v -e $'^Severity\tItem$' -e $'^---\t---$' \
+    | LC_ALL=C sort || true
+}
+
+validate_readiness_delta_section() {
+  local section_title="$1"
+  local source_path="$2"
+  local comparison_path="$3"
+  local empty_text="$4"
+  local description="$5"
+  local expected_path="$temp_dir/${description}-expected.tsv"
+  local actual_path="$temp_dir/${description}-actual.tsv"
+  local diff_path="$temp_dir/${description}-diff.txt"
+
+  write_expected_readiness_delta_rows "$source_path" "$comparison_path" >"$expected_path"
+  write_actual_readiness_delta_rows "$section_title" >"$actual_path"
+
+  if [[ ! -s "$expected_path" ]]; then
+    if [[ -s "$actual_path" ]]; then
+      fail "$section_title mismatch"
+      diff -u "$expected_path" "$actual_path" >"$diff_path" || true
+      sed 's/^/  /' "$diff_path"
+    fi
+    require_contains "$empty_text" "$section_title empty-state guidance"
+    return
+  fi
+
+  if ! diff -u "$expected_path" "$actual_path" >"$diff_path"; then
+    fail "$section_title mismatch"
+    sed 's/^/  /' "$diff_path"
+  fi
+}
+
 require_file "$actions_path" "external readiness actions input"
 require_file "$brief_path" "release handoff brief input"
+if [[ "$#" -eq 4 ]]; then
+  require_file "$ci_readiness_path" "CI readiness log input"
+  require_file "$local_readiness_path" "local readiness log input"
+fi
 
 if [[ "$failures" -gt 0 ]]; then
   exit 1
@@ -143,6 +217,21 @@ require_placeholder_guidance \
   "apple-id@example.com" \
   "Replace apple-id@example.com with the App Store Connect Apple ID before running Fastlane Apple ID commands." \
   "Fastlane Apple ID placeholder replacement guidance"
+
+if [[ "$#" -eq 4 ]]; then
+  validate_readiness_delta_section \
+    "CI-only Readiness Detail" \
+    "$ci_readiness_path" \
+    "$local_readiness_path" \
+    "No CI-only blockers or warnings." \
+    "ci-only-readiness-detail"
+  validate_readiness_delta_section \
+    "Local-only Readiness Detail" \
+    "$local_readiness_path" \
+    "$ci_readiness_path" \
+    "No local-only blockers or warnings." \
+    "local-only-readiness-detail"
+fi
 
 awk '
   /^## External Action Summary$/ {
