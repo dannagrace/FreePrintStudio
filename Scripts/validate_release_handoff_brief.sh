@@ -33,6 +33,30 @@ require_contains() {
   fi
 }
 
+require_section_contains() {
+  local section_title="$1"
+  local pattern="$2"
+  local description="$3"
+  if ! awk -v section_title="## $section_title" -v pattern="$pattern" '
+    $0 == section_title {
+      in_section = 1
+      next
+    }
+    in_section && /^## / {
+      exit
+    }
+    in_section && index($0, pattern) > 0 {
+      found = 1
+      exit
+    }
+    END {
+      exit(found ? 0 : 1)
+    }
+  ' "$brief_path"; then
+    fail "$description is missing from release handoff brief"
+  fi
+}
+
 require_placeholder_guidance() {
   local placeholder="$1"
   local guidance="$2"
@@ -264,6 +288,8 @@ require_contains "## Local-only Readiness Detail" "Local-only Readiness Detail s
 require_contains "## External Action Summary" "External Action Summary section"
 require_contains "## Owner Summary" "Owner Summary section"
 require_contains "## External Action Detail" "External Action Detail section"
+require_contains "## Primary Action Files" "Primary Action Files section"
+require_contains "## Next Commands" "Next Commands section"
 require_placeholder_guidance \
   "PROCESSED_BUILD_NUMBER" \
   "Replace \`PROCESSED_BUILD_NUMBER\` with the processed App Store Connect build selected for review." \
@@ -276,6 +302,36 @@ require_placeholder_guidance \
   "apple-id@example.com" \
   "Replace apple-id@example.com with the App Store Connect Apple ID before running Fastlane Apple ID commands." \
   "Fastlane Apple ID placeholder replacement guidance"
+
+for required_action_file in \
+  "release-handoff-summary.tsv" \
+  "release-handoff-brief.md" \
+  "release-input-todo.md" \
+  "release-owner-actions" \
+  "private-release-input-templates" \
+  "external-readiness-actions.tsv" \
+  "ACTION_ITEMS.md" \
+  "AppStore/release-inputs-worksheet.md" \
+  "Config/release.env" \
+  "Config/manual-release-verification.env"; do
+  require_section_contains \
+    "Primary Action Files" \
+    "$required_action_file" \
+    "primary action file reference is missing: $required_action_file"
+done
+
+for required_handoff_command in \
+  "Scripts/install_private_release_input_templates.sh --source-dir build/private-release-input-templates --target-dir Config" \
+  "Scripts/print_release_input_status.sh --strict" \
+  "Scripts/check_app_store_readiness.sh" \
+  "APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/validate_manual_release_verification.sh" \
+  "DEVELOPMENT_TEAM_ID=YOURTEAMID ALLOW_PROVISIONING_UPDATES=1 Scripts/archive_app_store.sh" \
+  "APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/preflight_app_review_submission.sh"; do
+  require_section_contains \
+    "Next Commands" \
+    "$required_handoff_command" \
+    "required handoff command is missing: $required_handoff_command"
+done
 
 if [[ "$#" -eq 4 ]]; then
   validate_readiness_delta_section \

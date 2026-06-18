@@ -4033,6 +4033,8 @@ if [[ -f "Scripts/validate_release_handoff_brief.sh" && ! -x "Scripts/validate_r
 fi
 check_contains "Scripts/validate_release_handoff_brief.sh" "Owner Summary" "Release handoff brief validator must verify owner summary counts"
 check_contains "Scripts/validate_release_handoff_brief.sh" "Readiness Counts" "Release handoff brief validator must verify readiness count rows"
+check_contains "Scripts/validate_release_handoff_brief.sh" "Primary Action Files" "Release handoff brief validator must require primary action file references"
+check_contains "Scripts/validate_release_handoff_brief.sh" "Next Commands" "Release handoff brief validator must require next command guidance"
 check_contains "Scripts/validate_release_handoff_brief.sh" "Team ID placeholder replacement guidance" "Release handoff brief validator must require Team ID placeholder replacement guidance"
 check_contains "Scripts/validate_release_handoff_brief.sh" "Fastlane Apple ID placeholder replacement guidance" "Release handoff brief validator must require Fastlane Apple ID placeholder replacement guidance"
 check_contains "Scripts/preflight_release_handoff.sh" 'Scripts/validate_release_handoff_brief.sh "$external_actions_path" "$brief_path"' "Release handoff preflight must validate generated handoff briefs"
@@ -4101,6 +4103,34 @@ EOF
 | --- | --- | --- | --- | --- | --- | --- |
 | Apple Developer account holder | Signing | blocker | `DEVELOPMENT_TEAM_ID` | Apple Developer Team ID missing | fill it | `Scripts/check_code_signing_assets.sh` |
 | App Store Connect account holder | App Store Connect | warning | `App Store Connect app record` | App record needs verification | verify it | `APP_STORE_CONNECT_SKIP_BUILD_CHECK=1 Scripts/check_app_store_connect_state.sh` |
+
+## Primary Action Files
+
+- Machine summary: `release-handoff-summary.tsv`
+- Human brief: `release-handoff-brief.md`
+- Release input TODO: `release-input-todo.md`
+- Per-owner action briefs: `release-owner-actions`
+- Private release input templates: `private-release-input-templates`
+- CI action manifest: `external-readiness-actions.tsv`
+- CI action checklist: `ACTION_ITEMS.md`
+- Release input worksheet: `AppStore/release-inputs-worksheet.md`
+- Private release values: `Config/release.env`
+- Manual device evidence: `Config/manual-release-verification.env`
+
+## Next Commands
+
+```sh
+Scripts/install_private_release_input_templates.sh --source-dir build/private-release-input-templates --target-dir Config
+Scripts/print_release_input_status.sh --strict
+Scripts/check_app_store_readiness.sh
+APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/validate_manual_release_verification.sh
+DEVELOPMENT_TEAM_ID=YOURTEAMID ALLOW_PROVISIONING_UPDATES=1 Scripts/archive_app_store.sh
+APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/preflight_app_review_submission.sh
+```
+
+Replace `PROCESSED_BUILD_NUMBER` with the processed App Store Connect build selected for review.
+Replace YOURTEAMID with the Apple Developer Team ID before running signing or archive commands.
+Replace apple-id@example.com with the App Store Connect Apple ID before running Fastlane Apple ID commands.
 EOF
   if ! Scripts/validate_release_handoff_brief.sh "$handoff_brief_actions" "$handoff_brief_path" "$handoff_brief_ci_readiness" "$handoff_brief_local_readiness" >"$handoff_brief_log" 2>&1; then
     printf 'FAIL: Release handoff brief validator must accept matching owner-scoped external action detail fixtures\n'
@@ -4164,6 +4194,24 @@ EOF
     failures=$((failures + 1))
   elif ! grep -q 'CI-only Readiness Detail mismatch' "$handoff_brief_log"; then
     printf 'FAIL: Release handoff brief validator must identify CI-only readiness delta mismatches\n'
+    failures=$((failures + 1))
+  fi
+  cp "$handoff_brief_path" "$handoff_brief_bad"
+  perl -0pi -e 's/^Scripts\/check_app_store_readiness\.sh\n//m' "$handoff_brief_bad"
+  if Scripts/validate_release_handoff_brief.sh "$handoff_brief_actions" "$handoff_brief_bad" "$handoff_brief_ci_readiness" "$handoff_brief_local_readiness" >"$handoff_brief_log" 2>&1; then
+    printf 'FAIL: Release handoff brief validator must reject missing next-command rows\n'
+    failures=$((failures + 1))
+  elif ! grep -q 'required handoff command is missing' "$handoff_brief_log"; then
+    printf 'FAIL: Release handoff brief validator must identify missing next-command rows\n'
+    failures=$((failures + 1))
+  fi
+  cp "$handoff_brief_path" "$handoff_brief_bad"
+  perl -0pi -e 's/^- Manual device evidence: `Config\/manual-release-verification\.env`\n//m' "$handoff_brief_bad"
+  if Scripts/validate_release_handoff_brief.sh "$handoff_brief_actions" "$handoff_brief_bad" "$handoff_brief_ci_readiness" "$handoff_brief_local_readiness" >"$handoff_brief_log" 2>&1; then
+    printf 'FAIL: Release handoff brief validator must reject missing primary action file references\n'
+    failures=$((failures + 1))
+  elif ! grep -q 'primary action file reference is missing' "$handoff_brief_log"; then
+    printf 'FAIL: Release handoff brief validator must identify missing primary action file references\n'
     failures=$((failures + 1))
   fi
   rm -rf "$handoff_brief_test_dir"
