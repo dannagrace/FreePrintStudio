@@ -287,7 +287,7 @@ Download and validate the latest successful CI-generated packet before release h
 Scripts/download_latest_submission_packet.sh
 ```
 
-If GitHub artifact downloads are slow or hang, tune `FREEPRINTSTUDIO_ARTIFACT_DOWNLOAD_ATTEMPTS` and `FREEPRINTSTUDIO_ARTIFACT_DOWNLOAD_TIMEOUT_SECONDS`; each download attempt is bounded before retrying. When `gh run download` does not complete, the helper automatically uses a GitHub artifact API fallback to download the same packet zip and validate its provenance. To bypass `gh run download` during a handoff, run `FREEPRINTSTUDIO_ARTIFACT_DOWNLOAD_METHOD=api Scripts/download_latest_submission_packet.sh`.
+The helper uses the GitHub artifact API download path by default because `gh run download` can stall during handoff. Tune `FREEPRINTSTUDIO_ARTIFACT_DOWNLOAD_ATTEMPTS` and `FREEPRINTSTUDIO_ARTIFACT_DOWNLOAD_TIMEOUT_SECONDS` if GitHub artifact downloads are slow or hang; each download attempt is bounded before retrying. To explicitly select the default API path, run `FREEPRINTSTUDIO_ARTIFACT_DOWNLOAD_METHOD=api Scripts/download_latest_submission_packet.sh`. To try `gh run download` first and keep the GitHub artifact API fallback, run `FREEPRINTSTUDIO_ARTIFACT_DOWNLOAD_METHOD=auto Scripts/download_latest_submission_packet.sh`; to force only `gh run download`, use `FREEPRINTSTUDIO_ARTIFACT_DOWNLOAD_METHOD=gh`.
 
 Run the full release handoff preflight before giving the packet to the App Store Connect account owner. It requires a clean local worktree, downloads the latest successful CI packet, verifies the packet provenance matches local `HEAD`, then runs the readiness audit:
 

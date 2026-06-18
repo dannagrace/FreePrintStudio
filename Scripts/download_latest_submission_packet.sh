@@ -20,9 +20,10 @@ Environment overrides:
   FREEPRINTSTUDIO_ARTIFACT_DOWNLOAD_ATTEMPTS Download attempts, default 3
   FREEPRINTSTUDIO_ARTIFACT_DOWNLOAD_TIMEOUT_SECONDS
                                                Per-attempt artifact download timeout, default 180
-                                               If gh run download stalls, the helper falls back to the
-                                               GitHub artifact API for the same artifact.
-  FREEPRINTSTUDIO_ARTIFACT_DOWNLOAD_METHOD    auto, gh, or api; default auto
+                                               Used for both GitHub artifact API and gh downloads.
+  FREEPRINTSTUDIO_ARTIFACT_DOWNLOAD_METHOD    api, gh, or auto; default api
+                                               Use auto to try gh run download first, then fall back
+                                               to the GitHub artifact API for the same artifact.
 EOF
 }
 
@@ -47,7 +48,7 @@ artifact_name="${FREEPRINTSTUDIO_SUBMISSION_PACKET_ARTIFACT:-freeprintstudio-app
 destination="${1:-${FREEPRINTSTUDIO_CI_SUBMISSION_PACKET_DIR:-build/CISubmissionPacket}}"
 download_attempts="${FREEPRINTSTUDIO_ARTIFACT_DOWNLOAD_ATTEMPTS:-3}"
 download_timeout_seconds="${FREEPRINTSTUDIO_ARTIFACT_DOWNLOAD_TIMEOUT_SECONDS:-180}"
-download_method="${FREEPRINTSTUDIO_ARTIFACT_DOWNLOAD_METHOD:-auto}"
+download_method="${FREEPRINTSTUDIO_ARTIFACT_DOWNLOAD_METHOD:-api}"
 if ! [[ "$download_attempts" =~ ^[1-9][0-9]*$ ]]; then
   printf 'FAIL: FREEPRINTSTUDIO_ARTIFACT_DOWNLOAD_ATTEMPTS must be a positive integer.\n' >&2
   exit 1
@@ -57,10 +58,10 @@ if ! [[ "$download_timeout_seconds" =~ ^[1-9][0-9]*$ ]]; then
   exit 1
 fi
 case "$download_method" in
-  auto|gh|api)
+  api|gh|auto)
     ;;
   *)
-    printf 'FAIL: FREEPRINTSTUDIO_ARTIFACT_DOWNLOAD_METHOD must be auto, gh, or api.\n' >&2
+    printf 'FAIL: FREEPRINTSTUDIO_ARTIFACT_DOWNLOAD_METHOD must be api, gh, or auto.\n' >&2
     exit 1
     ;;
 esac
