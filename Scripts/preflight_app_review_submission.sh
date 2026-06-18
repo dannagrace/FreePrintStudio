@@ -23,6 +23,11 @@ looks_placeholder_like() {
   return 1
 }
 
+looks_like_processed_build_number() {
+  local value="${1:-}"
+  [[ "$value" =~ ^[0-9]+(\.[0-9]+){0,2}$ ]]
+}
+
 run_step() {
   local title="$1"
   shift
@@ -50,6 +55,9 @@ run_build_number_step() {
     failures=$((failures + 1))
   elif looks_placeholder_like "$APP_STORE_BUILD_NUMBER"; then
     printf 'BLOCKED: APP_STORE_BUILD_NUMBER still looks like a placeholder; set it to the processed App Store Connect build number.\n'
+    failures=$((failures + 1))
+  elif ! looks_like_processed_build_number "$APP_STORE_BUILD_NUMBER"; then
+    printf 'BLOCKED: APP_STORE_BUILD_NUMBER must be a processed App Store Connect build number, for example 42 or 1.0.1.\n'
     failures=$((failures + 1))
   else
     printf 'OK: APP_STORE_BUILD_NUMBER is set to %s\n' "$APP_STORE_BUILD_NUMBER"

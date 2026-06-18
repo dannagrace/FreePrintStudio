@@ -3006,6 +3006,19 @@ if ! grep -q 'MISSING_FIELD:' "$review_preflight_placeholder_output"; then
   failures=$((failures + 1))
 fi
 rm -rf "$review_preflight_placeholder_test_dir"
+review_preflight_invalid_build_test_dir="$(mktemp -d)"
+review_preflight_invalid_build_output="$review_preflight_invalid_build_test_dir/preflight.txt"
+APP_STORE_BUILD_NUMBER="build candidate" \
+  Scripts/preflight_app_review_submission.sh >"$review_preflight_invalid_build_output" 2>&1 || true
+if grep -q 'OK: APP_STORE_BUILD_NUMBER is set to build candidate' "$review_preflight_invalid_build_output"; then
+  printf 'FAIL: App Review preflight must not mark malformed selected build numbers as OK\n'
+  failures=$((failures + 1))
+fi
+if ! grep -q 'APP_STORE_BUILD_NUMBER must be a processed App Store Connect build number' "$review_preflight_invalid_build_output"; then
+  printf 'FAIL: App Review preflight must identify malformed selected build numbers\n'
+  failures=$((failures + 1))
+fi
+rm -rf "$review_preflight_invalid_build_test_dir"
 check_contains "Scripts/verify_release.sh" "review-preflight" "Release verification must expose the App Review submission preflight command"
 check_contains "README.md" "Scripts/run_fastlane.sh ios upload_testflight" "README must document the TestFlight upload command"
 check_contains "README.md" "ASC_KEY_ID=XXXXXXXXXX ASC_ISSUER_ID=00000000-0000-0000-0000-000000000000 ASC_KEY_PATH=/secure/AuthKey_XXXXXXXXXX.p8 Scripts/run_fastlane.sh ios metadata" "README metadata upload command must require App Store Connect API credentials"
