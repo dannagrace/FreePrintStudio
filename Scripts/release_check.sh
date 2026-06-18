@@ -841,6 +841,46 @@ elif ! grep -q 'PROCESSED_BUILD_NUMBER' "$manual_release_placeholder_build_log";
   failures=$((failures + 1))
 fi
 rm -rf "$manual_release_placeholder_build_test_dir"
+manual_release_invalid_build_format_test_dir="$(mktemp -d)"
+manual_release_invalid_build_format_evidence="$manual_release_invalid_build_format_test_dir/manual-release-verification.env"
+manual_release_invalid_build_format_log="$manual_release_invalid_build_format_test_dir/manual-release-verification-invalid-build.log"
+cat >"$manual_release_invalid_build_format_evidence" <<EOF
+MANUAL_VERIFIER_NAME="Release Tester"
+MANUAL_REAL_IPHONE_MODEL="iPhone 15"
+MANUAL_REAL_IPHONE_IOS_VERSION="18.5"
+MANUAL_REAL_IPHONE_TEST_DATE="$today"
+MANUAL_REAL_IPHONE_PHOTOS_IMPORT="pass"
+MANUAL_REAL_IPHONE_PDF_EXPORT="pass"
+MANUAL_REAL_IPHONE_PRINT_SHEET="pass"
+MANUAL_AIRPRINT_TEST_DATE="$today"
+MANUAL_AIRPRINT_PRINTER="Production AirPrint validation"
+MANUAL_AIRPRINT_EXACT_SIZE="pass"
+MANUAL_AIRPRINT_RULER_TARGET_INCHES="6"
+MANUAL_AIRPRINT_RULER_MEASURED_INCHES="6.00"
+MANUAL_TESTFLIGHT_BUILD_NUMBER="build candidate"
+MANUAL_TESTFLIGHT_DEVICE="iPhone 15"
+MANUAL_TESTFLIGHT_TEST_DATE="$today"
+MANUAL_TESTFLIGHT_INSTALL="pass"
+MANUAL_TESTFLIGHT_PRINT_WORKFLOW="pass"
+MANUAL_IPAD_TESTFLIGHT_DEVICE="iPad Pro 13-inch"
+MANUAL_IPAD_TESTFLIGHT_TEST_DATE="$today"
+MANUAL_IPAD_TESTFLIGHT_INSTALL="pass"
+MANUAL_IPAD_TESTFLIGHT_LAYOUT="pass"
+MANUAL_IPAD_TESTFLIGHT_PRINT_WORKFLOW="pass"
+EOF
+if APP_STORE_BUILD_NUMBER="build candidate" \
+  MANUAL_RELEASE_VERIFICATION_PATH="$manual_release_invalid_build_format_evidence" \
+  Scripts/validate_manual_release_verification.sh >"$manual_release_invalid_build_format_log" 2>&1; then
+  printf 'FAIL: Manual verification must reject malformed selected and tested build numbers\n'
+  failures=$((failures + 1))
+elif ! grep -q 'processed App Store Connect build number' "$manual_release_invalid_build_format_log"; then
+  printf 'FAIL: Manual verification invalid-build failure should identify processed App Store Connect build number requirements\n'
+  failures=$((failures + 1))
+elif grep -q 'TestFlight build matches selected App Store build' "$manual_release_invalid_build_format_log"; then
+  printf 'FAIL: Manual verification must not mark malformed matching build numbers as matched\n'
+  failures=$((failures + 1))
+fi
+rm -rf "$manual_release_invalid_build_format_test_dir"
 manual_release_lowercase_placeholder_test_dir="$(mktemp -d)"
 manual_release_lowercase_placeholder_evidence="$manual_release_lowercase_placeholder_test_dir/manual-release-verification.env"
 manual_release_lowercase_placeholder_log="$manual_release_lowercase_placeholder_test_dir/manual-release-verification-lowercase-placeholder.log"

@@ -39,6 +39,11 @@ looks_placeholder_like() {
   return 1
 }
 
+looks_like_processed_build_number() {
+  local value="$1"
+  [[ "$value" =~ ^[0-9]+(\.[0-9]+){0,2}$ ]]
+}
+
 validate_private_file_permissions() {
   local path="$1"
   local label="$2"
@@ -334,9 +339,23 @@ if [[ -n "${APP_STORE_BUILD_NUMBER:-}" ]] && looks_placeholder_like "$APP_STORE_
   block "Selected App Store build still looks like a placeholder (APP_STORE_BUILD_NUMBER=$APP_STORE_BUILD_NUMBER)"
 fi
 
+if [[ -n "${APP_STORE_BUILD_NUMBER:-}" ]] \
+  && ! looks_placeholder_like "$APP_STORE_BUILD_NUMBER" \
+  && ! looks_like_processed_build_number "$APP_STORE_BUILD_NUMBER"; then
+  block "Selected App Store build must be a processed App Store Connect build number (APP_STORE_BUILD_NUMBER=$APP_STORE_BUILD_NUMBER), for example 42 or 1.0.1"
+fi
+
+if [[ -n "${MANUAL_TESTFLIGHT_BUILD_NUMBER:-}" ]] \
+  && ! looks_placeholder_like "$MANUAL_TESTFLIGHT_BUILD_NUMBER" \
+  && ! looks_like_processed_build_number "$MANUAL_TESTFLIGHT_BUILD_NUMBER"; then
+  block "TestFlight build number must be a processed App Store Connect build number (MANUAL_TESTFLIGHT_BUILD_NUMBER=$MANUAL_TESTFLIGHT_BUILD_NUMBER), for example 42 or 1.0.1"
+fi
+
 if [[ -n "${APP_STORE_BUILD_NUMBER:-}" && -n "${MANUAL_TESTFLIGHT_BUILD_NUMBER:-}" ]] \
   && ! looks_placeholder_like "$APP_STORE_BUILD_NUMBER" \
-  && ! looks_placeholder_like "$MANUAL_TESTFLIGHT_BUILD_NUMBER"; then
+  && ! looks_placeholder_like "$MANUAL_TESTFLIGHT_BUILD_NUMBER" \
+  && looks_like_processed_build_number "$APP_STORE_BUILD_NUMBER" \
+  && looks_like_processed_build_number "$MANUAL_TESTFLIGHT_BUILD_NUMBER"; then
   if [[ "$MANUAL_TESTFLIGHT_BUILD_NUMBER" == "$APP_STORE_BUILD_NUMBER" ]]; then
     ok "TestFlight build matches selected App Store build $APP_STORE_BUILD_NUMBER"
   else
