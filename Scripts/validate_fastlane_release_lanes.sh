@@ -102,6 +102,10 @@ if source:
         fail("Fastfile must call Scripts/preflight_app_store_archive.sh")
     if "Scripts/preflight_app_review_submission.sh" not in source:
         fail("Fastfile must call Scripts/preflight_app_review_submission.sh")
+    if "def validate_app_store_build_number!" not in source:
+        fail("Fastfile must define validate_app_store_build_number!")
+    if "Set APP_STORE_BUILD_NUMBER to the processed App Store Connect build number before submitting for review" not in source:
+        fail("Fastfile must explain missing selected App Store build numbers")
 
     metadata = lane_body(source, "metadata")
     if metadata:
@@ -137,7 +141,8 @@ if source:
     if submit_review:
         require_before("submit_review", submit_review, "confirm_submit_for_review!", "deliver(")
         require_before("submit_review", submit_review, 'build_number = ENV["APP_STORE_BUILD_NUMBER"].to_s.strip', "validate_app_store_metadata!")
-        require_before("submit_review", submit_review, "Set APP_STORE_BUILD_NUMBER to the processed App Store Connect build number before submitting for review", "validate_app_store_metadata!")
+        require_before("submit_review", submit_review, "validate_app_store_build_number!(build_number)", "preflight_app_review_submission!")
+        require_before("submit_review", submit_review, "validate_app_store_build_number!(build_number)", "deliver(")
         require_before("submit_review", submit_review, "preflight_app_review_submission!", "validate_release_env!")
         require_before("submit_review", submit_review, "preflight_app_review_submission!", "deliver(")
         require_before("submit_review", submit_review, "validate_release_env!", "deliver(")

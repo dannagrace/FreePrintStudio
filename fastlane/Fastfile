@@ -245,6 +245,28 @@ def confirm_submit_for_review!
   )
 end
 
+def validate_app_store_build_number!(build_number)
+  normalized_build_number = build_number.to_s.strip
+  if normalized_build_number.empty?
+    UI.user_error!("Set APP_STORE_BUILD_NUMBER to the processed App Store Connect build number before submitting for review")
+  end
+
+  lower_build_number = normalized_build_number.downcase
+  if normalized_build_number == "PROCESSED_BUILD_NUMBER" ||
+     normalized_build_number.include?("YOUR") ||
+     normalized_build_number.include?("YOUR_") ||
+     lower_build_number.include?("todo") ||
+     lower_build_number.include?("tbd") ||
+     lower_build_number.include?("example") ||
+     lower_build_number.include?("placeholder")
+    UI.user_error!("APP_STORE_BUILD_NUMBER still looks like a placeholder; set it to the processed App Store Connect build number")
+  end
+
+  unless normalized_build_number.match?(/\A[0-9]+(\.[0-9]+){0,2}\z/)
+    UI.user_error!("APP_STORE_BUILD_NUMBER must be a processed App Store Connect build number, for example 42 or 1.0.1")
+  end
+end
+
 def confirm_upload_app_privacy!
   return if ENV["CONFIRM_UPLOAD_APP_PRIVACY"].to_s == "1"
 
@@ -339,7 +361,7 @@ platform :ios do
   lane :submit_review do
     confirm_submit_for_review!
     build_number = ENV["APP_STORE_BUILD_NUMBER"].to_s.strip
-    UI.user_error!("Set APP_STORE_BUILD_NUMBER to the processed App Store Connect build number before submitting for review") if build_number.empty?
+    validate_app_store_build_number!(build_number)
 
     preflight_app_review_submission!
     validate_release_env!
