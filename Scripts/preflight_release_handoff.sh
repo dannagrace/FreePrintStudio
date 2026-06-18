@@ -9,6 +9,7 @@ readiness_log="${FREEPRINTSTUDIO_HANDOFF_READINESS_LOG:-build/release-handoff-re
 summary_path="${FREEPRINTSTUDIO_HANDOFF_SUMMARY_PATH:-build/release-handoff-summary.tsv}"
 brief_path="${FREEPRINTSTUDIO_HANDOFF_BRIEF_PATH:-build/release-handoff-brief.md}"
 input_todo_path="${FREEPRINTSTUDIO_HANDOFF_INPUT_TODO_PATH:-build/release-input-todo.md}"
+phase_plan_path="${FREEPRINTSTUDIO_HANDOFF_PHASE_PLAN_PATH:-build/release-phase-plan.md}"
 owner_action_dir="${FREEPRINTSTUDIO_HANDOFF_OWNER_ACTION_DIR:-build/release-owner-actions}"
 private_template_dir="${FREEPRINTSTUDIO_HANDOFF_PRIVATE_TEMPLATE_DIR:-build/private-release-input-templates}"
 ci_readiness_log="$packet_dir/readiness.txt"
@@ -28,6 +29,7 @@ Connect account work:
   - writes build/release-handoff-summary.tsv with CI packet and readiness status
   - writes build/release-handoff-brief.md for release owner handoff
   - writes build/release-input-todo.md with fillable private release input fields
+  - writes build/release-phase-plan.md with phase-ordered release work
   - writes build/release-owner-actions/ with per-owner action briefs
   - writes build/private-release-input-templates/ with blank private env starters
 EOF
@@ -139,6 +141,7 @@ write_handoff_summary() {
     printf 'packet_github_run_url\t%s\n' "$packet_github_run_url"
     printf 'handoff_brief\t%s\n' "$brief_path"
     printf 'release_input_todo\t%s\n' "$input_todo_path"
+    printf 'release_phase_plan\t%s\n' "$phase_plan_path"
     printf 'owner_action_dir\t%s\n' "$owner_action_dir"
     printf 'private_template_dir\t%s\n' "$private_template_dir"
     printf 'ci_readiness_log\t%s\n' "$ci_readiness_log"
@@ -308,6 +311,7 @@ write_handoff_brief() {
     printf -- '- Machine summary: `%s`\n' "$summary_path"
     printf -- '- Human brief: `%s`\n' "$brief_path"
     printf -- '- Release input TODO: `%s`\n' "$input_todo_path"
+    printf -- '- Release phase plan: `%s`\n' "$phase_plan_path"
     printf -- '- Per-owner action briefs: `%s`\n' "$owner_action_dir"
     printf -- '- Private release input templates: `%s`\n' "$private_template_dir"
     printf -- '- CI action manifest: `%s`\n' "$external_actions_path"
@@ -321,6 +325,7 @@ write_handoff_brief() {
     printf 'Scripts/install_private_release_input_templates.sh --source-dir build/private-release-input-templates --target-dir Config\n'
     printf 'Scripts/print_release_input_status.sh --strict\n'
     printf 'Scripts/check_app_store_readiness.sh\n'
+    printf 'Scripts/validate_release_phase_plan.sh build/CISubmissionPacket/external-readiness-actions.tsv build/release-phase-plan.md\n'
     printf 'APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/validate_manual_release_verification.sh\n'
     printf 'DEVELOPMENT_TEAM_ID=YOURTEAMID ALLOW_PROVISIONING_UPDATES=1 Scripts/archive_app_store.sh\n'
     printf 'APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/preflight_app_review_submission.sh\n'
@@ -352,6 +357,8 @@ Scripts/validate_release_provenance.sh "$packet_dir/release-provenance.tsv" "$lo
 Scripts/validate_external_readiness_actions.sh "$packet_dir/readiness.txt" "$external_actions_path"
 Scripts/generate_release_input_todo.sh "$external_actions_path" "$input_todo_path"
 Scripts/validate_release_input_todo.sh "$external_actions_path" "$input_todo_path"
+Scripts/generate_release_phase_plan.sh "$external_actions_path" "$phase_plan_path"
+Scripts/validate_release_phase_plan.sh "$external_actions_path" "$phase_plan_path"
 Scripts/generate_release_owner_action_briefs.sh "$external_actions_path" "$owner_action_dir"
 Scripts/validate_release_owner_action_briefs.sh "$external_actions_path" "$owner_action_dir"
 Scripts/generate_private_release_input_templates.sh "$external_actions_path" "$private_template_dir"

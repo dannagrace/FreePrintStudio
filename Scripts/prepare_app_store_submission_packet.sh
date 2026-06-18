@@ -25,6 +25,7 @@ SUMMARY_PATH="$PACKET_DIR/SUMMARY.md"
 ACTION_ITEMS_PATH="$PACKET_DIR/ACTION_ITEMS.md"
 EXTERNAL_READINESS_ACTIONS="$PACKET_DIR/external-readiness-actions.tsv"
 RELEASE_INPUT_TODO="$PACKET_DIR/release-input-todo.md"
+RELEASE_PHASE_PLAN="$PACKET_DIR/release-phase-plan.md"
 OWNER_ACTION_BRIEFS_DIR="$PACKET_DIR/owner-action-briefs"
 PRIVATE_RELEASE_INPUT_TEMPLATES_DIR="$PACKET_DIR/private-release-input-templates"
 
@@ -623,6 +624,8 @@ write_release_provenance
 write_action_items
 write_external_readiness_actions
 Scripts/generate_release_input_todo.sh "$EXTERNAL_READINESS_ACTIONS" "$RELEASE_INPUT_TODO" >/dev/null
+Scripts/generate_release_phase_plan.sh "$EXTERNAL_READINESS_ACTIONS" "$RELEASE_PHASE_PLAN" >/dev/null
+Scripts/validate_release_phase_plan.sh "$EXTERNAL_READINESS_ACTIONS" "$RELEASE_PHASE_PLAN"
 Scripts/generate_release_owner_action_briefs.sh "$EXTERNAL_READINESS_ACTIONS" "$OWNER_ACTION_BRIEFS_DIR" >/dev/null
 Scripts/generate_private_release_input_templates.sh "$EXTERNAL_READINESS_ACTIONS" "$PRIVATE_RELEASE_INPUT_TEMPLATES_DIR" >/dev/null
 
@@ -656,6 +659,7 @@ cat >"$SUMMARY_PATH" <<EOF
 - Screenshot privacy metadata validation report for reviewed and Fastlane upload screenshots.
 - Redacted release input status with field-level missing private input tracking.
 - Fillable release input TODO generated from categorized external readiness actions.
+- Phase-based release plan generated from categorized external readiness actions.
 - Per-owner action briefs generated from categorized external readiness actions.
 - Blank private release input templates generated from categorized external readiness actions.
 - Reviewed screenshots and Fastlane upload screenshots.
@@ -679,6 +683,7 @@ cat >"$SUMMARY_PATH" <<EOF
 - \`release-input-status.txt\` with redacted private input readiness and missing field checklist.
 - \`external-readiness-actions.tsv\` with categorized external blockers, affected fields, target locations, validation commands, and warnings for release tracking.
 - \`release-input-todo.md\` with fillable \`Config/release.env\` and \`Config/manual-release-verification.env\` fields plus non-env external actions.
+- \`release-phase-plan.md\` with phase-ordered release work, validation gates, and action rows generated from \`external-readiness-actions.tsv\`.
 - \`owner-action-briefs/\` with one focused action file per release owner plus an index.
 - \`private-release-input-templates/\` with blank \`release.env\` and \`manual-release-verification.env\` starters generated from current external actions.
 - \`file-manifest.tsv\` with package file sizes and sha256 checksums.
@@ -705,6 +710,7 @@ Scripts/verify_release.sh review-report
 Scripts/verify_release.sh public-pages-report
 Scripts/verify_release.sh public-pages
 Scripts/check_app_store_readiness.sh
+Scripts/validate_release_phase_plan.sh build/AppStoreSubmissionPacket/external-readiness-actions.tsv build/AppStoreSubmissionPacket/release-phase-plan.md
 Scripts/preflight_metadata_upload.sh
 ASC_KEY_ID=XXXXXXXXXX ASC_ISSUER_ID=00000000-0000-0000-0000-000000000000 ASC_KEY_PATH=/secure/AuthKey_XXXXXXXXXX.p8 Scripts/run_fastlane.sh ios metadata
 FASTLANE_USER=apple-id@example.com CONFIRM_UPLOAD_APP_PRIVACY=1 Scripts/preflight_app_privacy_upload.sh

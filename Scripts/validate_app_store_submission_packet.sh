@@ -201,6 +201,7 @@ required_files=(
   "ACTION_ITEMS.md"
   "release-input-status.txt"
   "release-input-todo.md"
+  "release-phase-plan.md"
   "owner-action-briefs/index.md"
   "private-release-input-templates/index.md"
   "readiness.txt"
@@ -240,6 +241,9 @@ fi
 if ! Scripts/validate_release_input_todo.sh "$PACKET_DIR/external-readiness-actions.tsv" "$PACKET_DIR/release-input-todo.md"; then
   failures=$((failures + 1))
 fi
+if ! Scripts/validate_release_phase_plan.sh "$PACKET_DIR/external-readiness-actions.tsv" "$PACKET_DIR/release-phase-plan.md"; then
+  failures=$((failures + 1))
+fi
 if ! Scripts/validate_release_owner_action_briefs.sh "$PACKET_DIR/external-readiness-actions.tsv" "$PACKET_DIR/owner-action-briefs"; then
   failures=$((failures + 1))
 fi
@@ -268,6 +272,7 @@ require_contains "files/Config/release.env.example" "APP_REVIEW_CONTACT_EMAIL" "
 require_contains "files/Config/release.env.example" "CONFIRM_SUBMIT_FOR_REVIEW" "release environment template final submission guard"
 require_contains "SUMMARY.md" "release-input-status.txt" "summary redacted release input status reference"
 require_contains "SUMMARY.md" "release-input-todo.md" "summary release input TODO reference"
+require_contains "SUMMARY.md" "release-phase-plan.md" "summary release phase plan reference"
 require_contains "SUMMARY.md" "owner-action-briefs/" "summary per-owner action brief reference"
 require_contains "SUMMARY.md" "private-release-input-templates/" "summary private release input template reference"
 require_contains "release-input-status.txt" "== Release Input Status ==" "redacted release input status header"
@@ -278,6 +283,9 @@ require_contains "release-input-todo.md" "Config/release.env" "release input TOD
 require_contains "release-input-todo.md" "DEVELOPMENT_TEAM_ID=" "release input TODO signing field"
 require_contains "release-input-todo.md" "Config/manual-release-verification.env" "release input TODO manual evidence group"
 require_contains "release-input-todo.md" "Non-env External Actions" "release input TODO non-env action group"
+require_contains "release-phase-plan.md" "FreePrint Studio Release Phase Plan" "release phase plan title"
+require_contains "release-phase-plan.md" "Phase 1 - Private Inputs And Account Access" "release phase plan private input phase"
+require_contains "release-phase-plan.md" "Phase 5 - App Review Submission" "release phase plan final submission phase"
 require_contains "owner-action-briefs/index.md" "FreePrint Studio Release Owner Action Briefs" "owner action brief index title"
 require_contains "private-release-input-templates/index.md" "FreePrint Studio Private Release Input Templates" "private release input template index title"
 require_contains "SUMMARY.md" "release-provenance.tsv" "summary release provenance reference"
@@ -369,6 +377,7 @@ required_file_manifest_entries=(
   "private-release-input-templates/index.md"
   "pdf-export-validation.tsv"
   "public-pages-readiness-report.md"
+  "release-phase-plan.md"
   "release-input-todo.md"
   "release-provenance.tsv"
   "readiness.txt"

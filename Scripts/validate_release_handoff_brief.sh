@@ -387,6 +387,7 @@ for required_action_file in \
   "release-handoff-summary.tsv" \
   "release-handoff-brief.md" \
   "release-input-todo.md" \
+  "release-phase-plan.md" \
   "release-owner-actions" \
   "private-release-input-templates" \
   "external-readiness-actions.tsv" \
@@ -404,6 +405,7 @@ for required_handoff_command in \
   "Scripts/install_private_release_input_templates.sh --source-dir build/private-release-input-templates --target-dir Config" \
   "Scripts/print_release_input_status.sh --strict" \
   "Scripts/check_app_store_readiness.sh" \
+  "Scripts/validate_release_phase_plan.sh build/CISubmissionPacket/external-readiness-actions.tsv build/release-phase-plan.md" \
   "APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/validate_manual_release_verification.sh" \
   "DEVELOPMENT_TEAM_ID=YOURTEAMID ALLOW_PROVISIONING_UPDATES=1 Scripts/archive_app_store.sh" \
   "APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/preflight_app_review_submission.sh"; do

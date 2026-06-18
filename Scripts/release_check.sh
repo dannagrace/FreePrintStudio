@@ -4288,6 +4288,7 @@ EOF
 - Machine summary: `release-handoff-summary.tsv`
 - Human brief: `release-handoff-brief.md`
 - Release input TODO: `release-input-todo.md`
+- Release phase plan: `release-phase-plan.md`
 - Per-owner action briefs: `release-owner-actions`
 - Private release input templates: `private-release-input-templates`
 - CI action manifest: `external-readiness-actions.tsv`
@@ -4302,6 +4303,7 @@ EOF
 Scripts/install_private_release_input_templates.sh --source-dir build/private-release-input-templates --target-dir Config
 Scripts/print_release_input_status.sh --strict
 Scripts/check_app_store_readiness.sh
+Scripts/validate_release_phase_plan.sh build/CISubmissionPacket/external-readiness-actions.tsv build/release-phase-plan.md
 APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/validate_manual_release_verification.sh
 DEVELOPMENT_TEAM_ID=YOURTEAMID ALLOW_PROVISIONING_UPDATES=1 Scripts/archive_app_store.sh
 APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/preflight_app_review_submission.sh
@@ -5078,6 +5080,89 @@ EOF
     fi
   fi
   rm -rf "$install_template_test_dir"
+fi
+check_file "Scripts/generate_release_phase_plan.sh" "Release phase plan generator is required"
+if [[ -f "Scripts/generate_release_phase_plan.sh" && ! -x "Scripts/generate_release_phase_plan.sh" ]]; then
+  printf 'FAIL: Release phase plan generator must be executable (Scripts/generate_release_phase_plan.sh)\n'
+  failures=$((failures + 1))
+fi
+check_file "Scripts/validate_release_phase_plan.sh" "Release phase plan validator is required"
+if [[ -f "Scripts/validate_release_phase_plan.sh" && ! -x "Scripts/validate_release_phase_plan.sh" ]]; then
+  printf 'FAIL: Release phase plan validator must be executable (Scripts/validate_release_phase_plan.sh)\n'
+  failures=$((failures + 1))
+fi
+check_contains "Scripts/generate_release_phase_plan.sh" "Phase 1 - Private Inputs And Account Access" "Release phase plan must include the private input and account access phase"
+check_contains "Scripts/generate_release_phase_plan.sh" "Phase 2 - Signing And Archive" "Release phase plan must include the signing and archive phase"
+check_contains "Scripts/generate_release_phase_plan.sh" "Phase 3 - App Store Connect Metadata And Privacy" "Release phase plan must include the App Store Connect metadata and privacy phase"
+check_contains "Scripts/generate_release_phase_plan.sh" "Phase 4 - TestFlight And Manual QA" "Release phase plan must include the TestFlight and manual QA phase"
+check_contains "Scripts/generate_release_phase_plan.sh" "Phase 5 - App Review Submission" "Release phase plan must include the final App Review submission phase"
+check_contains "Scripts/prepare_app_store_submission_packet.sh" "RELEASE_PHASE_PLAN" "Submission packet must define a release phase plan output path"
+check_contains "Scripts/prepare_app_store_submission_packet.sh" 'Scripts/generate_release_phase_plan.sh "$EXTERNAL_READINESS_ACTIONS" "$RELEASE_PHASE_PLAN"' "Submission packet must generate the release phase plan from external readiness actions"
+check_contains "Scripts/validate_app_store_submission_packet.sh" "release-phase-plan.md" "Submission packet validator must require the release phase plan"
+check_contains "Scripts/validate_app_store_submission_packet.sh" 'Scripts/validate_release_phase_plan.sh "$PACKET_DIR/external-readiness-actions.tsv" "$PACKET_DIR/release-phase-plan.md"' "Submission packet validator must validate the release phase plan against external actions"
+check_contains "Scripts/preflight_release_handoff.sh" "phase_plan_path" "Release handoff preflight must define a phase plan output path"
+check_contains "Scripts/preflight_release_handoff.sh" 'Scripts/generate_release_phase_plan.sh "$external_actions_path" "$phase_plan_path"' "Release handoff preflight must generate a phase plan for local handoff"
+check_contains "Scripts/preflight_release_handoff.sh" "release_phase_plan" "Release handoff summary must record the release phase plan path"
+check_contains "Scripts/preflight_release_handoff.sh" "Release phase plan" "Release handoff brief must reference the release phase plan"
+check_contains "README.md" "release-phase-plan.md" "README must document the release phase plan"
+check_contains "AppStore/release-checklist.md" "release-phase-plan.md" "Release checklist must document the release phase plan"
+if [[ -x "Scripts/generate_release_phase_plan.sh" && -x "Scripts/validate_release_phase_plan.sh" ]]; then
+  phase_plan_test_dir="$PWD/build/release-check-phase-plan"
+  phase_plan_actions="$phase_plan_test_dir/external-readiness-actions.tsv"
+  phase_plan_output="$phase_plan_test_dir/release-phase-plan.md"
+  phase_plan_log="$phase_plan_test_dir/validate.log"
+  rm -rf "$phase_plan_test_dir"
+  mkdir -p "$phase_plan_test_dir"
+  cat >"$phase_plan_actions" <<'EOF'
+category	severity	owner	field	target	item	next_action	validation_command
+App Review Contact	blocker	Release owner	APP_REVIEW_CONTACT_EMAIL	Config/release.env	APP_REVIEW_CONTACT_EMAIL is missing	Fill App Review contact fields.	Scripts/validate_app_review_contact.sh
+Signing	blocker	Apple Developer account holder	DEVELOPMENT_TEAM_ID	Config/release.env or Xcode project settings	Apple Developer Team ID missing	Install signing assets.	Scripts/check_code_signing_assets.sh
+Commercial Configuration	blocker	App Store Connect account holder	APP_STORE_COMMERCIAL_CONFIG_CONFIRMED_IN_APP_STORE_CONNECT	Config/release.env	Set APP_STORE_COMMERCIAL_CONFIG_CONFIRMED_IN_APP_STORE_CONNECT=1 after App Store Connect Pricing, Availability, monetization, release option, and phased release match AppStore/commercial-configuration.md	Apply AppStore/commercial-configuration.md.	Scripts/validate_commercial_configuration_connect_entry.sh
+Manual Verification	blocker	QA/release owner	MANUAL_TESTFLIGHT_BUILD_NUMBER	Config/manual-release-verification.env	TestFlight build number is missing	Record TestFlight evidence.	APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/validate_manual_release_verification.sh
+App Store Connect	warning	App Store Connect account holder	App Store Connect app record/TestFlight status	App Store Connect	App Store Connect app record and version require account-specific verification after credentials are configured	Verify the app record.	APP_STORE_CONNECT_SKIP_BUILD_CHECK=1 Scripts/check_app_store_connect_state.sh
+EOF
+  if ! Scripts/generate_release_phase_plan.sh "$phase_plan_actions" "$phase_plan_output" >"$phase_plan_test_dir/generate.log" 2>&1; then
+    printf 'FAIL: Release phase plan generator must generate a phase plan from external readiness actions\n'
+    sed 's/^/  /' "$phase_plan_test_dir/generate.log"
+    failures=$((failures + 1))
+  else
+    if ! grep -q '# FreePrint Studio Release Phase Plan' "$phase_plan_output"; then
+      printf 'FAIL: Release phase plan must include a title\n'
+      failures=$((failures + 1))
+    fi
+    if ! grep -q '| Phase 1 - Private Inputs And Account Access | 1 | 1 | 0 |' "$phase_plan_output"; then
+      printf 'FAIL: Release phase plan must summarize private input actions by phase\n'
+      failures=$((failures + 1))
+    fi
+    if ! grep -q '| Phase 3 - App Store Connect Metadata And Privacy | 2 | 1 | 1 |' "$phase_plan_output"; then
+      printf 'FAIL: Release phase plan must summarize App Store Connect actions by phase\n'
+      failures=$((failures + 1))
+    fi
+    if ! grep -q 'APP_STORE_COMMERCIAL_CONFIG_CONFIRMED_IN_APP_STORE_CONNECT' "$phase_plan_output"; then
+      printf 'FAIL: Release phase plan must include commercial configuration confirmation actions\n'
+      failures=$((failures + 1))
+    fi
+    if ! grep -q 'APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/preflight_app_review_submission.sh' "$phase_plan_output"; then
+      printf 'FAIL: Release phase plan must include the final App Review submission preflight command\n'
+      failures=$((failures + 1))
+    fi
+    if ! Scripts/validate_release_phase_plan.sh "$phase_plan_actions" "$phase_plan_output" >"$phase_plan_log" 2>&1; then
+      printf 'FAIL: Release phase plan validator must accept a matching generated plan\n'
+      sed 's/^/  /' "$phase_plan_log"
+      failures=$((failures + 1))
+    fi
+    phase_plan_bad="$phase_plan_test_dir/release-phase-plan-missing-manual.md"
+    cp "$phase_plan_output" "$phase_plan_bad"
+    perl -0pi -e 's/^.*MANUAL_TESTFLIGHT_BUILD_NUMBER.*\n//m' "$phase_plan_bad"
+    if Scripts/validate_release_phase_plan.sh "$phase_plan_actions" "$phase_plan_bad" >"$phase_plan_log" 2>&1; then
+      printf 'FAIL: Release phase plan validator must reject missing action detail rows\n'
+      failures=$((failures + 1))
+    elif ! grep -q 'MANUAL_TESTFLIGHT_BUILD_NUMBER' "$phase_plan_log"; then
+      printf 'FAIL: Release phase plan validator must identify the missing action detail field\n'
+      failures=$((failures + 1))
+    fi
+  fi
+  rm -rf "$phase_plan_test_dir"
 fi
 check_file "Scripts/preflight_release_handoff.sh" "Release handoff preflight script is required"
 if [[ -f "Scripts/preflight_release_handoff.sh" && ! -x "Scripts/preflight_release_handoff.sh" ]]; then
