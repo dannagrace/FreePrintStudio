@@ -98,6 +98,19 @@ phases = OrderedDict(
     ]
 )
 
+final_submission_guards = [
+    (
+        "APP_STORE_BUILD_NUMBER",
+        "Processed App Store Connect build selected for App Review.",
+        "APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/preflight_app_review_submission.sh",
+    ),
+    (
+        "CONFIRM_SUBMIT_FOR_REVIEW=1",
+        "Explicit final confirmation before Fastlane submits the selected build for review.",
+        "APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER CONFIRM_SUBMIT_FOR_REVIEW=1 Scripts/run_fastlane.sh ios submit_review",
+    ),
+]
+
 
 def fail(message: str) -> None:
     print(f"FAIL: {message}", file=sys.stderr)
@@ -194,6 +207,14 @@ for phase_name, metadata in phases.items():
     for gate in metadata["gates"]:
         lines.append(f"- `{markdown_cell(gate)}`")
     lines.append("")
+    if phase_name == "Phase 5 - App Review Submission":
+        lines.append("Required final submission guards:")
+        lines.append("")
+        lines.append("| Guard | Purpose | Validation Command |")
+        lines.append("| --- | --- | --- |")
+        for guard, purpose, command in final_submission_guards:
+            lines.append(f"| {code(guard)} | {markdown_cell(purpose)} | {code(command)} |")
+        lines.append("")
     if current_rows:
         lines.append("| Category | Owner | Severity | Field | Target | Item | Validation Command |")
         lines.append("| --- | --- | --- | --- | --- | --- | --- |")

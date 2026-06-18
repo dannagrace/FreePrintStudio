@@ -127,6 +127,15 @@ require_contains("Replace YOURTEAMID with the Apple Developer Team ID before run
 require_contains("Replace apple-id@example.com with the App Store Connect Apple ID before running Fastlane Apple ID commands.", "Fastlane Apple ID placeholder replacement guidance")
 require_contains("APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/preflight_app_review_submission.sh", "final App Review submission preflight command")
 require_contains("APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER CONFIRM_SUBMIT_FOR_REVIEW=1 Scripts/run_fastlane.sh ios submit_review", "final App Review submit command")
+require_contains("Required final submission guards", "final submission guard section")
+require_contains(
+    "| `APP_STORE_BUILD_NUMBER` | Processed App Store Connect build selected for App Review. | `APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/preflight_app_review_submission.sh` |",
+    "APP_STORE_BUILD_NUMBER final guard row",
+)
+require_contains(
+    "| `CONFIRM_SUBMIT_FOR_REVIEW=1` | Explicit final confirmation before Fastlane submits the selected build for review. | `APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER CONFIRM_SUBMIT_FOR_REVIEW=1 Scripts/run_fastlane.sh ios submit_review` |",
+    "CONFIRM_SUBMIT_FOR_REVIEW=1 final submit confirmation guard row",
+)
 
 for phase_name, current_rows in phase_rows.items():
     phase_blockers = sum(1 for row in current_rows if row["severity"] == "blocker")
