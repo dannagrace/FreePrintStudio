@@ -120,6 +120,10 @@ validate_format \
   APP_PRIVACY_DETAILS_CONFIRMED_IN_APP_STORE_CONNECT \
   '^1$' \
   "APP_PRIVACY_DETAILS_CONFIRMED_IN_APP_STORE_CONNECT must be 1 after App Store Connect matches AppStore/app_privacy_details.json"
+validate_format \
+  APP_STORE_BUILD_NUMBER \
+  '^[0-9]+(\.[0-9]+){0,2}$' \
+  "APP_STORE_BUILD_NUMBER must be a processed App Store Connect build number, for example 42 or 1.0.1"
 
 if (( failures > 0 )); then
   printf '\nReplace placeholder values in Config/release.env or unset them until real account values are available.\n'

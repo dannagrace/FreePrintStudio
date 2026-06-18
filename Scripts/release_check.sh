@@ -1827,6 +1827,17 @@ elif ! grep -q 'APP_REVIEW_CONTACT_EMAIL still uses a placeholder value' /tmp/fr
   failures=$((failures + 1))
 fi
 rm -rf "$release_env_example_domain_test_dir"
+release_env_invalid_build_number_test_dir="$(mktemp -d)"
+release_env_invalid_build_number_test_file="$release_env_invalid_build_number_test_dir/release.env"
+printf 'APP_STORE_BUILD_NUMBER="build candidate"\n' >"$release_env_invalid_build_number_test_file"
+if RELEASE_ENV_PATH="$release_env_invalid_build_number_test_file" Scripts/validate_release_env.sh >/tmp/freeprintstudio-invalid-build-release-env.log 2>&1; then
+  printf 'FAIL: Release environment validation must reject malformed selected App Store build numbers\n'
+  failures=$((failures + 1))
+elif ! grep -q 'APP_STORE_BUILD_NUMBER must be a processed App Store Connect build number' /tmp/freeprintstudio-invalid-build-release-env.log; then
+  printf 'FAIL: Release environment invalid-build output must identify APP_STORE_BUILD_NUMBER format errors\n'
+  failures=$((failures + 1))
+fi
+rm -rf "$release_env_invalid_build_number_test_dir"
 release_env_invalid_format_test_dir="$(mktemp -d)"
 release_env_invalid_format_test_file="$release_env_invalid_format_test_dir/release.env"
 cat >"$release_env_invalid_format_test_file" <<'EOF'
