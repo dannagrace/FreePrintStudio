@@ -141,6 +141,10 @@ if looks_like_placeholder_build "$selected_build_number"; then
   block "APP_STORE_BUILD_NUMBER still uses a placeholder value; replace it with the processed App Store Connect build number"
 fi
 
+if [[ -n "$selected_build_number" && ! "$selected_build_number" =~ ^[0-9]+(\.[0-9]+){0,2}$ ]]; then
+  block "APP_STORE_BUILD_NUMBER must be a processed App Store Connect build number, for example 42 or 1.0.1"
+fi
+
 Scripts/check_app_store_connect_credentials.sh >/tmp/freeprintstudio-asc-credentials.log 2>&1 || {
   sed 's/^/  /' /tmp/freeprintstudio-asc-credentials.log
   block "App Store Connect API credentials are not configured"

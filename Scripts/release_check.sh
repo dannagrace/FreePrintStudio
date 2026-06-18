@@ -2820,6 +2820,22 @@ elif ! grep -q 'APP_STORE_BUILD_NUMBER still uses a placeholder' "$asc_state_low
   failures=$((failures + 1))
 fi
 rm -rf "$asc_state_lowercase_placeholder_build_test_dir"
+asc_state_invalid_build_format_test_dir="$(mktemp -d)"
+asc_state_invalid_build_format_env="$asc_state_invalid_build_format_test_dir/release.env"
+asc_state_invalid_build_format_log="$asc_state_invalid_build_format_test_dir/app-store-connect-state-invalid-build.log"
+printf 'APP_STORE_BUILD_NUMBER="build candidate"\n' >"$asc_state_invalid_build_format_env"
+if RELEASE_ENV_PATH="$asc_state_invalid_build_format_env" \
+  Scripts/check_app_store_connect_state.sh >"$asc_state_invalid_build_format_log" 2>&1; then
+  printf 'FAIL: App Store Connect state preflight must reject malformed selected build numbers before querying account state\n'
+  failures=$((failures + 1))
+elif ! grep -q 'APP_STORE_BUILD_NUMBER must be a processed App Store Connect build number' "$asc_state_invalid_build_format_log"; then
+  printf 'FAIL: App Store Connect state invalid-build failure should identify APP_STORE_BUILD_NUMBER format errors\n'
+  failures=$((failures + 1))
+elif grep -q 'App Store Connect API credentials are not configured' "$asc_state_invalid_build_format_log"; then
+  printf 'FAIL: App Store Connect state invalid-build failure must happen before credential validation\n'
+  failures=$((failures + 1))
+fi
+rm -rf "$asc_state_invalid_build_format_test_dir"
 check_file "Scripts/preflight_testflight_upload.sh" "TestFlight upload preflight script is required"
 if [[ ! -x "Scripts/preflight_testflight_upload.sh" ]]; then
   printf 'FAIL: TestFlight upload preflight script must be executable (Scripts/preflight_testflight_upload.sh)\n'
