@@ -244,6 +244,9 @@ fi
 if ! Scripts/validate_release_phase_plan.sh "$PACKET_DIR/external-readiness-actions.tsv" "$PACKET_DIR/release-phase-plan.md"; then
   failures=$((failures + 1))
 fi
+if ! Scripts/validate_manual_release_evidence_form.sh "$PACKET_DIR/external-readiness-actions.tsv" "$PACKET_DIR/manual-release-evidence-form.md"; then
+  failures=$((failures + 1))
+fi
 if ! Scripts/validate_release_owner_action_briefs.sh "$PACKET_DIR/external-readiness-actions.tsv" "$PACKET_DIR/owner-action-briefs"; then
   failures=$((failures + 1))
 fi

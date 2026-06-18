@@ -3456,6 +3456,39 @@ check_contains "Scripts/generate_manual_release_evidence_form.sh" "MANUAL_IPAD_T
 check_contains "Scripts/generate_manual_release_evidence_form.sh" "MANUAL_IPAD_TESTFLIGHT_PRINT_WORKFLOW" "Manual release evidence form must cover iPad TestFlight print workflow evidence"
 check_contains "Scripts/generate_manual_release_evidence_form.sh" "Numeric iOS version" "Manual release evidence form must require a traceable numeric iOS version"
 check_contains "Scripts/generate_manual_release_evidence_form.sh" "processed App Store Connect build number" "Manual release evidence form must warn that selected-build placeholders must be replaced"
+check_file "Scripts/validate_manual_release_evidence_form.sh" "Manual release evidence form validator is required"
+if [[ -f "Scripts/validate_manual_release_evidence_form.sh" && ! -x "Scripts/validate_manual_release_evidence_form.sh" ]]; then
+  printf 'FAIL: Manual release evidence form validator must be executable (Scripts/validate_manual_release_evidence_form.sh)\n'
+  failures=$((failures + 1))
+fi
+check_contains "Scripts/validate_app_store_submission_packet.sh" "validate_manual_release_evidence_form.sh" "Submission packet validator must validate manual evidence form coverage"
+if [[ -x "Scripts/validate_manual_release_evidence_form.sh" ]]; then
+  manual_form_validator_test_dir="$(mktemp -d)"
+  manual_form_actions="$manual_form_validator_test_dir/external-readiness-actions.tsv"
+  manual_form_output="$manual_form_validator_test_dir/manual-release-evidence-form.md"
+  manual_form_log="$manual_form_validator_test_dir/validation.log"
+  cat >"$manual_form_actions" <<'EOF'
+category	severity	owner	field	target	item	next_action	validation_command
+Manual Verification	blocker	QA/release owner	MANUAL_REAL_IPHONE_MODEL	Config/manual-release-verification.env	Real iPhone model is missing	Record real iPhone evidence.	APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/validate_manual_release_verification.sh
+Manual Verification	blocker	QA/release owner	MANUAL_TESTFLIGHT_PRINT_WORKFLOW	Config/manual-release-verification.env	TestFlight print workflow result is missing	Record TestFlight evidence.	APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/validate_manual_release_verification.sh
+Manual Verification	blocker	QA/release owner	manual-release-verification.env file	Config/manual-release-verification.env	Manual release verification evidence file is missing: Config/manual-release-verification.env	Install the generated template before recording evidence.	APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/validate_manual_release_verification.sh
+EOF
+  Scripts/generate_manual_release_evidence_form.sh "$manual_form_output" >/dev/null
+  if ! Scripts/validate_manual_release_evidence_form.sh "$manual_form_actions" "$manual_form_output" >"$manual_form_log" 2>&1; then
+    printf 'FAIL: Manual evidence form validator must accept the generated form for matching manual action fields\n'
+    cat "$manual_form_log"
+    failures=$((failures + 1))
+  fi
+  perl -0pi -e 's/^\| Print workflow succeeds from TestFlight build .*?\n//m' "$manual_form_output"
+  if Scripts/validate_manual_release_evidence_form.sh "$manual_form_actions" "$manual_form_output" >"$manual_form_log" 2>&1; then
+    printf 'FAIL: Manual evidence form validator must reject forms missing required manual action fields\n'
+    failures=$((failures + 1))
+  elif ! grep -q 'MANUAL_TESTFLIGHT_PRINT_WORKFLOW' "$manual_form_log"; then
+    printf 'FAIL: Manual evidence form validator must identify the missing manual action field\n'
+    failures=$((failures + 1))
+  fi
+  rm -rf "$manual_form_validator_test_dir"
+fi
 check_file "Scripts/generate_manual_release_readiness_report.sh" "Manual release readiness report generator is required"
 if [[ -f "Scripts/generate_manual_release_readiness_report.sh" && ! -x "Scripts/generate_manual_release_readiness_report.sh" ]]; then
   printf 'FAIL: Manual release readiness report generator must be executable (Scripts/generate_manual_release_readiness_report.sh)\n'
