@@ -56,6 +56,64 @@ readiness_signal_lines() {
   fi
 }
 
+readiness_count() {
+  local path="$1"
+  local prefix="$2"
+  grep -c "^${prefix}:" "$path" || true
+}
+
+external_action_count() {
+  local severity="${1:-}"
+  awk -F '\t' -v severity="$severity" '
+    NR == 1 {
+      for (i = 1; i <= NF; i += 1) {
+        columns[$i] = i
+      }
+      next
+    }
+    $1 != "" && (severity == "" || $(columns["severity"]) == severity) {
+      count += 1
+    }
+    END { print count + 0 }
+  ' "$actions_path"
+}
+
+write_expected_readiness_count_rows() {
+  if [[ "$#" -eq 4 ]]; then
+    printf 'CI packet\t%s\t%s\n' \
+      "$(readiness_count "$ci_readiness_path" "BLOCKED")" \
+      "$(readiness_count "$ci_readiness_path" "WARN")"
+    printf 'Local preflight\t%s\t%s\n' \
+      "$(readiness_count "$local_readiness_path" "BLOCKED")" \
+      "$(readiness_count "$local_readiness_path" "WARN")"
+  fi
+  printf 'External actions\t%s\t%s\n' \
+    "$(external_action_count blocker)" \
+    "$(external_action_count warning)"
+}
+
+write_actual_readiness_count_rows() {
+  local include_readiness_logs=0
+  if [[ "$#" -eq 4 ]]; then
+    include_readiness_logs=1
+  fi
+  awk '
+    /^## Readiness Counts$/ {
+      in_section = 1
+      next
+    }
+    in_section && /^## / {
+      in_section = 0
+    }
+    in_section {
+      print
+    }
+  ' "$brief_path" \
+    | sed -nE 's/^\| ([^|]+) \| ([0-9]+) \| ([0-9]+) \|.*\|$/\1	\2	\3/p' \
+    | awk -F '\t' -v include_readiness_logs="$include_readiness_logs" 'include_readiness_logs == 1 || $1 == "External actions" { print }' \
+    | LC_ALL=C sort || true
+}
+
 write_expected_readiness_delta_rows() {
   local source_path="$1"
   local comparison_path="$2"
@@ -200,6 +258,7 @@ awk -F '\t' '$1 != "owner" { print }' "$temp_dir/action-summary.tsv" | LC_ALL=C 
 awk -F '\t' '$1 == "owner" { print $2 "\t" $3 "\t" $4 "\t" $5 }' "$temp_dir/action-summary.tsv" | LC_ALL=C sort >"$expected_owner_summary"
 
 require_contains "# FreePrint Studio Release Handoff Brief" "release handoff brief title"
+require_contains "## Readiness Counts" "Readiness Counts section"
 require_contains "## CI-only Readiness Detail" "CI-only Readiness Detail section"
 require_contains "## Local-only Readiness Detail" "Local-only Readiness Detail section"
 require_contains "## External Action Summary" "External Action Summary section"
@@ -231,6 +290,16 @@ if [[ "$#" -eq 4 ]]; then
     "$ci_readiness_path" \
     "No local-only blockers or warnings." \
     "local-only-readiness-detail"
+fi
+
+expected_readiness_counts="$temp_dir/expected-readiness-counts.tsv"
+actual_readiness_counts="$temp_dir/actual-readiness-counts.tsv"
+readiness_counts_diff="$temp_dir/readiness-counts-diff.txt"
+write_expected_readiness_count_rows "$@" | LC_ALL=C sort >"$expected_readiness_counts"
+write_actual_readiness_count_rows "$@" >"$actual_readiness_counts"
+if ! diff -u "$expected_readiness_counts" "$actual_readiness_counts" >"$readiness_counts_diff"; then
+  fail "Readiness Counts mismatch"
+  sed 's/^/  /' "$readiness_counts_diff"
 fi
 
 awk '

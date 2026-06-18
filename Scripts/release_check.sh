@@ -4032,6 +4032,7 @@ if [[ -f "Scripts/validate_release_handoff_brief.sh" && ! -x "Scripts/validate_r
   failures=$((failures + 1))
 fi
 check_contains "Scripts/validate_release_handoff_brief.sh" "Owner Summary" "Release handoff brief validator must verify owner summary counts"
+check_contains "Scripts/validate_release_handoff_brief.sh" "Readiness Counts" "Release handoff brief validator must verify readiness count rows"
 check_contains "Scripts/validate_release_handoff_brief.sh" "Team ID placeholder replacement guidance" "Release handoff brief validator must require Team ID placeholder replacement guidance"
 check_contains "Scripts/validate_release_handoff_brief.sh" "Fastlane Apple ID placeholder replacement guidance" "Release handoff brief validator must require Fastlane Apple ID placeholder replacement guidance"
 check_contains "Scripts/preflight_release_handoff.sh" 'Scripts/validate_release_handoff_brief.sh "$external_actions_path" "$brief_path"' "Release handoff preflight must validate generated handoff briefs"
@@ -4059,6 +4060,14 @@ WARN: shared warning
 EOF
   cat >"$handoff_brief_path" <<'EOF'
 # FreePrint Studio Release Handoff Brief
+
+## Readiness Counts
+
+| Source | Blockers | Warnings | Log |
+| --- | ---: | ---: | --- |
+| CI packet | 1 | 1 | `ci-readiness.txt` |
+| Local preflight | 1 | 1 | `local-readiness.txt` |
+| External actions | 1 | 1 | `external-readiness-actions.tsv` (2 total) |
 
 ## CI-only Readiness Detail
 
@@ -4098,6 +4107,11 @@ EOF
     sed 's/^/  /' "$handoff_brief_log"
     failures=$((failures + 1))
   fi
+  if ! Scripts/validate_release_handoff_brief.sh "$handoff_brief_actions" "$handoff_brief_path" >"$handoff_brief_log" 2>&1; then
+    printf 'FAIL: Release handoff brief validator must keep two-argument external-action validation compatible\n'
+    sed 's/^/  /' "$handoff_brief_log"
+    failures=$((failures + 1))
+  fi
   cp "$handoff_brief_path" "$handoff_brief_bad"
   perl -0pi -e 's/^\| Apple Developer account holder \| Signing \| blocker \| `DEVELOPMENT_TEAM_ID` \| Apple Developer Team ID missing \| fill it \| `Scripts\/check_code_signing_assets\.sh` \|\n//m' "$handoff_brief_bad"
   if Scripts/validate_release_handoff_brief.sh "$handoff_brief_actions" "$handoff_brief_bad" "$handoff_brief_ci_readiness" "$handoff_brief_local_readiness" >"$handoff_brief_log" 2>&1; then
@@ -4132,6 +4146,15 @@ EOF
     failures=$((failures + 1))
   elif ! grep -q 'Owner Summary count mismatch' "$handoff_brief_log"; then
     printf 'FAIL: Release handoff brief validator must identify owner summary count mismatches\n'
+    failures=$((failures + 1))
+  fi
+  cp "$handoff_brief_path" "$handoff_brief_bad"
+  perl -0pi -e 's/\| CI packet \| 1 \| 1 \| `ci-readiness\.txt` \|/\| CI packet \| 2 \| 1 \| `ci-readiness.txt` \|/' "$handoff_brief_bad"
+  if Scripts/validate_release_handoff_brief.sh "$handoff_brief_actions" "$handoff_brief_bad" "$handoff_brief_ci_readiness" "$handoff_brief_local_readiness" >"$handoff_brief_log" 2>&1; then
+    printf 'FAIL: Release handoff brief validator must reject readiness count mismatches\n'
+    failures=$((failures + 1))
+  elif ! grep -q 'Readiness Counts mismatch' "$handoff_brief_log"; then
+    printf 'FAIL: Release handoff brief validator must identify readiness count mismatches\n'
     failures=$((failures + 1))
   fi
   cp "$handoff_brief_path" "$handoff_brief_bad"
