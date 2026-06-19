@@ -2775,6 +2775,39 @@ check_contains "Scripts/generate_signing_readiness_report.sh" "redacted" "Signin
 check_not_contains "Scripts/generate_signing_readiness_report.sh" "DEVELOPMENT_TEAM_ID=<" "Signing readiness report must use shell-safe Team ID placeholders"
 check_contains "Scripts/generate_signing_readiness_report.sh" "DEVELOPMENT_TEAM_ID=YOURTEAMID ALLOW_PROVISIONING_UPDATES=1 Scripts/archive_app_store.sh" "Signing readiness report must show the guarded archive command"
 check_contains "Scripts/generate_signing_readiness_report.sh" "Replace YOURTEAMID with the Apple Developer Team ID before running signing or archive commands." "Signing readiness report must warn operators to replace Team ID placeholders"
+check_file "Scripts/validate_signing_readiness_report.sh" "Signing readiness report validator is required"
+if [[ -f "Scripts/validate_signing_readiness_report.sh" && ! -x "Scripts/validate_signing_readiness_report.sh" ]]; then
+  printf 'FAIL: Signing readiness report validator must be executable (Scripts/validate_signing_readiness_report.sh)\n'
+  failures=$((failures + 1))
+fi
+check_contains "Scripts/validate_app_store_submission_packet.sh" "validate_signing_readiness_report.sh" "Submission packet validator must validate signing readiness report coverage"
+if [[ -x "Scripts/validate_signing_readiness_report.sh" ]]; then
+  signing_report_validator_test_dir="$(mktemp -d)"
+  signing_report_actions="$signing_report_validator_test_dir/external-readiness-actions.tsv"
+  signing_report_output="$signing_report_validator_test_dir/signing-readiness-report.md"
+  signing_report_log="$signing_report_validator_test_dir/validation.log"
+  cat >"$signing_report_actions" <<'EOF'
+category	severity	owner	field	target	item	next_action	validation_command
+Signing	blocker	Apple Developer account holder	DEVELOPMENT_TEAM_ID	Config/release.env or Xcode project settings	Apple Developer Team ID missing; set DEVELOPMENT_TEAM_ID or configure DEVELOPMENT_TEAM in Xcode	Install Apple Distribution signing assets and set DEVELOPMENT_TEAM_ID, then run Scripts/check_code_signing_assets.sh.	Scripts/check_code_signing_assets.sh
+Signing	blocker	Apple Developer account holder	Apple Distribution certificate	login keychain	No valid Apple Distribution code signing identity found in the keychain	Install Apple Distribution signing assets and set DEVELOPMENT_TEAM_ID, then run Scripts/check_code_signing_assets.sh.	Scripts/check_code_signing_assets.sh
+Signing	blocker	Apple Developer account holder	App Store provisioning profile	~/Library/MobileDevice/Provisioning Profiles	No provisioning profiles found under ~/Library/MobileDevice/Provisioning Profiles	Install Apple Distribution signing assets and set DEVELOPMENT_TEAM_ID, then run Scripts/check_code_signing_assets.sh.	Scripts/check_code_signing_assets.sh
+EOF
+  Scripts/generate_signing_readiness_report.sh "$signing_report_output" >/dev/null
+  if ! Scripts/validate_signing_readiness_report.sh "$signing_report_actions" "$signing_report_output" >"$signing_report_log" 2>&1; then
+    printf 'FAIL: Signing readiness report validator must accept the generated report for matching signing action fields\n'
+    cat "$signing_report_log"
+    failures=$((failures + 1))
+  fi
+  perl -0pi -e 's/^\| App Store provisioning profile .*?\n//m' "$signing_report_output"
+  if Scripts/validate_signing_readiness_report.sh "$signing_report_actions" "$signing_report_output" >"$signing_report_log" 2>&1; then
+    printf 'FAIL: Signing readiness report validator must reject reports missing required signing action fields\n'
+    failures=$((failures + 1))
+  elif ! grep -q 'App Store provisioning profile' "$signing_report_log"; then
+    printf 'FAIL: Signing readiness report validator must identify the missing signing action field\n'
+    failures=$((failures + 1))
+  fi
+  rm -rf "$signing_report_validator_test_dir"
+fi
 check_file "Scripts/generate_app_store_connect_readiness_report.sh" "App Store Connect readiness report generator is required"
 if [[ -f "Scripts/generate_app_store_connect_readiness_report.sh" && ! -x "Scripts/generate_app_store_connect_readiness_report.sh" ]]; then
   printf 'FAIL: App Store Connect readiness report generator must be executable (Scripts/generate_app_store_connect_readiness_report.sh)\n'

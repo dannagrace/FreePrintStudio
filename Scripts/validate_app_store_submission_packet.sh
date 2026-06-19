@@ -253,6 +253,9 @@ fi
 if ! Scripts/validate_app_review_contact_readiness_report.sh "$PACKET_DIR/external-readiness-actions.tsv" "$PACKET_DIR/app-review-contact-readiness-report.md"; then
   failures=$((failures + 1))
 fi
+if ! Scripts/validate_signing_readiness_report.sh "$PACKET_DIR/external-readiness-actions.tsv" "$PACKET_DIR/signing-readiness-report.md"; then
+  failures=$((failures + 1))
+fi
 if ! Scripts/validate_release_owner_action_briefs.sh "$PACKET_DIR/external-readiness-actions.tsv" "$PACKET_DIR/owner-action-briefs"; then
   failures=$((failures + 1))
 fi
