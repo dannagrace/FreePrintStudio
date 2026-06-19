@@ -1500,6 +1500,21 @@ rm -rf "$release_input_status_metadata_scope_ready_dir"
 release_input_status_privacy_scope_ready_dir="$(mktemp -d)"
 release_input_status_privacy_scope_ready_env="$release_input_status_privacy_scope_ready_dir/release.env"
 release_input_status_privacy_scope_ready_log="$release_input_status_privacy_scope_ready_dir/status.log"
+release_input_status_privacy_scope_missing_log="$release_input_status_privacy_scope_ready_dir/missing-status.log"
+if RELEASE_ENV_PATH="$release_input_status_privacy_scope_ready_env" \
+  Scripts/print_release_input_status.sh --strict --scope app-privacy-upload >"$release_input_status_privacy_scope_missing_log" 2>&1; then
+  printf 'FAIL: App Privacy release input status scope must fail when privacy upload inputs are missing\n'
+  failures=$((failures + 1))
+fi
+for expected_privacy_scope_missing_field in \
+  "MISSING_FIELD: FASTLANE_USER" \
+  "MISSING_FIELD: CONFIRM_UPLOAD_APP_PRIVACY"
+do
+  if ! grep -q "$expected_privacy_scope_missing_field" "$release_input_status_privacy_scope_missing_log"; then
+    printf 'FAIL: App Privacy release input status scope must report missing field %s\n' "$expected_privacy_scope_missing_field"
+    failures=$((failures + 1))
+  fi
+done
 cat >"$release_input_status_privacy_scope_ready_env" <<'EOF'
 FASTLANE_USER=release-owner@freeprintstudio.test
 CONFIRM_UPLOAD_APP_PRIVACY=1

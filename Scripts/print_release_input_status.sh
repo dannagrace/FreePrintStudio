@@ -98,7 +98,7 @@ scope_requires() {
       ;;
     app-privacy-upload)
       case "$section" in
-        private-release-env)
+        private-release-env|app-privacy-upload)
           return 0
           ;;
       esac
@@ -435,7 +435,22 @@ else
   mark_optional "App Store Connect API credentials are deferred for this release input status scope"
 fi
 
-if is_set "${FASTLANE_USER:-}"; then
+if scope_requires "app-privacy-upload"; then
+  if is_set "${FASTLANE_USER:-}"; then
+    mark_ok "FASTLANE_USER is configured for App Privacy Details upload automation"
+  else
+    mark_missing "FASTLANE_USER is missing; set it to the Apple ID used for App Store Connect before App Privacy Details upload"
+    record_missing_field "FASTLANE_USER" "Config/release.env" "FASTLANE_USER=apple-id@example.com CONFIRM_UPLOAD_APP_PRIVACY=1 Scripts/preflight_app_privacy_upload.sh"
+  fi
+
+  confirm_upload_app_privacy="$(trimmed_value "${CONFIRM_UPLOAD_APP_PRIVACY:-}")"
+  if [[ "$confirm_upload_app_privacy" == "1" ]]; then
+    mark_ok "CONFIRM_UPLOAD_APP_PRIVACY is set after App Privacy Details review"
+  else
+    mark_missing "CONFIRM_UPLOAD_APP_PRIVACY is not set to 1; set only after reviewing AppStore/app_privacy_details.json against AppStore/app-privacy.md"
+    record_missing_field "CONFIRM_UPLOAD_APP_PRIVACY" "Config/release.env" "FASTLANE_USER=apple-id@example.com CONFIRM_UPLOAD_APP_PRIVACY=1 Scripts/preflight_app_privacy_upload.sh"
+  fi
+elif is_set "${FASTLANE_USER:-}"; then
   mark_ok "FASTLANE_USER is configured for App Privacy Details upload automation"
 else
   mark_optional "FASTLANE_USER is not configured; manual App Privacy Details confirmation is allowed"
