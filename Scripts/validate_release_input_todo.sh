@@ -193,6 +193,7 @@ expected_total_handoff_warnings="$(awk -F '\t' '$1 == "total_handoff_warnings" {
 has_selected_build_placeholder="$(awk -F '\t' '$1 == "placeholder" && $2 == "selected_build" { print $3 }' "$temp_dir/action-summary.tsv" | tail -n 1)"
 has_team_id_placeholder="$(awk -F '\t' '$1 == "placeholder" && $2 == "team_id" { print $3 }' "$temp_dir/action-summary.tsv" | tail -n 1)"
 has_fastlane_apple_id_placeholder="$(awk -F '\t' '$1 == "placeholder" && $2 == "fastlane_apple_id" { print $3 }' "$temp_dir/action-summary.tsv" | tail -n 1)"
+private_template_install_command="Scripts/install_private_release_input_templates.sh --source-dir build/private-release-input-templates --target-dir Config"
 awk -F '\t' '$1 == "target" { print $2 "\t" $3 }' "$temp_dir/action-summary.tsv" | LC_ALL=C sort >"$expected_targets"
 awk -F '\t' '$1 == "owner" { print $2 "\t" $3 "\t" $4 "\t" $5 }' "$temp_dir/action-summary.tsv" | LC_ALL=C sort >"$expected_owners"
 
@@ -207,10 +208,10 @@ require_contains "Total Handoff Blockers" "Total Handoff Blockers"
 require_contains "Warnings" "Warnings"
 require_contains "Total Handoff Warnings" "Total Handoff Warnings"
 require_contains "Config/release.env" "Config/release.env guidance"
-require_contains 'If the file does not exist yet, install or sync it from the current private templates with `Scripts/install_private_release_input_templates.sh` before filling release values.' "Config/release.env private template installer guidance"
+require_contains "If the file does not exist yet, install or sync it from the current private templates with \`$private_template_install_command\` before filling release values." "Config/release.env private template installer guidance"
 require_contains "Config/manual-release-verification.env" "Config/manual-release-verification.env guidance"
 if grep -qF $'manual-release-verification.env file\t' "$expected_action_details"; then
-  require_contains 'If the file does not exist yet, install or sync it from the current private templates with `Scripts/install_private_release_input_templates.sh` before recording evidence.' "Config/manual-release-verification.env private template installer guidance"
+  require_contains "If the file does not exist yet, install or sync it from the current private templates with \`$private_template_install_command\` before recording evidence." "Config/manual-release-verification.env private template installer guidance"
 fi
 require_contains "## Final Submission Guards" "Final Submission Guards section"
 require_contains "APP_STORE_BUILD_NUMBER=" "selected App Store build guard"
