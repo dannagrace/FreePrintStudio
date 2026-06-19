@@ -1950,6 +1950,8 @@ check_contains "Scripts/validate_release_env.sh" "FASTLANE_USER" "Release enviro
 check_contains "Scripts/validate_release_env.sh" "PROCESSED_BUILD_NUMBER" "Release environment validation must reject the selected-build placeholder"
 check_contains "Scripts/validate_release_env.sh" "CONFIRM_UPLOAD_APP_PRIVACY" "Release environment validation must check App Privacy upload confirmation values"
 check_contains "Scripts/validate_release_env.sh" "CONFIRM_SUBMIT_FOR_REVIEW" "Release environment validation must check final submission confirmation values"
+check_contains "Scripts/validate_release_env.sh" "ALLOW_PROVISIONING_UPDATES" "Release environment validation must check provisioning update boolean values"
+check_contains "Scripts/validate_release_env.sh" "APP_PRIVACY_SKIP_PUBLISH" "Release environment validation must check App Privacy skip-publish boolean values"
 release_env_placeholder_test_dir="$(mktemp -d)"
 release_env_placeholder_test_file="$release_env_placeholder_test_dir/release.env"
 printf 'APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER\n' >"$release_env_placeholder_test_file"
@@ -2016,6 +2018,28 @@ elif ! grep -q 'CONFIRM_SUBMIT_FOR_REVIEW must be 1' /tmp/freeprintstudio-invali
   failures=$((failures + 1))
 fi
 rm -rf "$release_env_invalid_submit_confirm_test_dir"
+release_env_invalid_provisioning_flag_test_dir="$(mktemp -d)"
+release_env_invalid_provisioning_flag_test_file="$release_env_invalid_provisioning_flag_test_dir/release.env"
+printf 'ALLOW_PROVISIONING_UPDATES=yes\n' >"$release_env_invalid_provisioning_flag_test_file"
+if RELEASE_ENV_PATH="$release_env_invalid_provisioning_flag_test_file" Scripts/validate_release_env.sh >/tmp/freeprintstudio-invalid-provisioning-flag-release-env.log 2>&1; then
+  printf 'FAIL: Release environment validation must reject non-0-or-1 provisioning update values\n'
+  failures=$((failures + 1))
+elif ! grep -q 'ALLOW_PROVISIONING_UPDATES must be 0 or 1' /tmp/freeprintstudio-invalid-provisioning-flag-release-env.log; then
+  printf 'FAIL: Release environment invalid provisioning flag output must identify ALLOW_PROVISIONING_UPDATES format errors\n'
+  failures=$((failures + 1))
+fi
+rm -rf "$release_env_invalid_provisioning_flag_test_dir"
+release_env_invalid_privacy_skip_publish_test_dir="$(mktemp -d)"
+release_env_invalid_privacy_skip_publish_test_file="$release_env_invalid_privacy_skip_publish_test_dir/release.env"
+printf 'APP_PRIVACY_SKIP_PUBLISH=maybe\n' >"$release_env_invalid_privacy_skip_publish_test_file"
+if RELEASE_ENV_PATH="$release_env_invalid_privacy_skip_publish_test_file" Scripts/validate_release_env.sh >/tmp/freeprintstudio-invalid-privacy-skip-publish-release-env.log 2>&1; then
+  printf 'FAIL: Release environment validation must reject non-0-or-1 App Privacy skip-publish values\n'
+  failures=$((failures + 1))
+elif ! grep -q 'APP_PRIVACY_SKIP_PUBLISH must be 0 or 1' /tmp/freeprintstudio-invalid-privacy-skip-publish-release-env.log; then
+  printf 'FAIL: Release environment invalid App Privacy skip-publish output must identify APP_PRIVACY_SKIP_PUBLISH format errors\n'
+  failures=$((failures + 1))
+fi
+rm -rf "$release_env_invalid_privacy_skip_publish_test_dir"
 release_env_invalid_build_number_test_dir="$(mktemp -d)"
 release_env_invalid_build_number_test_file="$release_env_invalid_build_number_test_dir/release.env"
 printf 'APP_STORE_BUILD_NUMBER="build candidate"\n' >"$release_env_invalid_build_number_test_file"

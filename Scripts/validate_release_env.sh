@@ -40,6 +40,7 @@ PLACEHOLDER_VALUES=(
 
 tracked_env_names=(
   DEVELOPMENT_TEAM_ID
+  ALLOW_PROVISIONING_UPDATES
   ASC_KEY_ID
   ASC_ISSUER_ID
   ASC_KEY_PATH
@@ -52,6 +53,7 @@ tracked_env_names=(
   FASTLANE_ITC_TEAM_ID
   FASTLANE_ITC_TEAM_NAME
   CONFIRM_UPLOAD_APP_PRIVACY
+  APP_PRIVACY_SKIP_PUBLISH
   APP_PRIVACY_DETAILS_CONFIRMED_IN_APP_STORE_CONNECT
   APP_STORE_COMMERCIAL_CONFIG_CONFIRMED_IN_APP_STORE_CONNECT
   IPA_PATH
@@ -108,6 +110,10 @@ validate_format \
   '^[A-Z0-9]{10}$' \
   "DEVELOPMENT_TEAM_ID must be a 10-character Apple Developer Team ID"
 validate_format \
+  ALLOW_PROVISIONING_UPDATES \
+  '^[01]$' \
+  "ALLOW_PROVISIONING_UPDATES must be 0 or 1"
+validate_format \
   ASC_KEY_ID \
   '^[A-Z0-9]{10}$' \
   "ASC_KEY_ID must be a 10-character App Store Connect API key id"
@@ -123,6 +129,10 @@ validate_format \
   CONFIRM_UPLOAD_APP_PRIVACY \
   '^1$' \
   "CONFIRM_UPLOAD_APP_PRIVACY must be 1 after AppStore/app_privacy_details.json has been reviewed against App Store Connect answers"
+validate_format \
+  APP_PRIVACY_SKIP_PUBLISH \
+  '^[01]$' \
+  "APP_PRIVACY_SKIP_PUBLISH must be 0 or 1"
 validate_format \
   APP_PRIVACY_DETAILS_CONFIRMED_IN_APP_STORE_CONNECT \
   '^1$' \
