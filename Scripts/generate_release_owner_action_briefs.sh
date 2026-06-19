@@ -64,6 +64,40 @@ awk -F '\t' -v output_dir="$output_dir" -v actions_path="$actions_path" -v gener
       code_text(markdown_cell(validation_command[row])) >>path
   }
 
+  function add_action(action_category, action_severity, action_owner, action_field, action_target, action_item, action_next_action, action_validation_command, placeholder_source) {
+    row_count += 1
+    category[row_count] = action_category
+    severity[row_count] = action_severity
+    owner[row_count] = action_owner
+    field[row_count] = action_field
+    target[row_count] = action_target
+    item[row_count] = action_item
+    next_action[row_count] = action_next_action
+    validation_command[row_count] = action_validation_command
+
+    owner_counts[action_owner] += 1
+    placeholder_source = action_next_action " " action_validation_command
+    if (placeholder_source ~ /PROCESSED_BUILD_NUMBER/) {
+      owner_selected_build_placeholder[action_owner] = 1
+    }
+    if (placeholder_source ~ /YOURTEAMID/) {
+      owner_team_id_placeholder[action_owner] = 1
+    }
+    if (placeholder_source ~ /apple-id@example\.com/) {
+      owner_fastlane_apple_id_placeholder[action_owner] = 1
+    }
+    if (!(action_owner in owner_seen)) {
+      owner_seen[action_owner] = 1
+      owner_order_count += 1
+      owner_order[owner_order_count] = action_owner
+    }
+    if (action_severity == "blocker") {
+      owner_blocker_counts[action_owner] += 1
+    } else if (action_severity == "warning") {
+      owner_warning_counts[action_owner] += 1
+    }
+  }
+
   NR == 1 {
     for (i = 1; i <= NF; i += 1) {
       columns[$i] = i
@@ -85,43 +119,41 @@ awk -F '\t' -v output_dir="$output_dir" -v actions_path="$actions_path" -v gener
   }
 
   $1 != "" {
-    row_count += 1
-    category[row_count] = $(columns["category"])
-    severity[row_count] = $(columns["severity"])
-    owner[row_count] = $(columns["owner"])
-    field[row_count] = $(columns["field"])
-    target[row_count] = $(columns["target"])
-    item[row_count] = $(columns["item"])
-    next_action[row_count] = $(columns["next_action"])
-    validation_command[row_count] = $(columns["validation_command"])
-
-    owner_counts[owner[row_count]] += 1
-    placeholder_source = next_action[row_count] " " validation_command[row_count]
-    if (placeholder_source ~ /PROCESSED_BUILD_NUMBER/) {
-      owner_selected_build_placeholder[owner[row_count]] = 1
-    }
-    if (placeholder_source ~ /YOURTEAMID/) {
-      owner_team_id_placeholder[owner[row_count]] = 1
-    }
-    if (placeholder_source ~ /apple-id@example\.com/) {
-      owner_fastlane_apple_id_placeholder[owner[row_count]] = 1
-    }
-    if (!(owner[row_count] in owner_seen)) {
-      owner_seen[owner[row_count]] = 1
-      owner_order_count += 1
-      owner_order[owner_order_count] = owner[row_count]
-    }
-    if (severity[row_count] == "blocker") {
-      owner_blocker_counts[owner[row_count]] += 1
-    } else if (severity[row_count] == "warning") {
-      owner_warning_counts[owner[row_count]] += 1
-    }
+    external_row_count += 1
+    add_action( \
+      $(columns["category"]), \
+      $(columns["severity"]), \
+      $(columns["owner"]), \
+      $(columns["field"]), \
+      $(columns["target"]), \
+      $(columns["item"]), \
+      $(columns["next_action"]), \
+      $(columns["validation_command"]))
   }
 
   END {
-    if (row_count == 0) {
+    if (external_row_count == 0) {
       fail("external readiness actions file has no action rows")
     }
+
+    add_action( \
+      "Final Submission Guard", \
+      "blocker", \
+      "Release owner", \
+      "APP_STORE_BUILD_NUMBER", \
+      "Config/release.env", \
+      "Processed App Store Connect build selected for App Review.", \
+      "Replace PROCESSED_BUILD_NUMBER with the processed App Store Connect build number before running selected-build commands.", \
+      "APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/preflight_app_review_submission.sh")
+    add_action( \
+      "Final Submission Guard", \
+      "blocker", \
+      "Release owner", \
+      "CONFIRM_SUBMIT_FOR_REVIEW", \
+      "Config/release.env", \
+      "Explicit final confirmation before Fastlane submits the selected build for review.", \
+      "Set CONFIRM_SUBMIT_FOR_REVIEW=1 only for the final deliberate App Review submission.", \
+      "APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER CONFIRM_SUBMIT_FOR_REVIEW=1 Scripts/run_fastlane.sh ios submit_review")
 
     index_path = output_dir "/index.md"
     print "# FreePrint Studio Release Owner Action Briefs" >index_path

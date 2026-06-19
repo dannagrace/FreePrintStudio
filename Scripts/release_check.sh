@@ -4220,6 +4220,7 @@ check_contains "Scripts/prepare_app_store_submission_packet.sh" "release-input-t
 check_contains "Scripts/prepare_app_store_submission_packet.sh" 'Scripts/generate_release_input_todo.sh "$EXTERNAL_READINESS_ACTIONS" "$RELEASE_INPUT_TODO"' "Submission packet generator must build the release input TODO from external readiness actions"
 check_contains "Scripts/prepare_app_store_submission_packet.sh" "owner-action-briefs" "Submission packet generator must include per-owner action briefs"
 check_contains "Scripts/prepare_app_store_submission_packet.sh" 'Scripts/generate_release_owner_action_briefs.sh "$EXTERNAL_READINESS_ACTIONS" "$OWNER_ACTION_BRIEFS_DIR"' "Submission packet generator must build per-owner action briefs from external readiness actions"
+check_contains "Scripts/prepare_app_store_submission_packet.sh" "final submission guard actions for Release owner" "Submission packet summary must document final submission guard actions in per-owner briefs"
 check_contains "Scripts/prepare_app_store_submission_packet.sh" '\\`release-input-status.txt\\`' "Submission packet summary must reference the redacted release input status output"
 check_contains "Scripts/prepare_app_store_submission_packet.sh" '\\`release-input-todo.md\\`' "Submission packet summary must reference the release input TODO"
 check_contains "Scripts/prepare_app_store_submission_packet.sh" '\\`owner-action-briefs/\\`' "Submission packet summary must reference per-owner action briefs"
@@ -5403,10 +5404,12 @@ fi
 check_contains "Scripts/generate_release_owner_action_briefs.sh" "owner-action-briefs" "Release owner action brief generator must document the owner-action-briefs output"
 check_contains "Scripts/generate_release_owner_action_briefs.sh" "Owner Action Briefs" "Release owner action brief generator must write a stable index title"
 check_contains "Scripts/generate_release_owner_action_briefs.sh" "Validation Commands" "Release owner action brief generator must group validation commands per owner"
+check_contains "Scripts/generate_release_owner_action_briefs.sh" "Final Submission Guard" "Release owner action brief generator must include final submission guard actions for Release owner"
 check_contains "Scripts/generate_release_owner_action_briefs.sh" "Replace PROCESSED_BUILD_NUMBER with the processed App Store Connect build number before running selected-build commands" "Release owner action brief generator must warn operators to replace selected-build placeholders"
 check_contains "Scripts/generate_release_owner_action_briefs.sh" "Replace YOURTEAMID with the Apple Developer Team ID before running signing or archive commands" "Release owner action brief generator must warn operators to replace Team ID placeholders"
 check_contains "Scripts/generate_release_owner_action_briefs.sh" "Replace apple-id@example.com with the App Store Connect Apple ID before running Fastlane Apple ID commands" "Release owner action brief generator must warn operators to replace Fastlane Apple ID placeholders"
 check_contains "Scripts/validate_release_owner_action_briefs.sh" "Owner action brief count mismatch" "Release owner action brief validator must compare owner counts"
+check_contains "Scripts/validate_release_owner_action_briefs.sh" "Final Submission Guard" "Release owner action brief validator must verify final submission guard actions for Release owner"
 check_contains "Scripts/validate_release_owner_action_briefs.sh" "action detail row is missing or mismatched" "Release owner action brief validator must verify action detail rows"
 check_contains "Scripts/validate_release_owner_action_briefs.sh" "selected-build placeholder replacement guidance" "Release owner action brief validator must require selected-build placeholder replacement guidance"
 check_contains "Scripts/validate_release_owner_action_briefs.sh" "Team ID placeholder replacement guidance" "Release owner action brief validator must require Team ID placeholder replacement guidance"
@@ -5445,6 +5448,23 @@ EOF
       printf 'FAIL: Release owner action brief index must count QA/release owner actions\n'
       failures=$((failures + 1))
     fi
+    if ! grep -Fq '| Release owner | [release-owner.md](release-owner.md) | 3 | 3 | 0 |' "$owner_brief_output_dir/index.md"; then
+      printf 'FAIL: Release owner action brief index must count final submission guards under Release owner\n'
+      failures=$((failures + 1))
+    fi
+    if ! grep -q '^- Actions: `3`' "$owner_brief_output_dir/release-owner.md" ||
+       ! grep -q '^- Blockers: `3`' "$owner_brief_output_dir/release-owner.md"; then
+      printf 'FAIL: Release owner action brief must count final submission guard actions under Release owner\n'
+      failures=$((failures + 1))
+    fi
+    if ! grep -Fq '| Final Submission Guard | blocker | `APP_STORE_BUILD_NUMBER` | `Config/release.env` | Processed App Store Connect build selected for App Review. | Replace PROCESSED_BUILD_NUMBER with the processed App Store Connect build number before running selected-build commands. | `APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/preflight_app_review_submission.sh` |' "$owner_brief_output_dir/release-owner.md"; then
+      printf 'FAIL: Release owner action brief must include APP_STORE_BUILD_NUMBER final submission guard\n'
+      failures=$((failures + 1))
+    fi
+    if ! grep -Fq '| Final Submission Guard | blocker | `CONFIRM_SUBMIT_FOR_REVIEW` | `Config/release.env` | Explicit final confirmation before Fastlane submits the selected build for review. | Set CONFIRM_SUBMIT_FOR_REVIEW=1 only for the final deliberate App Review submission. | `APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER CONFIRM_SUBMIT_FOR_REVIEW=1 Scripts/run_fastlane.sh ios submit_review` |' "$owner_brief_output_dir/release-owner.md"; then
+      printf 'FAIL: Release owner action brief must include CONFIRM_SUBMIT_FOR_REVIEW final submission guard\n'
+      failures=$((failures + 1))
+    fi
     if ! grep -q '^# QA/release owner Release Actions' "$owner_brief_output_dir/qa-release-owner.md"; then
       printf 'FAIL: Release owner action brief generator must create a QA/release owner file\n'
       failures=$((failures + 1))
@@ -5477,6 +5497,16 @@ EOF
       failures=$((failures + 1))
     elif ! grep -q 'Owner action brief count mismatch' "$owner_brief_log"; then
       printf 'FAIL: Release owner action brief validator must identify owner count mismatches\n'
+      failures=$((failures + 1))
+    fi
+    owner_brief_bad_dir="$owner_brief_test_dir/owner-action-briefs-missing-final-guard"
+    cp -R "$owner_brief_output_dir" "$owner_brief_bad_dir"
+    perl -0pi -e 's/^\| Final Submission Guard \| blocker \| `APP_STORE_BUILD_NUMBER` .*\n//m' "$owner_brief_bad_dir/release-owner.md"
+    if Scripts/validate_release_owner_action_briefs.sh "$owner_brief_actions" "$owner_brief_bad_dir" >"$owner_brief_log" 2>&1; then
+      printf 'FAIL: Release owner action brief validator must reject missing final submission guard rows\n'
+      failures=$((failures + 1))
+    elif ! grep -q 'APP_STORE_BUILD_NUMBER' "$owner_brief_log"; then
+      printf 'FAIL: Release owner action brief validator must identify missing final submission guard rows\n'
       failures=$((failures + 1))
     fi
     owner_brief_bad_dir="$owner_brief_test_dir/owner-action-briefs-missing-row"
@@ -6019,6 +6049,7 @@ check_contains "README.md" "Scripts/validate_release_handoff_brief.sh" "README m
 check_contains "README.md" "release-handoff-brief.md" "README must document the release handoff brief"
 check_contains "README.md" "release-input-todo.md" "README must document the release input TODO"
 check_contains "README.md" "owner-action-briefs" "README must document per-owner action brief handoff files"
+check_contains "README.md" "adds final submission guard actions to the Release owner file" "README must document final submission guards in Release owner action briefs"
 check_contains "README.md" "Owner Summary" "README must document the release input TODO owner summary"
 check_contains "README.md" "handoff brief Owner Summary" "README must document the handoff brief owner summary"
 check_contains "README.md" "Total Handoff Owner Summary" "README must document the handoff brief total owner summary"
@@ -6039,6 +6070,7 @@ check_contains "AppStore/release-checklist.md" "Scripts/validate_release_handoff
 check_contains "AppStore/release-checklist.md" "release-handoff-brief.md" "Release checklist must document the release handoff brief"
 check_contains "AppStore/release-checklist.md" "release-input-todo.md" "Release checklist must document the release input TODO"
 check_contains "AppStore/release-checklist.md" "owner-action-briefs" "Release checklist must document per-owner action brief handoff files"
+check_contains "AppStore/release-checklist.md" "adds final submission guard actions to the Release owner file" "Release checklist must document final submission guards in Release owner action briefs"
 check_contains "AppStore/release-checklist.md" "Owner Summary" "Release checklist must document the release input TODO owner summary"
 check_contains "AppStore/release-checklist.md" "handoff brief Owner Summary" "Release checklist must document the handoff brief owner summary"
 check_contains "AppStore/release-checklist.md" "Total Handoff Owner Summary" "Release checklist must document the handoff brief total owner summary"

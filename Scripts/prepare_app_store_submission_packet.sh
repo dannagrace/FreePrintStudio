@@ -660,7 +660,7 @@ cat >"$SUMMARY_PATH" <<EOF
 - Redacted release input status with field-level missing private input tracking.
 - Fillable release input TODO generated from categorized external readiness actions.
 - Phase-based release plan generated from categorized external readiness actions.
-- Per-owner action briefs generated from categorized external readiness actions.
+- Per-owner action briefs generated from categorized external readiness actions plus final submission guard actions for Release owner.
 - Blank private release input templates generated from categorized external readiness actions.
 - Reviewed screenshots and Fastlane upload screenshots.
 - PDF export validation manifest, including Test Ruler exact-size evidence.
@@ -684,7 +684,7 @@ cat >"$SUMMARY_PATH" <<EOF
 - \`external-readiness-actions.tsv\` with categorized external blockers, affected fields, target locations, validation commands, and warnings for release tracking.
 - \`release-input-todo.md\` with fillable \`Config/release.env\` and \`Config/manual-release-verification.env\` fields plus non-env external actions.
 - \`release-phase-plan.md\` with phase-ordered release work, validation gates, and action rows generated from \`external-readiness-actions.tsv\`.
-- \`owner-action-briefs/\` with one focused action file per release owner plus an index.
+- \`owner-action-briefs/\` with one focused action file per release owner plus an index, including final submission guard actions for Release owner.
 - \`private-release-input-templates/\` with blank \`release.env\` and \`manual-release-verification.env\` starters generated from current external actions.
 - \`file-manifest.tsv\` with package file sizes and sha256 checksums.
 - \`readiness.txt\` with the latest App Store readiness audit.
