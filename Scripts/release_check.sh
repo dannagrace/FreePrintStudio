@@ -1444,6 +1444,25 @@ do
     failures=$((failures + 1))
   fi
 done
+for expected_metadata_scope_command in \
+  "Scripts/preflight_metadata_upload.sh" \
+  "Scripts/run_fastlane.sh ios metadata"
+do
+  if ! grep -q "$expected_metadata_scope_command" "$release_input_status_metadata_scope_log"; then
+    printf 'FAIL: Metadata release input status scope must include next command %s\n' "$expected_metadata_scope_command"
+    failures=$((failures + 1))
+  fi
+done
+for deferred_metadata_scope_command in \
+  "Scripts/preflight_app_store_archive.sh" \
+  "Scripts/run_fastlane.sh ios upload_testflight" \
+  "Scripts/run_fastlane.sh ios submit_review"
+do
+  if grep -q "$deferred_metadata_scope_command" "$release_input_status_metadata_scope_log"; then
+    printf 'FAIL: Metadata release input status scope must defer non-metadata next command %s\n' "$deferred_metadata_scope_command"
+    failures=$((failures + 1))
+  fi
+done
 check_contains "Scripts/preflight_metadata_upload.sh" "Scripts/print_release_input_status.sh --strict --scope metadata-upload" "Metadata upload preflight must scope release input status to metadata requirements"
 rm -rf "$release_input_status_metadata_scope_dir"
 release_input_status_metadata_scope_ready_dir="$PWD/build/release-input-status-metadata-scope-ready"
@@ -1507,6 +1526,26 @@ do
     failures=$((failures + 1))
   fi
 done
+for expected_privacy_scope_command in \
+  "Scripts/preflight_app_privacy_upload.sh" \
+  "Scripts/run_fastlane.sh ios privacy_details"
+do
+  if ! grep -q "$expected_privacy_scope_command" "$release_input_status_privacy_scope_ready_log"; then
+    printf 'FAIL: App Privacy release input status scope must include next command %s\n' "$expected_privacy_scope_command"
+    failures=$((failures + 1))
+  fi
+done
+for deferred_privacy_scope_command in \
+  "Scripts/preflight_metadata_upload.sh" \
+  "Scripts/preflight_app_store_archive.sh" \
+  "Scripts/run_fastlane.sh ios upload_testflight" \
+  "Scripts/run_fastlane.sh ios submit_review"
+do
+  if grep -q "$deferred_privacy_scope_command" "$release_input_status_privacy_scope_ready_log"; then
+    printf 'FAIL: App Privacy release input status scope must defer non-privacy next command %s\n' "$deferred_privacy_scope_command"
+    failures=$((failures + 1))
+  fi
+done
 check_contains "Scripts/preflight_app_privacy_upload.sh" "Scripts/print_release_input_status.sh --strict --scope app-privacy-upload" "App Privacy Details upload preflight must scope release input status to privacy upload requirements"
 rm -rf "$release_input_status_privacy_scope_ready_dir"
 release_input_status_testflight_scope_ready_dir="$(mktemp -d)"
@@ -1546,6 +1585,27 @@ do
     failures=$((failures + 1))
   fi
 done
+for expected_testflight_scope_command in \
+  "Scripts/verify_release.sh testflight-dependencies-preflight" \
+  "Scripts/preflight_testflight_upload.sh" \
+  "Scripts/run_fastlane.sh ios upload_testflight"
+do
+  if ! grep -q "$expected_testflight_scope_command" "$release_input_status_testflight_scope_ready_log"; then
+    printf 'FAIL: TestFlight release input status scope must include next command %s\n' "$expected_testflight_scope_command"
+    failures=$((failures + 1))
+  fi
+done
+for deferred_testflight_scope_command in \
+  "Scripts/preflight_metadata_upload.sh" \
+  "Scripts/preflight_app_store_archive.sh" \
+  "Scripts/run_fastlane.sh ios metadata" \
+  "Scripts/run_fastlane.sh ios submit_review"
+do
+  if grep -q "$deferred_testflight_scope_command" "$release_input_status_testflight_scope_ready_log"; then
+    printf 'FAIL: TestFlight release input status scope must defer non-TestFlight next command %s\n' "$deferred_testflight_scope_command"
+    failures=$((failures + 1))
+  fi
+done
 check_contains "Scripts/preflight_testflight_upload_dependencies.sh" "Scripts/print_release_input_status.sh --strict --scope testflight-upload" "TestFlight dependency preflight must scope release input status to TestFlight upload requirements"
 check_contains "Scripts/preflight_testflight_upload.sh" "Scripts/print_release_input_status.sh --strict --scope testflight-upload" "TestFlight upload preflight must scope release input status to TestFlight upload requirements"
 rm -rf "$release_input_status_testflight_scope_ready_dir"
@@ -1575,6 +1635,27 @@ for deferred_archive_scope_field in \
 do
   if grep -q "$deferred_archive_scope_field" "$release_input_status_archive_scope_log"; then
     printf 'FAIL: App Store archive release input status scope must defer non-archive field %s\n' "$deferred_archive_scope_field"
+    failures=$((failures + 1))
+  fi
+done
+for expected_archive_scope_command in \
+  "Scripts/preflight_app_store_archive.sh" \
+  "Scripts/archive_app_store.sh"
+do
+  if ! grep -q "$expected_archive_scope_command" "$release_input_status_archive_scope_log"; then
+    printf 'FAIL: App Store archive release input status scope must include next command %s\n' "$expected_archive_scope_command"
+    failures=$((failures + 1))
+  fi
+done
+for deferred_archive_scope_command in \
+  "Scripts/preflight_metadata_upload.sh" \
+  "Scripts/preflight_app_privacy_upload.sh" \
+  "Scripts/run_fastlane.sh ios metadata" \
+  "Scripts/run_fastlane.sh ios upload_testflight" \
+  "Scripts/run_fastlane.sh ios submit_review"
+do
+  if grep -q "$deferred_archive_scope_command" "$release_input_status_archive_scope_log"; then
+    printf 'FAIL: App Store archive release input status scope must defer non-archive next command %s\n' "$deferred_archive_scope_command"
     failures=$((failures + 1))
   fi
 done
@@ -1644,6 +1725,27 @@ for deferred_review_scope_field in \
 do
   if grep -q "$deferred_review_scope_field" "$release_input_status_review_scope_ready_log"; then
     printf 'FAIL: App Review submission release input status scope must defer post-upload signing field %s\n' "$deferred_review_scope_field"
+    failures=$((failures + 1))
+  fi
+done
+for expected_review_scope_command in \
+  "Scripts/run_fastlane.sh ios app_store_connect_state" \
+  "Scripts/preflight_app_review_submission.sh" \
+  "Scripts/run_fastlane.sh ios submit_review"
+do
+  if ! grep -q "$expected_review_scope_command" "$release_input_status_review_scope_ready_log"; then
+    printf 'FAIL: App Review submission release input status scope must include next command %s\n' "$expected_review_scope_command"
+    failures=$((failures + 1))
+  fi
+done
+for deferred_review_scope_command in \
+  "Scripts/preflight_app_store_archive.sh" \
+  "Scripts/run_fastlane.sh ios metadata" \
+  "Scripts/run_fastlane.sh ios privacy_details" \
+  "Scripts/run_fastlane.sh ios upload_testflight"
+do
+  if grep -q "$deferred_review_scope_command" "$release_input_status_review_scope_ready_log"; then
+    printf 'FAIL: App Review submission release input status scope must defer non-review next command %s\n' "$deferred_review_scope_command"
     failures=$((failures + 1))
   fi
 done

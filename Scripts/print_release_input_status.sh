@@ -603,28 +603,90 @@ fi
 
 print_missing_fields
 
+print_private_setup_commands() {
+  printf '%s\n' "$private_template_install_command"
+  printf 'Scripts/validate_release_env.sh\n'
+}
+
+print_metadata_commands() {
+  print_private_setup_commands
+  printf 'Scripts/preflight_metadata_upload.sh\n'
+  printf 'ASC_KEY_ID=XXXXXXXXXX ASC_ISSUER_ID=00000000-0000-0000-0000-000000000000 ASC_KEY_PATH=/secure/AuthKey_XXXXXXXXXX.p8 Scripts/run_fastlane.sh ios metadata\n'
+}
+
+print_privacy_commands() {
+  print_private_setup_commands
+  printf 'FASTLANE_USER=apple-id@example.com CONFIRM_UPLOAD_APP_PRIVACY=1 Scripts/preflight_app_privacy_upload.sh\n'
+  printf 'FASTLANE_USER=apple-id@example.com CONFIRM_UPLOAD_APP_PRIVACY=1 Scripts/run_fastlane.sh ios privacy_details\n'
+  printf 'Replace apple-id@example.com with the App Store Connect Apple ID before running Fastlane Apple ID commands.\n'
+  printf 'APP_PRIVACY_DETAILS_CONFIRMED_IN_APP_STORE_CONNECT=1 Scripts/validate_app_privacy_connect_entry.sh\n'
+}
+
+print_archive_commands() {
+  print_private_setup_commands
+  printf 'Scripts/preflight_app_store_archive.sh\n'
+  printf 'DEVELOPMENT_TEAM_ID=YOURTEAMID ALLOW_PROVISIONING_UPDATES=1 Scripts/archive_app_store.sh\n'
+  printf 'Replace YOURTEAMID with the Apple Developer Team ID before running signing or archive commands.\n'
+}
+
+print_testflight_commands() {
+  print_private_setup_commands
+  printf 'Scripts/verify_release.sh testflight-dependencies-preflight\n'
+  printf 'Scripts/preflight_testflight_upload.sh\n'
+  printf 'ASC_KEY_ID=XXXXXXXXXX ASC_ISSUER_ID=00000000-0000-0000-0000-000000000000 ASC_KEY_PATH=/secure/AuthKey_XXXXXXXXXX.p8 Scripts/run_fastlane.sh ios upload_testflight\n'
+}
+
+print_review_submission_commands() {
+  local selected_app_store_build="$1"
+  print_private_setup_commands
+  printf 'APP_STORE_BUILD_NUMBER=%s Scripts/validate_manual_release_verification.sh\n' "$selected_app_store_build"
+  printf 'APP_PRIVACY_DETAILS_CONFIRMED_IN_APP_STORE_CONNECT=1 Scripts/validate_app_privacy_connect_entry.sh\n'
+  printf 'APP_STORE_COMMERCIAL_CONFIG_CONFIRMED_IN_APP_STORE_CONNECT=1 Scripts/validate_commercial_configuration_connect_entry.sh\n'
+  printf 'APP_STORE_BUILD_NUMBER=%s Scripts/run_fastlane.sh ios app_store_connect_state\n' "$selected_app_store_build"
+  printf 'APP_STORE_BUILD_NUMBER=%s Scripts/preflight_app_review_submission.sh\n' "$selected_app_store_build"
+  printf 'APP_STORE_BUILD_NUMBER=%s CONFIRM_SUBMIT_FOR_REVIEW=1 Scripts/run_fastlane.sh ios submit_review\n' "$selected_app_store_build"
+}
+
 printf '\n== Next Commands ==\n'
 selected_app_store_build="${APP_STORE_BUILD_NUMBER:-PROCESSED_BUILD_NUMBER}"
-printf '%s\n' "$private_template_install_command"
-printf 'Scripts/validate_release_env.sh\n'
-printf 'APP_STORE_BUILD_NUMBER=%s Scripts/validate_manual_release_verification.sh\n' "$selected_app_store_build"
-printf 'Scripts/check_app_store_readiness.sh\n'
-printf 'Scripts/preflight_metadata_upload.sh\n'
-printf 'ASC_KEY_ID=XXXXXXXXXX ASC_ISSUER_ID=00000000-0000-0000-0000-000000000000 ASC_KEY_PATH=/secure/AuthKey_XXXXXXXXXX.p8 Scripts/run_fastlane.sh ios metadata\n'
-printf 'FASTLANE_USER=apple-id@example.com CONFIRM_UPLOAD_APP_PRIVACY=1 Scripts/preflight_app_privacy_upload.sh\n'
-printf 'FASTLANE_USER=apple-id@example.com CONFIRM_UPLOAD_APP_PRIVACY=1 Scripts/run_fastlane.sh ios privacy_details\n'
-printf 'Replace apple-id@example.com with the App Store Connect Apple ID before running Fastlane Apple ID commands.\n'
-printf 'APP_PRIVACY_DETAILS_CONFIRMED_IN_APP_STORE_CONNECT=1 Scripts/validate_app_privacy_connect_entry.sh\n'
-printf 'APP_STORE_COMMERCIAL_CONFIG_CONFIRMED_IN_APP_STORE_CONNECT=1 Scripts/validate_commercial_configuration_connect_entry.sh\n'
-printf 'Scripts/verify_release.sh testflight-dependencies-preflight\n'
-printf 'Scripts/preflight_app_store_archive.sh\n'
-printf 'DEVELOPMENT_TEAM_ID=YOURTEAMID ALLOW_PROVISIONING_UPDATES=1 Scripts/archive_app_store.sh\n'
-printf 'Replace YOURTEAMID with the Apple Developer Team ID before running signing or archive commands.\n'
-printf 'Scripts/preflight_testflight_upload.sh\n'
-printf 'ASC_KEY_ID=XXXXXXXXXX ASC_ISSUER_ID=00000000-0000-0000-0000-000000000000 ASC_KEY_PATH=/secure/AuthKey_XXXXXXXXXX.p8 Scripts/run_fastlane.sh ios upload_testflight\n'
-printf 'APP_STORE_BUILD_NUMBER=%s Scripts/run_fastlane.sh ios app_store_connect_state\n' "$selected_app_store_build"
-printf 'APP_STORE_BUILD_NUMBER=%s Scripts/preflight_app_review_submission.sh\n' "$selected_app_store_build"
-printf 'APP_STORE_BUILD_NUMBER=%s CONFIRM_SUBMIT_FOR_REVIEW=1 Scripts/run_fastlane.sh ios submit_review\n' "$selected_app_store_build"
+case "$scope" in
+  all)
+    print_private_setup_commands
+    printf 'APP_STORE_BUILD_NUMBER=%s Scripts/validate_manual_release_verification.sh\n' "$selected_app_store_build"
+    printf 'Scripts/check_app_store_readiness.sh\n'
+    printf 'Scripts/preflight_metadata_upload.sh\n'
+    printf 'ASC_KEY_ID=XXXXXXXXXX ASC_ISSUER_ID=00000000-0000-0000-0000-000000000000 ASC_KEY_PATH=/secure/AuthKey_XXXXXXXXXX.p8 Scripts/run_fastlane.sh ios metadata\n'
+    printf 'FASTLANE_USER=apple-id@example.com CONFIRM_UPLOAD_APP_PRIVACY=1 Scripts/preflight_app_privacy_upload.sh\n'
+    printf 'FASTLANE_USER=apple-id@example.com CONFIRM_UPLOAD_APP_PRIVACY=1 Scripts/run_fastlane.sh ios privacy_details\n'
+    printf 'Replace apple-id@example.com with the App Store Connect Apple ID before running Fastlane Apple ID commands.\n'
+    printf 'APP_PRIVACY_DETAILS_CONFIRMED_IN_APP_STORE_CONNECT=1 Scripts/validate_app_privacy_connect_entry.sh\n'
+    printf 'APP_STORE_COMMERCIAL_CONFIG_CONFIRMED_IN_APP_STORE_CONNECT=1 Scripts/validate_commercial_configuration_connect_entry.sh\n'
+    printf 'Scripts/verify_release.sh testflight-dependencies-preflight\n'
+    printf 'Scripts/preflight_app_store_archive.sh\n'
+    printf 'DEVELOPMENT_TEAM_ID=YOURTEAMID ALLOW_PROVISIONING_UPDATES=1 Scripts/archive_app_store.sh\n'
+    printf 'Replace YOURTEAMID with the Apple Developer Team ID before running signing or archive commands.\n'
+    printf 'Scripts/preflight_testflight_upload.sh\n'
+    printf 'ASC_KEY_ID=XXXXXXXXXX ASC_ISSUER_ID=00000000-0000-0000-0000-000000000000 ASC_KEY_PATH=/secure/AuthKey_XXXXXXXXXX.p8 Scripts/run_fastlane.sh ios upload_testflight\n'
+    printf 'APP_STORE_BUILD_NUMBER=%s Scripts/run_fastlane.sh ios app_store_connect_state\n' "$selected_app_store_build"
+    printf 'APP_STORE_BUILD_NUMBER=%s Scripts/preflight_app_review_submission.sh\n' "$selected_app_store_build"
+    printf 'APP_STORE_BUILD_NUMBER=%s CONFIRM_SUBMIT_FOR_REVIEW=1 Scripts/run_fastlane.sh ios submit_review\n' "$selected_app_store_build"
+    ;;
+  metadata-upload)
+    print_metadata_commands
+    ;;
+  app-privacy-upload)
+    print_privacy_commands
+    ;;
+  app-store-archive)
+    print_archive_commands
+    ;;
+  testflight-upload)
+    print_testflight_commands
+    ;;
+  app-review-submission)
+    print_review_submission_commands "$selected_app_store_build"
+    ;;
+esac
 
 missing_field_count="${#missing_fields[@]}"
 printf '\nSummary: %d missing required release input check(s), %d missing field/action item(s).\n' \
