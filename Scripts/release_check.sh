@@ -4794,6 +4794,7 @@ check_contains "Scripts/validate_release_handoff_brief.sh" "Next Commands" "Rele
 check_contains "Scripts/validate_release_handoff_brief.sh" "Release Input Status" "Release handoff brief validator must require the release input status section"
 check_contains "Scripts/validate_release_handoff_brief.sh" "Missing required release input checks" "Release handoff brief validator must require missing release input check counts"
 check_contains "Scripts/validate_release_handoff_brief.sh" "Missing field/action items" "Release handoff brief validator must require missing release input field/action counts"
+check_contains "Scripts/validate_release_handoff_brief.sh" "Total Handoff Owner Summary" "Release handoff brief validator must verify total owner summary counts including final submission guards"
 check_contains "Scripts/validate_release_handoff_brief.sh" "Team ID placeholder replacement guidance" "Release handoff brief validator must require Team ID placeholder replacement guidance"
 check_contains "Scripts/validate_release_handoff_brief.sh" "Fastlane Apple ID placeholder replacement guidance" "Release handoff brief validator must require Fastlane Apple ID placeholder replacement guidance"
 check_contains "Scripts/preflight_release_handoff.sh" 'Scripts/validate_release_handoff_brief.sh "$external_actions_path" "$brief_path"' "Release handoff preflight must validate generated handoff briefs"
@@ -4912,6 +4913,14 @@ The phase plan count includes derived final submission guard actions that are no
 | Apple Developer account holder | 1 | 1 | 0 |
 | App Store Connect account holder | 1 | 0 | 1 |
 
+## Total Handoff Owner Summary
+
+| Owner | Actions | Blockers | Warnings |
+| --- | ---: | ---: | ---: |
+| Apple Developer account holder | 1 | 1 | 0 |
+| App Store Connect account holder | 1 | 0 | 1 |
+| Release owner | 2 | 2 | 0 |
+
 ## External Action Detail
 
 | Owner | Category | Severity | Field | Item | Next Action | Validation Command |
@@ -4995,6 +5004,15 @@ EOF
     failures=$((failures + 1))
   elif ! grep -q 'Owner Summary count mismatch' "$handoff_brief_log"; then
     printf 'FAIL: Release handoff brief validator must identify owner summary count mismatches\n'
+    failures=$((failures + 1))
+  fi
+  cp "$handoff_brief_path" "$handoff_brief_bad"
+  perl -0pi -e 's/^\| Release owner \| 2 \| 2 \| 0 \|\n//m' "$handoff_brief_bad"
+  if Scripts/validate_release_handoff_brief.sh "$handoff_brief_actions" "$handoff_brief_bad" "$handoff_brief_ci_readiness" "$handoff_brief_local_readiness" >"$handoff_brief_log" 2>&1; then
+    printf 'FAIL: Release handoff brief validator must reject missing total handoff owner summary final guard rows\n'
+    failures=$((failures + 1))
+  elif ! grep -q 'Total Handoff Owner Summary count mismatch' "$handoff_brief_log"; then
+    printf 'FAIL: Release handoff brief validator must identify total handoff owner summary count mismatches\n'
     failures=$((failures + 1))
   fi
   cp "$handoff_brief_path" "$handoff_brief_bad"
@@ -5971,6 +5989,7 @@ check_contains "Scripts/preflight_release_handoff.sh" "Missing required release 
 check_contains "Scripts/preflight_release_handoff.sh" "Missing field/action items" "Release handoff brief must include missing release input field/action counts"
 check_contains "Scripts/preflight_release_handoff.sh" "Release Phase Plan Status" "Release handoff brief must include release phase plan status counts"
 check_contains "Scripts/preflight_release_handoff.sh" "Final submission guard actions" "Release handoff brief must include final submission guard action counts"
+check_contains "Scripts/preflight_release_handoff.sh" "Total Handoff Owner Summary" "Release handoff brief must summarize total handoff actions by owner including final submission guards"
 check_contains "Scripts/preflight_release_handoff.sh" "CI-only Readiness Detail" "Release handoff brief must list readiness lines present only in CI"
 check_contains "Scripts/preflight_release_handoff.sh" "Local-only Readiness Detail" "Release handoff brief must list readiness lines present only in local preflight"
 check_contains "Scripts/preflight_release_handoff.sh" "External Action Summary" "Release handoff brief must summarize external action categories"
@@ -6002,6 +6021,7 @@ check_contains "README.md" "release-input-todo.md" "README must document the rel
 check_contains "README.md" "owner-action-briefs" "README must document per-owner action brief handoff files"
 check_contains "README.md" "Owner Summary" "README must document the release input TODO owner summary"
 check_contains "README.md" "handoff brief Owner Summary" "README must document the handoff brief owner summary"
+check_contains "README.md" "Total Handoff Owner Summary" "README must document the handoff brief total owner summary"
 check_contains "README.md" "external action details" "README must document that the release handoff brief includes external action details"
 check_contains "README.md" "owner-scoped external action details" "README must document that handoff brief detail rows identify each action owner"
 check_contains "README.md" "external action blocker count" "README must document external action counts in the handoff summary"
@@ -6021,6 +6041,7 @@ check_contains "AppStore/release-checklist.md" "release-input-todo.md" "Release 
 check_contains "AppStore/release-checklist.md" "owner-action-briefs" "Release checklist must document per-owner action brief handoff files"
 check_contains "AppStore/release-checklist.md" "Owner Summary" "Release checklist must document the release input TODO owner summary"
 check_contains "AppStore/release-checklist.md" "handoff brief Owner Summary" "Release checklist must document the handoff brief owner summary"
+check_contains "AppStore/release-checklist.md" "Total Handoff Owner Summary" "Release checklist must document the handoff brief total owner summary"
 check_contains "AppStore/release-checklist.md" "external action details" "Release checklist must document the handoff brief external action details"
 check_contains "AppStore/release-checklist.md" "owner-scoped external action details" "Release checklist must document that handoff brief detail rows identify each action owner"
 check_contains "AppStore/release-checklist.md" "external action blocker count" "Release checklist must document external action counts in the handoff summary"

@@ -450,6 +450,9 @@ summary_diff="$temp_dir/summary-diff.txt"
 expected_owner_summary="$temp_dir/expected-owner-summary.tsv"
 actual_owner_summary="$temp_dir/actual-owner-summary.tsv"
 owner_summary_diff="$temp_dir/owner-summary-diff.txt"
+expected_total_owner_summary="$temp_dir/expected-total-owner-summary.tsv"
+actual_total_owner_summary="$temp_dir/actual-total-owner-summary.tsv"
+total_owner_summary_diff="$temp_dir/total-owner-summary-diff.txt"
 expected_details="$temp_dir/expected-details.tsv"
 
 awk -F '\t' -v expected_details="$expected_details" '
@@ -511,6 +514,22 @@ awk -F '\t' -v expected_details="$expected_details" '
 }
 awk -F '\t' '$1 != "owner" { print }' "$temp_dir/action-summary.tsv" | LC_ALL=C sort >"$expected_summary"
 awk -F '\t' '$1 == "owner" { print $2 "\t" $3 "\t" $4 "\t" $5 }' "$temp_dir/action-summary.tsv" | LC_ALL=C sort >"$expected_owner_summary"
+final_submission_guard_actions="$(section_table_value "Release Phase Plan Status" "Final submission guard actions" 2>/dev/null || printf '0')"
+awk -F '\t' -v final_guard_actions="$final_submission_guard_actions" '
+  {
+    owner_counts[$1] += $2
+    owner_blocker_counts[$1] += $3
+    owner_warning_counts[$1] += $4
+  }
+  END {
+    final_guard_actions += 0
+    owner_counts["Release owner"] += final_guard_actions
+    owner_blocker_counts["Release owner"] += final_guard_actions
+    for (owner in owner_counts) {
+      print owner "\t" owner_counts[owner] + 0 "\t" owner_blocker_counts[owner] + 0 "\t" owner_warning_counts[owner] + 0
+    }
+  }
+' "$expected_owner_summary" | LC_ALL=C sort >"$expected_total_owner_summary"
 
 require_contains "# FreePrint Studio Release Handoff Brief" "release handoff brief title"
 validate_source_metadata
@@ -521,6 +540,7 @@ require_contains "## CI-only Readiness Detail" "CI-only Readiness Detail section
 require_contains "## Local-only Readiness Detail" "Local-only Readiness Detail section"
 require_contains "## External Action Summary" "External Action Summary section"
 require_contains "## Owner Summary" "Owner Summary section"
+require_contains "## Total Handoff Owner Summary" "Total Handoff Owner Summary section"
 require_contains "## External Action Detail" "External Action Detail section"
 require_contains "## Primary Action Files" "Primary Action Files section"
 require_contains "## Next Commands" "Next Commands section"
@@ -656,6 +676,27 @@ awk '
 if ! diff -u "$expected_owner_summary" "$actual_owner_summary" >"$owner_summary_diff"; then
   fail "Owner Summary count mismatch"
   sed 's/^/  /' "$owner_summary_diff"
+fi
+
+awk '
+  /^## Total Handoff Owner Summary$/ {
+    in_summary = 1
+    next
+  }
+  in_summary && /^## / {
+    in_summary = 0
+  }
+  in_summary {
+    print
+  }
+' "$brief_path" \
+  | sed -nE 's/^\| ([^|]+) \| ([0-9]+) \| ([0-9]+) \| ([0-9]+) \|$/\1	\2	\3	\4/p' \
+  | grep -v $'^Owner\tActions\tBlockers\tWarnings$' \
+  | LC_ALL=C sort >"$actual_total_owner_summary"
+
+if ! diff -u "$expected_total_owner_summary" "$actual_total_owner_summary" >"$total_owner_summary_diff"; then
+  fail "Total Handoff Owner Summary count mismatch"
+  sed 's/^/  /' "$total_owner_summary_diff"
 fi
 
 while IFS=$'\t' read -r owner category severity field item next_action validation_command; do

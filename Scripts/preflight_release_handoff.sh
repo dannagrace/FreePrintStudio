@@ -425,6 +425,43 @@ write_handoff_brief() {
       printf 'No external readiness action manifest was found at `%s`.\n' "$external_actions_path"
     fi
 
+    printf '\n## Total Handoff Owner Summary\n\n'
+    if [[ -s "$external_actions_path" ]]; then
+      printf 'This adds derived final submission guard blockers to the Release owner so the owner view matches the total phase plan handoff count.\n\n'
+      printf '| Owner | Actions | Blockers | Warnings |\n'
+      printf '| --- | ---: | ---: | ---: |\n'
+      awk -F '\t' -v final_guard_actions="$release_phase_plan_final_submission_guard_actions" '
+        NR == 1 {
+          for (i = 1; i <= NF; i++) {
+            columns[$i] = i
+          }
+          next
+        }
+        $1 != "" {
+          owner = $(columns["owner"])
+          severity = $(columns["severity"])
+          owner_counts[owner] += 1
+          if (severity == "blocker") {
+            owner_blocker_counts[owner] += 1
+          } else if (severity == "warning") {
+            owner_warning_counts[owner] += 1
+          }
+        }
+        END {
+          final_guard_actions += 0
+          owner_counts["Release owner"] += final_guard_actions
+          owner_blocker_counts["Release owner"] += final_guard_actions
+          for (owner in owner_counts) {
+            print owner "\t" owner_counts[owner] "\t" owner_blocker_counts[owner] + 0 "\t" owner_warning_counts[owner] + 0
+          }
+        }
+      ' "$external_actions_path" \
+        | LC_ALL=C sort \
+        | awk -F '\t' '{ printf "| %s | %s | %s | %s |\n", $1, $2, $3, $4 }'
+    else
+      printf 'No external readiness action manifest was found at `%s`.\n' "$external_actions_path"
+    fi
+
     printf '\n## External Action Detail\n\n'
     if [[ -s "$external_actions_path" ]]; then
       printf '| Owner | Category | Severity | Field | Item | Next Action | Validation Command |\n'
