@@ -4212,6 +4212,42 @@ EOF
   rm -rf "$release_action_items_test_dir"
 fi
 check_contains "Scripts/validate_app_store_submission_packet.sh" "file-manifest.tsv" "Submission packet validator must require the file manifest"
+check_file "Scripts/validate_file_manifest_integrity.sh" "File manifest integrity validator is required"
+if [[ -f "Scripts/validate_file_manifest_integrity.sh" && ! -x "Scripts/validate_file_manifest_integrity.sh" ]]; then
+  printf 'FAIL: File manifest integrity validator must be executable (Scripts/validate_file_manifest_integrity.sh)\n'
+  failures=$((failures + 1))
+fi
+check_contains "Scripts/validate_app_store_submission_packet.sh" "validate_file_manifest_integrity.sh" "Submission packet validator must verify file-manifest byte counts and sha256 checksums"
+if [[ -x "Scripts/validate_file_manifest_integrity.sh" ]]; then
+  file_manifest_test_dir="$(mktemp -d)"
+  file_manifest_packet="$file_manifest_test_dir/packet"
+  file_manifest_log="$file_manifest_test_dir/validation.log"
+  mkdir -p "$file_manifest_packet/files/docs"
+  printf 'FreePrint Studio submission packet\n' >"$file_manifest_packet/SUMMARY.md"
+  printf '<html>privacy</html>\n' >"$file_manifest_packet/files/docs/privacy-policy.html"
+  {
+    printf 'path\tbytes\tsha256\n'
+    for manifest_path in "SUMMARY.md" "files/docs/privacy-policy.html"; do
+      manifest_bytes="$(wc -c <"$file_manifest_packet/$manifest_path" | tr -d '[:space:]')"
+      manifest_sha="$(shasum -a 256 "$file_manifest_packet/$manifest_path" | awk '{ print $1 }')"
+      printf '%s\t%s\t%s\n' "$manifest_path" "$manifest_bytes" "$manifest_sha"
+    done
+  } >"$file_manifest_packet/file-manifest.tsv"
+  if ! Scripts/validate_file_manifest_integrity.sh "$file_manifest_packet" >"$file_manifest_log" 2>&1; then
+    printf 'FAIL: File manifest integrity validator must accept matching byte counts and sha256 checksums\n'
+    cat "$file_manifest_log"
+    failures=$((failures + 1))
+  fi
+  printf 'tampered\n' >>"$file_manifest_packet/SUMMARY.md"
+  if Scripts/validate_file_manifest_integrity.sh "$file_manifest_packet" >"$file_manifest_log" 2>&1; then
+    printf 'FAIL: File manifest integrity validator must reject byte and sha256 mismatches\n'
+    failures=$((failures + 1))
+  elif ! grep -q 'SUMMARY.md' "$file_manifest_log"; then
+    printf 'FAIL: File manifest integrity validator must identify the mismatched file path\n'
+    failures=$((failures + 1))
+  fi
+  rm -rf "$file_manifest_test_dir"
+fi
 check_contains "Scripts/validate_app_store_submission_packet.sh" "pdf-export-validation.tsv" "Submission packet validator must require PDF validation evidence"
 check_contains "Scripts/validate_app_store_submission_packet.sh" "screenshots.tsv" "Submission packet validator must require screenshot evidence"
 check_contains "Scripts/validate_app_store_submission_packet.sh" "screenshot-privacy-metadata-report.txt" "Submission packet validator must require screenshot privacy metadata evidence"

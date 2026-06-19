@@ -230,6 +230,9 @@ require_tsv_header "pdf-export-validation.tsv" $'label\tcontent\tmode\tpaper\tor
 require_tsv_header "file-manifest.tsv" $'path\tbytes\tsha256' "file-manifest.tsv"
 require_tsv_header "release-provenance.tsv" $'key	value' "release-provenance.tsv"
 require_tsv_header "external-readiness-actions.tsv" $'category	severity	owner	field	target	item	next_action	validation_command' "external-readiness-actions.tsv"
+if ! Scripts/validate_file_manifest_integrity.sh "$PACKET_DIR"; then
+  failures=$((failures + 1))
+fi
 require_tsv_column_populated "external-readiness-actions.tsv" 4 "external-readiness-actions.tsv affected field tracking"
 require_tsv_column_populated "external-readiness-actions.tsv" 5 "external-readiness-actions.tsv target tracking"
 if ! Scripts/validate_external_readiness_actions.sh "$PACKET_DIR/readiness.txt" "$PACKET_DIR/external-readiness-actions.tsv"; then
