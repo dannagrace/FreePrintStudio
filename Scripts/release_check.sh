@@ -1948,6 +1948,8 @@ check_contains "Scripts/validate_release_env.sh" "PLACEHOLDER_VALUES" "Release e
 check_contains "Scripts/validate_release_env.sh" "APP_REVIEW_CONTACT_EMAIL" "Release environment validation must check App Review contact placeholders"
 check_contains "Scripts/validate_release_env.sh" "FASTLANE_USER" "Release environment validation must check Fastlane Apple ID placeholders"
 check_contains "Scripts/validate_release_env.sh" "PROCESSED_BUILD_NUMBER" "Release environment validation must reject the selected-build placeholder"
+check_contains "Scripts/validate_release_env.sh" "CONFIRM_UPLOAD_APP_PRIVACY" "Release environment validation must check App Privacy upload confirmation values"
+check_contains "Scripts/validate_release_env.sh" "CONFIRM_SUBMIT_FOR_REVIEW" "Release environment validation must check final submission confirmation values"
 release_env_placeholder_test_dir="$(mktemp -d)"
 release_env_placeholder_test_file="$release_env_placeholder_test_dir/release.env"
 printf 'APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER\n' >"$release_env_placeholder_test_file"
@@ -1992,6 +1994,28 @@ elif ! grep -q 'APP_REVIEW_CONTACT_EMAIL still uses a placeholder value' /tmp/fr
   failures=$((failures + 1))
 fi
 rm -rf "$release_env_example_domain_test_dir"
+release_env_invalid_upload_confirm_test_dir="$(mktemp -d)"
+release_env_invalid_upload_confirm_test_file="$release_env_invalid_upload_confirm_test_dir/release.env"
+printf 'CONFIRM_UPLOAD_APP_PRIVACY=0\n' >"$release_env_invalid_upload_confirm_test_file"
+if RELEASE_ENV_PATH="$release_env_invalid_upload_confirm_test_file" Scripts/validate_release_env.sh >/tmp/freeprintstudio-invalid-upload-confirm-release-env.log 2>&1; then
+  printf 'FAIL: Release environment validation must reject non-1 App Privacy upload confirmation values\n'
+  failures=$((failures + 1))
+elif ! grep -q 'CONFIRM_UPLOAD_APP_PRIVACY must be 1' /tmp/freeprintstudio-invalid-upload-confirm-release-env.log; then
+  printf 'FAIL: Release environment invalid upload confirmation output must identify CONFIRM_UPLOAD_APP_PRIVACY format errors\n'
+  failures=$((failures + 1))
+fi
+rm -rf "$release_env_invalid_upload_confirm_test_dir"
+release_env_invalid_submit_confirm_test_dir="$(mktemp -d)"
+release_env_invalid_submit_confirm_test_file="$release_env_invalid_submit_confirm_test_dir/release.env"
+printf 'CONFIRM_SUBMIT_FOR_REVIEW=0\n' >"$release_env_invalid_submit_confirm_test_file"
+if RELEASE_ENV_PATH="$release_env_invalid_submit_confirm_test_file" Scripts/validate_release_env.sh >/tmp/freeprintstudio-invalid-submit-confirm-release-env.log 2>&1; then
+  printf 'FAIL: Release environment validation must reject non-1 App Review submission confirmation values\n'
+  failures=$((failures + 1))
+elif ! grep -q 'CONFIRM_SUBMIT_FOR_REVIEW must be 1' /tmp/freeprintstudio-invalid-submit-confirm-release-env.log; then
+  printf 'FAIL: Release environment invalid submit confirmation output must identify CONFIRM_SUBMIT_FOR_REVIEW format errors\n'
+  failures=$((failures + 1))
+fi
+rm -rf "$release_env_invalid_submit_confirm_test_dir"
 release_env_invalid_build_number_test_dir="$(mktemp -d)"
 release_env_invalid_build_number_test_file="$release_env_invalid_build_number_test_dir/release.env"
 printf 'APP_STORE_BUILD_NUMBER="build candidate"\n' >"$release_env_invalid_build_number_test_file"

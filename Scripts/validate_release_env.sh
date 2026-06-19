@@ -51,10 +51,12 @@ tracked_env_names=(
   FASTLANE_USER
   FASTLANE_ITC_TEAM_ID
   FASTLANE_ITC_TEAM_NAME
+  CONFIRM_UPLOAD_APP_PRIVACY
   APP_PRIVACY_DETAILS_CONFIRMED_IN_APP_STORE_CONNECT
   APP_STORE_COMMERCIAL_CONFIG_CONFIRMED_IN_APP_STORE_CONNECT
   IPA_PATH
   APP_STORE_BUILD_NUMBER
+  CONFIRM_SUBMIT_FOR_REVIEW
 )
 
 looks_like_placeholder() {
@@ -118,6 +120,10 @@ validate_format \
   '^[0-9]+$' \
   "FASTLANE_ITC_TEAM_ID must be numeric"
 validate_format \
+  CONFIRM_UPLOAD_APP_PRIVACY \
+  '^1$' \
+  "CONFIRM_UPLOAD_APP_PRIVACY must be 1 after AppStore/app_privacy_details.json has been reviewed against App Store Connect answers"
+validate_format \
   APP_PRIVACY_DETAILS_CONFIRMED_IN_APP_STORE_CONNECT \
   '^1$' \
   "APP_PRIVACY_DETAILS_CONFIRMED_IN_APP_STORE_CONNECT must be 1 after App Store Connect matches AppStore/app_privacy_details.json"
@@ -129,6 +135,10 @@ validate_format \
   APP_STORE_BUILD_NUMBER \
   '^[0-9]+(\.[0-9]+){0,2}$' \
   "APP_STORE_BUILD_NUMBER must be a processed App Store Connect build number, for example 42 or 1.0.1"
+validate_format \
+  CONFIRM_SUBMIT_FOR_REVIEW \
+  '^1$' \
+  "CONFIRM_SUBMIT_FOR_REVIEW must be 1 only after the final App Review preflight passes"
 
 if (( failures > 0 )); then
   printf '\nReplace placeholder values in Config/release.env or unset them until real account values are available.\n'
