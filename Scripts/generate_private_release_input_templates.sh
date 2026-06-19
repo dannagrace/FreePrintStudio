@@ -104,6 +104,43 @@ awk -F '\t' \
     }
   }
 
+  function manual_env_hint(name) {
+    if (name == "MANUAL_VERIFIER_NAME") {
+      return "verifier name or team."
+    }
+    if (name == "MANUAL_REAL_IPHONE_MODEL") {
+      return "physical iPhone model, not Simulator."
+    }
+    if (name == "MANUAL_REAL_IPHONE_IOS_VERSION") {
+      return "numeric iOS version, e.g. 18.5 or iOS 18.5."
+    }
+    if (name ~ /_TEST_DATE$/) {
+      return "YYYY-MM-DD."
+    }
+    if (name == "MANUAL_AIRPRINT_PRINTER") {
+      return "printer or production-equivalent workflow name."
+    }
+    if (name == "MANUAL_AIRPRINT_RULER_TARGET_INCHES") {
+      return "6."
+    }
+    if (name == "MANUAL_AIRPRINT_RULER_MEASURED_INCHES") {
+      return "decimal inches within 0.0625 of MANUAL_AIRPRINT_RULER_TARGET_INCHES."
+    }
+    if (name == "MANUAL_TESTFLIGHT_BUILD_NUMBER") {
+      return "same as APP_STORE_BUILD_NUMBER."
+    }
+    if (name == "MANUAL_TESTFLIGHT_DEVICE") {
+      return "physical device model."
+    }
+    if (name == "MANUAL_IPAD_TESTFLIGHT_DEVICE") {
+      return "physical iPad model, not Simulator."
+    }
+    if (name ~ /_(PHOTOS_IMPORT|PDF_EXPORT|PRINT_SHEET|EXACT_SIZE|INSTALL|PRINT_WORKFLOW|LAYOUT)$/) {
+      return "pass."
+    }
+    return ""
+  }
+
   BEGIN {
     add_standard_env_assignments(standard_release_env_names, "release.env")
     add_standard_env_assignments(standard_manual_env_names, "manual-release-verification.env")
@@ -124,6 +161,12 @@ awk -F '\t' \
 
     for (idx = 1; idx <= count; idx += 1) {
       name = names[idx]
+      if (label == "manual-release-verification.env") {
+        hint = manual_env_hint(name)
+        if (hint != "") {
+          print "# Required: " hint >>path
+        }
+      }
       if (name == "MANUAL_AIRPRINT_RULER_TARGET_INCHES") {
         print "MANUAL_AIRPRINT_RULER_TARGET_INCHES=\"6\"" >>path
       } else {

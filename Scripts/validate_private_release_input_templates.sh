@@ -212,6 +212,12 @@ else
 fi
 require_contains "$index_path" "Replace PROCESSED_BUILD_NUMBER with the processed App Store Connect build number before running selected-build commands" "selected-build placeholder replacement guidance"
 require_not_contains "$index_path" "cp private-release-input-templates/" "unsafe manual copy instructions"
+require_contains "$manual_env_path" "# Required: physical iPhone model, not Simulator." "manual evidence field guidance"
+require_contains "$manual_env_path" "# Required: YYYY-MM-DD." "manual evidence field guidance"
+require_contains "$manual_env_path" "# Required: pass." "manual evidence field guidance"
+require_contains "$manual_env_path" "# Required: decimal inches within 0.0625 of MANUAL_AIRPRINT_RULER_TARGET_INCHES." "manual evidence field guidance"
+require_contains "$manual_env_path" "# Required: same as APP_STORE_BUILD_NUMBER." "manual evidence field guidance"
+require_contains "$manual_env_path" "# Required: physical iPad model, not Simulator." "manual evidence field guidance"
 
 while IFS=$'\t' read -r template_name expected_count; do
   [[ -z "$template_name" ]] && continue

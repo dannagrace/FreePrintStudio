@@ -5572,10 +5572,12 @@ check_contains "Scripts/generate_private_release_input_templates.sh" "STANDARD_M
 check_contains "Scripts/generate_private_release_input_templates.sh" "CONFIRM_UPLOAD_APP_PRIVACY" "Private release input template generator must include the App Privacy upload confirmation guard"
 check_contains "Scripts/generate_private_release_input_templates.sh" "CONFIRM_SUBMIT_FOR_REVIEW" "Private release input template generator must include the final App Review submission guard"
 check_contains "Scripts/generate_private_release_input_templates.sh" 'MANUAL_AIRPRINT_RULER_TARGET_INCHES="6"' "Private release input template generator must preserve the ruler target default"
+check_contains "Scripts/generate_private_release_input_templates.sh" "manual_env_hint" "Private release input template generator must include manual evidence field guidance"
 check_contains "Scripts/validate_private_release_input_templates.sh" "Private release input template count mismatch" "Private release input template validator must compare env assignment counts"
 check_contains "Scripts/validate_private_release_input_templates.sh" "template assignment is missing" "Private release input template validator must verify generated env assignments"
 check_contains "Scripts/validate_private_release_input_templates.sh" "STANDARD_RELEASE_ENV_NAMES" "Private release input template validator must require the complete release.env starter surface"
 check_contains "Scripts/validate_private_release_input_templates.sh" "STANDARD_MANUAL_ENV_NAMES" "Private release input template validator must require the complete manual evidence starter surface"
+check_contains "Scripts/validate_private_release_input_templates.sh" "manual evidence field guidance" "Private release input template validator must require manual evidence field guidance"
 check_contains "Scripts/validate_private_release_input_templates.sh" "safe installer command" "Private release input template validator must require safe installer guidance"
 check_contains "Scripts/validate_private_release_input_templates.sh" "unsafe manual copy instructions" "Private release input template validator must reject unsafe manual copy guidance"
 check_contains "Scripts/validate_private_release_input_templates.sh" "selected-build placeholder replacement guidance" "Private release input template validator must require selected-build placeholder replacement guidance"
@@ -5697,8 +5699,32 @@ EOF
       printf 'FAIL: Private release input template must include blank manual evidence assignments\n'
       failures=$((failures + 1))
     fi
+    if ! grep -qF '# Required: physical iPhone model, not Simulator.' "$private_template_output_dir/manual-release-verification.env"; then
+      printf 'FAIL: Private release input template must guide physical iPhone evidence values\n'
+      failures=$((failures + 1))
+    fi
+    if ! grep -qF '# Required: YYYY-MM-DD.' "$private_template_output_dir/manual-release-verification.env"; then
+      printf 'FAIL: Private release input template must guide date evidence values\n'
+      failures=$((failures + 1))
+    fi
+    if ! grep -qF '# Required: pass.' "$private_template_output_dir/manual-release-verification.env"; then
+      printf 'FAIL: Private release input template must guide pass/fail evidence values\n'
+      failures=$((failures + 1))
+    fi
     if ! grep -q '^MANUAL_AIRPRINT_RULER_TARGET_INCHES="6"' "$private_template_output_dir/manual-release-verification.env"; then
       printf 'FAIL: Private release input template must include the AirPrint ruler target default\n'
+      failures=$((failures + 1))
+    fi
+    if ! grep -qF '# Required: decimal inches within 0.0625 of MANUAL_AIRPRINT_RULER_TARGET_INCHES.' "$private_template_output_dir/manual-release-verification.env"; then
+      printf 'FAIL: Private release input template must guide AirPrint ruler measurement tolerance\n'
+      failures=$((failures + 1))
+    fi
+    if ! grep -qF '# Required: same as APP_STORE_BUILD_NUMBER.' "$private_template_output_dir/manual-release-verification.env"; then
+      printf 'FAIL: Private release input template must guide selected build evidence values\n'
+      failures=$((failures + 1))
+    fi
+    if ! grep -qF '# Required: physical iPad model, not Simulator.' "$private_template_output_dir/manual-release-verification.env"; then
+      printf 'FAIL: Private release input template must guide physical iPad evidence values\n'
       failures=$((failures + 1))
     fi
     if grep -q 'manual-release-verification.env file=' "$private_template_output_dir/manual-release-verification.env"; then
@@ -5723,6 +5749,19 @@ EOF
       failures=$((failures + 1))
     elif ! grep -q 'MANUAL_REAL_IPHONE_MODEL' "$private_template_log"; then
       printf 'FAIL: Private release input template validator must identify missing env assignments\n'
+      failures=$((failures + 1))
+    fi
+    private_template_bad_dir="$private_template_test_dir/private-release-input-templates-missing-manual-guidance"
+    cp -R "$private_template_output_dir" "$private_template_bad_dir"
+    BAD_TEMPLATE_INSTALL_COMMAND="Scripts/install_private_release_input_templates.sh --source-dir $private_template_bad_dir --target-dir Config" \
+      PRIVATE_TEMPLATE_INSTALL_COMMAND="$private_template_install_command" \
+      perl -0pi -e 's#\Q$ENV{PRIVATE_TEMPLATE_INSTALL_COMMAND}\E#$ENV{BAD_TEMPLATE_INSTALL_COMMAND}#m' "$private_template_bad_dir/index.md"
+    perl -0pi -e 's/^# Required: pass\.\n//mg' "$private_template_bad_dir/manual-release-verification.env"
+    if Scripts/validate_private_release_input_templates.sh "$private_template_actions" "$private_template_bad_dir" >"$private_template_log" 2>&1; then
+      printf 'FAIL: Private release input template validator must reject missing manual evidence field guidance\n'
+      failures=$((failures + 1))
+    elif ! grep -q 'manual evidence field guidance' "$private_template_log"; then
+      printf 'FAIL: Private release input template validator must identify missing manual evidence field guidance\n'
       failures=$((failures + 1))
     fi
     private_template_bad_dir="$private_template_test_dir/private-release-input-templates-manual-copy"
