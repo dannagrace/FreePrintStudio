@@ -2883,6 +2883,38 @@ check_contains "Scripts/generate_app_review_contact_readiness_report.sh" "APP_RE
 check_contains "Scripts/generate_app_review_contact_readiness_report.sh" "APP_REVIEW_CONTACT_EMAIL" "App Review contact readiness report must summarize email state"
 check_contains "Scripts/generate_app_review_contact_readiness_report.sh" "Scripts/validate_app_review_contact.sh" "App Review contact readiness report must reference the strict validator"
 check_contains "Scripts/generate_app_review_contact_readiness_report.sh" "redacted" "App Review contact readiness report must avoid printing private contact values"
+check_file "Scripts/validate_app_review_contact_readiness_report.sh" "App Review contact readiness report validator is required"
+if [[ -f "Scripts/validate_app_review_contact_readiness_report.sh" && ! -x "Scripts/validate_app_review_contact_readiness_report.sh" ]]; then
+  printf 'FAIL: App Review contact readiness report validator must be executable (Scripts/validate_app_review_contact_readiness_report.sh)\n'
+  failures=$((failures + 1))
+fi
+check_contains "Scripts/validate_app_store_submission_packet.sh" "validate_app_review_contact_readiness_report.sh" "Submission packet validator must validate App Review contact readiness report coverage"
+if [[ -x "Scripts/validate_app_review_contact_readiness_report.sh" ]]; then
+  contact_report_validator_test_dir="$(mktemp -d)"
+  contact_report_actions="$contact_report_validator_test_dir/external-readiness-actions.tsv"
+  contact_report_output="$contact_report_validator_test_dir/app-review-contact-readiness-report.md"
+  contact_report_log="$contact_report_validator_test_dir/validation.log"
+  cat >"$contact_report_actions" <<'EOF'
+category	severity	owner	field	target	item	next_action	validation_command
+App Review Contact	blocker	Release owner	APP_REVIEW_CONTACT_FIRST_NAME	Config/release.env	APP_REVIEW_CONTACT_FIRST_NAME is missing	Fill App Review contact fields in untracked Config/release.env.	Scripts/validate_app_review_contact.sh
+App Review Contact	blocker	Release owner	APP_REVIEW_CONTACT_EMAIL	Config/release.env	APP_REVIEW_CONTACT_EMAIL is missing	Fill App Review contact fields in untracked Config/release.env.	Scripts/validate_app_review_contact.sh
+EOF
+  Scripts/generate_app_review_contact_readiness_report.sh "$contact_report_output" >/dev/null
+  if ! Scripts/validate_app_review_contact_readiness_report.sh "$contact_report_actions" "$contact_report_output" >"$contact_report_log" 2>&1; then
+    printf 'FAIL: App Review contact report validator must accept the generated report for matching contact action fields\n'
+    cat "$contact_report_log"
+    failures=$((failures + 1))
+  fi
+  perl -0pi -e 's/^\| Email address .*?\n//m' "$contact_report_output"
+  if Scripts/validate_app_review_contact_readiness_report.sh "$contact_report_actions" "$contact_report_output" >"$contact_report_log" 2>&1; then
+    printf 'FAIL: App Review contact report validator must reject reports missing required contact action fields\n'
+    failures=$((failures + 1))
+  elif ! grep -q 'APP_REVIEW_CONTACT_EMAIL' "$contact_report_log"; then
+    printf 'FAIL: App Review contact report validator must identify the missing contact action field\n'
+    failures=$((failures + 1))
+  fi
+  rm -rf "$contact_report_validator_test_dir"
+fi
 check_file "Scripts/check_app_store_connect_state.sh" "App Store Connect state preflight script is required"
 check_contains "Scripts/check_app_store_connect_state.sh" "Spaceship::ConnectAPI::App.find" "App Store Connect state preflight must verify the app record"
 check_contains "Scripts/check_app_store_connect_state.sh" "Spaceship::ConnectAPI::Build.all" "App Store Connect state preflight must inspect TestFlight builds"
