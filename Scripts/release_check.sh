@@ -4250,6 +4250,38 @@ if [[ -x "Scripts/validate_file_manifest_integrity.sh" ]]; then
 fi
 check_contains "Scripts/validate_app_store_submission_packet.sh" "pdf-export-validation.tsv" "Submission packet validator must require PDF validation evidence"
 check_contains "Scripts/validate_app_store_submission_packet.sh" "screenshots.tsv" "Submission packet validator must require screenshot evidence"
+check_file "Scripts/validate_screenshot_manifest_integrity.sh" "Screenshot manifest integrity validator is required"
+if [[ -f "Scripts/validate_screenshot_manifest_integrity.sh" && ! -x "Scripts/validate_screenshot_manifest_integrity.sh" ]]; then
+  printf 'FAIL: Screenshot manifest integrity validator must be executable (Scripts/validate_screenshot_manifest_integrity.sh)\n'
+  failures=$((failures + 1))
+fi
+check_contains "Scripts/validate_app_store_submission_packet.sh" "validate_screenshot_manifest_integrity.sh" "Submission packet validator must verify screenshot manifest dimensions and sha256 checksums"
+if [[ -x "Scripts/validate_screenshot_manifest_integrity.sh" ]]; then
+  screenshot_manifest_test_dir="$(mktemp -d)"
+  screenshot_manifest_packet="$screenshot_manifest_test_dir/packet"
+  screenshot_manifest_log="$screenshot_manifest_test_dir/validation.log"
+  mkdir -p "$screenshot_manifest_packet/files/AppStore/Screenshots"
+  cp "AppStore/Screenshots/iphone-main.jpg" "$screenshot_manifest_packet/files/AppStore/Screenshots/iphone-main.jpg"
+  screenshot_manifest_sha="$(shasum -a 256 "$screenshot_manifest_packet/files/AppStore/Screenshots/iphone-main.jpg" | awk '{ print $1 }')"
+  {
+    printf 'path\twidth\theight\thasAlpha\tsha256\n'
+    printf 'AppStore/Screenshots/iphone-main.jpg\t1320\t2868\tno\t%s\n' "$screenshot_manifest_sha"
+  } >"$screenshot_manifest_packet/screenshots.tsv"
+  if ! Scripts/validate_screenshot_manifest_integrity.sh "$screenshot_manifest_packet" >"$screenshot_manifest_log" 2>&1; then
+    printf 'FAIL: Screenshot manifest integrity validator must accept matching dimensions and sha256 checksums\n'
+    cat "$screenshot_manifest_log"
+    failures=$((failures + 1))
+  fi
+  perl -0pi -e 's/AppStore\/Screenshots\/iphone-main\.jpg\t1320\t2868/AppStore\/Screenshots\/iphone-main.jpg\t1321\t2868/' "$screenshot_manifest_packet/screenshots.tsv"
+  if Scripts/validate_screenshot_manifest_integrity.sh "$screenshot_manifest_packet" >"$screenshot_manifest_log" 2>&1; then
+    printf 'FAIL: Screenshot manifest integrity validator must reject screenshot dimension mismatches\n'
+    failures=$((failures + 1))
+  elif ! grep -q 'AppStore/Screenshots/iphone-main.jpg' "$screenshot_manifest_log"; then
+    printf 'FAIL: Screenshot manifest integrity validator must identify the mismatched screenshot path\n'
+    failures=$((failures + 1))
+  fi
+  rm -rf "$screenshot_manifest_test_dir"
+fi
 check_contains "Scripts/validate_app_store_submission_packet.sh" "screenshot-privacy-metadata-report.txt" "Submission packet validator must require screenshot privacy metadata evidence"
 check_contains "Scripts/validate_app_store_submission_packet.sh" "Screenshot privacy metadata validation passed." "Submission packet validator must require successful screenshot privacy metadata output"
 check_contains "Scripts/validate_app_store_submission_packet.sh" "test-ruler-stretch" "Submission packet validator must require Test Ruler PDF evidence"
