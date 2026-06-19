@@ -188,7 +188,7 @@ awk -F '\t' \
     print "## Usage" >>index_path
     print "" >>index_path
     print "```sh" >>index_path
-    print "Scripts/install_private_release_input_templates.sh --source-dir private-release-input-templates --target-dir Config" >>index_path
+    print "Scripts/install_private_release_input_templates.sh --source-dir " output_dir " --target-dir Config" >>index_path
     print "Scripts/print_release_input_status.sh --strict" >>index_path
     print "APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/validate_manual_release_verification.sh" >>index_path
     print "```" >>index_path

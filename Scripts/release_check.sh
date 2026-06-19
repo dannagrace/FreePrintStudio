@@ -5609,6 +5609,7 @@ if [[ -x "Scripts/generate_private_release_input_templates.sh" && -x "Scripts/va
   private_template_test_dir="$(mktemp -d)"
   private_template_actions="$private_template_test_dir/external-readiness-actions.tsv"
   private_template_output_dir="$private_template_test_dir/private-release-input-templates"
+  private_template_install_command="Scripts/install_private_release_input_templates.sh --source-dir $private_template_output_dir --target-dir Config"
   private_template_log="$private_template_test_dir/validation.log"
   cat >"$private_template_actions" <<'EOF'
 category	severity	owner	field	target	item	next_action	validation_command
@@ -5632,8 +5633,8 @@ EOF
       printf 'FAIL: Private release input template index must have a stable title\n'
       failures=$((failures + 1))
     fi
-    if ! grep -q 'Scripts/install_private_release_input_templates.sh --source-dir private-release-input-templates --target-dir Config' "$private_template_output_dir/index.md"; then
-      printf 'FAIL: Private release input template index must use the safe installer command\n'
+    if ! grep -Fq "$private_template_install_command" "$private_template_output_dir/index.md"; then
+      printf 'FAIL: Private release input template index must point the safe installer command at the generated output directory\n'
       failures=$((failures + 1))
     fi
     if ! grep -q 'Replace PROCESSED_BUILD_NUMBER with the processed App Store Connect build number before running selected-build commands' "$private_template_output_dir/index.md"; then
@@ -5722,13 +5723,38 @@ EOF
     fi
     private_template_bad_dir="$private_template_test_dir/private-release-input-templates-manual-copy"
     cp -R "$private_template_output_dir" "$private_template_bad_dir"
-    perl -0pi -e 's#Scripts/install_private_release_input_templates\.sh --source-dir private-release-input-templates --target-dir Config#cp private-release-input-templates/release.env Config/release.env\\ncp private-release-input-templates/manual-release-verification.env Config/manual-release-verification.env#m' "$private_template_bad_dir/index.md"
+    PRIVATE_TEMPLATE_INSTALL_COMMAND="$private_template_install_command" perl -0pi -e 's#\Q$ENV{PRIVATE_TEMPLATE_INSTALL_COMMAND}\E#cp private-release-input-templates/release.env Config/release.env\\ncp private-release-input-templates/manual-release-verification.env Config/manual-release-verification.env#m' "$private_template_bad_dir/index.md"
     if Scripts/validate_private_release_input_templates.sh "$private_template_actions" "$private_template_bad_dir" >"$private_template_log" 2>&1; then
       printf 'FAIL: Private release input template validator must reject manual copy guidance\n'
       failures=$((failures + 1))
     elif ! grep -q 'unsafe manual copy instructions' "$private_template_log"; then
       printf 'FAIL: Private release input template validator must identify unsafe manual copy guidance\n'
       failures=$((failures + 1))
+    fi
+    private_template_bad_dir="$private_template_test_dir/private-release-input-templates-stale-source"
+    cp -R "$private_template_output_dir" "$private_template_bad_dir"
+    PRIVATE_TEMPLATE_INSTALL_COMMAND="$private_template_install_command" perl -0pi -e 's#\Q$ENV{PRIVATE_TEMPLATE_INSTALL_COMMAND}\E#Scripts/install_private_release_input_templates.sh --source-dir private-release-input-templates --target-dir Config#m' "$private_template_bad_dir/index.md"
+    if Scripts/validate_private_release_input_templates.sh "$private_template_actions" "$private_template_bad_dir" >"$private_template_log" 2>&1; then
+      printf 'FAIL: Private release input template validator must reject stale source-dir installer guidance\n'
+      failures=$((failures + 1))
+    elif ! grep -q 'safe installer command' "$private_template_log"; then
+      printf 'FAIL: Private release input template validator must identify stale source-dir installer guidance\n'
+      failures=$((failures + 1))
+    fi
+    private_template_packet_source_dir="$private_template_test_dir/build/AppStoreSubmissionPacket/private-release-input-templates"
+    private_template_packet_destination_dir="$private_template_test_dir/build/CISubmissionPacket/private-release-input-templates"
+    mkdir -p "$(dirname "$private_template_packet_source_dir")" "$(dirname "$private_template_packet_destination_dir")"
+    if ! Scripts/generate_private_release_input_templates.sh "$private_template_actions" "$private_template_packet_source_dir" >"$private_template_test_dir/generate-packet.log" 2>&1; then
+      printf 'FAIL: Private release input template generator must create packet-scoped template indexes\n'
+      sed 's/^/  /' "$private_template_test_dir/generate-packet.log"
+      failures=$((failures + 1))
+    else
+      cp -R "$private_template_packet_source_dir" "$private_template_packet_destination_dir"
+      if ! Scripts/validate_private_release_input_templates.sh "$private_template_actions" "$private_template_packet_destination_dir" >"$private_template_log" 2>&1; then
+        printf 'FAIL: Private release input template validator must accept downloaded CI packet template indexes\n'
+        sed 's/^/  /' "$private_template_log"
+        failures=$((failures + 1))
+      fi
     fi
     private_template_bad_dir="$private_template_test_dir/private-release-input-templates-missing-placeholder-warning"
     cp -R "$private_template_output_dir" "$private_template_bad_dir"

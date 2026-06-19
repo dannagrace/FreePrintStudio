@@ -185,6 +185,17 @@ awk -F '\t' \
 index_path="$template_dir/index.md"
 release_env_path="$template_dir/release.env"
 manual_env_path="$template_dir/manual-release-verification.env"
+safe_installer_command="Scripts/install_private_release_input_templates.sh --source-dir $template_dir --target-dir Config"
+packet_origin_template_dir=""
+case "$template_dir" in
+  *build/CISubmissionPacket/private-release-input-templates)
+    packet_origin_template_dir="${template_dir%build/CISubmissionPacket/private-release-input-templates}build/AppStoreSubmissionPacket/private-release-input-templates"
+    ;;
+esac
+packet_origin_installer_command=""
+if [[ -n "$packet_origin_template_dir" ]]; then
+  packet_origin_installer_command="Scripts/install_private_release_input_templates.sh --source-dir $packet_origin_template_dir --target-dir Config"
+fi
 
 require_file "$index_path" "private release input template index"
 require_file "$release_env_path" "release.env private input template"
@@ -192,7 +203,13 @@ require_file "$manual_env_path" "manual-release-verification.env private input t
 
 require_contains "$index_path" "# FreePrint Studio Private Release Input Templates" "private release input template index title"
 require_contains "$index_path" "private-release-input-templates/" "private release input template output directory reference"
-require_contains "$index_path" "Scripts/install_private_release_input_templates.sh --source-dir private-release-input-templates --target-dir Config" "safe installer command"
+if [[ -n "$packet_origin_installer_command" ]]; then
+  if ! grep -qF "$safe_installer_command" "$index_path" && ! grep -qF "$packet_origin_installer_command" "$index_path"; then
+    fail "safe installer command is missing from $index_path"
+  fi
+else
+  require_contains "$index_path" "$safe_installer_command" "safe installer command"
+fi
 require_contains "$index_path" "Replace PROCESSED_BUILD_NUMBER with the processed App Store Connect build number before running selected-build commands" "selected-build placeholder replacement guidance"
 require_not_contains "$index_path" "cp private-release-input-templates/" "unsafe manual copy instructions"
 
