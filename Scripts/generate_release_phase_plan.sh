@@ -111,6 +111,27 @@ final_submission_guards = [
     ),
 ]
 
+final_submission_guard_actions = [
+    {
+        "category": "Final Submission Guard",
+        "severity": "blocker",
+        "owner": "Release owner",
+        "field": "APP_STORE_BUILD_NUMBER",
+        "target": "Config/release.env",
+        "item": "Processed App Store Connect build selected for App Review.",
+        "validation_command": "APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/preflight_app_review_submission.sh",
+    },
+    {
+        "category": "Final Submission Guard",
+        "severity": "blocker",
+        "owner": "Release owner",
+        "field": "CONFIRM_SUBMIT_FOR_REVIEW",
+        "target": "Config/release.env",
+        "item": "Explicit final confirmation before Fastlane submits the selected build for review.",
+        "validation_command": "APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER CONFIRM_SUBMIT_FOR_REVIEW=1 Scripts/run_fastlane.sh ios submit_review",
+    },
+]
+
 
 def fail(message: str) -> None:
     print(f"FAIL: {message}", file=sys.stderr)
@@ -164,6 +185,7 @@ with actions_path.open(newline="") as handle:
 phase_rows = {phase: [] for phase in phases}
 for row in rows:
     phase_rows[phase_for(row)].append(row)
+phase_rows["Phase 5 - App Review Submission"].extend(final_submission_guard_actions)
 
 total = len(rows)
 blockers = sum(1 for row in rows if row["severity"] == "blocker")
@@ -176,6 +198,7 @@ lines.append("")
 lines.append(f"- Generated At: `{generated_at}`")
 lines.append(f"- Source: `{actions_path}`")
 lines.append(f"- External Actions: `{total}`")
+lines.append(f"- Final Submission Guard Actions: `{len(final_submission_guard_actions)}`")
 lines.append(f"- Blockers: `{blockers}`")
 lines.append(f"- Warnings: `{warnings}`")
 lines.append("")

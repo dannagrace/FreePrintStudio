@@ -5726,8 +5726,10 @@ check_contains "Scripts/generate_release_phase_plan.sh" "Phase 4 - TestFlight An
 check_contains "Scripts/generate_release_phase_plan.sh" "Phase 5 - App Review Submission" "Release phase plan must include the final App Review submission phase"
 check_contains "Scripts/generate_release_phase_plan.sh" "Required final submission guards" "Release phase plan must include explicit final submission guard guidance"
 check_contains "Scripts/generate_release_phase_plan.sh" "CONFIRM_SUBMIT_FOR_REVIEW=1" "Release phase plan must include the final submit confirmation guard"
+check_contains "Scripts/generate_release_phase_plan.sh" "Final Submission Guard" "Release phase plan must model final submission guards as Phase 5 action rows"
 check_contains "Scripts/validate_release_phase_plan.sh" "Required final submission guards" "Release phase plan validator must require final submission guard guidance"
 check_contains "Scripts/validate_release_phase_plan.sh" "CONFIRM_SUBMIT_FOR_REVIEW=1" "Release phase plan validator must require the final submit confirmation guard"
+check_contains "Scripts/validate_release_phase_plan.sh" "Final Submission Guard" "Release phase plan validator must require final submission guard action rows"
 check_contains "Scripts/prepare_app_store_submission_packet.sh" "RELEASE_PHASE_PLAN" "Submission packet must define a release phase plan output path"
 check_contains "Scripts/prepare_app_store_submission_packet.sh" 'Scripts/generate_release_phase_plan.sh "$EXTERNAL_READINESS_ACTIONS" "$RELEASE_PHASE_PLAN"' "Submission packet must generate the release phase plan from external readiness actions"
 check_contains "Scripts/validate_app_store_submission_packet.sh" "release-phase-plan.md" "Submission packet validator must require the release phase plan"
@@ -5737,7 +5739,9 @@ check_contains "Scripts/preflight_release_handoff.sh" 'Scripts/generate_release_
 check_contains "Scripts/preflight_release_handoff.sh" "release_phase_plan" "Release handoff summary must record the release phase plan path"
 check_contains "Scripts/preflight_release_handoff.sh" "Release phase plan" "Release handoff brief must reference the release phase plan"
 check_contains "README.md" "release-phase-plan.md" "README must document the release phase plan"
+check_contains "README.md" "final submission guard actions" "README must document that the release phase plan includes final submission guard actions"
 check_contains "AppStore/release-checklist.md" "release-phase-plan.md" "Release checklist must document the release phase plan"
+check_contains "AppStore/release-checklist.md" "final submission guard actions" "Release checklist must document that the release phase plan includes final submission guard actions"
 if [[ -x "Scripts/generate_release_phase_plan.sh" && -x "Scripts/validate_release_phase_plan.sh" ]]; then
   phase_plan_test_dir="$PWD/build/release-check-phase-plan"
   phase_plan_actions="$phase_plan_test_dir/external-readiness-actions.tsv"
@@ -5770,6 +5774,10 @@ EOF
       printf 'FAIL: Release phase plan must summarize App Store Connect actions by phase\n'
       failures=$((failures + 1))
     fi
+    if ! grep -q '| Phase 5 - App Review Submission | 2 | 2 | 0 |' "$phase_plan_output"; then
+      printf 'FAIL: Release phase plan must count final submission guards as Phase 5 blocker actions\n'
+      failures=$((failures + 1))
+    fi
     if ! grep -q 'APP_STORE_COMMERCIAL_CONFIG_CONFIRMED_IN_APP_STORE_CONNECT' "$phase_plan_output"; then
       printf 'FAIL: Release phase plan must include commercial configuration confirmation actions\n'
       failures=$((failures + 1))
@@ -5788,6 +5796,14 @@ EOF
     fi
     if ! grep -q '| `CONFIRM_SUBMIT_FOR_REVIEW=1` | Explicit final confirmation before Fastlane submits the selected build for review. |' "$phase_plan_output"; then
       printf 'FAIL: Release phase plan must include the final submit confirmation guard\n'
+      failures=$((failures + 1))
+    fi
+    if ! grep -Fq '| Final Submission Guard | Release owner | blocker | `APP_STORE_BUILD_NUMBER` | `Config/release.env` | Processed App Store Connect build selected for App Review. | `APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/preflight_app_review_submission.sh` |' "$phase_plan_output"; then
+      printf 'FAIL: Release phase plan must include the selected App Store build guard as an action row\n'
+      failures=$((failures + 1))
+    fi
+    if ! grep -Fq '| Final Submission Guard | Release owner | blocker | `CONFIRM_SUBMIT_FOR_REVIEW` | `Config/release.env` | Explicit final confirmation before Fastlane submits the selected build for review. | `APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER CONFIRM_SUBMIT_FOR_REVIEW=1 Scripts/run_fastlane.sh ios submit_review` |' "$phase_plan_output"; then
+      printf 'FAIL: Release phase plan must include the final submit confirmation guard as an action row\n'
       failures=$((failures + 1))
     fi
     if ! Scripts/validate_release_phase_plan.sh "$phase_plan_actions" "$phase_plan_output" >"$phase_plan_log" 2>&1; then
@@ -5813,6 +5829,16 @@ EOF
       failures=$((failures + 1))
     elif ! grep -q 'CONFIRM_SUBMIT_FOR_REVIEW=1' "$phase_plan_log"; then
       printf 'FAIL: Release phase plan validator must identify the missing final submit guard\n'
+      failures=$((failures + 1))
+    fi
+    phase_plan_bad="$phase_plan_test_dir/release-phase-plan-missing-final-guard-action-row.md"
+    cp "$phase_plan_output" "$phase_plan_bad"
+    perl -0pi -e 's/^\| Final Submission Guard \| Release owner \| blocker \| `APP_STORE_BUILD_NUMBER` .*\n//m' "$phase_plan_bad"
+    if Scripts/validate_release_phase_plan.sh "$phase_plan_actions" "$phase_plan_bad" >"$phase_plan_log" 2>&1; then
+      printf 'FAIL: Release phase plan validator must reject missing final guard action detail rows\n'
+      failures=$((failures + 1))
+    elif ! grep -q 'APP_STORE_BUILD_NUMBER' "$phase_plan_log"; then
+      printf 'FAIL: Release phase plan validator must identify missing final guard action detail rows\n'
       failures=$((failures + 1))
     fi
   fi
