@@ -5858,7 +5858,9 @@ EOF
   fi
   mkdir -p "$install_template_sync_target_dir"
   printf 'APP_REVIEW_CONTACT_EMAIL="real@example.com"\n' >"$install_template_sync_target_dir/release.env"
+  printf 'MANUAL_REAL_IPHONE_MODEL="iPhone 16 Pro"\n' >"$install_template_sync_target_dir/manual-release-verification.env"
   chmod 600 "$install_template_sync_target_dir/release.env"
+  chmod 600 "$install_template_sync_target_dir/manual-release-verification.env"
   if ! Scripts/install_private_release_input_templates.sh --source-dir "$install_template_source_dir" --target-dir "$install_template_sync_target_dir" >"$install_template_test_dir/install-sync.log" 2>&1; then
     printf 'FAIL: Private release input template installer must sync missing keys into existing private files\n'
     sed 's/^/  /' "$install_template_test_dir/install-sync.log"
@@ -5872,8 +5874,24 @@ EOF
       printf 'FAIL: Private release input template installer must append missing release env keys\n'
       failures=$((failures + 1))
     fi
+    if ! grep -q '^MANUAL_REAL_IPHONE_MODEL="iPhone 16 Pro"' "$install_template_sync_target_dir/manual-release-verification.env"; then
+      printf 'FAIL: Private release input template installer must preserve existing manual evidence values\n'
+      failures=$((failures + 1))
+    fi
+    if ! grep -q '^MANUAL_AIRPRINT_RULER_MEASURED_INCHES=""' "$install_template_sync_target_dir/manual-release-verification.env"; then
+      printf 'FAIL: Private release input template installer must append missing manual evidence keys\n'
+      failures=$((failures + 1))
+    fi
+    if ! grep -qF '# Required: decimal inches within 0.0625 of MANUAL_AIRPRINT_RULER_TARGET_INCHES.' "$install_template_sync_target_dir/manual-release-verification.env"; then
+      printf 'FAIL: Private release input template installer must append manual evidence guidance with missing keys\n'
+      failures=$((failures + 1))
+    fi
     if ! compgen -G "$install_template_sync_target_dir/release.env.bak.*" >/dev/null; then
       printf 'FAIL: Private release input template installer must back up existing release.env before appending missing keys\n'
+      failures=$((failures + 1))
+    fi
+    if ! compgen -G "$install_template_sync_target_dir/manual-release-verification.env.bak.*" >/dev/null; then
+      printf 'FAIL: Private release input template installer must back up existing manual evidence before appending missing keys\n'
       failures=$((failures + 1))
     fi
   fi

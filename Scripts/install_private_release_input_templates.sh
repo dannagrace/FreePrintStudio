@@ -154,13 +154,38 @@ sync_missing_template_assignments() {
       key = assignment_key($0)
       if (key != "") {
         if (!(key in existing)) {
+          for (idx = 1; idx <= pending_guidance_count; idx += 1) {
+            print pending_guidance[idx]
+          }
           print $0
         }
+        pending_guidance_count = 0
+        next
+      }
+      if ($0 ~ /^# Required:/) {
+        pending_guidance_count += 1
+        pending_guidance[pending_guidance_count] = $0
+      } else {
+        pending_guidance_count = 0
       }
     }
   ' "$target_path" "$source_path" >"$missing_path"
 
-  missing_count="$(wc -l <"$missing_path" | tr -d '[:space:]')"
+  missing_count="$(
+    awk '
+      {
+        line = $0
+        sub(/^[[:space:]]+/, "", line)
+        sub(/^export[[:space:]]+/, "", line)
+        if (line ~ /^[A-Za-z_][A-Za-z0-9_]*=/) {
+          count += 1
+        }
+      }
+      END {
+        print count + 0
+      }
+    ' "$missing_path"
+  )"
   if [[ "$missing_count" -gt 0 ]]; then
     backup_existing_private_file "$target_path" "$label"
     {
