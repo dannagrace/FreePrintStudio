@@ -3711,6 +3711,39 @@ check_contains "Scripts/generate_app_review_submission_readiness_report.sh" "Scr
 check_contains "Scripts/generate_app_review_submission_readiness_report.sh" "Missing Release Input Fields" "App Review submission readiness report must surface missing release input fields"
 check_contains "Scripts/generate_app_review_submission_readiness_report.sh" "processed App Store Connect build number" "App Review submission readiness report must warn that selected-build placeholders must be replaced"
 check_contains "Scripts/generate_app_review_submission_readiness_report.sh" "redacted" "App Review submission readiness report must avoid printing private release values"
+check_file "Scripts/validate_app_review_submission_readiness_report.sh" "App Review submission readiness report validator is required"
+if [[ -f "Scripts/validate_app_review_submission_readiness_report.sh" && ! -x "Scripts/validate_app_review_submission_readiness_report.sh" ]]; then
+  printf 'FAIL: App Review submission readiness report validator must be executable (Scripts/validate_app_review_submission_readiness_report.sh)\n'
+  failures=$((failures + 1))
+fi
+check_contains "Scripts/validate_app_store_submission_packet.sh" "validate_app_review_submission_readiness_report.sh" "Submission packet validator must validate App Review submission readiness report coverage"
+if [[ -x "Scripts/validate_app_review_submission_readiness_report.sh" ]]; then
+  review_submission_report_validator_test_dir="$(mktemp -d)"
+  review_submission_report_actions="$review_submission_report_validator_test_dir/external-readiness-actions.tsv"
+  review_submission_report_output="$review_submission_report_validator_test_dir/app-review-submission-readiness-report.md"
+  review_submission_report_log="$review_submission_report_validator_test_dir/validation.log"
+  cat >"$review_submission_report_actions" <<'EOF'
+category	severity	owner	field	target	item	next_action	validation_command
+App Review Contact	blocker	Release owner	APP_REVIEW_CONTACT_EMAIL	Config/release.env	APP_REVIEW_CONTACT_EMAIL is missing	Fill App Review contact fields in untracked Config/release.env.	Scripts/validate_app_review_contact.sh
+Manual Verification	blocker	QA/release owner	MANUAL_TESTFLIGHT_PRINT_WORKFLOW	Config/manual-release-verification.env	TestFlight print workflow result is missing	Record manual evidence in Config/manual-release-verification.env.	APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/validate_manual_release_verification.sh
+App Store Connect	blocker	App Store Connect account holder	APP_STORE_CONNECT_API_KEY_JSON or ASC_KEY_ID/ASC_ISSUER_ID/ASC_KEY_PATH	Config/release.env	Fastlane App Store Connect API credentials are not configured	Configure App Store Connect credentials.	Scripts/check_app_store_connect_credentials.sh
+EOF
+  Scripts/generate_app_review_submission_readiness_report.sh "$review_submission_report_output" >/dev/null
+  if ! Scripts/validate_app_review_submission_readiness_report.sh "$review_submission_report_actions" "$review_submission_report_output" >"$review_submission_report_log" 2>&1; then
+    printf 'FAIL: App Review submission readiness report validator must accept the generated report for matching final submission action fields\n'
+    cat "$review_submission_report_log"
+    failures=$((failures + 1))
+  fi
+  perl -0pi -e 's/^\| App Review contact .*?\n//m' "$review_submission_report_output"
+  if Scripts/validate_app_review_submission_readiness_report.sh "$review_submission_report_actions" "$review_submission_report_output" >"$review_submission_report_log" 2>&1; then
+    printf 'FAIL: App Review submission readiness report validator must reject reports missing required final submission action fields\n'
+    failures=$((failures + 1))
+  elif ! grep -q 'APP_REVIEW_CONTACT_EMAIL' "$review_submission_report_log"; then
+    printf 'FAIL: App Review submission readiness report validator must identify the missing final submission action field\n'
+    failures=$((failures + 1))
+  fi
+  rm -rf "$review_submission_report_validator_test_dir"
+fi
 selected_build_report_placeholder_test_dir="$(mktemp -d)"
 selected_build_asc_report="$selected_build_report_placeholder_test_dir/app-store-connect.md"
 selected_build_asc_lowercase_report="$selected_build_report_placeholder_test_dir/app-store-connect-lowercase.md"
