@@ -8,6 +8,7 @@ packet_dir="${FREEPRINTSTUDIO_HANDOFF_PACKET_DIR:-build/CISubmissionPacket}"
 readiness_log="${FREEPRINTSTUDIO_HANDOFF_READINESS_LOG:-build/release-handoff-readiness.txt}"
 summary_path="${FREEPRINTSTUDIO_HANDOFF_SUMMARY_PATH:-build/release-handoff-summary.tsv}"
 brief_path="${FREEPRINTSTUDIO_HANDOFF_BRIEF_PATH:-build/release-handoff-brief.md}"
+release_input_status_path="${FREEPRINTSTUDIO_HANDOFF_RELEASE_INPUT_STATUS_PATH:-build/release-handoff-input-status.txt}"
 input_todo_path="${FREEPRINTSTUDIO_HANDOFF_INPUT_TODO_PATH:-build/release-input-todo.md}"
 phase_plan_path="${FREEPRINTSTUDIO_HANDOFF_PHASE_PLAN_PATH:-build/release-phase-plan.md}"
 owner_action_dir="${FREEPRINTSTUDIO_HANDOFF_OWNER_ACTION_DIR:-build/release-owner-actions}"
@@ -25,6 +26,7 @@ Connect account work:
   - downloads and validates the latest successful CI submission packet
   - verifies the downloaded packet provenance matches the local HEAD
   - validates the CI external-readiness-actions.tsv manifest
+  - writes a redacted release input status report
   - runs the App Store readiness audit and surfaces remaining blockers
   - writes build/release-handoff-summary.tsv with CI packet and readiness status
   - writes build/release-handoff-brief.md for release owner handoff
@@ -39,6 +41,35 @@ provenance_value() {
   local key="$1"
   awk -F '\t' -v key="$key" 'NR > 1 && $1 == key { print $2; found = 1; exit } END { if (!found) exit 1 }' \
     "$packet_dir/release-provenance.tsv"
+}
+
+release_input_summary_value() {
+  local path="$1"
+  local field="$2"
+  local summary_line
+
+  if [[ ! -s "$path" ]]; then
+    printf 'missing'
+    return
+  fi
+
+  summary_line="$(grep -E '^Summary: [0-9]+ missing required release input check\(s\), [0-9]+ missing field/action item\(s\)\.$' "$path" | tail -n 1 || true)"
+  if [[ -z "$summary_line" ]]; then
+    printf 'missing'
+    return
+  fi
+
+  case "$field" in
+    checks)
+      sed -E 's/^Summary: ([0-9]+) missing required release input check\(s\), ([0-9]+) missing field\/action item\(s\)\.$/\1/' <<<"$summary_line"
+      ;;
+    fields)
+      sed -E 's/^Summary: ([0-9]+) missing required release input check\(s\), ([0-9]+) missing field\/action item\(s\)\.$/\2/' <<<"$summary_line"
+      ;;
+    *)
+      printf 'missing'
+      ;;
+  esac
 }
 
 external_action_count() {
@@ -113,6 +144,8 @@ write_handoff_summary() {
   local external_action_total
   local external_action_blockers
   local external_action_warnings
+  local release_input_missing_checks
+  local release_input_missing_fields
   local ci_local_readiness_blocker_delta
   local ci_local_readiness_warning_delta
 
@@ -126,6 +159,8 @@ write_handoff_summary() {
   external_action_total="$(external_action_count)"
   external_action_blockers="$(external_action_count blocker)"
   external_action_warnings="$(external_action_count warning)"
+  release_input_missing_checks="$(release_input_summary_value "$release_input_status_path" checks)"
+  release_input_missing_fields="$(release_input_summary_value "$release_input_status_path" fields)"
   ci_local_readiness_blocker_delta="$((readiness_blockers - ci_readiness_blockers))"
   ci_local_readiness_warning_delta="$((readiness_warnings - ci_readiness_warnings))"
 
@@ -140,6 +175,10 @@ write_handoff_summary() {
     printf 'packet_github_sha\t%s\n' "$packet_github_sha"
     printf 'packet_github_run_url\t%s\n' "$packet_github_run_url"
     printf 'handoff_brief\t%s\n' "$brief_path"
+    printf 'release_input_status_path\t%s\n' "$release_input_status_path"
+    printf 'release_input_status\t%s\n' "$release_input_status"
+    printf 'release_input_missing_checks\t%s\n' "$release_input_missing_checks"
+    printf 'release_input_missing_fields\t%s\n' "$release_input_missing_fields"
     printf 'release_input_todo\t%s\n' "$input_todo_path"
     printf 'release_phase_plan\t%s\n' "$phase_plan_path"
     printf 'owner_action_dir\t%s\n' "$owner_action_dir"
@@ -172,6 +211,8 @@ write_handoff_brief() {
   local external_action_total
   local external_action_blockers
   local external_action_warnings
+  local release_input_missing_checks
+  local release_input_missing_fields
   local ci_local_readiness_blocker_delta
   local ci_local_readiness_warning_delta
 
@@ -185,6 +226,8 @@ write_handoff_brief() {
   external_action_total="$(external_action_count)"
   external_action_blockers="$(external_action_count blocker)"
   external_action_warnings="$(external_action_count warning)"
+  release_input_missing_checks="$(release_input_summary_value "$release_input_status_path" checks)"
+  release_input_missing_fields="$(release_input_summary_value "$release_input_status_path" fields)"
   ci_local_readiness_blocker_delta="$((readiness_blockers - ci_readiness_blockers))"
   ci_local_readiness_warning_delta="$((readiness_warnings - ci_readiness_warnings))"
 
@@ -204,6 +247,15 @@ write_handoff_brief() {
     printf '| CI packet | %s | %s | `%s` |\n' "$ci_readiness_blockers" "$ci_readiness_warnings" "$ci_readiness_log"
     printf '| Local preflight | %s | %s | `%s` |\n' "$readiness_blockers" "$readiness_warnings" "$readiness_log"
     printf '| External actions | %s | %s | `%s` (%s total) |\n\n' "$external_action_blockers" "$external_action_warnings" "$external_actions_path" "$external_action_total"
+
+    printf '## Release Input Status\n\n'
+    printf '| Metric | Value |\n'
+    printf '| --- | --- |\n'
+    printf '| Status | `%s` |\n' "$release_input_status"
+    printf '| Missing required release input checks | %s |\n' "$release_input_missing_checks"
+    printf '| Missing field/action items | %s |\n' "$release_input_missing_fields"
+    printf '| Log | `%s` |\n\n' "$release_input_status_path"
+    printf 'This redacted status includes final submission guards such as `APP_STORE_BUILD_NUMBER` and `CONFIRM_SUBMIT_FOR_REVIEW`, so it can show required final handoff inputs that are not readiness blockers yet.\n\n'
 
     printf '## CI vs Local Readiness Delta\n\n'
     printf '| Metric | Local - CI |\n'
@@ -310,6 +362,7 @@ write_handoff_brief() {
     printf '\n## Primary Action Files\n\n'
     printf -- '- Machine summary: `%s`\n' "$summary_path"
     printf -- '- Human brief: `%s`\n' "$brief_path"
+    printf -- '- Release input status: `%s`\n' "$release_input_status_path"
     printf -- '- Release input TODO: `%s`\n' "$input_todo_path"
     printf -- '- Release phase plan: `%s`\n' "$phase_plan_path"
     printf -- '- Per-owner action briefs: `%s`\n' "$owner_action_dir"
@@ -363,6 +416,12 @@ Scripts/generate_release_owner_action_briefs.sh "$external_actions_path" "$owner
 Scripts/validate_release_owner_action_briefs.sh "$external_actions_path" "$owner_action_dir"
 Scripts/generate_private_release_input_templates.sh "$external_actions_path" "$private_template_dir"
 Scripts/validate_private_release_input_templates.sh "$external_actions_path" "$private_template_dir"
+
+mkdir -p "$(dirname "$release_input_status_path")"
+set +e
+Scripts/print_release_input_status.sh --strict >"$release_input_status_path" 2>&1
+release_input_status="$?"
+set -e
 
 mkdir -p "$(dirname "$readiness_log")"
 set +e

@@ -4608,14 +4608,20 @@ check_contains "Scripts/validate_release_handoff_summary.sh" "readiness_blockers
 check_contains "Scripts/validate_release_handoff_summary.sh" "ci_local_readiness_blocker_delta" "Release handoff summary validator must check CI/local blocker deltas"
 check_contains "Scripts/validate_release_handoff_summary.sh" "ci_local_readiness_warning_delta" "Release handoff summary validator must check CI/local warning deltas"
 check_contains "Scripts/validate_release_handoff_summary.sh" "release_input_todo" "Release handoff summary validator must require the generated release input TODO"
+check_contains "Scripts/validate_release_handoff_summary.sh" "release_input_status_path" "Release handoff summary validator must require the redacted release input status report"
+check_contains "Scripts/validate_release_handoff_summary.sh" "release_input_missing_checks" "Release handoff summary validator must verify missing release input check counts"
+check_contains "Scripts/validate_release_handoff_summary.sh" "release_input_missing_fields" "Release handoff summary validator must verify missing release input field/action counts"
 if [[ -x "Scripts/validate_release_handoff_summary.sh" ]]; then
   handoff_summary_test_dir="$(mktemp -d)"
   handoff_summary_path="$handoff_summary_test_dir/release-handoff-summary.tsv"
   handoff_delta_summary_path="$handoff_summary_test_dir/release-handoff-summary-bad-delta.tsv"
+  handoff_release_input_summary_path="$handoff_summary_test_dir/release-handoff-summary-bad-release-input.tsv"
   handoff_ci_readiness_path="$handoff_summary_test_dir/ci-readiness.txt"
   handoff_local_readiness_path="$handoff_summary_test_dir/local-readiness.txt"
   handoff_actions_path="$handoff_summary_test_dir/external-readiness-actions.tsv"
   handoff_input_todo_path="$handoff_summary_test_dir/release-input-todo.md"
+  handoff_phase_plan_path="$handoff_summary_test_dir/release-phase-plan.md"
+  handoff_release_input_status_path="$handoff_summary_test_dir/release-handoff-input-status.txt"
   handoff_summary_log="$handoff_summary_test_dir/validation.log"
   cat >"$handoff_ci_readiness_path" <<'EOF'
 BLOCKED: CI blocker
@@ -4633,6 +4639,11 @@ App Store Connect	warning	Release owner	App Store Connect App Store Connect stat
 EOF
   printf '# Handoff Brief\n' >"$handoff_summary_test_dir/release-handoff-brief.md"
   printf '# Release Input TODO\n' >"$handoff_input_todo_path"
+  printf '# Release Phase Plan\n' >"$handoff_phase_plan_path"
+  cat >"$handoff_release_input_status_path" <<'EOF'
+== Release Input Status ==
+Summary: 2 missing required release input check(s), 5 missing field/action item(s).
+EOF
   cat >"$handoff_summary_path" <<EOF
 key	value
 generated_at	2026-06-14T00:00:00Z
@@ -4644,6 +4655,11 @@ packet_github_sha	abcdef
 packet_github_run_url	https://github.com/dannagrace/FreePrintStudio/actions/runs/1
 handoff_brief	$handoff_summary_test_dir/release-handoff-brief.md
 release_input_todo	$handoff_input_todo_path
+release_phase_plan	$handoff_phase_plan_path
+release_input_status_path	$handoff_release_input_status_path
+release_input_status	1
+release_input_missing_checks	2
+release_input_missing_fields	5
 ci_readiness_log	$handoff_ci_readiness_path
 ci_readiness_blockers	1
 ci_readiness_warnings	1
@@ -4676,6 +4692,11 @@ packet_github_sha	abcdef
 packet_github_run_url	https://github.com/dannagrace/FreePrintStudio/actions/runs/1
 handoff_brief	$handoff_summary_test_dir/release-handoff-brief.md
 release_input_todo	$handoff_input_todo_path
+release_phase_plan	$handoff_phase_plan_path
+release_input_status_path	$handoff_release_input_status_path
+release_input_status	1
+release_input_missing_checks	2
+release_input_missing_fields	5
 ci_readiness_log	$handoff_ci_readiness_path
 ci_readiness_blockers	1
 ci_readiness_warnings	1
@@ -4697,6 +4718,43 @@ EOF
     printf 'FAIL: Release handoff summary validator must explain CI/local blocker delta mismatches\n'
     failures=$((failures + 1))
   fi
+  cat >"$handoff_release_input_summary_path" <<EOF
+key	value
+generated_at	2026-06-14T00:00:00Z
+handoff_status	blocked
+local_head	abcdef
+packet_dir	$handoff_summary_test_dir
+packet_git_commit	abcdef
+packet_github_sha	abcdef
+packet_github_run_url	https://github.com/dannagrace/FreePrintStudio/actions/runs/1
+handoff_brief	$handoff_summary_test_dir/release-handoff-brief.md
+release_input_todo	$handoff_input_todo_path
+release_phase_plan	$handoff_phase_plan_path
+release_input_status_path	$handoff_release_input_status_path
+release_input_status	1
+release_input_missing_checks	2
+release_input_missing_fields	4
+ci_readiness_log	$handoff_ci_readiness_path
+ci_readiness_blockers	1
+ci_readiness_warnings	1
+external_readiness_actions	$handoff_actions_path
+external_action_total	2
+external_action_blockers	1
+external_action_warnings	1
+readiness_log	$handoff_local_readiness_path
+readiness_status	1
+readiness_blockers	1
+readiness_warnings	0
+ci_local_readiness_blocker_delta	0
+ci_local_readiness_warning_delta	-1
+EOF
+  if Scripts/validate_release_handoff_summary.sh "$handoff_release_input_summary_path" >"$handoff_summary_log" 2>&1; then
+    printf 'FAIL: Release handoff summary validator must reject mismatched release input missing field counts\n'
+    failures=$((failures + 1))
+  elif ! grep -q 'release_input_missing_fields' "$handoff_summary_log"; then
+    printf 'FAIL: Release handoff summary validator must explain release input missing field count mismatches\n'
+    failures=$((failures + 1))
+  fi
   rm -rf "$handoff_summary_test_dir"
 fi
 check_file "Scripts/validate_release_handoff_brief.sh" "Release handoff brief validator is required"
@@ -4710,6 +4768,9 @@ check_contains "Scripts/validate_release_handoff_brief.sh" "CI Packet SHA" "Rele
 check_contains "Scripts/validate_release_handoff_brief.sh" "release-provenance.tsv" "Release handoff brief validator must compare source metadata with CI provenance"
 check_contains "Scripts/validate_release_handoff_brief.sh" "Primary Action Files" "Release handoff brief validator must require primary action file references"
 check_contains "Scripts/validate_release_handoff_brief.sh" "Next Commands" "Release handoff brief validator must require next command guidance"
+check_contains "Scripts/validate_release_handoff_brief.sh" "Release Input Status" "Release handoff brief validator must require the release input status section"
+check_contains "Scripts/validate_release_handoff_brief.sh" "Missing required release input checks" "Release handoff brief validator must require missing release input check counts"
+check_contains "Scripts/validate_release_handoff_brief.sh" "Missing field/action items" "Release handoff brief validator must require missing release input field/action counts"
 check_contains "Scripts/validate_release_handoff_brief.sh" "Team ID placeholder replacement guidance" "Release handoff brief validator must require Team ID placeholder replacement guidance"
 check_contains "Scripts/validate_release_handoff_brief.sh" "Fastlane Apple ID placeholder replacement guidance" "Release handoff brief validator must require Fastlane Apple ID placeholder replacement guidance"
 check_contains "Scripts/preflight_release_handoff.sh" 'Scripts/validate_release_handoff_brief.sh "$external_actions_path" "$brief_path"' "Release handoff preflight must validate generated handoff briefs"
@@ -4766,6 +4827,17 @@ EOF
 | Local preflight | 1 | 1 | `local-readiness.txt` |
 | External actions | 1 | 1 | `external-readiness-actions.tsv` (2 total) |
 
+## Release Input Status
+
+| Metric | Value |
+| --- | --- |
+| Status | `1` |
+| Missing required release input checks | 2 |
+| Missing field/action items | 5 |
+| Log | `release-handoff-input-status.txt` |
+
+This redacted status includes final submission guards such as `APP_STORE_BUILD_NUMBER` and `CONFIRM_SUBMIT_FOR_REVIEW`.
+
 ## CI-only Readiness Detail
 
 | Severity | Item |
@@ -4803,6 +4875,7 @@ EOF
 
 - Machine summary: `release-handoff-summary.tsv`
 - Human brief: `release-handoff-brief.md`
+- Release input status: `release-handoff-input-status.txt`
 - Release input TODO: `release-input-todo.md`
 - Release phase plan: `release-phase-plan.md`
 - Per-owner action briefs: `release-owner-actions`
@@ -4882,6 +4955,15 @@ EOF
     failures=$((failures + 1))
   elif ! grep -q 'Readiness Counts mismatch' "$handoff_brief_log"; then
     printf 'FAIL: Release handoff brief validator must identify readiness count mismatches\n'
+    failures=$((failures + 1))
+  fi
+  cp "$handoff_brief_path" "$handoff_brief_bad"
+  perl -0pi -e 's/^## Release Input Status\n\n\| Metric \| Value \|\n\| --- \| --- \|\n\| Status \| `1` \|\n\| Missing required release input checks \| 2 \|\n\| Missing field\/action items \| 5 \|\n\| Log \| `release-handoff-input-status\.txt` \|\n\nThis redacted status includes final submission guards such as `APP_STORE_BUILD_NUMBER` and `CONFIRM_SUBMIT_FOR_REVIEW`\.\n\n//m' "$handoff_brief_bad"
+  if Scripts/validate_release_handoff_brief.sh "$handoff_brief_actions" "$handoff_brief_bad" "$handoff_brief_ci_readiness" "$handoff_brief_local_readiness" >"$handoff_brief_log" 2>&1; then
+    printf 'FAIL: Release handoff brief validator must reject a missing release input status section\n'
+    failures=$((failures + 1))
+  elif ! grep -q 'Release Input Status' "$handoff_brief_log"; then
+    printf 'FAIL: Release handoff brief validator must identify missing release input status sections\n'
     failures=$((failures + 1))
   fi
   cp "$handoff_brief_path" "$handoff_brief_bad"
@@ -5756,6 +5838,10 @@ check_contains "Scripts/preflight_release_handoff.sh" 'Scripts/generate_release_
 check_contains "Scripts/preflight_release_handoff.sh" "write_handoff_brief" "Release handoff preflight must generate the handoff brief after readiness audit"
 check_contains "Scripts/preflight_release_handoff.sh" "handoff_brief" "Release handoff summary must record the human-readable handoff brief path"
 check_contains "Scripts/preflight_release_handoff.sh" "release_input_todo" "Release handoff summary must record the release input TODO path"
+check_contains "Scripts/preflight_release_handoff.sh" "release-handoff-input-status.txt" "Release handoff preflight must write a redacted release input status report"
+check_contains "Scripts/preflight_release_handoff.sh" "release_input_status_path" "Release handoff summary must record the release input status report path"
+check_contains "Scripts/preflight_release_handoff.sh" "release_input_missing_checks" "Release handoff summary must record missing release input check counts"
+check_contains "Scripts/preflight_release_handoff.sh" "release_input_missing_fields" "Release handoff summary must record missing release input field/action counts"
 check_contains "Scripts/preflight_release_handoff.sh" "packet_github_run_url" "Release handoff summary must record the CI packet run URL"
 check_contains "Scripts/preflight_release_handoff.sh" "readiness_blockers" "Release handoff summary must record readiness blocker count"
 check_contains "Scripts/preflight_release_handoff.sh" "readiness_warnings" "Release handoff summary must record readiness warning count"
@@ -5768,6 +5854,9 @@ check_contains "Scripts/preflight_release_handoff.sh" "external_action_warnings"
 check_contains "Scripts/preflight_release_handoff.sh" "ci_local_readiness_blocker_delta" "Release handoff summary must record the CI/local blocker delta"
 check_contains "Scripts/preflight_release_handoff.sh" "ci_local_readiness_warning_delta" "Release handoff summary must record the CI/local warning delta"
 check_contains "Scripts/preflight_release_handoff.sh" "CI vs Local Readiness Delta" "Release handoff brief must explain CI/local readiness differences"
+check_contains "Scripts/preflight_release_handoff.sh" "Release Input Status" "Release handoff brief must include release input status before readiness deltas"
+check_contains "Scripts/preflight_release_handoff.sh" "Missing required release input checks" "Release handoff brief must include missing release input check counts"
+check_contains "Scripts/preflight_release_handoff.sh" "Missing field/action items" "Release handoff brief must include missing release input field/action counts"
 check_contains "Scripts/preflight_release_handoff.sh" "CI-only Readiness Detail" "Release handoff brief must list readiness lines present only in CI"
 check_contains "Scripts/preflight_release_handoff.sh" "Local-only Readiness Detail" "Release handoff brief must list readiness lines present only in local preflight"
 check_contains "Scripts/preflight_release_handoff.sh" "External Action Summary" "Release handoff brief must summarize external action categories"
@@ -5803,6 +5892,8 @@ check_contains "README.md" "external action blocker count" "README must document
 check_contains "README.md" "external-readiness-actions.tsv" "README must document the handoff external readiness action manifest"
 check_contains "README.md" "CI readiness blocker count" "README must document CI readiness counts in the handoff summary"
 check_contains "README.md" "CI/local readiness delta" "README must document CI/local readiness delta tracking in the handoff summary"
+check_contains "README.md" "release-handoff-input-status.txt" "README must document the handoff release input status report"
+check_contains "README.md" "release input missing check count" "README must document release input missing counts in the handoff summary"
 check_contains "AppStore/release-checklist.md" "Scripts/preflight_release_handoff.sh" "Release checklist must document the release handoff preflight"
 check_contains "AppStore/release-checklist.md" "release-handoff-summary.tsv" "Release checklist must document the release handoff summary"
 check_contains "AppStore/release-checklist.md" "Scripts/validate_release_handoff_summary.sh" "Release checklist must document validating the release handoff summary"
@@ -5818,6 +5909,8 @@ check_contains "AppStore/release-checklist.md" "external action blocker count" "
 check_contains "AppStore/release-checklist.md" "external-readiness-actions.tsv" "Release checklist must document the handoff external readiness action manifest"
 check_contains "AppStore/release-checklist.md" "CI readiness blocker count" "Release checklist must document CI readiness counts in the handoff summary"
 check_contains "AppStore/release-checklist.md" "CI/local readiness delta" "Release checklist must document CI/local readiness delta tracking"
+check_contains "AppStore/release-checklist.md" "release-handoff-input-status.txt" "Release checklist must document the handoff release input status report"
+check_contains "AppStore/release-checklist.md" "release input missing check count" "Release checklist must document release input missing counts in the handoff summary"
 check_contains "FreePrintStudio/Resources/Info.plist" "CFBundleDisplayName" "Info.plist must define display name"
 check_contains "FreePrintStudio/Resources/Info.plist" "ITSAppUsesNonExemptEncryption" "Info.plist must declare non-exempt encryption usage"
 check_plist_raw_value "FreePrintStudio/Resources/Info.plist" "ITSAppUsesNonExemptEncryption" "false" "Info.plist must declare no non-exempt encryption"

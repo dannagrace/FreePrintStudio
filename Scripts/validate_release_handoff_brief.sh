@@ -363,6 +363,7 @@ awk -F '\t' '$1 == "owner" { print $2 "\t" $3 "\t" $4 "\t" $5 }' "$temp_dir/acti
 require_contains "# FreePrint Studio Release Handoff Brief" "release handoff brief title"
 validate_source_metadata
 require_contains "## Readiness Counts" "Readiness Counts section"
+require_contains "## Release Input Status" "Release Input Status section"
 require_contains "## CI-only Readiness Detail" "CI-only Readiness Detail section"
 require_contains "## Local-only Readiness Detail" "Local-only Readiness Detail section"
 require_contains "## External Action Summary" "External Action Summary section"
@@ -370,6 +371,26 @@ require_contains "## Owner Summary" "Owner Summary section"
 require_contains "## External Action Detail" "External Action Detail section"
 require_contains "## Primary Action Files" "Primary Action Files section"
 require_contains "## Next Commands" "Next Commands section"
+require_section_contains \
+  "Release Input Status" \
+  "Missing required release input checks" \
+  "Missing required release input checks row"
+require_section_contains \
+  "Release Input Status" \
+  "Missing field/action items" \
+  "Missing field/action items row"
+require_section_contains \
+  "Release Input Status" \
+  "release-handoff-input-status.txt" \
+  "release input status log reference"
+require_section_contains \
+  "Release Input Status" \
+  "APP_STORE_BUILD_NUMBER" \
+  "selected App Store build final guard guidance"
+require_section_contains \
+  "Release Input Status" \
+  "CONFIRM_SUBMIT_FOR_REVIEW" \
+  "final App Review submission confirmation guard guidance"
 require_placeholder_guidance \
   "PROCESSED_BUILD_NUMBER" \
   "Replace \`PROCESSED_BUILD_NUMBER\` with the processed App Store Connect build selected for review." \
@@ -386,6 +407,7 @@ require_placeholder_guidance \
 for required_action_file in \
   "release-handoff-summary.tsv" \
   "release-handoff-brief.md" \
+  "release-handoff-input-status.txt" \
   "release-input-todo.md" \
   "release-phase-plan.md" \
   "release-owner-actions" \

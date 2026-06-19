@@ -96,6 +96,30 @@ external_action_count() {
   ' "$actions_path"
 }
 
+release_input_summary_count() {
+  local status_path="$1"
+  local field="$2"
+  local summary_line
+
+  summary_line="$(grep -E '^Summary: [0-9]+ missing required release input check\(s\), [0-9]+ missing field/action item\(s\)\.$' "$status_path" | tail -n 1 || true)"
+  if [[ -z "$summary_line" ]]; then
+    printf 'missing'
+    return
+  fi
+
+  case "$field" in
+    checks)
+      sed -E 's/^Summary: ([0-9]+) missing required release input check\(s\), ([0-9]+) missing field\/action item\(s\)\.$/\1/' <<<"$summary_line"
+      ;;
+    fields)
+      sed -E 's/^Summary: ([0-9]+) missing required release input check\(s\), ([0-9]+) missing field\/action item\(s\)\.$/\2/' <<<"$summary_line"
+      ;;
+    *)
+      printf 'missing'
+      ;;
+  esac
+}
+
 compare_count() {
   local key="$1"
   local expected="$2"
@@ -121,6 +145,7 @@ for key in \
 done
 
 require_file_key "handoff_brief"
+require_file_key "release_input_status_path"
 require_file_key "release_input_todo"
 require_file_key "release_phase_plan"
 require_file_key "ci_readiness_log"
@@ -130,6 +155,9 @@ require_file_key "readiness_log"
 for key in \
   ci_readiness_blockers \
   ci_readiness_warnings \
+  release_input_status \
+  release_input_missing_checks \
+  release_input_missing_fields \
   external_action_total \
   external_action_blockers \
   external_action_warnings \
@@ -163,6 +191,7 @@ fi
 ci_readiness_log="$(summary_value "ci_readiness_log" 2>/dev/null || true)"
 readiness_log="$(summary_value "readiness_log" 2>/dev/null || true)"
 external_actions_path="$(summary_value "external_readiness_actions" 2>/dev/null || true)"
+release_input_status_path="$(summary_value "release_input_status_path" 2>/dev/null || true)"
 
 if [[ -s "$ci_readiness_log" ]]; then
   compare_count "ci_readiness_blockers" "$(readiness_count "$ci_readiness_log" "BLOCKED")"
@@ -172,6 +201,11 @@ fi
 if [[ -s "$readiness_log" ]]; then
   compare_count "readiness_blockers" "$(readiness_count "$readiness_log" "BLOCKED")"
   compare_count "readiness_warnings" "$(readiness_count "$readiness_log" "WARN")"
+fi
+
+if [[ -s "$release_input_status_path" ]]; then
+  compare_count "release_input_missing_checks" "$(release_input_summary_count "$release_input_status_path" checks)"
+  compare_count "release_input_missing_fields" "$(release_input_summary_count "$release_input_status_path" fields)"
 fi
 
 ci_readiness_blockers="$(summary_value "ci_readiness_blockers" 2>/dev/null || true)"
