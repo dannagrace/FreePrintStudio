@@ -14,6 +14,10 @@ if [[ ! -s "$actions_path" ]]; then
   exit 1
 fi
 
+STANDARD_RELEASE_ENV_NAMES="DEVELOPMENT_TEAM_ID ALLOW_PROVISIONING_UPDATES APP_STORE_CONNECT_API_KEY_JSON ASC_KEY_ID ASC_ISSUER_ID ASC_KEY_PATH APP_REVIEW_CONTACT_FIRST_NAME APP_REVIEW_CONTACT_LAST_NAME APP_REVIEW_CONTACT_PHONE APP_REVIEW_CONTACT_EMAIL FASTLANE_USER FASTLANE_ITC_TEAM_ID FASTLANE_ITC_TEAM_NAME CONFIRM_UPLOAD_APP_PRIVACY APP_PRIVACY_SKIP_PUBLISH APP_PRIVACY_DETAILS_CONFIRMED_IN_APP_STORE_CONNECT APP_STORE_COMMERCIAL_CONFIG_CONFIRMED_IN_APP_STORE_CONNECT IPA_PATH TESTFLIGHT_CHANGELOG APP_STORE_BUILD_NUMBER CONFIRM_SUBMIT_FOR_REVIEW"
+
+STANDARD_MANUAL_ENV_NAMES="MANUAL_VERIFIER_NAME MANUAL_REAL_IPHONE_MODEL MANUAL_REAL_IPHONE_IOS_VERSION MANUAL_REAL_IPHONE_TEST_DATE MANUAL_REAL_IPHONE_PHOTOS_IMPORT MANUAL_REAL_IPHONE_PDF_EXPORT MANUAL_REAL_IPHONE_PRINT_SHEET MANUAL_AIRPRINT_TEST_DATE MANUAL_AIRPRINT_PRINTER MANUAL_AIRPRINT_EXACT_SIZE MANUAL_AIRPRINT_RULER_TARGET_INCHES MANUAL_AIRPRINT_RULER_MEASURED_INCHES MANUAL_TESTFLIGHT_BUILD_NUMBER MANUAL_TESTFLIGHT_DEVICE MANUAL_TESTFLIGHT_TEST_DATE MANUAL_TESTFLIGHT_INSTALL MANUAL_TESTFLIGHT_PRINT_WORKFLOW MANUAL_IPAD_TESTFLIGHT_DEVICE MANUAL_IPAD_TESTFLIGHT_TEST_DATE MANUAL_IPAD_TESTFLIGHT_INSTALL MANUAL_IPAD_TESTFLIGHT_LAYOUT MANUAL_IPAD_TESTFLIGHT_PRINT_WORKFLOW"
+
 mkdir -p "$output_dir"
 rm -f \
   "$output_dir/index.md" \
@@ -21,7 +25,12 @@ rm -f \
   "$output_dir/manual-release-verification.env"
 
 # Emits MANUAL_AIRPRINT_RULER_TARGET_INCHES="6" when measured ruler evidence is required.
-awk -F '\t' -v output_dir="$output_dir" -v actions_path="$actions_path" -v generated_at="$(date -u '+%Y-%m-%dT%H:%M:%SZ')" '
+awk -F '\t' \
+  -v output_dir="$output_dir" \
+  -v actions_path="$actions_path" \
+  -v generated_at="$(date -u '+%Y-%m-%dT%H:%M:%SZ')" \
+  -v standard_release_env_names="$STANDARD_RELEASE_ENV_NAMES" \
+  -v standard_manual_env_names="$STANDARD_MANUAL_ENV_NAMES" '
   function fail(message) {
     print "FAIL: " message >"/dev/stderr"
     exit 1
@@ -79,11 +88,32 @@ awk -F '\t' -v output_dir="$output_dir" -v actions_path="$actions_path" -v gener
        item ~ /Manual release verification evidence file/)
   }
 
+  function add_standard_env_assignments(names, template_name,   parts, part_count, part_index, candidate) {
+    part_count = split(names, parts, /[[:space:]]+/)
+    for (part_index = 1; part_index <= part_count; part_index += 1) {
+      candidate = parts[part_index]
+      gsub(/^ +| +$/, "", candidate)
+      if (candidate == "") {
+        continue
+      }
+      if (template_name == "release.env") {
+        add_release_env(candidate)
+      } else if (template_name == "manual-release-verification.env") {
+        add_manual_env(candidate)
+      }
+    }
+  }
+
+  BEGIN {
+    add_standard_env_assignments(standard_release_env_names, "release.env")
+    add_standard_env_assignments(standard_manual_env_names, "manual-release-verification.env")
+  }
+
   function write_env_file(path, label, count, names,   idx, name) {
     print "# FreePrint Studio " label "." >path
     print "# Generated At: " generated_at >>path
     print "# Source: " actions_path >>path
-    print "# Install this starter with Scripts/install_private_release_input_templates.sh, then fill real private values locally." >>path
+    print "# Install this complete starter with Scripts/install_private_release_input_templates.sh, then fill real private values locally." >>path
     print "# Keep filled values out of git." >>path
     print "" >>path
 
@@ -146,7 +176,7 @@ awk -F '\t' -v output_dir="$output_dir" -v actions_path="$actions_path" -v gener
     print "- Source: `" actions_path "`" >>index_path
     print "- Output: `private-release-input-templates/`" >>index_path
     print "" >>index_path
-    print "These files are blank private-input starters generated from the current external readiness actions. Install them with `Scripts/install_private_release_input_templates.sh` so existing private values are backed up, missing keys are appended, and installed files keep owner-only permissions. Fill real values locally and keep the filled files out of git." >>index_path
+    print "These files are complete blank private-input starters seeded with the full release input surface and the current external readiness actions. Install them with `Scripts/install_private_release_input_templates.sh` so existing private values are backed up, missing keys are appended, and installed files keep owner-only permissions. Fill real values locally and keep the filled files out of git." >>index_path
     print "" >>index_path
     print "## Templates" >>index_path
     print "" >>index_path

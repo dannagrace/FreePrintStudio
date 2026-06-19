@@ -5304,9 +5304,15 @@ fi
 check_contains "Scripts/generate_private_release_input_templates.sh" "private-release-input-templates" "Private release input template generator must document its output directory"
 check_contains "Scripts/generate_private_release_input_templates.sh" "Private Release Input Templates" "Private release input template generator must write a stable index title"
 check_contains "Scripts/generate_private_release_input_templates.sh" "Scripts/install_private_release_input_templates.sh" "Private release input template generator must direct operators to the safe installer"
+check_contains "Scripts/generate_private_release_input_templates.sh" "STANDARD_RELEASE_ENV_NAMES" "Private release input template generator must include the complete release.env starter surface"
+check_contains "Scripts/generate_private_release_input_templates.sh" "STANDARD_MANUAL_ENV_NAMES" "Private release input template generator must include the complete manual evidence starter surface"
+check_contains "Scripts/generate_private_release_input_templates.sh" "CONFIRM_UPLOAD_APP_PRIVACY" "Private release input template generator must include the App Privacy upload confirmation guard"
+check_contains "Scripts/generate_private_release_input_templates.sh" "CONFIRM_SUBMIT_FOR_REVIEW" "Private release input template generator must include the final App Review submission guard"
 check_contains "Scripts/generate_private_release_input_templates.sh" 'MANUAL_AIRPRINT_RULER_TARGET_INCHES="6"' "Private release input template generator must preserve the ruler target default"
 check_contains "Scripts/validate_private_release_input_templates.sh" "Private release input template count mismatch" "Private release input template validator must compare env assignment counts"
 check_contains "Scripts/validate_private_release_input_templates.sh" "template assignment is missing" "Private release input template validator must verify generated env assignments"
+check_contains "Scripts/validate_private_release_input_templates.sh" "STANDARD_RELEASE_ENV_NAMES" "Private release input template validator must require the complete release.env starter surface"
+check_contains "Scripts/validate_private_release_input_templates.sh" "STANDARD_MANUAL_ENV_NAMES" "Private release input template validator must require the complete manual evidence starter surface"
 check_contains "Scripts/validate_private_release_input_templates.sh" "safe installer command" "Private release input template validator must require safe installer guidance"
 check_contains "Scripts/validate_private_release_input_templates.sh" "unsafe manual copy instructions" "Private release input template validator must reject unsafe manual copy guidance"
 check_contains "Scripts/validate_private_release_input_templates.sh" "selected-build placeholder replacement guidance" "Private release input template validator must require selected-build placeholder replacement guidance"
@@ -5375,12 +5381,16 @@ EOF
       printf 'FAIL: Private release input template index must not recommend unsafe manual copy commands\n'
       failures=$((failures + 1))
     fi
-    if ! grep -Fq '| `release.env` | [release.env](release.env) | 5 |' "$private_template_output_dir/index.md"; then
-      printf 'FAIL: Private release input template index must count release.env assignments\n'
+    if ! grep -Fq '| `release.env` | [release.env](release.env) | 21 |' "$private_template_output_dir/index.md"; then
+      printf 'FAIL: Private release input template index must count the complete release.env assignment surface\n'
       failures=$((failures + 1))
     fi
-    if ! grep -Fq '| `manual-release-verification.env` | [manual-release-verification.env](manual-release-verification.env) | 3 |' "$private_template_output_dir/index.md"; then
-      printf 'FAIL: Private release input template index must count manual evidence assignments including ruler target default\n'
+    if ! grep -Fq '| `manual-release-verification.env` | [manual-release-verification.env](manual-release-verification.env) | 22 |' "$private_template_output_dir/index.md"; then
+      printf 'FAIL: Private release input template index must count the complete manual evidence assignment surface\n'
+      failures=$((failures + 1))
+    fi
+    if ! grep -q '^ALLOW_PROVISIONING_UPDATES=""' "$private_template_output_dir/release.env"; then
+      printf 'FAIL: Private release input template must include the provisioning update guard\n'
       failures=$((failures + 1))
     fi
     if ! grep -q '^APP_REVIEW_CONTACT_EMAIL=""' "$private_template_output_dir/release.env"; then
@@ -5393,6 +5403,26 @@ EOF
     fi
     if ! grep -q '^ASC_KEY_ID=""' "$private_template_output_dir/release.env"; then
       printf 'FAIL: Private release input template must expand App Store Connect key id assignment\n'
+      failures=$((failures + 1))
+    fi
+    if ! grep -q '^FASTLANE_USER=""' "$private_template_output_dir/release.env"; then
+      printf 'FAIL: Private release input template must include the Fastlane Apple ID field\n'
+      failures=$((failures + 1))
+    fi
+    if ! grep -q '^CONFIRM_UPLOAD_APP_PRIVACY=""' "$private_template_output_dir/release.env"; then
+      printf 'FAIL: Private release input template must include the App Privacy upload confirmation guard\n'
+      failures=$((failures + 1))
+    fi
+    if ! grep -q '^APP_PRIVACY_SKIP_PUBLISH=""' "$private_template_output_dir/release.env"; then
+      printf 'FAIL: Private release input template must include the App Privacy skip-publish switch\n'
+      failures=$((failures + 1))
+    fi
+    if ! grep -q '^APP_STORE_BUILD_NUMBER=""' "$private_template_output_dir/release.env"; then
+      printf 'FAIL: Private release input template must include the selected App Store build field\n'
+      failures=$((failures + 1))
+    fi
+    if ! grep -q '^CONFIRM_SUBMIT_FOR_REVIEW=""' "$private_template_output_dir/release.env"; then
+      printf 'FAIL: Private release input template must include the final App Review submission guard\n'
       failures=$((failures + 1))
     fi
     if ! grep -q '^MANUAL_REAL_IPHONE_MODEL=""' "$private_template_output_dir/manual-release-verification.env"; then
@@ -5409,7 +5439,7 @@ EOF
     fi
     private_template_bad_dir="$private_template_test_dir/private-release-input-templates-bad"
     cp -R "$private_template_output_dir" "$private_template_bad_dir"
-    perl -0pi -e 's/\| `release\.env` \| \[release\.env\]\(release\.env\) \| 5 \|/\| `release.env` | [release.env](release.env) | 3 |/' "$private_template_bad_dir/index.md"
+    perl -0pi -e 's/\| `release\.env` \| \[release\.env\]\(release\.env\) \| 21 \|/\| `release.env` | [release.env](release.env) | 19 |/' "$private_template_bad_dir/index.md"
     if Scripts/validate_private_release_input_templates.sh "$private_template_actions" "$private_template_bad_dir" >"$private_template_log" 2>&1; then
       printf 'FAIL: Private release input template validator must reject count mismatches\n'
       failures=$((failures + 1))

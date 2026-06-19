@@ -14,6 +14,10 @@ if [[ ! -s "$actions_path" ]]; then
   exit 1
 fi
 
+STANDARD_RELEASE_ENV_NAMES="DEVELOPMENT_TEAM_ID ALLOW_PROVISIONING_UPDATES APP_STORE_CONNECT_API_KEY_JSON ASC_KEY_ID ASC_ISSUER_ID ASC_KEY_PATH APP_REVIEW_CONTACT_FIRST_NAME APP_REVIEW_CONTACT_LAST_NAME APP_REVIEW_CONTACT_PHONE APP_REVIEW_CONTACT_EMAIL FASTLANE_USER FASTLANE_ITC_TEAM_ID FASTLANE_ITC_TEAM_NAME CONFIRM_UPLOAD_APP_PRIVACY APP_PRIVACY_SKIP_PUBLISH APP_PRIVACY_DETAILS_CONFIRMED_IN_APP_STORE_CONNECT APP_STORE_COMMERCIAL_CONFIG_CONFIRMED_IN_APP_STORE_CONNECT IPA_PATH TESTFLIGHT_CHANGELOG APP_STORE_BUILD_NUMBER CONFIRM_SUBMIT_FOR_REVIEW"
+
+STANDARD_MANUAL_ENV_NAMES="MANUAL_VERIFIER_NAME MANUAL_REAL_IPHONE_MODEL MANUAL_REAL_IPHONE_IOS_VERSION MANUAL_REAL_IPHONE_TEST_DATE MANUAL_REAL_IPHONE_PHOTOS_IMPORT MANUAL_REAL_IPHONE_PDF_EXPORT MANUAL_REAL_IPHONE_PRINT_SHEET MANUAL_AIRPRINT_TEST_DATE MANUAL_AIRPRINT_PRINTER MANUAL_AIRPRINT_EXACT_SIZE MANUAL_AIRPRINT_RULER_TARGET_INCHES MANUAL_AIRPRINT_RULER_MEASURED_INCHES MANUAL_TESTFLIGHT_BUILD_NUMBER MANUAL_TESTFLIGHT_DEVICE MANUAL_TESTFLIGHT_TEST_DATE MANUAL_TESTFLIGHT_INSTALL MANUAL_TESTFLIGHT_PRINT_WORKFLOW MANUAL_IPAD_TESTFLIGHT_DEVICE MANUAL_IPAD_TESTFLIGHT_TEST_DATE MANUAL_IPAD_TESTFLIGHT_INSTALL MANUAL_IPAD_TESTFLIGHT_LAYOUT MANUAL_IPAD_TESTFLIGHT_PRINT_WORKFLOW"
+
 failures=0
 
 fail() {
@@ -61,7 +65,9 @@ trap 'rm -rf "$temp_dir"' EXIT
 expected_assignments="$temp_dir/expected-assignments.tsv"
 expected_counts="$temp_dir/expected-counts.tsv"
 
-awk -F '\t' '
+awk -F '\t' \
+  -v standard_release_env_names="$STANDARD_RELEASE_ENV_NAMES" \
+  -v standard_manual_env_names="$STANDARD_MANUAL_ENV_NAMES" '
   function fail(message) {
     print "FAIL: " message >"/dev/stderr"
     exit 1
@@ -115,6 +121,27 @@ awk -F '\t' '
       (field_name == "manual-release-verification.env file" || \
        field_name == "MANUAL_RELEASE_VERIFICATION_PATH" || \
        item ~ /Manual release verification evidence file/)
+  }
+
+  function add_standard_assignments(names, template_name,   parts, part_count, part_index, candidate) {
+    part_count = split(names, parts, /[[:space:]]+/)
+    for (part_index = 1; part_index <= part_count; part_index += 1) {
+      candidate = parts[part_index]
+      gsub(/^ +| +$/, "", candidate)
+      if (candidate == "") {
+        continue
+      }
+      if (template_name == "release.env") {
+        add_assignment("release.env", candidate)
+      } else if (template_name == "manual-release-verification.env") {
+        add_manual_assignment(candidate)
+      }
+    }
+  }
+
+  BEGIN {
+    add_standard_assignments(standard_release_env_names, "release.env")
+    add_standard_assignments(standard_manual_env_names, "manual-release-verification.env")
   }
 
   NR == 1 {
