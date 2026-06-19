@@ -17,6 +17,8 @@ Environment overrides:
   FREEPRINTSTUDIO_RELEASE_BRANCH             Branch, default main
   FREEPRINTSTUDIO_SUBMISSION_PACKET_ARTIFACT Artifact name, default freeprintstudio-app-store-submission-packet
   FREEPRINTSTUDIO_CI_SUBMISSION_PACKET_DIR   Destination, default build/CISubmissionPacket
+  FREEPRINTSTUDIO_CI_PRIVATE_TEMPLATE_DIR    Mirrored local private input templates,
+                                             default build/private-release-input-templates
   FREEPRINTSTUDIO_ARTIFACT_DOWNLOAD_ATTEMPTS Download attempts, default 3
   FREEPRINTSTUDIO_ARTIFACT_DOWNLOAD_TIMEOUT_SECONDS
                                                Per-attempt artifact download timeout, default 180
@@ -46,6 +48,7 @@ workflow="${FREEPRINTSTUDIO_RELEASE_WORKFLOW:-release.yml}"
 branch="${FREEPRINTSTUDIO_RELEASE_BRANCH:-main}"
 artifact_name="${FREEPRINTSTUDIO_SUBMISSION_PACKET_ARTIFACT:-freeprintstudio-app-store-submission-packet}"
 destination="${1:-${FREEPRINTSTUDIO_CI_SUBMISSION_PACKET_DIR:-build/CISubmissionPacket}}"
+local_private_template_dir="${FREEPRINTSTUDIO_CI_PRIVATE_TEMPLATE_DIR:-build/private-release-input-templates}"
 download_attempts="${FREEPRINTSTUDIO_ARTIFACT_DOWNLOAD_ATTEMPTS:-3}"
 download_timeout_seconds="${FREEPRINTSTUDIO_ARTIFACT_DOWNLOAD_TIMEOUT_SECONDS:-180}"
 download_method="${FREEPRINTSTUDIO_ARTIFACT_DOWNLOAD_METHOD:-api}"
@@ -175,6 +178,12 @@ case "$destination" in
     exit 1
     ;;
 esac
+case "$local_private_template_dir" in
+  ""|"/"|"$ROOT_DIR"|"$HOME")
+    printf 'FAIL: Refusing unsafe private template mirror destination: %s\n' "${local_private_template_dir:-empty}" >&2
+    exit 1
+    ;;
+esac
 
 run_info=""
 for attempt in $(seq 1 "$download_attempts"); do
@@ -276,7 +285,12 @@ cp -R "$packet_source"/. "$destination"/
 
 FREEPRINTSTUDIO_SUBMISSION_PACKET_DIR="$destination" Scripts/validate_app_store_submission_packet.sh
 Scripts/validate_release_provenance.sh "$destination/release-provenance.tsv" "$run_sha" "$run_url"
+Scripts/generate_private_release_input_templates.sh "$destination/external-readiness-actions.tsv" "$local_private_template_dir"
+Scripts/validate_private_release_input_templates.sh "$destination/external-readiness-actions.tsv" "$local_private_template_dir"
 
 printf 'Downloaded and validated CI submission packet: %s\n' "$destination"
 printf 'Source run: %s\n' "$run_url"
 printf 'Source SHA: %s\n' "$run_sha"
+printf 'Mirrored local private release input templates: %s\n' "$local_private_template_dir"
+printf 'Install local private release input templates with:\n'
+printf '  Scripts/install_private_release_input_templates.sh --source-dir %s --target-dir Config\n' "$local_private_template_dir"

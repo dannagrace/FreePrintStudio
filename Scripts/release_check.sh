@@ -5603,6 +5603,10 @@ check_contains "AppStore/release-checklist.md" "Scripts/install_private_release_
 check_contains "Scripts/preflight_release_handoff.sh" 'Scripts/generate_private_release_input_templates.sh "$external_actions_path" "$private_template_dir"' "Release handoff preflight must generate private release input templates"
 check_contains "Scripts/preflight_release_handoff.sh" 'Scripts/validate_private_release_input_templates.sh "$external_actions_path" "$private_template_dir"' "Release handoff preflight must validate private release input templates"
 check_contains "Scripts/preflight_release_handoff.sh" "private_template_dir" "Release handoff summary must record the private release input template directory"
+check_contains "Scripts/download_latest_submission_packet.sh" "FREEPRINTSTUDIO_CI_PRIVATE_TEMPLATE_DIR" "CI packet downloader must allow overriding the mirrored local private template directory"
+check_contains "Scripts/download_latest_submission_packet.sh" 'Scripts/generate_private_release_input_templates.sh "$destination/external-readiness-actions.tsv" "$local_private_template_dir"' "CI packet downloader must mirror downloaded private templates into the local handoff template directory"
+check_contains "Scripts/download_latest_submission_packet.sh" 'Scripts/validate_private_release_input_templates.sh "$destination/external-readiness-actions.tsv" "$local_private_template_dir"' "CI packet downloader must validate mirrored local private templates"
+check_contains "Scripts/download_latest_submission_packet.sh" 'Scripts/install_private_release_input_templates.sh --source-dir %s --target-dir Config' "CI packet downloader must print the local private template install command"
 check_contains "README.md" "private-release-input-templates" "README must document private release input template handoff files"
 check_contains "AppStore/release-checklist.md" "private-release-input-templates" "Release checklist must document private release input template handoff files"
 if [[ -x "Scripts/generate_private_release_input_templates.sh" && -x "Scripts/validate_private_release_input_templates.sh" ]]; then
