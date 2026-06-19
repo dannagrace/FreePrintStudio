@@ -2824,6 +2824,40 @@ check_contains "Scripts/generate_app_store_connect_readiness_report.sh" "Scripts
 check_contains "Scripts/generate_app_store_connect_readiness_report.sh" "Scripts/preflight_testflight_upload.sh" "App Store Connect readiness report must reference the TestFlight preflight"
 check_contains "Scripts/generate_app_store_connect_readiness_report.sh" "Scripts/preflight_app_review_submission.sh" "App Store Connect readiness report must reference the App Review preflight"
 check_contains "Scripts/generate_app_store_connect_readiness_report.sh" "redacted" "App Store Connect readiness report must avoid printing private credentials"
+check_file "Scripts/validate_app_store_connect_readiness_report.sh" "App Store Connect readiness report validator is required"
+if [[ -f "Scripts/validate_app_store_connect_readiness_report.sh" && ! -x "Scripts/validate_app_store_connect_readiness_report.sh" ]]; then
+  printf 'FAIL: App Store Connect readiness report validator must be executable (Scripts/validate_app_store_connect_readiness_report.sh)\n'
+  failures=$((failures + 1))
+fi
+check_contains "Scripts/validate_app_store_submission_packet.sh" "validate_app_store_connect_readiness_report.sh" "Submission packet validator must validate App Store Connect readiness report coverage"
+if [[ -x "Scripts/validate_app_store_connect_readiness_report.sh" ]]; then
+  asc_report_validator_test_dir="$(mktemp -d)"
+  asc_report_actions="$asc_report_validator_test_dir/external-readiness-actions.tsv"
+  asc_report_output="$asc_report_validator_test_dir/app-store-connect-readiness-report.md"
+  asc_report_log="$asc_report_validator_test_dir/validation.log"
+  cat >"$asc_report_actions" <<'EOF'
+category	severity	owner	field	target	item	next_action	validation_command
+App Privacy	blocker	App Store Connect account holder	APP_PRIVACY_DETAILS_CONFIRMED_IN_APP_STORE_CONNECT	Config/release.env	Set APP_PRIVACY_DETAILS_CONFIRMED_IN_APP_STORE_CONNECT=1 after App Store Connect App Privacy Details match AppStore/app_privacy_details.json	Confirm App Privacy Details in App Store Connect match AppStore/app_privacy_details.json, then run the App Privacy upload and confirmation checks.	Scripts/validate_app_privacy_connect_entry.sh
+Commercial Configuration	blocker	App Store Connect account holder	APP_STORE_COMMERCIAL_CONFIG_CONFIRMED_IN_APP_STORE_CONNECT	Config/release.env	Set APP_STORE_COMMERCIAL_CONFIG_CONFIRMED_IN_APP_STORE_CONNECT=1 after App Store Connect commercial settings match AppStore/commercial-configuration.md	Apply AppStore/commercial-configuration.md in App Store Connect, then run the commercial configuration confirmation check.	Scripts/validate_commercial_configuration_connect_entry.sh
+App Store Connect	blocker	App Store Connect account holder	APP_STORE_CONNECT_API_KEY_JSON or ASC_KEY_ID/ASC_ISSUER_ID/ASC_KEY_PATH	Config/release.env	Fastlane App Store Connect API credentials are not configured	Configure App Store Connect credentials in untracked Config/release.env, then run the credential check.	Scripts/check_app_store_connect_credentials.sh
+App Store Connect	warning	App Store Connect account holder	App Store Connect app record/TestFlight status	App Store Connect	App Store Connect app record and version require account-specific verification after credentials are configured	After App Store Connect credentials are configured, verify the app record and selected build.	APP_STORE_CONNECT_SKIP_BUILD_CHECK=1 Scripts/check_app_store_connect_state.sh
+EOF
+  Scripts/generate_app_store_connect_readiness_report.sh "$asc_report_output" >/dev/null
+  if ! Scripts/validate_app_store_connect_readiness_report.sh "$asc_report_actions" "$asc_report_output" >"$asc_report_log" 2>&1; then
+    printf 'FAIL: App Store Connect readiness report validator must accept the generated report for matching App Store Connect action fields\n'
+    cat "$asc_report_log"
+    failures=$((failures + 1))
+  fi
+  perl -0pi -e 's/^\| `APP_STORE_COMMERCIAL_CONFIG_CONFIRMED_IN_APP_STORE_CONNECT=1` .*?\n//m' "$asc_report_output"
+  if Scripts/validate_app_store_connect_readiness_report.sh "$asc_report_actions" "$asc_report_output" >"$asc_report_log" 2>&1; then
+    printf 'FAIL: App Store Connect readiness report validator must reject reports missing required App Store Connect action fields\n'
+    failures=$((failures + 1))
+  elif ! grep -q 'APP_STORE_COMMERCIAL_CONFIG_CONFIRMED_IN_APP_STORE_CONNECT' "$asc_report_log"; then
+    printf 'FAIL: App Store Connect readiness report validator must identify the missing App Store Connect action field\n'
+    failures=$((failures + 1))
+  fi
+  rm -rf "$asc_report_validator_test_dir"
+fi
 asc_report_loose_json_dir="$(mktemp -d)"
 asc_report_loose_json_path="$asc_report_loose_json_dir/fastlane-api-key.json"
 asc_report_loose_json_report="$asc_report_loose_json_dir/app-store-connect-readiness-report.md"
