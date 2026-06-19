@@ -113,9 +113,18 @@ awk -F '\t' '
       print "FAIL: external readiness actions file has no action rows" >"/dev/stderr"
       exit 4
     }
+    final_submission_guard_actions = 2
+    final_submission_guard_blockers = 2
+    target_counts["Config/release.env"] += final_submission_guard_actions
+    owner_counts["Release owner"] += final_submission_guard_actions
+    owner_blocker_counts["Release owner"] += final_submission_guard_blockers
     printf "total\t%s\n", total
+    printf "final_submission_guard_actions\t%s\n", final_submission_guard_actions
+    printf "total_handoff_actions\t%s\n", total + final_submission_guard_actions
     printf "blockers\t%s\n", blockers + 0
+    printf "total_handoff_blockers\t%s\n", blockers + final_submission_guard_blockers
     printf "warnings\t%s\n", warnings + 0
+    printf "total_handoff_warnings\t%s\n", warnings + 0
     for (target in target_counts) {
       printf "target\t%s\t%s\n", target, target_counts[target]
     }
@@ -175,8 +184,12 @@ awk -F '\t' -v expected_action_rows="$expected_action_rows" '
 ' "$actions_path" >"$expected_action_details"
 
 expected_total="$(awk -F '\t' '$1 == "total" { print $2 }' "$temp_dir/action-summary.tsv")"
+expected_final_submission_guard_actions="$(awk -F '\t' '$1 == "final_submission_guard_actions" { print $2 }' "$temp_dir/action-summary.tsv")"
+expected_total_handoff_actions="$(awk -F '\t' '$1 == "total_handoff_actions" { print $2 }' "$temp_dir/action-summary.tsv")"
 expected_blockers="$(awk -F '\t' '$1 == "blockers" { print $2 }' "$temp_dir/action-summary.tsv")"
+expected_total_handoff_blockers="$(awk -F '\t' '$1 == "total_handoff_blockers" { print $2 }' "$temp_dir/action-summary.tsv")"
 expected_warnings="$(awk -F '\t' '$1 == "warnings" { print $2 }' "$temp_dir/action-summary.tsv")"
+expected_total_handoff_warnings="$(awk -F '\t' '$1 == "total_handoff_warnings" { print $2 }' "$temp_dir/action-summary.tsv")"
 has_selected_build_placeholder="$(awk -F '\t' '$1 == "placeholder" && $2 == "selected_build" { print $3 }' "$temp_dir/action-summary.tsv" | tail -n 1)"
 has_team_id_placeholder="$(awk -F '\t' '$1 == "placeholder" && $2 == "team_id" { print $3 }' "$temp_dir/action-summary.tsv" | tail -n 1)"
 has_fastlane_apple_id_placeholder="$(awk -F '\t' '$1 == "placeholder" && $2 == "fastlane_apple_id" { print $3 }' "$temp_dir/action-summary.tsv" | tail -n 1)"
@@ -187,8 +200,12 @@ require_contains "# FreePrint Studio Release Input TODO" "release input TODO tit
 require_contains "## Target Summary" "Target Summary"
 require_contains "## Owner Summary" "Owner Summary"
 require_contains "External Actions" "External Actions"
+require_contains "Final Submission Guard Actions" "Final Submission Guard Actions"
+require_contains "Total Handoff Actions" "Total Handoff Actions"
 require_contains "Blockers" "Blockers"
+require_contains "Total Handoff Blockers" "Total Handoff Blockers"
 require_contains "Warnings" "Warnings"
+require_contains "Total Handoff Warnings" "Total Handoff Warnings"
 require_contains "Config/release.env" "Config/release.env guidance"
 require_contains 'If the file does not exist yet, install or sync it from the current private templates with `Scripts/install_private_release_input_templates.sh` before filling release values.' "Config/release.env private template installer guidance"
 require_contains "Config/manual-release-verification.env" "Config/manual-release-verification.env guidance"
@@ -212,8 +229,12 @@ if [[ -n "$has_fastlane_apple_id_placeholder" ]]; then
 fi
 
 compare_count "External Actions" "$expected_total"
+compare_count "Final Submission Guard Actions" "$expected_final_submission_guard_actions"
+compare_count "Total Handoff Actions" "$expected_total_handoff_actions"
 compare_count "Blockers" "$expected_blockers"
+compare_count "Total Handoff Blockers" "$expected_total_handoff_blockers"
 compare_count "Warnings" "$expected_warnings"
+compare_count "Total Handoff Warnings" "$expected_total_handoff_warnings"
 
 awk '
   /^## Target Summary$/ {

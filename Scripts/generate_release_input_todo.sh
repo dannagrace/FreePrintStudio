@@ -237,13 +237,40 @@ awk -F '\t' -v output_path="$output_path" -v actions_path="$actions_path" -v gen
       fail("external readiness actions file has no action rows")
     }
 
+    final_submission_guard_actions = 2
+    final_submission_guard_blockers = 2
+    total_handoff_actions = row_count + final_submission_guard_actions
+    total_handoff_blockers = blocker_count + final_submission_guard_blockers
+    total_handoff_warnings = warning_count + 0
+
+    final_guard_target = "Config/release.env"
+    if (!(final_guard_target in target_seen)) {
+      target_seen[final_guard_target] = 1
+      target_order_count += 1
+      target_order[target_order_count] = final_guard_target
+    }
+    target_counts[final_guard_target] += final_submission_guard_actions
+
+    final_guard_owner = "Release owner"
+    if (!(final_guard_owner in owner_seen)) {
+      owner_seen[final_guard_owner] = 1
+      owner_order_count += 1
+      owner_order[owner_order_count] = final_guard_owner
+    }
+    owner_counts[final_guard_owner] += final_submission_guard_actions
+    owner_blocker_counts[final_guard_owner] += final_submission_guard_blockers
+
     print "# FreePrint Studio Release Input TODO" >output_path
     print "" >>output_path
     print "- Generated At: `" generated_at "`" >>output_path
     print "- Source: `" actions_path "`" >>output_path
     print "- External Actions: `" row_count "`" >>output_path
+    print "- Final Submission Guard Actions: `" final_submission_guard_actions "`" >>output_path
+    print "- Total Handoff Actions: `" total_handoff_actions "`" >>output_path
     print "- Blockers: `" blocker_count + 0 "`" >>output_path
+    print "- Total Handoff Blockers: `" total_handoff_blockers "`" >>output_path
     print "- Warnings: `" warning_count + 0 "`" >>output_path
+    print "- Total Handoff Warnings: `" total_handoff_warnings "`" >>output_path
     print "" >>output_path
     print "## Target Summary" >>output_path
     print "" >>output_path

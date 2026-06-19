@@ -5071,6 +5071,8 @@ check_contains "Scripts/generate_release_input_todo.sh" "external-readiness-acti
 check_contains "Scripts/generate_release_input_todo.sh" "Config/release.env" "Release input TODO generator must group private release environment fields"
 check_contains "Scripts/generate_release_input_todo.sh" "Config/manual-release-verification.env" "Release input TODO generator must group manual release evidence fields"
 check_contains "Scripts/generate_release_input_todo.sh" "Owner Summary" "Release input TODO generator must summarize external actions by owner"
+check_contains "Scripts/generate_release_input_todo.sh" "Final Submission Guard Actions" "Release input TODO generator must count final submission guard actions"
+check_contains "Scripts/generate_release_input_todo.sh" "Total Handoff Actions" "Release input TODO generator must expose total handoff action counts"
 check_contains "Scripts/generate_release_input_todo.sh" "Non-env External Actions" "Release input TODO generator must preserve non-env external actions"
 check_contains "Scripts/generate_release_input_todo.sh" "Placeholder Replacement Notes" "Release input TODO generator must include placeholder replacement notes"
 check_contains "Scripts/generate_release_input_todo.sh" "Replace PROCESSED_BUILD_NUMBER with the processed App Store Connect build number before running selected-build commands" "Release input TODO generator must warn operators to replace selected-build placeholders"
@@ -5111,8 +5113,28 @@ EOF
       printf 'FAIL: Release input TODO owner summary must count Apple Developer actions\n'
       failures=$((failures + 1))
     fi
+    if ! grep -q '| `Release owner` | 3 | 3 | 0 |' "$release_input_todo_output"; then
+      printf 'FAIL: Release input TODO owner summary must count final submission guards under Release owner\n'
+      failures=$((failures + 1))
+    fi
     if ! grep -q '| `QA/release owner` | 3 | 3 | 0 |' "$release_input_todo_output"; then
       printf 'FAIL: Release input TODO owner summary must count QA/release owner actions\n'
+      failures=$((failures + 1))
+    fi
+    if ! grep -q '| `Config/release.env` | 4 |' "$release_input_todo_output"; then
+      printf 'FAIL: Release input TODO target summary must count final submission guards under Config/release.env\n'
+      failures=$((failures + 1))
+    fi
+    if ! grep -q -- '- Final Submission Guard Actions: `2`' "$release_input_todo_output"; then
+      printf 'FAIL: Release input TODO must record final submission guard action count\n'
+      failures=$((failures + 1))
+    fi
+    if ! grep -q -- '- Total Handoff Actions: `9`' "$release_input_todo_output"; then
+      printf 'FAIL: Release input TODO must record total handoff action count including final guards\n'
+      failures=$((failures + 1))
+    fi
+    if ! grep -q -- '- Total Handoff Blockers: `9`' "$release_input_todo_output"; then
+      printf 'FAIL: Release input TODO must record total handoff blocker count including final guards\n'
       failures=$((failures + 1))
     fi
     if ! grep -q 'install or sync it from the current private templates with `Scripts/install_private_release_input_templates.sh` before filling release values' "$release_input_todo_output"; then
@@ -5212,6 +5234,8 @@ if [[ -f "Scripts/validate_release_input_todo.sh" && ! -x "Scripts/validate_rele
   failures=$((failures + 1))
 fi
 check_contains "Scripts/validate_release_input_todo.sh" "External Actions" "Release input TODO validator must verify total action counts"
+check_contains "Scripts/validate_release_input_todo.sh" "Final Submission Guard Actions" "Release input TODO validator must verify final submission guard counts"
+check_contains "Scripts/validate_release_input_todo.sh" "Total Handoff Actions" "Release input TODO validator must verify total handoff action counts"
 check_contains "Scripts/validate_release_input_todo.sh" "Blockers" "Release input TODO validator must verify blocker counts"
 check_contains "Scripts/validate_release_input_todo.sh" "Warnings" "Release input TODO validator must verify warning counts"
 check_contains "Scripts/validate_release_input_todo.sh" "Target Summary" "Release input TODO validator must verify target summary counts"
@@ -5283,6 +5307,15 @@ EOF
       failures=$((failures + 1))
     elif ! grep -q 'Owner Summary counts' "$release_input_todo_validator_test_dir/validate-owner-summary.log"; then
       printf 'FAIL: Release input TODO validator must identify owner summary count mismatches\n'
+      failures=$((failures + 1))
+    fi
+    cp "$release_input_todo_validator_output" "$release_input_todo_validator_bad"
+    perl -0pi -e 's/- Total Handoff Actions: `9`/- Total Handoff Actions: `7`/' "$release_input_todo_validator_bad"
+    if Scripts/validate_release_input_todo.sh "$release_input_todo_validator_actions" "$release_input_todo_validator_bad" >"$release_input_todo_validator_test_dir/validate-total-handoff.log" 2>&1; then
+      printf 'FAIL: Release input TODO validator must reject total handoff action count mismatches\n'
+      failures=$((failures + 1))
+    elif ! grep -q 'Total Handoff Actions' "$release_input_todo_validator_test_dir/validate-total-handoff.log"; then
+      printf 'FAIL: Release input TODO validator must identify total handoff action count mismatches\n'
       failures=$((failures + 1))
     fi
     cp "$release_input_todo_validator_output" "$release_input_todo_validator_bad"
