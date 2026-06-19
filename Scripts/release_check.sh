@@ -4639,7 +4639,18 @@ App Store Connect	warning	Release owner	App Store Connect App Store Connect stat
 EOF
   printf '# Handoff Brief\n' >"$handoff_summary_test_dir/release-handoff-brief.md"
   printf '# Release Input TODO\n' >"$handoff_input_todo_path"
-  printf '# Release Phase Plan\n' >"$handoff_phase_plan_path"
+  cat >"$handoff_phase_plan_path" <<'EOF'
+# FreePrint Studio Release Phase Plan
+
+- Final Submission Guard Actions: `2`
+
+## Phase Summary
+
+| Phase | Actions | Blockers | Warnings |
+| --- | ---: | ---: | ---: |
+| Phase 1 - Private Inputs And Account Access | 2 | 1 | 1 |
+| Phase 5 - App Review Submission | 2 | 2 | 0 |
+EOF
   cat >"$handoff_release_input_status_path" <<'EOF'
 == Release Input Status ==
 Summary: 2 missing required release input check(s), 5 missing field/action item(s).
@@ -4656,6 +4667,10 @@ packet_github_run_url	https://github.com/dannagrace/FreePrintStudio/actions/runs
 handoff_brief	$handoff_summary_test_dir/release-handoff-brief.md
 release_input_todo	$handoff_input_todo_path
 release_phase_plan	$handoff_phase_plan_path
+release_phase_plan_total_actions	4
+release_phase_plan_total_blockers	3
+release_phase_plan_total_warnings	1
+release_phase_plan_final_submission_guard_actions	2
 release_input_status_path	$handoff_release_input_status_path
 release_input_status	1
 release_input_missing_checks	2
@@ -4693,6 +4708,10 @@ packet_github_run_url	https://github.com/dannagrace/FreePrintStudio/actions/runs
 handoff_brief	$handoff_summary_test_dir/release-handoff-brief.md
 release_input_todo	$handoff_input_todo_path
 release_phase_plan	$handoff_phase_plan_path
+release_phase_plan_total_actions	4
+release_phase_plan_total_blockers	3
+release_phase_plan_total_warnings	1
+release_phase_plan_final_submission_guard_actions	2
 release_input_status_path	$handoff_release_input_status_path
 release_input_status	1
 release_input_missing_checks	2
@@ -4730,6 +4749,10 @@ packet_github_run_url	https://github.com/dannagrace/FreePrintStudio/actions/runs
 handoff_brief	$handoff_summary_test_dir/release-handoff-brief.md
 release_input_todo	$handoff_input_todo_path
 release_phase_plan	$handoff_phase_plan_path
+release_phase_plan_total_actions	4
+release_phase_plan_total_blockers	3
+release_phase_plan_total_warnings	1
+release_phase_plan_final_submission_guard_actions	2
 release_input_status_path	$handoff_release_input_status_path
 release_input_status	1
 release_input_missing_checks	2
@@ -4781,6 +4804,7 @@ if [[ -x "Scripts/validate_release_handoff_brief.sh" ]]; then
   handoff_brief_provenance="$handoff_brief_test_dir/release-provenance.tsv"
   handoff_brief_ci_readiness="$handoff_brief_test_dir/ci-readiness.txt"
   handoff_brief_local_readiness="$handoff_brief_test_dir/local-readiness.txt"
+  handoff_brief_phase_plan="$handoff_brief_test_dir/release-phase-plan.md"
   handoff_brief_path="$handoff_brief_test_dir/release-handoff-brief.md"
   handoff_brief_bad="$handoff_brief_test_dir/release-handoff-brief-bad.md"
   handoff_brief_log="$handoff_brief_test_dir/validation.log"
@@ -4808,6 +4832,18 @@ EOF
   cat >"$handoff_brief_local_readiness" <<'EOF'
 BLOCKED: Local-only blocker
 WARN: shared warning
+EOF
+  cat >"$handoff_brief_phase_plan" <<'EOF'
+# FreePrint Studio Release Phase Plan
+
+- Final Submission Guard Actions: `2`
+
+## Phase Summary
+
+| Phase | Actions | Blockers | Warnings |
+| --- | ---: | ---: | ---: |
+| Phase 1 - Private Inputs And Account Access | 2 | 1 | 1 |
+| Phase 5 - App Review Submission | 2 | 2 | 0 |
 EOF
   cat >"$handoff_brief_path" <<'EOF'
 # FreePrint Studio Release Handoff Brief
@@ -4837,6 +4873,18 @@ EOF
 | Log | `release-handoff-input-status.txt` |
 
 This redacted status includes final submission guards such as `APP_STORE_BUILD_NUMBER` and `CONFIRM_SUBMIT_FOR_REVIEW`.
+
+## Release Phase Plan Status
+
+| Metric | Value |
+| --- | ---: |
+| Total phase plan actions | 4 |
+| Total phase plan blockers | 3 |
+| Total phase plan warnings | 1 |
+| Final submission guard actions | 2 |
+| Plan | `PHASE_PLAN_PATH_PLACEHOLDER` |
+
+The phase plan count includes derived final submission guard actions that are not present in the CI external readiness manifest.
 
 ## CI-only Readiness Detail
 
@@ -4902,6 +4950,7 @@ Replace `PROCESSED_BUILD_NUMBER` with the processed App Store Connect build sele
 Replace YOURTEAMID with the Apple Developer Team ID before running signing or archive commands.
 Replace apple-id@example.com with the App Store Connect Apple ID before running Fastlane Apple ID commands.
 EOF
+  PHASE_PLAN_PATH_PLACEHOLDER="$handoff_brief_phase_plan" perl -0pi -e 's/PHASE_PLAN_PATH_PLACEHOLDER/$ENV{PHASE_PLAN_PATH_PLACEHOLDER}/g' "$handoff_brief_path"
   if ! Scripts/validate_release_handoff_brief.sh "$handoff_brief_actions" "$handoff_brief_path" "$handoff_brief_ci_readiness" "$handoff_brief_local_readiness" >"$handoff_brief_log" 2>&1; then
     printf 'FAIL: Release handoff brief validator must accept matching owner-scoped external action detail fixtures\n'
     sed 's/^/  /' "$handoff_brief_log"
@@ -5737,6 +5786,10 @@ check_contains "Scripts/validate_app_store_submission_packet.sh" 'Scripts/valida
 check_contains "Scripts/preflight_release_handoff.sh" "phase_plan_path" "Release handoff preflight must define a phase plan output path"
 check_contains "Scripts/preflight_release_handoff.sh" 'Scripts/generate_release_phase_plan.sh "$external_actions_path" "$phase_plan_path"' "Release handoff preflight must generate a phase plan for local handoff"
 check_contains "Scripts/preflight_release_handoff.sh" "release_phase_plan" "Release handoff summary must record the release phase plan path"
+check_contains "Scripts/preflight_release_handoff.sh" "release_phase_plan_total_actions" "Release handoff summary must record total phase plan action count"
+check_contains "Scripts/preflight_release_handoff.sh" "release_phase_plan_total_blockers" "Release handoff summary must record total phase plan blocker count"
+check_contains "Scripts/preflight_release_handoff.sh" "release_phase_plan_total_warnings" "Release handoff summary must record total phase plan warning count"
+check_contains "Scripts/preflight_release_handoff.sh" "release_phase_plan_final_submission_guard_actions" "Release handoff summary must record final submission guard action count"
 check_contains "Scripts/preflight_release_handoff.sh" "Release phase plan" "Release handoff brief must reference the release phase plan"
 check_contains "README.md" "release-phase-plan.md" "README must document the release phase plan"
 check_contains "README.md" "final submission guard actions" "README must document that the release phase plan includes final submission guard actions"
@@ -5883,6 +5936,8 @@ check_contains "Scripts/preflight_release_handoff.sh" "CI vs Local Readiness Del
 check_contains "Scripts/preflight_release_handoff.sh" "Release Input Status" "Release handoff brief must include release input status before readiness deltas"
 check_contains "Scripts/preflight_release_handoff.sh" "Missing required release input checks" "Release handoff brief must include missing release input check counts"
 check_contains "Scripts/preflight_release_handoff.sh" "Missing field/action items" "Release handoff brief must include missing release input field/action counts"
+check_contains "Scripts/preflight_release_handoff.sh" "Release Phase Plan Status" "Release handoff brief must include release phase plan status counts"
+check_contains "Scripts/preflight_release_handoff.sh" "Final submission guard actions" "Release handoff brief must include final submission guard action counts"
 check_contains "Scripts/preflight_release_handoff.sh" "CI-only Readiness Detail" "Release handoff brief must list readiness lines present only in CI"
 check_contains "Scripts/preflight_release_handoff.sh" "Local-only Readiness Detail" "Release handoff brief must list readiness lines present only in local preflight"
 check_contains "Scripts/preflight_release_handoff.sh" "External Action Summary" "Release handoff brief must summarize external action categories"
@@ -5897,6 +5952,8 @@ check_contains "Scripts/preflight_release_handoff.sh" "Replace YOURTEAMID with t
 check_contains "Scripts/preflight_release_handoff.sh" "Replace apple-id@example.com with the App Store Connect Apple ID before running Fastlane Apple ID commands." "Release handoff brief must warn operators to replace Fastlane Apple ID placeholders"
 check_contains "Scripts/validate_release_handoff_brief.sh" "CI-only Readiness Detail" "Release handoff brief validator must require CI-only readiness detail section"
 check_contains "Scripts/validate_release_handoff_brief.sh" "Local-only Readiness Detail" "Release handoff brief validator must require local-only readiness detail section"
+check_contains "Scripts/validate_release_handoff_brief.sh" "Release Phase Plan Status" "Release handoff brief validator must require release phase plan status section"
+check_contains "Scripts/validate_release_handoff_summary.sh" "release_phase_plan_final_submission_guard_actions" "Release handoff summary validator must require final submission guard action count"
 check_not_contains "Scripts/preflight_release_handoff.sh" "Scripts/bootstrap_release_inputs.sh" "Release handoff brief must not send operators through stale bootstrap_release_inputs after generating private templates"
 check_not_contains "Scripts/preflight_release_handoff.sh" "printf '-" "Release handoff brief must not use printf formats that start with a dash"
 check_contains "Scripts/preflight_release_handoff.sh" "ci_readiness_log" "Release handoff summary must record the CI packet readiness log path"
@@ -5920,6 +5977,8 @@ check_contains "README.md" "CI readiness blocker count" "README must document CI
 check_contains "README.md" "CI/local readiness delta" "README must document CI/local readiness delta tracking in the handoff summary"
 check_contains "README.md" "release-handoff-input-status.txt" "README must document the handoff release input status report"
 check_contains "README.md" "release input missing check count" "README must document release input missing counts in the handoff summary"
+check_contains "README.md" "release phase plan total action count" "README must document phase plan total action counts in the handoff summary"
+check_contains "README.md" "final submission guard action count" "README must document final submission guard counts in the handoff summary"
 check_contains "AppStore/release-checklist.md" "Scripts/preflight_release_handoff.sh" "Release checklist must document the release handoff preflight"
 check_contains "AppStore/release-checklist.md" "release-handoff-summary.tsv" "Release checklist must document the release handoff summary"
 check_contains "AppStore/release-checklist.md" "Scripts/validate_release_handoff_summary.sh" "Release checklist must document validating the release handoff summary"
@@ -5937,6 +5996,8 @@ check_contains "AppStore/release-checklist.md" "CI readiness blocker count" "Rel
 check_contains "AppStore/release-checklist.md" "CI/local readiness delta" "Release checklist must document CI/local readiness delta tracking"
 check_contains "AppStore/release-checklist.md" "release-handoff-input-status.txt" "Release checklist must document the handoff release input status report"
 check_contains "AppStore/release-checklist.md" "release input missing check count" "Release checklist must document release input missing counts in the handoff summary"
+check_contains "AppStore/release-checklist.md" "release phase plan total action count" "Release checklist must document phase plan total action counts in the handoff summary"
+check_contains "AppStore/release-checklist.md" "final submission guard action count" "Release checklist must document final submission guard counts in the handoff summary"
 check_contains "FreePrintStudio/Resources/Info.plist" "CFBundleDisplayName" "Info.plist must define display name"
 check_contains "FreePrintStudio/Resources/Info.plist" "ITSAppUsesNonExemptEncryption" "Info.plist must declare non-exempt encryption usage"
 check_plist_raw_value "FreePrintStudio/Resources/Info.plist" "ITSAppUsesNonExemptEncryption" "false" "Info.plist must declare no non-exempt encryption"

@@ -120,6 +120,63 @@ release_input_summary_count() {
   esac
 }
 
+phase_plan_metadata_count() {
+  local plan_path="$1"
+  local label="$2"
+  local prefix
+
+  printf -v prefix -- '- %s: `' "$label"
+  awk -v label="$prefix" '
+    index($0, label) == 1 {
+      value = substr($0, length(label) + 1)
+      sub(/`$/, "", value)
+      print value
+      found = 1
+      exit
+    }
+    END {
+      if (!found) {
+        print "missing"
+      }
+    }
+  ' "$plan_path"
+}
+
+phase_plan_summary_count() {
+  local plan_path="$1"
+  local field="$2"
+
+  awk -F '|' -v field="$field" '
+    function trim(value) {
+      gsub(/^[[:space:]]+|[[:space:]]+$/, "", value)
+      return value
+    }
+    $0 == "## Phase Summary" {
+      in_section = 1
+      next
+    }
+    in_section && /^## / {
+      in_section = 0
+    }
+    in_section && $2 ~ /^[[:space:]]*Phase [0-9]+ - / {
+      actions += trim($3)
+      blockers += trim($4)
+      warnings += trim($5)
+    }
+    END {
+      if (field == "actions") {
+        print actions + 0
+      } else if (field == "blockers") {
+        print blockers + 0
+      } else if (field == "warnings") {
+        print warnings + 0
+      } else {
+        print "missing"
+      }
+    }
+  ' "$plan_path"
+}
+
 compare_count() {
   local key="$1"
   local expected="$2"
@@ -158,6 +215,10 @@ for key in \
   release_input_status \
   release_input_missing_checks \
   release_input_missing_fields \
+  release_phase_plan_total_actions \
+  release_phase_plan_total_blockers \
+  release_phase_plan_total_warnings \
+  release_phase_plan_final_submission_guard_actions \
   external_action_total \
   external_action_blockers \
   external_action_warnings \
@@ -192,6 +253,7 @@ ci_readiness_log="$(summary_value "ci_readiness_log" 2>/dev/null || true)"
 readiness_log="$(summary_value "readiness_log" 2>/dev/null || true)"
 external_actions_path="$(summary_value "external_readiness_actions" 2>/dev/null || true)"
 release_input_status_path="$(summary_value "release_input_status_path" 2>/dev/null || true)"
+release_phase_plan_path="$(summary_value "release_phase_plan" 2>/dev/null || true)"
 
 if [[ -s "$ci_readiness_log" ]]; then
   compare_count "ci_readiness_blockers" "$(readiness_count "$ci_readiness_log" "BLOCKED")"
@@ -206,6 +268,13 @@ fi
 if [[ -s "$release_input_status_path" ]]; then
   compare_count "release_input_missing_checks" "$(release_input_summary_count "$release_input_status_path" checks)"
   compare_count "release_input_missing_fields" "$(release_input_summary_count "$release_input_status_path" fields)"
+fi
+
+if [[ -s "$release_phase_plan_path" ]]; then
+  compare_count "release_phase_plan_total_actions" "$(phase_plan_summary_count "$release_phase_plan_path" actions)"
+  compare_count "release_phase_plan_total_blockers" "$(phase_plan_summary_count "$release_phase_plan_path" blockers)"
+  compare_count "release_phase_plan_total_warnings" "$(phase_plan_summary_count "$release_phase_plan_path" warnings)"
+  compare_count "release_phase_plan_final_submission_guard_actions" "$(phase_plan_metadata_count "$release_phase_plan_path" "Final Submission Guard Actions")"
 fi
 
 ci_readiness_blockers="$(summary_value "ci_readiness_blockers" 2>/dev/null || true)"

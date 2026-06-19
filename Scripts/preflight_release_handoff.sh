@@ -72,6 +72,73 @@ release_input_summary_value() {
   esac
 }
 
+phase_plan_metadata_value() {
+  local path="$1"
+  local label="$2"
+  local prefix
+
+  if [[ ! -s "$path" ]]; then
+    printf 'missing'
+    return
+  fi
+
+  printf -v prefix -- '- %s: `' "$label"
+  awk -v label="$prefix" '
+    index($0, label) == 1 {
+      value = substr($0, length(label) + 1)
+      sub(/`$/, "", value)
+      print value
+      found = 1
+      exit
+    }
+    END {
+      if (!found) {
+        exit 1
+      }
+    }
+  ' "$path" 2>/dev/null || printf 'missing'
+}
+
+phase_plan_summary_value() {
+  local path="$1"
+  local field="$2"
+
+  if [[ ! -s "$path" ]]; then
+    printf 'missing'
+    return
+  fi
+
+  awk -F '|' -v field="$field" '
+    function trim(value) {
+      gsub(/^[[:space:]]+|[[:space:]]+$/, "", value)
+      return value
+    }
+    $0 == "## Phase Summary" {
+      in_section = 1
+      next
+    }
+    in_section && /^## / {
+      in_section = 0
+    }
+    in_section && $2 ~ /^[[:space:]]*Phase [0-9]+ - / {
+      actions += trim($3)
+      blockers += trim($4)
+      warnings += trim($5)
+    }
+    END {
+      if (field == "actions") {
+        print actions + 0
+      } else if (field == "blockers") {
+        print blockers + 0
+      } else if (field == "warnings") {
+        print warnings + 0
+      } else {
+        print "missing"
+      }
+    }
+  ' "$path"
+}
+
 external_action_count() {
   local severity="${1:-}"
   if [[ ! -s "$external_actions_path" ]]; then
@@ -146,6 +213,10 @@ write_handoff_summary() {
   local external_action_warnings
   local release_input_missing_checks
   local release_input_missing_fields
+  local release_phase_plan_total_actions
+  local release_phase_plan_total_blockers
+  local release_phase_plan_total_warnings
+  local release_phase_plan_final_submission_guard_actions
   local ci_local_readiness_blocker_delta
   local ci_local_readiness_warning_delta
 
@@ -161,6 +232,10 @@ write_handoff_summary() {
   external_action_warnings="$(external_action_count warning)"
   release_input_missing_checks="$(release_input_summary_value "$release_input_status_path" checks)"
   release_input_missing_fields="$(release_input_summary_value "$release_input_status_path" fields)"
+  release_phase_plan_total_actions="$(phase_plan_summary_value "$phase_plan_path" actions)"
+  release_phase_plan_total_blockers="$(phase_plan_summary_value "$phase_plan_path" blockers)"
+  release_phase_plan_total_warnings="$(phase_plan_summary_value "$phase_plan_path" warnings)"
+  release_phase_plan_final_submission_guard_actions="$(phase_plan_metadata_value "$phase_plan_path" "Final Submission Guard Actions")"
   ci_local_readiness_blocker_delta="$((readiness_blockers - ci_readiness_blockers))"
   ci_local_readiness_warning_delta="$((readiness_warnings - ci_readiness_warnings))"
 
@@ -181,6 +256,10 @@ write_handoff_summary() {
     printf 'release_input_missing_fields\t%s\n' "$release_input_missing_fields"
     printf 'release_input_todo\t%s\n' "$input_todo_path"
     printf 'release_phase_plan\t%s\n' "$phase_plan_path"
+    printf 'release_phase_plan_total_actions\t%s\n' "$release_phase_plan_total_actions"
+    printf 'release_phase_plan_total_blockers\t%s\n' "$release_phase_plan_total_blockers"
+    printf 'release_phase_plan_total_warnings\t%s\n' "$release_phase_plan_total_warnings"
+    printf 'release_phase_plan_final_submission_guard_actions\t%s\n' "$release_phase_plan_final_submission_guard_actions"
     printf 'owner_action_dir\t%s\n' "$owner_action_dir"
     printf 'private_template_dir\t%s\n' "$private_template_dir"
     printf 'ci_readiness_log\t%s\n' "$ci_readiness_log"
@@ -213,6 +292,10 @@ write_handoff_brief() {
   local external_action_warnings
   local release_input_missing_checks
   local release_input_missing_fields
+  local release_phase_plan_total_actions
+  local release_phase_plan_total_blockers
+  local release_phase_plan_total_warnings
+  local release_phase_plan_final_submission_guard_actions
   local ci_local_readiness_blocker_delta
   local ci_local_readiness_warning_delta
 
@@ -228,6 +311,10 @@ write_handoff_brief() {
   external_action_warnings="$(external_action_count warning)"
   release_input_missing_checks="$(release_input_summary_value "$release_input_status_path" checks)"
   release_input_missing_fields="$(release_input_summary_value "$release_input_status_path" fields)"
+  release_phase_plan_total_actions="$(phase_plan_summary_value "$phase_plan_path" actions)"
+  release_phase_plan_total_blockers="$(phase_plan_summary_value "$phase_plan_path" blockers)"
+  release_phase_plan_total_warnings="$(phase_plan_summary_value "$phase_plan_path" warnings)"
+  release_phase_plan_final_submission_guard_actions="$(phase_plan_metadata_value "$phase_plan_path" "Final Submission Guard Actions")"
   ci_local_readiness_blocker_delta="$((readiness_blockers - ci_readiness_blockers))"
   ci_local_readiness_warning_delta="$((readiness_warnings - ci_readiness_warnings))"
 
@@ -256,6 +343,16 @@ write_handoff_brief() {
     printf '| Missing field/action items | %s |\n' "$release_input_missing_fields"
     printf '| Log | `%s` |\n\n' "$release_input_status_path"
     printf 'This redacted status includes final submission guards such as `APP_STORE_BUILD_NUMBER` and `CONFIRM_SUBMIT_FOR_REVIEW`, so it can show required final handoff inputs that are not readiness blockers yet.\n\n'
+
+    printf '## Release Phase Plan Status\n\n'
+    printf '| Metric | Value |\n'
+    printf '| --- | ---: |\n'
+    printf '| Total phase plan actions | %s |\n' "$release_phase_plan_total_actions"
+    printf '| Total phase plan blockers | %s |\n' "$release_phase_plan_total_blockers"
+    printf '| Total phase plan warnings | %s |\n' "$release_phase_plan_total_warnings"
+    printf '| Final submission guard actions | %s |\n' "$release_phase_plan_final_submission_guard_actions"
+    printf '| Plan | `%s` |\n\n' "$phase_plan_path"
+    printf 'The phase plan count includes derived final submission guard actions that are not present in the CI external readiness manifest.\n\n'
 
     printf '## CI vs Local Readiness Delta\n\n'
     printf '| Metric | Local - CI |\n'

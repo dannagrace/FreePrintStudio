@@ -181,6 +181,158 @@ external_action_count() {
   ' "$actions_path"
 }
 
+section_table_value() {
+  local section_title="$1"
+  local metric="$2"
+
+  awk -F '|' -v section_title="## $section_title" -v metric="$metric" '
+    function trim(value) {
+      gsub(/^[[:space:]]+|[[:space:]]+$/, "", value)
+      return value
+    }
+    $0 == section_title {
+      in_section = 1
+      next
+    }
+    in_section && /^## / {
+      exit
+    }
+    in_section {
+      key = trim($2)
+      value = trim($3)
+      if (key == metric) {
+        gsub(/^`|`$/, "", value)
+        print value
+        found = 1
+        exit
+      }
+    }
+    END {
+      if (!found) {
+        exit 1
+      }
+    }
+  ' "$brief_path"
+}
+
+phase_plan_metadata_count() {
+  local plan_path="$1"
+  local label="$2"
+  local prefix
+
+  printf -v prefix -- '- %s: `' "$label"
+  awk -v label="$prefix" '
+    index($0, label) == 1 {
+      value = substr($0, length(label) + 1)
+      sub(/`$/, "", value)
+      print value
+      found = 1
+      exit
+    }
+    END {
+      if (!found) {
+        print "missing"
+      }
+    }
+  ' "$plan_path"
+}
+
+phase_plan_summary_count() {
+  local plan_path="$1"
+  local field="$2"
+
+  awk -F '|' -v field="$field" '
+    function trim(value) {
+      gsub(/^[[:space:]]+|[[:space:]]+$/, "", value)
+      return value
+    }
+    $0 == "## Phase Summary" {
+      in_section = 1
+      next
+    }
+    in_section && /^## / {
+      in_section = 0
+    }
+    in_section && $2 ~ /^[[:space:]]*Phase [0-9]+ - / {
+      actions += trim($3)
+      blockers += trim($4)
+      warnings += trim($5)
+    }
+    END {
+      if (field == "actions") {
+        print actions + 0
+      } else if (field == "blockers") {
+        print blockers + 0
+      } else if (field == "warnings") {
+        print warnings + 0
+      } else {
+        print "missing"
+      }
+    }
+  ' "$plan_path"
+}
+
+validate_release_phase_plan_status() {
+  local plan_path
+  local expected
+  local actual
+
+  require_section_contains \
+    "Release Phase Plan Status" \
+    "Total phase plan actions" \
+    "Total phase plan actions row"
+  require_section_contains \
+    "Release Phase Plan Status" \
+    "Total phase plan blockers" \
+    "Total phase plan blockers row"
+  require_section_contains \
+    "Release Phase Plan Status" \
+    "Total phase plan warnings" \
+    "Total phase plan warnings row"
+  require_section_contains \
+    "Release Phase Plan Status" \
+    "Final submission guard actions" \
+    "Final submission guard actions row"
+  require_section_contains \
+    "Release Phase Plan Status" \
+    "release-phase-plan.md" \
+    "release phase plan path row"
+
+  plan_path="$(section_table_value "Release Phase Plan Status" "Plan" 2>/dev/null || true)"
+  if [[ -z "$plan_path" ]]; then
+    fail "release phase plan path is missing from release handoff brief"
+    return
+  fi
+  if [[ ! -s "$plan_path" ]]; then
+    fail "release phase plan referenced by handoff brief is missing or empty: $plan_path"
+    return
+  fi
+
+  expected="$(phase_plan_summary_count "$plan_path" actions)"
+  actual="$(section_table_value "Release Phase Plan Status" "Total phase plan actions" 2>/dev/null || true)"
+  if [[ "$actual" != "$expected" ]]; then
+    fail "Release Phase Plan Status total action count mismatch (brief: ${actual:-missing}; actual: $expected)"
+  fi
+
+  expected="$(phase_plan_summary_count "$plan_path" blockers)"
+  actual="$(section_table_value "Release Phase Plan Status" "Total phase plan blockers" 2>/dev/null || true)"
+  if [[ "$actual" != "$expected" ]]; then
+    fail "Release Phase Plan Status blocker count mismatch (brief: ${actual:-missing}; actual: $expected)"
+  fi
+
+  expected="$(phase_plan_summary_count "$plan_path" warnings)"
+  actual="$(section_table_value "Release Phase Plan Status" "Total phase plan warnings" 2>/dev/null || true)"
+  if [[ "$actual" != "$expected" ]]; then
+    fail "Release Phase Plan Status warning count mismatch (brief: ${actual:-missing}; actual: $expected)"
+  fi
+
+  expected="$(phase_plan_metadata_count "$plan_path" "Final Submission Guard Actions")"
+  actual="$(section_table_value "Release Phase Plan Status" "Final submission guard actions" 2>/dev/null || true)"
+  if [[ "$actual" != "$expected" ]]; then
+    fail "Release Phase Plan Status final submission guard action count mismatch (brief: ${actual:-missing}; actual: $expected)"
+  fi
+}
+
 write_expected_readiness_count_rows() {
   if [[ "$#" -eq 4 ]]; then
     printf 'CI packet\t%s\t%s\n' \
@@ -364,6 +516,7 @@ require_contains "# FreePrint Studio Release Handoff Brief" "release handoff bri
 validate_source_metadata
 require_contains "## Readiness Counts" "Readiness Counts section"
 require_contains "## Release Input Status" "Release Input Status section"
+require_contains "## Release Phase Plan Status" "Release Phase Plan Status section"
 require_contains "## CI-only Readiness Detail" "CI-only Readiness Detail section"
 require_contains "## Local-only Readiness Detail" "Local-only Readiness Detail section"
 require_contains "## External Action Summary" "External Action Summary section"
@@ -391,6 +544,7 @@ require_section_contains \
   "Release Input Status" \
   "CONFIRM_SUBMIT_FOR_REVIEW" \
   "final App Review submission confirmation guard guidance"
+validate_release_phase_plan_status
 require_placeholder_guidance \
   "PROCESSED_BUILD_NUMBER" \
   "Replace \`PROCESSED_BUILD_NUMBER\` with the processed App Store Connect build selected for review." \
