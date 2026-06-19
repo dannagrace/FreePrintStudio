@@ -3693,6 +3693,39 @@ check_contains "Scripts/prepare_app_store_submission_packet.sh" "generate_app_st
 check_contains "Scripts/prepare_app_store_submission_packet.sh" '\\`app-store-connect-state-report.md\\`' "Submission packet summary must reference the App Store Connect state report"
 check_contains "Scripts/validate_app_store_submission_packet.sh" "app-store-connect-state-report.md" "Submission packet validator must require the App Store Connect state report"
 check_contains "Scripts/validate_app_store_submission_packet.sh" "Scripts/check_app_store_connect_state.sh" "Submission packet validator must require selected-build state report command tracking"
+check_file "Scripts/validate_app_store_connect_state_report.sh" "App Store Connect state report validator is required"
+if [[ -f "Scripts/validate_app_store_connect_state_report.sh" && ! -x "Scripts/validate_app_store_connect_state_report.sh" ]]; then
+  printf 'FAIL: App Store Connect state report validator must be executable (Scripts/validate_app_store_connect_state_report.sh)\n'
+  failures=$((failures + 1))
+fi
+check_contains "Scripts/validate_app_store_submission_packet.sh" "validate_app_store_connect_state_report.sh" "Submission packet validator must validate App Store Connect state report coverage"
+if [[ -x "Scripts/validate_app_store_connect_state_report.sh" ]]; then
+  asc_state_report_validator_test_dir="$(mktemp -d)"
+  asc_state_report_actions="$asc_state_report_validator_test_dir/external-readiness-actions.tsv"
+  asc_state_report_output="$asc_state_report_validator_test_dir/app-store-connect-state-report.md"
+  asc_state_report_log="$asc_state_report_validator_test_dir/validation.log"
+  cat >"$asc_state_report_actions" <<'EOF'
+category	severity	owner	field	target	item	next_action	validation_command
+App Store Connect	warning	App Store Connect account holder	APP_STORE_BUILD_NUMBER	Config/release.env	App Store Connect app record and version require account-specific verification after credentials are configured	Upload and select a processed TestFlight build.	APP_STORE_CONNECT_SKIP_BUILD_CHECK=1 Scripts/check_app_store_connect_state.sh
+App Store Connect	blocker	App Store Connect account holder	APP_STORE_CONNECT_API_KEY_JSON or ASC_KEY_ID/ASC_ISSUER_ID/ASC_KEY_PATH	Config/release.env	Fastlane App Store Connect API credentials are not configured; automated metadata and TestFlight upload will be blocked	Create an App Store Connect API key and record it in Config/release.env.	Scripts/check_app_store_connect_credentials.sh
+EOF
+  APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER \
+    Scripts/generate_app_store_connect_state_report.sh "$asc_state_report_output" >/dev/null
+  if ! Scripts/validate_app_store_connect_state_report.sh "$asc_state_report_actions" "$asc_state_report_output" >"$asc_state_report_log" 2>&1; then
+    printf 'FAIL: App Store Connect state report validator must accept the generated report for matching selected-build actions\n'
+    cat "$asc_state_report_log"
+    failures=$((failures + 1))
+  fi
+  perl -0pi -e 's/^- \[ \] Set `APP_STORE_BUILD_NUMBER`.*?\n//m' "$asc_state_report_output"
+  if Scripts/validate_app_store_connect_state_report.sh "$asc_state_report_actions" "$asc_state_report_output" >"$asc_state_report_log" 2>&1; then
+    printf 'FAIL: App Store Connect state report validator must reject reports missing selected-build next action guidance\n'
+    failures=$((failures + 1))
+  elif ! grep -q 'APP_STORE_BUILD_NUMBER' "$asc_state_report_log"; then
+    printf 'FAIL: App Store Connect state report validator must identify missing selected-build guidance\n'
+    failures=$((failures + 1))
+  fi
+  rm -rf "$asc_state_report_validator_test_dir"
+fi
 check_contains "Scripts/verify_release.sh" "asc-state-report" "Release verification must expose App Store Connect state report generation"
 check_contains "README.md" "Scripts/verify_release.sh asc-state-report" "README must document the App Store Connect state report command"
 check_contains "AppStore/release-checklist.md" "Scripts/verify_release.sh asc-state-report" "Release checklist must include App Store Connect state report generation"

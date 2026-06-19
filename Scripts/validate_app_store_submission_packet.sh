@@ -259,6 +259,9 @@ fi
 if ! Scripts/validate_app_store_connect_readiness_report.sh "$PACKET_DIR/external-readiness-actions.tsv" "$PACKET_DIR/app-store-connect-readiness-report.md"; then
   failures=$((failures + 1))
 fi
+if ! Scripts/validate_app_store_connect_state_report.sh "$PACKET_DIR/external-readiness-actions.tsv" "$PACKET_DIR/app-store-connect-state-report.md"; then
+  failures=$((failures + 1))
+fi
 if ! Scripts/validate_app_review_submission_readiness_report.sh "$PACKET_DIR/external-readiness-actions.tsv" "$PACKET_DIR/app-review-submission-readiness-report.md"; then
   failures=$((failures + 1))
 fi
