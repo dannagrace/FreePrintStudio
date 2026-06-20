@@ -9,18 +9,20 @@ manual_evidence_path="${MANUAL_RELEASE_VERIFICATION_PATH:-$ROOT_DIR/Config/manua
 DEFAULT_AIRPRINT_RULER_TARGET_INCHES="${MANUAL_AIRPRINT_RULER_TARGET_DEFAULT_INCHES:-6}"
 strict=0
 scope="all"
+owner="all"
 missing_count=0
 missing_fields=()
 
 usage() {
   cat <<'EOF'
-Usage: Scripts/print_release_input_status.sh [--strict]
+Usage: Scripts/print_release_input_status.sh [--strict] [--scope SCOPE] [--owner OWNER]
 
 Prints a redacted App Store release input status summary. It does not print private values.
 
 Options:
   --strict  exit nonzero when required private inputs or signing assets are missing
   --scope   limit strict missing fields to a release phase (all, metadata-upload, app-privacy-upload, app-store-archive, testflight-upload, app-review-submission)
+  --owner   limit strict missing fields to a handoff owner (all, release-owner, qa-release-owner, apple-developer-account-holder, app-store-connect-account-holder)
 EOF
 }
 
@@ -36,6 +38,15 @@ while [[ $# -gt 0 ]]; do
         exit 1
       fi
       scope="$2"
+      shift
+      ;;
+    --owner)
+      if [[ $# -lt 2 ]]; then
+        printf 'Missing value for --owner\n\n' >&2
+        usage >&2
+        exit 1
+      fi
+      owner="$2"
       shift
       ;;
     -h|--help)
@@ -61,7 +72,17 @@ case "$scope" in
     ;;
 esac
 
-scope_requires() {
+case "$owner" in
+  all|release-owner|qa-release-owner|apple-developer-account-holder|app-store-connect-account-holder)
+    ;;
+  *)
+    printf 'Unknown --owner value: %s\n\n' "$owner" >&2
+    usage >&2
+    exit 1
+    ;;
+esac
+
+phase_requires() {
   local section="$1"
 
   case "$scope" in
@@ -106,6 +127,52 @@ scope_requires() {
   esac
 
   return 1
+}
+
+owner_requires() {
+  local section="$1"
+
+  case "$owner" in
+    all)
+      return 0
+      ;;
+    release-owner)
+      case "$section" in
+        private-release-env|app-review-contact|final-submission)
+          return 0
+          ;;
+      esac
+      ;;
+    qa-release-owner)
+      case "$section" in
+        manual-release-evidence)
+          return 0
+          ;;
+      esac
+      ;;
+    apple-developer-account-holder)
+      case "$section" in
+        private-release-env|signing)
+          return 0
+          ;;
+      esac
+      ;;
+    app-store-connect-account-holder)
+      case "$section" in
+        private-release-env|app-store-connect|app-privacy-upload|app-privacy-connect-confirmation|commercial-configuration-confirmation)
+          return 0
+          ;;
+      esac
+      ;;
+  esac
+
+  return 1
+}
+
+scope_requires() {
+  local section="$1"
+
+  phase_requires "$section" && owner_requires "$section"
 }
 
 trimmed_value() {
@@ -620,7 +687,14 @@ print_missing_fields
 
 print_private_setup_commands() {
   printf '%s\n' "$private_template_install_command"
-  printf 'Scripts/print_release_input_status.sh --strict\n'
+  printf 'Scripts/print_release_input_status.sh --strict'
+  if [[ "$scope" != "all" ]]; then
+    printf ' --scope %s' "$scope"
+  fi
+  if [[ "$owner" != "all" ]]; then
+    printf ' --owner %s' "$owner"
+  fi
+  printf '\n'
   printf 'Scripts/validate_release_env.sh\n'
 }
 
@@ -663,9 +737,41 @@ print_review_submission_commands() {
   printf 'APP_STORE_BUILD_NUMBER=%s CONFIRM_SUBMIT_FOR_REVIEW=1 Scripts/run_fastlane.sh ios submit_review\n' "$selected_app_store_build"
 }
 
+print_owner_commands() {
+  local selected_app_store_build="$1"
+
+  case "$owner" in
+    release-owner)
+      print_private_setup_commands
+      printf 'Scripts/validate_app_review_contact.sh\n'
+      printf 'APP_STORE_BUILD_NUMBER=%s Scripts/preflight_app_review_submission.sh\n' "$selected_app_store_build"
+      printf 'APP_STORE_BUILD_NUMBER=%s CONFIRM_SUBMIT_FOR_REVIEW=1 Scripts/run_fastlane.sh ios submit_review\n' "$selected_app_store_build"
+      ;;
+    qa-release-owner)
+      print_private_setup_commands
+      printf 'APP_STORE_BUILD_NUMBER=%s Scripts/validate_manual_release_verification.sh\n' "$selected_app_store_build"
+      ;;
+    apple-developer-account-holder)
+      print_archive_commands
+      ;;
+    app-store-connect-account-holder)
+      print_private_setup_commands
+      printf 'Scripts/check_app_store_connect_credentials.sh\n'
+      printf 'FASTLANE_USER=apple-id@example.com CONFIRM_UPLOAD_APP_PRIVACY=1 Scripts/preflight_app_privacy_upload.sh\n'
+      printf 'FASTLANE_USER=apple-id@example.com CONFIRM_UPLOAD_APP_PRIVACY=1 Scripts/run_fastlane.sh ios privacy_details\n'
+      printf 'Replace apple-id@example.com with the App Store Connect Apple ID before running Fastlane Apple ID commands.\n'
+      printf 'APP_PRIVACY_DETAILS_CONFIRMED_IN_APP_STORE_CONNECT=1 Scripts/validate_app_privacy_connect_entry.sh\n'
+      printf 'APP_STORE_COMMERCIAL_CONFIG_CONFIRMED_IN_APP_STORE_CONNECT=1 Scripts/validate_commercial_configuration_connect_entry.sh\n'
+      ;;
+  esac
+}
+
 printf '\n== Next Commands ==\n'
 selected_app_store_build="${APP_STORE_BUILD_NUMBER:-PROCESSED_BUILD_NUMBER}"
-case "$scope" in
+if [[ "$owner" != "all" ]]; then
+  print_owner_commands "$selected_app_store_build"
+else
+  case "$scope" in
   all)
     print_private_setup_commands
     printf 'APP_STORE_BUILD_NUMBER=%s Scripts/validate_manual_release_verification.sh\n' "$selected_app_store_build"
@@ -702,7 +808,8 @@ case "$scope" in
   app-review-submission)
     print_review_submission_commands "$selected_app_store_build"
     ;;
-esac
+  esac
+fi
 
 missing_field_count="${#missing_fields[@]}"
 printf '\nSummary: %d missing required release input check(s), %d missing field/action item(s).\n' \

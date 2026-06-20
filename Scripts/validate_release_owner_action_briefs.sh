@@ -54,7 +54,16 @@ selected_build_placeholder_guidance="Replace PROCESSED_BUILD_NUMBER with the pro
 team_id_placeholder_guidance="Replace YOURTEAMID with the Apple Developer Team ID before running signing or archive commands."
 fastlane_apple_id_placeholder_guidance="Replace apple-id@example.com with the App Store Connect Apple ID before running Fastlane Apple ID commands."
 private_input_installer_command="Scripts/install_private_release_input_templates.sh --source-dir build/private-release-input-templates --target-dir Config"
-private_input_status_command="Scripts/print_release_input_status.sh --strict"
+
+owner_slug() {
+  local value="$1"
+  value="$(printf '%s' "$value" | tr '[:upper:]' '[:lower:]')"
+  value="$(printf '%s' "$value" | sed -E 's/[^a-z0-9]+/-/g; s/^-+|-+$//g')"
+  if [[ -z "$value" ]]; then
+    value="owner"
+  fi
+  printf '%s' "$value"
+}
 
 awk -F '\t' -v expected_owners="$expected_owners" -v expected_details="$expected_details" '
   function fail(message) {
@@ -206,9 +215,10 @@ while IFS=$'\t' read -r owner_name file_name actions blockers warnings selected_
   require_contains_file "$owner_path" "## Action Detail" "owner action detail section for $owner_name"
   require_contains_file "$owner_path" "## Validation Commands" "owner validation commands section for $owner_name"
   if [[ "${private_input_setup:-0}" == "1" ]]; then
+    private_input_status_command="Scripts/print_release_input_status.sh --strict --owner $(owner_slug "$owner_name")"
     require_contains_file "$owner_path" "## Private Input Setup" "private input setup guidance for $owner_name"
     require_contains_file "$owner_path" "$private_input_installer_command" "private input setup guidance for $owner_name"
-    require_contains_file "$owner_path" "$private_input_status_command" "private input setup guidance for $owner_name"
+    require_contains_file "$owner_path" "$private_input_status_command" "owner-scoped release input status guidance for $owner_name"
   fi
   if [[ "${selected_build_placeholder:-0}" == "1" ]]; then
     require_contains_file "$owner_path" "$selected_build_placeholder_guidance" "selected-build placeholder replacement guidance for $owner_name"

@@ -1252,6 +1252,9 @@ check_contains "Scripts/print_release_input_status.sh" "APP_STORE_COMMERCIAL_CON
 check_contains "Scripts/print_release_input_status.sh" "CONFIRM_SUBMIT_FOR_REVIEW" "Release input status must show whether explicit App Review submission confirmation is configured"
 check_contains "Scripts/print_release_input_status.sh" "git check-ignore" "Release input status must confirm private files stay ignored"
 check_contains "Scripts/print_release_input_status.sh" "--strict" "Release input status must offer a strict mode for handoff gating"
+check_contains "Scripts/print_release_input_status.sh" "--owner" "Release input status must offer owner-scoped strict checks for release handoff"
+check_contains "Scripts/print_release_input_status.sh" "qa-release-owner" "Release input status must support QA owner-scoped manual evidence checks"
+check_contains "Scripts/print_release_input_status.sh" "app-store-connect-account-holder" "Release input status must support App Store Connect owner-scoped checks"
 check_contains "Scripts/print_release_input_status.sh" "does not print private values" "Release input status must explicitly avoid printing private values"
 check_contains "Scripts/print_release_input_status.sh" "Scripts/install_private_release_input_templates.sh --source-dir build/private-release-input-templates --target-dir Config" "Release input status next commands must install generated private input templates safely"
 check_contains "Scripts/print_release_input_status.sh" "Scripts/print_release_input_status.sh --strict" "Release input status next commands must rerun strict redacted status after installing private templates"
@@ -1428,6 +1431,70 @@ elif grep -Fq "$release_input_status_missing_release_env_dir" "$release_input_st
   failures=$((failures + 1))
 fi
 rm -rf "$release_input_status_missing_release_env_dir"
+release_input_status_owner_scope_dir="$(mktemp -d)"
+release_input_status_owner_scope_env="$release_input_status_owner_scope_dir/release.env"
+release_input_status_owner_scope_manual="$release_input_status_owner_scope_dir/manual-release-verification.env"
+release_input_status_qa_owner_log="$release_input_status_owner_scope_dir/qa-owner.log"
+release_input_status_release_owner_log="$release_input_status_owner_scope_dir/release-owner.log"
+: >"$release_input_status_owner_scope_env"
+: >"$release_input_status_owner_scope_manual"
+RELEASE_ENV_PATH="$release_input_status_owner_scope_env" \
+  MANUAL_RELEASE_VERIFICATION_PATH="$release_input_status_owner_scope_manual" \
+  Scripts/print_release_input_status.sh --strict --owner qa-release-owner >"$release_input_status_qa_owner_log" 2>&1 || true
+for expected_qa_owner_field in \
+  "MISSING_FIELD: MANUAL_REAL_IPHONE_MODEL" \
+  "MISSING_FIELD: MANUAL_TESTFLIGHT_BUILD_NUMBER" \
+  "MISSING_FIELD: MANUAL_IPAD_TESTFLIGHT_PRINT_WORKFLOW"
+do
+  if ! grep -q "$expected_qa_owner_field" "$release_input_status_qa_owner_log"; then
+    printf 'FAIL: QA owner release input status scope must include manual evidence field %s\n' "$expected_qa_owner_field"
+    failures=$((failures + 1))
+  fi
+done
+for deferred_qa_owner_field in \
+  "MISSING_FIELD: APP_REVIEW_CONTACT_FIRST_NAME" \
+  "MISSING_FIELD: DEVELOPMENT_TEAM_ID" \
+  "MISSING_FIELD: Apple Distribution certificate" \
+  "MISSING_FIELD: APP_STORE_CONNECT_API_KEY_JSON or ASC_KEY_ID/ASC_ISSUER_ID/ASC_KEY_PATH" \
+  "MISSING_FIELD: APP_PRIVACY_DETAILS_CONFIRMED_IN_APP_STORE_CONNECT" \
+  "MISSING_FIELD: CONFIRM_SUBMIT_FOR_REVIEW"
+do
+  if grep -q "$deferred_qa_owner_field" "$release_input_status_qa_owner_log"; then
+    printf 'FAIL: QA owner release input status scope must defer non-QA field %s\n' "$deferred_qa_owner_field"
+    failures=$((failures + 1))
+  fi
+done
+RELEASE_ENV_PATH="$release_input_status_owner_scope_env" \
+  MANUAL_RELEASE_VERIFICATION_PATH="$release_input_status_owner_scope_manual" \
+  Scripts/print_release_input_status.sh --strict --owner release-owner >"$release_input_status_release_owner_log" 2>&1 || true
+for expected_release_owner_field in \
+  "MISSING_FIELD: APP_REVIEW_CONTACT_FIRST_NAME" \
+  "MISSING_FIELD: APP_REVIEW_CONTACT_EMAIL" \
+  "MISSING_FIELD: APP_STORE_BUILD_NUMBER" \
+  "MISSING_FIELD: CONFIRM_SUBMIT_FOR_REVIEW"
+do
+  if ! grep -q "$expected_release_owner_field" "$release_input_status_release_owner_log"; then
+    printf 'FAIL: Release owner release input status scope must include field %s\n' "$expected_release_owner_field"
+    failures=$((failures + 1))
+  fi
+done
+for deferred_release_owner_field in \
+  "MISSING_FIELD: MANUAL_REAL_IPHONE_MODEL" \
+  "MISSING_FIELD: DEVELOPMENT_TEAM_ID" \
+  "MISSING_FIELD: Apple Distribution certificate" \
+  "MISSING_FIELD: APP_STORE_CONNECT_API_KEY_JSON or ASC_KEY_ID/ASC_ISSUER_ID/ASC_KEY_PATH" \
+  "MISSING_FIELD: APP_PRIVACY_DETAILS_CONFIRMED_IN_APP_STORE_CONNECT"
+do
+  if grep -q "$deferred_release_owner_field" "$release_input_status_release_owner_log"; then
+    printf 'FAIL: Release owner release input status scope must defer non-release-owner field %s\n' "$deferred_release_owner_field"
+    failures=$((failures + 1))
+  fi
+done
+if ! grep -q 'Scripts/print_release_input_status.sh --strict --owner qa-release-owner' "$release_input_status_qa_owner_log"; then
+  printf 'FAIL: QA owner release input status scope must rerun strict owner-scoped status after template install\n'
+  failures=$((failures + 1))
+fi
+rm -rf "$release_input_status_owner_scope_dir"
 release_input_status_loose_release_env_dir="$(mktemp -d)"
 release_input_status_loose_release_env="$release_input_status_loose_release_env_dir/release.env"
 release_input_status_loose_release_log="$release_input_status_loose_release_env_dir/status.log"
@@ -3435,6 +3502,7 @@ check_not_contains "README.md" "Scripts/bootstrap_release_env.sh" "README must n
 check_not_contains "README.md" "Scripts/bootstrap_release_inputs.sh" "README must not send release operators through stale bootstrap_release_inputs"
 check_contains "README.md" "Scripts/print_release_input_status.sh" "README must document the redacted release input status command"
 check_contains "README.md" "Scripts/print_release_input_status.sh --strict" "README must document strict redacted release input status before handoff"
+check_contains "README.md" "Scripts/print_release_input_status.sh --strict --owner qa-release-owner" "README must document owner-scoped redacted release input status"
 check_contains "README.md" "Scripts/verify_release.sh contact-report" "README must document the App Review contact readiness report command"
 check_contains "README.md" "Scripts/verify_release.sh manual-report" "README must document the manual release readiness report command"
 check_contains "README.md" "Scripts/verify_release.sh signing-report" "README must document the signing readiness report command"
@@ -3508,6 +3576,7 @@ check_not_contains "AppStore/release-checklist.md" "Fill local release environme
 check_not_contains "AppStore/release-checklist.md" "Scripts/bootstrap_release_env.sh" "Release checklist must not send release operators through stale bootstrap_release_env"
 check_not_contains "AppStore/release-checklist.md" "Scripts/bootstrap_release_inputs.sh" "Release checklist must not send release operators through stale bootstrap_release_inputs"
 check_contains "AppStore/release-checklist.md" "Scripts/print_release_input_status.sh" "Release checklist must include redacted release input status"
+check_contains "AppStore/release-checklist.md" "Scripts/print_release_input_status.sh --strict --owner qa-release-owner" "Release checklist must include owner-scoped redacted release input status"
 check_not_contains "AppStore/release-checklist.md" "DEVELOPMENT_TEAM_ID=\\.\\.\\." "Release checklist archive commands must use shell-safe Team ID placeholders"
 check_contains "AppStore/release-checklist.md" "DEVELOPMENT_TEAM_ID=YOURTEAMID ALLOW_PROVISIONING_UPDATES=1 Scripts/archive_app_store.sh" "Release checklist must show a shell-safe archive command placeholder"
 check_contains "AppStore/release-checklist.md" "Replace YOURTEAMID with the Apple Developer Team ID before running signing or archive commands." "Release checklist must warn operators to replace Team ID placeholders"
@@ -5508,8 +5577,8 @@ EOF
       printf 'FAIL: Release owner action brief must include the safe private template installer command\n'
       failures=$((failures + 1))
     fi
-    if ! grep -q 'Scripts/print_release_input_status.sh --strict' "$owner_brief_output_dir/release-owner.md"; then
-      printf 'FAIL: Release owner action brief must include the strict release input status command\n'
+    if ! grep -q 'Scripts/print_release_input_status.sh --strict --owner release-owner' "$owner_brief_output_dir/release-owner.md"; then
+      printf 'FAIL: Release owner action brief must include the owner-scoped strict release input status command\n'
       failures=$((failures + 1))
     fi
     if ! grep -Fq '| Final Submission Guard | blocker | `CONFIRM_SUBMIT_FOR_REVIEW` | `Config/release.env` | Explicit final confirmation before Fastlane submits the selected build for review. | Set CONFIRM_SUBMIT_FOR_REVIEW=1 only for the final deliberate App Review submission. | `APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER CONFIRM_SUBMIT_FOR_REVIEW=1 Scripts/run_fastlane.sh ios submit_review` |' "$owner_brief_output_dir/release-owner.md"; then
@@ -5522,6 +5591,10 @@ EOF
     fi
     if ! grep -q '^## Private Input Setup' "$owner_brief_output_dir/qa-release-owner.md"; then
       printf 'FAIL: QA action brief must include private input setup guidance\n'
+      failures=$((failures + 1))
+    fi
+    if ! grep -q 'Scripts/print_release_input_status.sh --strict --owner qa-release-owner' "$owner_brief_output_dir/qa-release-owner.md"; then
+      printf 'FAIL: QA action brief must include owner-scoped strict release input status command\n'
       failures=$((failures + 1))
     fi
     if ! grep -Fq '| Manual Verification | blocker | `MANUAL_REAL_IPHONE_MODEL` | `Config/manual-release-verification.env` | Real iPhone model is missing | Record real iPhone evidence. | `APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/validate_manual_release_verification.sh` |' "$owner_brief_output_dir/qa-release-owner.md"; then
@@ -5548,8 +5621,16 @@ EOF
       printf 'FAIL: Apple Developer action brief must include private input setup guidance\n'
       failures=$((failures + 1))
     fi
+    if ! grep -q 'Scripts/print_release_input_status.sh --strict --owner apple-developer-account-holder' "$owner_brief_output_dir/apple-developer-account-holder.md"; then
+      printf 'FAIL: Apple Developer action brief must include owner-scoped strict release input status command\n'
+      failures=$((failures + 1))
+    fi
     if ! grep -q '^## Private Input Setup' "$owner_brief_output_dir/app-store-connect-account-holder.md"; then
       printf 'FAIL: App Store Connect action brief must include private input setup guidance\n'
+      failures=$((failures + 1))
+    fi
+    if ! grep -q 'Scripts/print_release_input_status.sh --strict --owner app-store-connect-account-holder' "$owner_brief_output_dir/app-store-connect-account-holder.md"; then
+      printf 'FAIL: App Store Connect action brief must include owner-scoped strict release input status command\n'
       failures=$((failures + 1))
     fi
     owner_brief_bad_dir="$owner_brief_test_dir/owner-action-briefs-bad"
@@ -5590,6 +5671,16 @@ EOF
       failures=$((failures + 1))
     elif ! grep -q 'private input setup guidance' "$owner_brief_log"; then
       printf 'FAIL: Release owner action brief validator must identify missing private input setup guidance\n'
+      failures=$((failures + 1))
+    fi
+    owner_brief_bad_dir="$owner_brief_test_dir/owner-action-briefs-missing-owner-scoped-status"
+    cp -R "$owner_brief_output_dir" "$owner_brief_bad_dir"
+    perl -0pi -e 's/Scripts\/print_release_input_status\.sh --strict --owner qa-release-owner/Scripts\/print_release_input_status.sh --strict/' "$owner_brief_bad_dir/qa-release-owner.md"
+    if Scripts/validate_release_owner_action_briefs.sh "$owner_brief_actions" "$owner_brief_bad_dir" >"$owner_brief_log" 2>&1; then
+      printf 'FAIL: Release owner action brief validator must reject non-owner-scoped release input status guidance\n'
+      failures=$((failures + 1))
+    elif ! grep -q 'owner-scoped release input status guidance' "$owner_brief_log"; then
+      printf 'FAIL: Release owner action brief validator must identify non-owner-scoped release input status guidance\n'
       failures=$((failures + 1))
     fi
     owner_brief_bad_dir="$owner_brief_test_dir/owner-action-briefs-missing-placeholder-warning"

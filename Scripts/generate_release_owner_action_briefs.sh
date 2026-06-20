@@ -48,6 +48,10 @@ awk -F '\t' -v output_dir="$output_dir" -v actions_path="$actions_path" -v gener
     return owner_slug(owner_name) ".md"
   }
 
+  function owner_status_command(owner_name) {
+    return "Scripts/print_release_input_status.sh --strict --owner " owner_slug(owner_name)
+  }
+
   function print_detail_header(path) {
     print "| Category | Severity | Field | Target | Item | Next Action | Validation Command |" >>path
     print "| --- | --- | --- | --- | --- | --- | --- |" >>path
@@ -226,7 +230,7 @@ awk -F '\t' -v output_dir="$output_dir" -v actions_path="$actions_path" -v gener
         print "" >>owner_path
         print "```sh" >>owner_path
         print "Scripts/install_private_release_input_templates.sh --source-dir build/private-release-input-templates --target-dir Config" >>owner_path
-        print "Scripts/print_release_input_status.sh --strict" >>owner_path
+        print owner_status_command(owner_name) >>owner_path
         print "```" >>owner_path
         print "" >>owner_path
       }
