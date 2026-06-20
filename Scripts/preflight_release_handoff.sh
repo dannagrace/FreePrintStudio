@@ -166,6 +166,21 @@ markdown_cell() {
   printf '%s' "$value"
 }
 
+owner_slug() {
+  local value="$1"
+  local slug
+  slug="$(printf '%s' "$value" | tr '[:upper:]' '[:lower:]' | sed -E 's/[^a-z0-9]+/-/g; s/^-+//; s/-+$//')"
+  if [[ -z "$slug" ]]; then
+    slug="owner"
+  fi
+  printf '%s' "$slug"
+}
+
+owner_status_command() {
+  local owner="$1"
+  printf 'Scripts/print_release_input_status.sh --strict --owner %s' "$(owner_slug "$owner")"
+}
+
 readiness_signal_lines() {
   local path="$1"
   if [[ -s "$path" ]]; then
@@ -196,6 +211,51 @@ write_readiness_delta_section() {
     local item="${line#*: }"
     printf '| %s | %s |\n' "$(markdown_cell "$severity")" "$(markdown_cell "$item")"
   done <<<"$delta_lines"
+  printf '\n'
+}
+
+write_owner_status_commands() {
+  local final_guard_actions="$1"
+
+  printf '## Owner-Scoped Status Commands\n\n'
+  printf 'Use these redacted commands when one handoff owner needs to check only their assigned release inputs.\n\n'
+  printf '| Owner | Command |\n'
+  printf '| --- | --- |\n'
+  if [[ -s "$external_actions_path" ]]; then
+    awk -F '\t' -v final_guard_actions="$final_guard_actions" '
+      NR == 1 {
+        for (i = 1; i <= NF; i++) {
+          columns[$i] = i
+        }
+        next
+      }
+      $1 != "" {
+        owner = $(columns["owner"])
+        if (!(owner in seen)) {
+          seen[owner] = 1
+          owner_order[++owner_count] = owner
+        }
+      }
+      END {
+        final_guard_actions += 0
+        if (final_guard_actions > 0 && !("Release owner" in seen)) {
+          owner_order[++owner_count] = "Release owner"
+        }
+        for (owner_index = 1; owner_index <= owner_count; owner_index += 1) {
+          print owner_order[owner_index]
+        }
+      }
+    ' "$external_actions_path" | while IFS= read -r owner; do
+      [[ -n "$owner" ]] || continue
+      local escaped_owner
+      local escaped_command
+      escaped_owner="$(markdown_cell "$owner")"
+      escaped_command="$(markdown_cell "$(owner_status_command "$owner")")"
+      printf '| `%s` | `%s` |\n' "$escaped_owner" "$escaped_command"
+    done
+  else
+    printf '| `Release owner` | `%s` |\n' "$(owner_status_command "Release owner")"
+  fi
   printf '\n'
 }
 
@@ -424,6 +484,9 @@ write_handoff_brief() {
     else
       printf 'No external readiness action manifest was found at `%s`.\n' "$external_actions_path"
     fi
+
+    printf '\n'
+    write_owner_status_commands "$release_phase_plan_final_submission_guard_actions"
 
     printf '\n## Total Handoff Owner Summary\n\n'
     if [[ -s "$external_actions_path" ]]; then

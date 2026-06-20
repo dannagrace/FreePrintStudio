@@ -4992,6 +4992,16 @@ The phase plan count includes derived final submission guard actions that are no
 | Apple Developer account holder | 1 | 1 | 0 |
 | App Store Connect account holder | 1 | 0 | 1 |
 
+## Owner-Scoped Status Commands
+
+Use these redacted commands when one handoff owner needs to check only their assigned release inputs.
+
+| Owner | Command |
+| --- | --- |
+| `Apple Developer account holder` | `Scripts/print_release_input_status.sh --strict --owner apple-developer-account-holder` |
+| `App Store Connect account holder` | `Scripts/print_release_input_status.sh --strict --owner app-store-connect-account-holder` |
+| `Release owner` | `Scripts/print_release_input_status.sh --strict --owner release-owner` |
+
 ## Total Handoff Owner Summary
 
 | Owner | Actions | Blockers | Warnings |
@@ -5056,6 +5066,15 @@ EOF
     failures=$((failures + 1))
   elif ! grep -q 'Apple Developer Team ID missing' "$handoff_brief_log"; then
     printf 'FAIL: Release handoff brief validator must identify missing external action detail rows\n'
+    failures=$((failures + 1))
+  fi
+  cp "$handoff_brief_path" "$handoff_brief_bad"
+  perl -0pi -e 's/^\| `Apple Developer account holder` \| `Scripts\/print_release_input_status\.sh --strict --owner apple-developer-account-holder` \|\n//m' "$handoff_brief_bad"
+  if Scripts/validate_release_handoff_brief.sh "$handoff_brief_actions" "$handoff_brief_bad" "$handoff_brief_ci_readiness" "$handoff_brief_local_readiness" >"$handoff_brief_log" 2>&1; then
+    printf 'FAIL: Release handoff brief validator must reject missing owner-scoped status commands\n'
+    failures=$((failures + 1))
+  elif ! grep -q 'owner-scoped status command' "$handoff_brief_log"; then
+    printf 'FAIL: Release handoff brief validator must identify missing owner-scoped status commands\n'
     failures=$((failures + 1))
   fi
   cp "$handoff_brief_path" "$handoff_brief_bad"
@@ -6354,6 +6373,10 @@ check_contains "Scripts/preflight_release_handoff.sh" "CI-only Readiness Detail"
 check_contains "Scripts/preflight_release_handoff.sh" "Local-only Readiness Detail" "Release handoff brief must list readiness lines present only in local preflight"
 check_contains "Scripts/preflight_release_handoff.sh" "External Action Summary" "Release handoff brief must summarize external action categories"
 check_contains "Scripts/preflight_release_handoff.sh" "Owner Summary" "Release handoff brief must summarize external actions by owner"
+check_contains "Scripts/preflight_release_handoff.sh" "Owner-Scoped Status Commands" "Release handoff brief must include owner-scoped status commands"
+check_contains "Scripts/preflight_release_handoff.sh" "owner_slug" "Release handoff brief must derive owner-scoped status command slugs"
+check_contains "Scripts/preflight_release_handoff.sh" "owner_status_command" "Release handoff brief must generate owner-scoped status commands"
+check_contains "Scripts/preflight_release_handoff.sh" "Scripts/print_release_input_status.sh --strict --owner" "Release handoff brief must include owner-scoped release input status commands"
 check_contains "Scripts/preflight_release_handoff.sh" "External Action Detail" "Release handoff brief must include actionable external readiness details"
 check_contains "Scripts/preflight_release_handoff.sh" "Owner | Category | Severity" "Release handoff brief must include owners in external action detail rows"
 check_contains "Scripts/preflight_release_handoff.sh" "next_action" "Release handoff brief must include next action guidance from the external action manifest"
@@ -6365,6 +6388,9 @@ check_contains "Scripts/preflight_release_handoff.sh" "Replace apple-id@example.
 check_contains "Scripts/validate_release_handoff_brief.sh" "CI-only Readiness Detail" "Release handoff brief validator must require CI-only readiness detail section"
 check_contains "Scripts/validate_release_handoff_brief.sh" "Local-only Readiness Detail" "Release handoff brief validator must require local-only readiness detail section"
 check_contains "Scripts/validate_release_handoff_brief.sh" "Release Phase Plan Status" "Release handoff brief validator must require release phase plan status section"
+check_contains "Scripts/validate_release_handoff_brief.sh" "Owner-Scoped Status Commands" "Release handoff brief validator must require owner-scoped status commands"
+check_contains "Scripts/validate_release_handoff_brief.sh" "owner_slug" "Release handoff brief validator must derive owner-scoped status command slugs"
+check_contains "Scripts/validate_release_handoff_brief.sh" "Scripts/print_release_input_status.sh --strict --owner" "Release handoff brief validator must require owner-scoped release input status commands"
 check_contains "Scripts/validate_release_handoff_summary.sh" "release_phase_plan_final_submission_guard_actions" "Release handoff summary validator must require final submission guard action count"
 check_not_contains "Scripts/preflight_release_handoff.sh" "Scripts/bootstrap_release_inputs.sh" "Release handoff brief must not send operators through stale bootstrap_release_inputs after generating private templates"
 check_not_contains "Scripts/preflight_release_handoff.sh" "printf '-" "Release handoff brief must not use printf formats that start with a dash"

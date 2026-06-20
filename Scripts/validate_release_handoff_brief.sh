@@ -152,6 +152,21 @@ markdown_cell() {
   printf '%s' "$value"
 }
 
+owner_slug() {
+  local value="$1"
+  local slug
+  slug="$(printf '%s' "$value" | tr '[:upper:]' '[:lower:]' | sed -E 's/[^a-z0-9]+/-/g; s/^-+//; s/-+$//')"
+  if [[ -z "$slug" ]]; then
+    slug="owner"
+  fi
+  printf '%s' "$slug"
+}
+
+owner_status_command() {
+  local owner="$1"
+  printf 'Scripts/print_release_input_status.sh --strict --owner %s' "$(owner_slug "$owner")"
+}
+
 readiness_signal_lines() {
   local path="$1"
   if [[ -s "$path" ]]; then
@@ -540,6 +555,7 @@ require_contains "## CI-only Readiness Detail" "CI-only Readiness Detail section
 require_contains "## Local-only Readiness Detail" "Local-only Readiness Detail section"
 require_contains "## External Action Summary" "External Action Summary section"
 require_contains "## Owner Summary" "Owner Summary section"
+require_contains "## Owner-Scoped Status Commands" "Owner-Scoped Status Commands section"
 require_contains "## Total Handoff Owner Summary" "Total Handoff Owner Summary section"
 require_contains "## External Action Detail" "External Action Detail section"
 require_contains "## Primary Action Files" "Primary Action Files section"
@@ -577,6 +593,14 @@ require_placeholder_guidance \
   "apple-id@example.com" \
   "Replace apple-id@example.com with the App Store Connect Apple ID before running Fastlane Apple ID commands." \
   "Fastlane Apple ID placeholder replacement guidance"
+
+while IFS=$'\t' read -r expected_owner _owner_actions _owner_blockers _owner_warnings; do
+  [[ -n "$expected_owner" ]] || continue
+  require_section_contains \
+    "Owner-Scoped Status Commands" \
+    "$(owner_status_command "$expected_owner")" \
+    "owner-scoped status command is missing for $expected_owner"
+done <"$expected_total_owner_summary"
 
 for required_action_file in \
   "release-handoff-summary.tsv" \
