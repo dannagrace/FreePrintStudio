@@ -36,6 +36,20 @@ awk -F '\t' -v output_path="$output_path" -v actions_path="$actions_path" -v gen
     return "`" value "`"
   }
 
+  function owner_slug(value, slug) {
+    slug = tolower(value)
+    gsub(/[^a-z0-9]+/, "-", slug)
+    gsub(/^-+|-+$/, "", slug)
+    if (slug == "") {
+      slug = "owner"
+    }
+    return slug
+  }
+
+  function owner_status_command(owner_name) {
+    return "Scripts/print_release_input_status.sh --strict --owner " owner_slug(owner_name)
+  }
+
   function target_heading(target) {
     return "## " target
   }
@@ -118,6 +132,22 @@ awk -F '\t' -v output_path="$output_path" -v actions_path="$actions_path" -v gen
     }
     if (has_fastlane_apple_id_placeholder) {
       print "Replace apple-id@example.com with the App Store Connect Apple ID before running Fastlane Apple ID commands." >>output_path
+    }
+  }
+
+  function print_owner_status_commands(   owner_index, owner_name) {
+    print "" >>output_path
+    print "## Owner-Scoped Status Commands" >>output_path
+    print "" >>output_path
+    print "Use these redacted commands when one handoff owner needs to check only their assigned release inputs." >>output_path
+    print "" >>output_path
+    print "| Owner | Command |" >>output_path
+    print "| --- | --- |" >>output_path
+    for (owner_index = 1; owner_index <= owner_order_count; owner_index += 1) {
+      owner_name = owner_order[owner_index]
+      printf "| %s | %s |\n", \
+        code_text(markdown_cell(owner_name)), \
+        code_text(markdown_cell(owner_status_command(owner_name))) >>output_path
     }
   }
 
@@ -299,6 +329,8 @@ awk -F '\t' -v output_path="$output_path" -v actions_path="$actions_path" -v gen
         owner_blocker_counts[owner_name] + 0, \
         owner_warning_counts[owner_name] + 0 >>output_path
     }
+
+    print_owner_status_commands()
 
     print_placeholder_replacement_notes()
 

@@ -5168,6 +5168,8 @@ check_contains "Scripts/generate_release_input_todo.sh" "external-readiness-acti
 check_contains "Scripts/generate_release_input_todo.sh" "Config/release.env" "Release input TODO generator must group private release environment fields"
 check_contains "Scripts/generate_release_input_todo.sh" "Config/manual-release-verification.env" "Release input TODO generator must group manual release evidence fields"
 check_contains "Scripts/generate_release_input_todo.sh" "Owner Summary" "Release input TODO generator must summarize external actions by owner"
+check_contains "Scripts/generate_release_input_todo.sh" "Owner-Scoped Status Commands" "Release input TODO generator must include owner-scoped status commands"
+check_contains "Scripts/generate_release_input_todo.sh" "Scripts/print_release_input_status.sh --strict --owner" "Release input TODO generator must tell each owner how to run owner-scoped redacted status"
 check_contains "Scripts/generate_release_input_todo.sh" "Final Submission Guard Actions" "Release input TODO generator must count final submission guard actions"
 check_contains "Scripts/generate_release_input_todo.sh" "Total Handoff Actions" "Release input TODO generator must expose total handoff action counts"
 check_contains "Scripts/generate_release_input_todo.sh" "Non-env External Actions" "Release input TODO generator must preserve non-env external actions"
@@ -5219,6 +5221,21 @@ EOF
       printf 'FAIL: Release input TODO owner summary must count QA/release owner actions\n'
       failures=$((failures + 1))
     fi
+    if ! grep -q '^## Owner-Scoped Status Commands' "$release_input_todo_output"; then
+      printf 'FAIL: Release input TODO must include owner-scoped status commands\n'
+      failures=$((failures + 1))
+    fi
+    for expected_owner_status_command in \
+      'Scripts/print_release_input_status.sh --strict --owner release-owner' \
+      'Scripts/print_release_input_status.sh --strict --owner qa-release-owner' \
+      'Scripts/print_release_input_status.sh --strict --owner apple-developer-account-holder' \
+      'Scripts/print_release_input_status.sh --strict --owner app-store-connect-account-holder'
+    do
+      if ! grep -q "$expected_owner_status_command" "$release_input_todo_output"; then
+        printf 'FAIL: Release input TODO must include owner-scoped status command %s\n' "$expected_owner_status_command"
+        failures=$((failures + 1))
+      fi
+    done
     if ! grep -q '| `Config/release.env` | 4 |' "$release_input_todo_output"; then
       printf 'FAIL: Release input TODO target summary must count final submission guards under Config/release.env\n'
       failures=$((failures + 1))
@@ -5346,6 +5363,8 @@ check_contains "Scripts/validate_release_input_todo.sh" "Blockers" "Release inpu
 check_contains "Scripts/validate_release_input_todo.sh" "Warnings" "Release input TODO validator must verify warning counts"
 check_contains "Scripts/validate_release_input_todo.sh" "Target Summary" "Release input TODO validator must verify target summary counts"
 check_contains "Scripts/validate_release_input_todo.sh" "Owner Summary" "Release input TODO validator must verify owner summary counts"
+check_contains "Scripts/validate_release_input_todo.sh" "Owner-Scoped Status Commands" "Release input TODO validator must require owner-scoped status commands"
+check_contains "Scripts/validate_release_input_todo.sh" "Scripts/print_release_input_status.sh --strict --owner" "Release input TODO validator must require owner-scoped redacted status commands"
 check_contains "Scripts/validate_release_input_todo.sh" "Config/release.env" "Release input TODO validator must require private release env guidance"
 check_contains "Scripts/validate_release_input_todo.sh" "Config/manual-release-verification.env" "Release input TODO validator must require manual evidence guidance"
 check_contains "Scripts/validate_release_input_todo.sh" "selected-build placeholder replacement guidance" "Release input TODO validator must require selected-build placeholder replacement guidance"
@@ -5423,6 +5442,15 @@ EOF
       failures=$((failures + 1))
     elif ! grep -q 'Blockers' "$release_input_todo_validator_test_dir/validate-bad.log"; then
       printf 'FAIL: Release input TODO validator must explain blocker count mismatches\n'
+      failures=$((failures + 1))
+    fi
+    cp "$release_input_todo_validator_output" "$release_input_todo_validator_bad"
+    perl -0pi -e 's/^## Owner-Scoped Status Commands\n\n(?:.*\n)*?\n## Placeholder Replacement Notes\n/## Placeholder Replacement Notes\n/m' "$release_input_todo_validator_bad"
+    if Scripts/validate_release_input_todo.sh "$release_input_todo_validator_actions" "$release_input_todo_validator_bad" >"$release_input_todo_validator_test_dir/validate-missing-owner-status.log" 2>&1; then
+      printf 'FAIL: Release input TODO validator must reject missing owner-scoped status commands\n'
+      failures=$((failures + 1))
+    elif ! grep -q 'owner-scoped status command' "$release_input_todo_validator_test_dir/validate-missing-owner-status.log"; then
+      printf 'FAIL: Release input TODO validator must identify missing owner-scoped status commands\n'
       failures=$((failures + 1))
     fi
     cp "$release_input_todo_validator_output" "$release_input_todo_validator_bad"

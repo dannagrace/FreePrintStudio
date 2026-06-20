@@ -53,6 +53,16 @@ compare_count() {
   fi
 }
 
+owner_slug() {
+  local value="$1"
+  value="$(printf '%s' "$value" | tr '[:upper:]' '[:lower:]')"
+  value="$(printf '%s' "$value" | sed -E 's/[^a-z0-9]+/-/g; s/^-+|-+$//g')"
+  if [[ -z "$value" ]]; then
+    value="owner"
+  fi
+  printf '%s' "$value"
+}
+
 temp_dir="$(mktemp -d)"
 trap 'rm -rf "$temp_dir"' EXIT
 
@@ -201,6 +211,7 @@ awk -F '\t' '$1 == "owner" { print $2 "\t" $3 "\t" $4 "\t" $5 }' "$temp_dir/acti
 require_contains "# FreePrint Studio Release Input TODO" "release input TODO title"
 require_contains "## Target Summary" "Target Summary"
 require_contains "## Owner Summary" "Owner Summary"
+require_contains "## Owner-Scoped Status Commands" "Owner-Scoped Status Commands"
 require_contains "External Actions" "External Actions"
 require_contains "Final Submission Guard Actions" "Final Submission Guard Actions"
 require_contains "Total Handoff Actions" "Total Handoff Actions"
@@ -279,6 +290,12 @@ if ! diff -u "$expected_owners" "$actual_owners" >"$owner_diff"; then
   fail "Owner Summary counts do not match external-readiness-actions.tsv"
   sed 's/^/  /' "$owner_diff"
 fi
+
+while IFS=$'\t' read -r expected_owner _expected_actions _expected_blockers _expected_warnings; do
+  [[ -n "${expected_owner:-}" ]] || continue
+  expected_owner_status_command="Scripts/print_release_input_status.sh --strict --owner $(owner_slug "$expected_owner")"
+  require_contains "$expected_owner_status_command" "owner-scoped status command for $expected_owner"
+done <"$expected_owners"
 
 while IFS=$'\t' read -r expected_field expected_item expected_validation_command; do
   [[ -n "${expected_field:-}${expected_item:-}${expected_validation_command:-}" ]] || continue
