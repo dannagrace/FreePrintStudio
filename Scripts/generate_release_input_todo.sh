@@ -17,8 +17,9 @@ fi
 mkdir -p "$(dirname "$output_path")"
 
 private_template_install_command="Scripts/install_private_release_input_templates.sh --source-dir build/private-release-input-templates --target-dir Config"
+private_template_status_command="Scripts/print_release_input_status.sh --strict"
 
-awk -F '\t' -v output_path="$output_path" -v actions_path="$actions_path" -v generated_at="$(date -u '+%Y-%m-%dT%H:%M:%SZ')" -v private_template_install_command="$private_template_install_command" '
+awk -F '\t' -v output_path="$output_path" -v actions_path="$actions_path" -v generated_at="$(date -u '+%Y-%m-%dT%H:%M:%SZ')" -v private_template_install_command="$private_template_install_command" -v private_template_status_command="$private_template_status_command" '
   function fail(message) {
     print "FAIL: " message >"/dev/stderr"
     exit 1
@@ -124,6 +125,7 @@ awk -F '\t' -v output_path="$output_path" -v actions_path="$actions_path" -v gen
     print "Fill these values in the git-ignored " code_text(target) " file. Leave secrets out of git." >>output_path
     if (target == "Config/release.env") {
       print "If the file does not exist yet, install or sync it from the current private templates with " code_text(private_template_install_command) " before filling release values." >>output_path
+      print "After installing or syncing templates, run " code_text(private_template_status_command) " before filling release values." >>output_path
     }
     if (target == "Config/manual-release-verification.env") {
       for (row = 1; row <= row_count; row += 1) {
@@ -133,6 +135,7 @@ awk -F '\t' -v output_path="$output_path" -v actions_path="$actions_path" -v gen
       }
       if (has_missing_manual_file_action) {
         print "If the file does not exist yet, install or sync it from the current private templates with " code_text(private_template_install_command) " before recording evidence." >>output_path
+        print "After installing or syncing templates, run " code_text(private_template_status_command) " before recording evidence." >>output_path
       }
     }
     print "" >>output_path
