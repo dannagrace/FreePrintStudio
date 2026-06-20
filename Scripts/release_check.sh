@@ -1254,6 +1254,7 @@ check_contains "Scripts/print_release_input_status.sh" "git check-ignore" "Relea
 check_contains "Scripts/print_release_input_status.sh" "--strict" "Release input status must offer a strict mode for handoff gating"
 check_contains "Scripts/print_release_input_status.sh" "does not print private values" "Release input status must explicitly avoid printing private values"
 check_contains "Scripts/print_release_input_status.sh" "Scripts/install_private_release_input_templates.sh --source-dir build/private-release-input-templates --target-dir Config" "Release input status next commands must install generated private input templates safely"
+check_contains "Scripts/print_release_input_status.sh" "Scripts/print_release_input_status.sh --strict" "Release input status next commands must rerun strict redacted status after installing private templates"
 check_not_contains "Scripts/print_release_input_status.sh" "Scripts/bootstrap_release_inputs.sh" "Release input status must not send operators through stale bootstrap_release_inputs"
 check_not_contains "Scripts/print_release_input_status.sh" "Scripts/bootstrap_release_env.sh" "Release input status must not send operators through stale bootstrap_release_env"
 check_contains "Scripts/print_release_input_status.sh" "Scripts/check_app_store_connect_credentials.sh" "Release input status must run strict App Store Connect credential validation"
@@ -1398,6 +1399,10 @@ do
 done
 if grep -q "$release_input_status_missing_fields_dir" "$release_input_status_missing_fields_log"; then
   printf 'FAIL: Release input status missing field checklist must not print private release input paths\n'
+  failures=$((failures + 1))
+fi
+if ! grep -qx 'Scripts/print_release_input_status.sh --strict' "$release_input_status_missing_fields_log"; then
+  printf 'FAIL: Release input status next commands must rerun strict redacted status after installing private templates\n'
   failures=$((failures + 1))
 fi
 rm -rf "$release_input_status_missing_fields_dir"

@@ -620,6 +620,7 @@ print_missing_fields
 
 print_private_setup_commands() {
   printf '%s\n' "$private_template_install_command"
+  printf 'Scripts/print_release_input_status.sh --strict\n'
   printf 'Scripts/validate_release_env.sh\n'
 }
 
