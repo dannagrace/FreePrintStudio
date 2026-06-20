@@ -9,6 +9,7 @@ readiness_log="${FREEPRINTSTUDIO_HANDOFF_READINESS_LOG:-build/release-handoff-re
 summary_path="${FREEPRINTSTUDIO_HANDOFF_SUMMARY_PATH:-build/release-handoff-summary.tsv}"
 brief_path="${FREEPRINTSTUDIO_HANDOFF_BRIEF_PATH:-build/release-handoff-brief.md}"
 release_input_status_path="${FREEPRINTSTUDIO_HANDOFF_RELEASE_INPUT_STATUS_PATH:-build/release-handoff-input-status.txt}"
+owner_input_status_dir="${FREEPRINTSTUDIO_HANDOFF_OWNER_INPUT_STATUS_DIR:-build/release-owner-input-status}"
 input_todo_path="${FREEPRINTSTUDIO_HANDOFF_INPUT_TODO_PATH:-build/release-input-todo.md}"
 phase_plan_path="${FREEPRINTSTUDIO_HANDOFF_PHASE_PLAN_PATH:-build/release-phase-plan.md}"
 owner_action_dir="${FREEPRINTSTUDIO_HANDOFF_OWNER_ACTION_DIR:-build/release-owner-actions}"
@@ -27,6 +28,7 @@ Connect account work:
   - verifies the downloaded packet provenance matches the local HEAD
   - validates the CI external-readiness-actions.tsv manifest
   - writes a redacted release input status report
+  - writes owner-scoped redacted release input status reports
   - runs the App Store readiness audit and surfaces remaining blockers
   - writes build/release-handoff-summary.tsv with CI packet and readiness status
   - writes build/release-handoff-brief.md for release owner handoff
@@ -181,6 +183,39 @@ owner_status_command() {
   printf 'Scripts/print_release_input_status.sh --strict --owner %s' "$(owner_slug "$owner")"
 }
 
+list_handoff_owners() {
+  local final_guard_actions="$1"
+
+  if [[ -s "$external_actions_path" ]]; then
+    awk -F '\t' -v final_guard_actions="$final_guard_actions" '
+      NR == 1 {
+        for (i = 1; i <= NF; i++) {
+          columns[$i] = i
+        }
+        next
+      }
+      $1 != "" {
+        owner = $(columns["owner"])
+        if (!(owner in seen)) {
+          seen[owner] = 1
+          owner_order[++owner_count] = owner
+        }
+      }
+      END {
+        final_guard_actions += 0
+        if (final_guard_actions > 0 && !("Release owner" in seen)) {
+          owner_order[++owner_count] = "Release owner"
+        }
+        for (owner_index = 1; owner_index <= owner_count; owner_index += 1) {
+          print owner_order[owner_index]
+        }
+      }
+    ' "$external_actions_path"
+  else
+    printf 'Release owner\n'
+  fi
+}
+
 readiness_signal_lines() {
   local path="$1"
   if [[ -s "$path" ]]; then
@@ -221,40 +256,63 @@ write_owner_status_commands() {
   printf 'Use these redacted commands when one handoff owner needs to check only their assigned release inputs.\n\n'
   printf '| Owner | Command |\n'
   printf '| --- | --- |\n'
-  if [[ -s "$external_actions_path" ]]; then
-    awk -F '\t' -v final_guard_actions="$final_guard_actions" '
-      NR == 1 {
-        for (i = 1; i <= NF; i++) {
-          columns[$i] = i
-        }
-        next
-      }
-      $1 != "" {
-        owner = $(columns["owner"])
-        if (!(owner in seen)) {
-          seen[owner] = 1
-          owner_order[++owner_count] = owner
-        }
-      }
-      END {
-        final_guard_actions += 0
-        if (final_guard_actions > 0 && !("Release owner" in seen)) {
-          owner_order[++owner_count] = "Release owner"
-        }
-        for (owner_index = 1; owner_index <= owner_count; owner_index += 1) {
-          print owner_order[owner_index]
-        }
-      }
-    ' "$external_actions_path" | while IFS= read -r owner; do
-      [[ -n "$owner" ]] || continue
-      local escaped_owner
-      local escaped_command
-      escaped_owner="$(markdown_cell "$owner")"
-      escaped_command="$(markdown_cell "$(owner_status_command "$owner")")"
-      printf '| `%s` | `%s` |\n' "$escaped_owner" "$escaped_command"
-    done
+  list_handoff_owners "$final_guard_actions" | while IFS= read -r owner; do
+    [[ -n "$owner" ]] || continue
+    local escaped_owner
+    local escaped_command
+    escaped_owner="$(markdown_cell "$owner")"
+    escaped_command="$(markdown_cell "$(owner_status_command "$owner")")"
+    printf '| `%s` | `%s` |\n' "$escaped_owner" "$escaped_command"
+  done
+  printf '\n'
+}
+
+write_owner_input_status_reports() {
+  local final_guard_actions="$1"
+  local index_path="$owner_input_status_dir/index.tsv"
+
+  rm -rf "$owner_input_status_dir"
+  mkdir -p "$owner_input_status_dir"
+  printf 'owner_slug\towner\tstatus\tpath\tcommand\n' >"$index_path"
+
+  list_handoff_owners "$final_guard_actions" | while IFS= read -r owner; do
+    [[ -n "$owner" ]] || continue
+    local command
+    local report_path
+    local slug
+    local status
+    slug="$(owner_slug "$owner")"
+    report_path="$owner_input_status_dir/$slug.txt"
+    command="$(owner_status_command "$owner")"
+    set +e
+    Scripts/print_release_input_status.sh --strict --owner "$slug" >"$report_path" 2>&1
+    status="$?"
+    set -e
+    printf '%s\t%s\t%s\t%s\t%s\n' "$slug" "$owner" "$status" "$report_path" "$command" >>"$index_path"
+  done
+}
+
+write_owner_input_status_reports_section() {
+  local index_path="$owner_input_status_dir/index.tsv"
+
+  printf '## Owner-Scoped Status Reports\n\n'
+  printf 'These redacted reports are generated during handoff so each owner can review current missing inputs without re-running commands first.\n\n'
+  printf '| Owner | Status | Report | Command |\n'
+  printf '| --- | ---: | --- | --- |\n'
+  if [[ -s "$index_path" ]]; then
+    while IFS=$'\t' read -r slug owner status report_path command; do
+      [[ "$slug" != "owner_slug" ]] || continue
+      [[ -n "${owner:-}" ]] || continue
+      printf '| `%s` | `%s` | `%s` | `%s` |\n' \
+        "$(markdown_cell "$owner")" \
+        "$(markdown_cell "$status")" \
+        "$(markdown_cell "$report_path")" \
+        "$(markdown_cell "$command")"
+    done <"$index_path"
   else
-    printf '| `Release owner` | `%s` |\n' "$(owner_status_command "Release owner")"
+    printf '| `Release owner` | `missing` | `%s/release-owner.txt` | `%s` |\n' \
+      "$(markdown_cell "$owner_input_status_dir")" \
+      "$(markdown_cell "$(owner_status_command "Release owner")")"
   fi
   printf '\n'
 }
@@ -314,6 +372,7 @@ write_handoff_summary() {
     printf 'release_input_status\t%s\n' "$release_input_status"
     printf 'release_input_missing_checks\t%s\n' "$release_input_missing_checks"
     printf 'release_input_missing_fields\t%s\n' "$release_input_missing_fields"
+    printf 'owner_input_status_dir\t%s\n' "$owner_input_status_dir"
     printf 'release_input_todo\t%s\n' "$input_todo_path"
     printf 'release_phase_plan\t%s\n' "$phase_plan_path"
     printf 'release_phase_plan_total_actions\t%s\n' "$release_phase_plan_total_actions"
@@ -487,6 +546,7 @@ write_handoff_brief() {
 
     printf '\n'
     write_owner_status_commands "$release_phase_plan_final_submission_guard_actions"
+    write_owner_input_status_reports_section
 
     printf '\n## Total Handoff Owner Summary\n\n'
     if [[ -s "$external_actions_path" ]]; then
@@ -563,6 +623,7 @@ write_handoff_brief() {
     printf -- '- Release input TODO: `%s`\n' "$input_todo_path"
     printf -- '- Release phase plan: `%s`\n' "$phase_plan_path"
     printf -- '- Per-owner action briefs: `%s`\n' "$owner_action_dir"
+    printf -- '- Owner-scoped release input status reports: `%s`\n' "$owner_input_status_dir"
     printf -- '- Private release input templates: `%s`\n' "$private_template_dir"
     printf -- '- CI action manifest: `%s`\n' "$external_actions_path"
     printf -- '- CI action checklist: `%s/ACTION_ITEMS.md`\n' "$packet_dir"
@@ -619,6 +680,9 @@ set +e
 Scripts/print_release_input_status.sh --strict >"$release_input_status_path" 2>&1
 release_input_status="$?"
 set -e
+
+release_phase_plan_final_submission_guard_actions="$(phase_plan_metadata_value "$phase_plan_path" "Final Submission Guard Actions")"
+write_owner_input_status_reports "$release_phase_plan_final_submission_guard_actions"
 
 mkdir -p "$(dirname "$readiness_log")"
 set +e

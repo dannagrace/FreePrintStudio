@@ -556,6 +556,7 @@ require_contains "## Local-only Readiness Detail" "Local-only Readiness Detail s
 require_contains "## External Action Summary" "External Action Summary section"
 require_contains "## Owner Summary" "Owner Summary section"
 require_contains "## Owner-Scoped Status Commands" "Owner-Scoped Status Commands section"
+require_contains "## Owner-Scoped Status Reports" "Owner-Scoped Status Reports section"
 require_contains "## Total Handoff Owner Summary" "Total Handoff Owner Summary section"
 require_contains "## External Action Detail" "External Action Detail section"
 require_contains "## Primary Action Files" "Primary Action Files section"
@@ -596,10 +597,23 @@ require_placeholder_guidance \
 
 while IFS=$'\t' read -r expected_owner _owner_actions _owner_blockers _owner_warnings; do
   [[ -n "$expected_owner" ]] || continue
+  expected_owner_slug="$(owner_slug "$expected_owner")"
   require_section_contains \
     "Owner-Scoped Status Commands" \
     "$(owner_status_command "$expected_owner")" \
     "owner-scoped status command is missing for $expected_owner"
+  require_section_contains \
+    "Owner-Scoped Status Reports" \
+    "$expected_owner" \
+    "owner-scoped status report owner is missing for $expected_owner"
+  require_section_contains \
+    "Owner-Scoped Status Reports" \
+    "$expected_owner_slug.txt" \
+    "owner-scoped status report file is missing for $expected_owner"
+  require_section_contains \
+    "Owner-Scoped Status Reports" \
+    "$(owner_status_command "$expected_owner")" \
+    "owner-scoped status report command is missing for $expected_owner"
 done <"$expected_total_owner_summary"
 
 for required_action_file in \
@@ -609,6 +623,7 @@ for required_action_file in \
   "release-input-todo.md" \
   "release-phase-plan.md" \
   "release-owner-actions" \
+  "release-owner-input-status" \
   "private-release-input-templates" \
   "external-readiness-actions.tsv" \
   "ACTION_ITEMS.md" \

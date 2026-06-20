@@ -51,6 +51,48 @@ require_file_key() {
   fi
 }
 
+require_directory_key() {
+  local key="$1"
+  local value
+  require_key "$key"
+  value="$(summary_value "$key" 2>/dev/null || true)"
+  if [[ -n "$value" && ! -d "$value" ]]; then
+    printf 'FAIL: release handoff summary %s points to a missing directory: %s\n' "$key" "$value"
+    failures=$((failures + 1))
+  fi
+}
+
+require_owner_input_status_dir() {
+  local value
+  local index_path
+  local header
+  require_directory_key "owner_input_status_dir"
+  value="$(summary_value "owner_input_status_dir" 2>/dev/null || true)"
+  [[ -n "$value" && -d "$value" ]] || return
+
+  index_path="$value/index.tsv"
+  if [[ ! -s "$index_path" ]]; then
+    printf 'FAIL: release handoff summary owner_input_status_dir is missing index.tsv: %s\n' "$index_path"
+    failures=$((failures + 1))
+    return
+  fi
+
+  header="$(sed -n '1p' "$index_path")"
+  if [[ "$header" != $'owner_slug\towner\tstatus\tpath\tcommand' ]]; then
+    printf 'FAIL: release handoff owner input status index has unexpected header: %s\n' "$header"
+    failures=$((failures + 1))
+  fi
+
+  while IFS=$'\t' read -r owner_slug owner status report_path command; do
+    [[ "$owner_slug" != "owner_slug" ]] || continue
+    [[ -n "${owner_slug:-}${owner:-}${status:-}${report_path:-}${command:-}" ]] || continue
+    if [[ ! -s "$report_path" ]]; then
+      printf 'FAIL: release handoff owner input status report is missing or empty for %s: %s\n' "$owner" "$report_path"
+      failures=$((failures + 1))
+    fi
+  done <"$index_path"
+}
+
 require_integer_key() {
   local key="$1"
   local value
@@ -208,6 +250,7 @@ require_file_key "release_phase_plan"
 require_file_key "ci_readiness_log"
 require_file_key "external_readiness_actions"
 require_file_key "readiness_log"
+require_owner_input_status_dir
 
 for key in \
   ci_readiness_blockers \

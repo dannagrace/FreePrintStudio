@@ -4690,6 +4690,7 @@ check_contains "Scripts/validate_release_handoff_summary.sh" "release_input_todo
 check_contains "Scripts/validate_release_handoff_summary.sh" "release_input_status_path" "Release handoff summary validator must require the redacted release input status report"
 check_contains "Scripts/validate_release_handoff_summary.sh" "release_input_missing_checks" "Release handoff summary validator must verify missing release input check counts"
 check_contains "Scripts/validate_release_handoff_summary.sh" "release_input_missing_fields" "Release handoff summary validator must verify missing release input field/action counts"
+check_contains "Scripts/validate_release_handoff_summary.sh" "owner_input_status_dir" "Release handoff summary validator must require owner-scoped release input status reports"
 if [[ -x "Scripts/validate_release_handoff_summary.sh" ]]; then
   handoff_summary_test_dir="$(mktemp -d)"
   handoff_summary_path="$handoff_summary_test_dir/release-handoff-summary.tsv"
@@ -4701,6 +4702,7 @@ if [[ -x "Scripts/validate_release_handoff_summary.sh" ]]; then
   handoff_input_todo_path="$handoff_summary_test_dir/release-input-todo.md"
   handoff_phase_plan_path="$handoff_summary_test_dir/release-phase-plan.md"
   handoff_release_input_status_path="$handoff_summary_test_dir/release-handoff-input-status.txt"
+  handoff_owner_input_status_dir="$handoff_summary_test_dir/release-owner-input-status"
   handoff_summary_log="$handoff_summary_test_dir/validation.log"
   cat >"$handoff_ci_readiness_path" <<'EOF'
 BLOCKED: CI blocker
@@ -4718,6 +4720,10 @@ App Store Connect	warning	Release owner	App Store Connect App Store Connect stat
 EOF
   printf '# Handoff Brief\n' >"$handoff_summary_test_dir/release-handoff-brief.md"
   printf '# Release Input TODO\n' >"$handoff_input_todo_path"
+  mkdir -p "$handoff_owner_input_status_dir"
+  printf 'owner_slug\towner\tstatus\tpath\tcommand\n' >"$handoff_owner_input_status_dir/index.tsv"
+  printf 'release-owner\tRelease owner\t1\t%s/release-owner.txt\tScripts/print_release_input_status.sh --strict --owner release-owner\n' "$handoff_owner_input_status_dir" >>"$handoff_owner_input_status_dir/index.tsv"
+  printf 'Summary: 1 missing required release input check(s), 1 missing field/action item(s).\n' >"$handoff_owner_input_status_dir/release-owner.txt"
   cat >"$handoff_phase_plan_path" <<'EOF'
 # FreePrint Studio Release Phase Plan
 
@@ -4751,6 +4757,7 @@ release_phase_plan_total_blockers	3
 release_phase_plan_total_warnings	1
 release_phase_plan_final_submission_guard_actions	2
 release_input_status_path	$handoff_release_input_status_path
+owner_input_status_dir	$handoff_owner_input_status_dir
 release_input_status	1
 release_input_missing_checks	2
 release_input_missing_fields	5
@@ -4792,6 +4799,7 @@ release_phase_plan_total_blockers	3
 release_phase_plan_total_warnings	1
 release_phase_plan_final_submission_guard_actions	2
 release_input_status_path	$handoff_release_input_status_path
+owner_input_status_dir	$handoff_owner_input_status_dir
 release_input_status	1
 release_input_missing_checks	2
 release_input_missing_fields	5
@@ -4833,6 +4841,7 @@ release_phase_plan_total_blockers	3
 release_phase_plan_total_warnings	1
 release_phase_plan_final_submission_guard_actions	2
 release_input_status_path	$handoff_release_input_status_path
+owner_input_status_dir	$handoff_owner_input_status_dir
 release_input_status	1
 release_input_missing_checks	2
 release_input_missing_fields	4
@@ -4885,6 +4894,7 @@ if [[ -x "Scripts/validate_release_handoff_brief.sh" ]]; then
   handoff_brief_ci_readiness="$handoff_brief_test_dir/ci-readiness.txt"
   handoff_brief_local_readiness="$handoff_brief_test_dir/local-readiness.txt"
   handoff_brief_phase_plan="$handoff_brief_test_dir/release-phase-plan.md"
+  handoff_brief_owner_input_status_dir="$handoff_brief_test_dir/release-owner-input-status"
   handoff_brief_path="$handoff_brief_test_dir/release-handoff-brief.md"
   handoff_brief_bad="$handoff_brief_test_dir/release-handoff-brief-bad.md"
   handoff_brief_log="$handoff_brief_test_dir/validation.log"
@@ -4925,6 +4935,10 @@ EOF
 | Phase 1 - Private Inputs And Account Access | 2 | 1 | 1 |
 | Phase 5 - App Review Submission | 2 | 2 | 0 |
 EOF
+  mkdir -p "$handoff_brief_owner_input_status_dir"
+  printf 'Summary: 1 missing required release input check(s), 1 missing field/action item(s).\n' >"$handoff_brief_owner_input_status_dir/apple-developer-account-holder.txt"
+  printf 'Summary: 1 missing required release input check(s), 1 missing field/action item(s).\n' >"$handoff_brief_owner_input_status_dir/app-store-connect-account-holder.txt"
+  printf 'Summary: 1 missing required release input check(s), 1 missing field/action item(s).\n' >"$handoff_brief_owner_input_status_dir/release-owner.txt"
   cat >"$handoff_brief_path" <<'EOF'
 # FreePrint Studio Release Handoff Brief
 
@@ -5002,6 +5016,16 @@ Use these redacted commands when one handoff owner needs to check only their ass
 | `App Store Connect account holder` | `Scripts/print_release_input_status.sh --strict --owner app-store-connect-account-holder` |
 | `Release owner` | `Scripts/print_release_input_status.sh --strict --owner release-owner` |
 
+## Owner-Scoped Status Reports
+
+These redacted reports are generated during handoff so each owner can review current missing inputs without re-running commands first.
+
+| Owner | Status | Report | Command |
+| --- | ---: | --- | --- |
+| `Apple Developer account holder` | `1` | `OWNER_STATUS_DIR_PLACEHOLDER/apple-developer-account-holder.txt` | `Scripts/print_release_input_status.sh --strict --owner apple-developer-account-holder` |
+| `App Store Connect account holder` | `1` | `OWNER_STATUS_DIR_PLACEHOLDER/app-store-connect-account-holder.txt` | `Scripts/print_release_input_status.sh --strict --owner app-store-connect-account-holder` |
+| `Release owner` | `1` | `OWNER_STATUS_DIR_PLACEHOLDER/release-owner.txt` | `Scripts/print_release_input_status.sh --strict --owner release-owner` |
+
 ## Total Handoff Owner Summary
 
 | Owner | Actions | Blockers | Warnings |
@@ -5025,6 +5049,7 @@ Use these redacted commands when one handoff owner needs to check only their ass
 - Release input TODO: `release-input-todo.md`
 - Release phase plan: `release-phase-plan.md`
 - Per-owner action briefs: `release-owner-actions`
+- Owner-scoped release input status reports: `release-owner-input-status`
 - Private release input templates: `private-release-input-templates`
 - CI action manifest: `external-readiness-actions.tsv`
 - CI action checklist: `ACTION_ITEMS.md`
@@ -5049,6 +5074,7 @@ Replace YOURTEAMID with the Apple Developer Team ID before running signing or ar
 Replace apple-id@example.com with the App Store Connect Apple ID before running Fastlane Apple ID commands.
 EOF
   PHASE_PLAN_PATH_PLACEHOLDER="$handoff_brief_phase_plan" perl -0pi -e 's/PHASE_PLAN_PATH_PLACEHOLDER/$ENV{PHASE_PLAN_PATH_PLACEHOLDER}/g' "$handoff_brief_path"
+  OWNER_STATUS_DIR_PLACEHOLDER="$handoff_brief_owner_input_status_dir" perl -0pi -e 's/OWNER_STATUS_DIR_PLACEHOLDER/$ENV{OWNER_STATUS_DIR_PLACEHOLDER}/g' "$handoff_brief_path"
   if ! Scripts/validate_release_handoff_brief.sh "$handoff_brief_actions" "$handoff_brief_path" "$handoff_brief_ci_readiness" "$handoff_brief_local_readiness" >"$handoff_brief_log" 2>&1; then
     printf 'FAIL: Release handoff brief validator must accept matching owner-scoped external action detail fixtures\n'
     sed 's/^/  /' "$handoff_brief_log"
@@ -5075,6 +5101,15 @@ EOF
     failures=$((failures + 1))
   elif ! grep -q 'owner-scoped status command' "$handoff_brief_log"; then
     printf 'FAIL: Release handoff brief validator must identify missing owner-scoped status commands\n'
+    failures=$((failures + 1))
+  fi
+  cp "$handoff_brief_path" "$handoff_brief_bad"
+  perl -0pi -e 's/^\| `Apple Developer account holder` \| `1` \| `[^`]+\/apple-developer-account-holder\.txt` \| `Scripts\/print_release_input_status\.sh --strict --owner apple-developer-account-holder` \|\n//m' "$handoff_brief_bad"
+  if Scripts/validate_release_handoff_brief.sh "$handoff_brief_actions" "$handoff_brief_bad" "$handoff_brief_ci_readiness" "$handoff_brief_local_readiness" >"$handoff_brief_log" 2>&1; then
+    printf 'FAIL: Release handoff brief validator must reject missing owner-scoped status report rows\n'
+    failures=$((failures + 1))
+  elif ! grep -q 'owner-scoped status report' "$handoff_brief_log"; then
+    printf 'FAIL: Release handoff brief validator must identify missing owner-scoped status report rows\n'
     failures=$((failures + 1))
   fi
   cp "$handoff_brief_path" "$handoff_brief_bad"
@@ -6349,6 +6384,8 @@ check_contains "Scripts/preflight_release_handoff.sh" "handoff_brief" "Release h
 check_contains "Scripts/preflight_release_handoff.sh" "release_input_todo" "Release handoff summary must record the release input TODO path"
 check_contains "Scripts/preflight_release_handoff.sh" "release-handoff-input-status.txt" "Release handoff preflight must write a redacted release input status report"
 check_contains "Scripts/preflight_release_handoff.sh" "release_input_status_path" "Release handoff summary must record the release input status report path"
+check_contains "Scripts/preflight_release_handoff.sh" "owner_input_status_dir" "Release handoff summary must record owner-scoped release input status reports"
+check_contains "Scripts/preflight_release_handoff.sh" "write_owner_input_status_reports" "Release handoff preflight must write owner-scoped release input status reports"
 check_contains "Scripts/preflight_release_handoff.sh" "release_input_missing_checks" "Release handoff summary must record missing release input check counts"
 check_contains "Scripts/preflight_release_handoff.sh" "release_input_missing_fields" "Release handoff summary must record missing release input field/action counts"
 check_contains "Scripts/preflight_release_handoff.sh" "packet_github_run_url" "Release handoff summary must record the CI packet run URL"
@@ -6374,6 +6411,7 @@ check_contains "Scripts/preflight_release_handoff.sh" "Local-only Readiness Deta
 check_contains "Scripts/preflight_release_handoff.sh" "External Action Summary" "Release handoff brief must summarize external action categories"
 check_contains "Scripts/preflight_release_handoff.sh" "Owner Summary" "Release handoff brief must summarize external actions by owner"
 check_contains "Scripts/preflight_release_handoff.sh" "Owner-Scoped Status Commands" "Release handoff brief must include owner-scoped status commands"
+check_contains "Scripts/preflight_release_handoff.sh" "Owner-Scoped Status Reports" "Release handoff brief must include generated owner-scoped status report paths"
 check_contains "Scripts/preflight_release_handoff.sh" "owner_slug" "Release handoff brief must derive owner-scoped status command slugs"
 check_contains "Scripts/preflight_release_handoff.sh" "owner_status_command" "Release handoff brief must generate owner-scoped status commands"
 check_contains "Scripts/preflight_release_handoff.sh" "Scripts/print_release_input_status.sh --strict --owner" "Release handoff brief must include owner-scoped release input status commands"
@@ -6389,6 +6427,7 @@ check_contains "Scripts/validate_release_handoff_brief.sh" "CI-only Readiness De
 check_contains "Scripts/validate_release_handoff_brief.sh" "Local-only Readiness Detail" "Release handoff brief validator must require local-only readiness detail section"
 check_contains "Scripts/validate_release_handoff_brief.sh" "Release Phase Plan Status" "Release handoff brief validator must require release phase plan status section"
 check_contains "Scripts/validate_release_handoff_brief.sh" "Owner-Scoped Status Commands" "Release handoff brief validator must require owner-scoped status commands"
+check_contains "Scripts/validate_release_handoff_brief.sh" "Owner-Scoped Status Reports" "Release handoff brief validator must require owner-scoped status report rows"
 check_contains "Scripts/validate_release_handoff_brief.sh" "owner_slug" "Release handoff brief validator must derive owner-scoped status command slugs"
 check_contains "Scripts/validate_release_handoff_brief.sh" "Scripts/print_release_input_status.sh --strict --owner" "Release handoff brief validator must require owner-scoped release input status commands"
 check_contains "Scripts/validate_release_handoff_summary.sh" "release_phase_plan_final_submission_guard_actions" "Release handoff summary validator must require final submission guard action count"
@@ -6416,6 +6455,7 @@ check_contains "README.md" "external-readiness-actions.tsv" "README must documen
 check_contains "README.md" "CI readiness blocker count" "README must document CI readiness counts in the handoff summary"
 check_contains "README.md" "CI/local readiness delta" "README must document CI/local readiness delta tracking in the handoff summary"
 check_contains "README.md" "release-handoff-input-status.txt" "README must document the handoff release input status report"
+check_contains "README.md" "release-owner-input-status" "README must document owner-scoped release input status reports"
 check_contains "README.md" "release input missing check count" "README must document release input missing counts in the handoff summary"
 check_contains "README.md" "release phase plan total action count" "README must document phase plan total action counts in the handoff summary"
 check_contains "README.md" "final submission guard action count" "README must document final submission guard counts in the handoff summary"
@@ -6437,6 +6477,7 @@ check_contains "AppStore/release-checklist.md" "external-readiness-actions.tsv" 
 check_contains "AppStore/release-checklist.md" "CI readiness blocker count" "Release checklist must document CI readiness counts in the handoff summary"
 check_contains "AppStore/release-checklist.md" "CI/local readiness delta" "Release checklist must document CI/local readiness delta tracking"
 check_contains "AppStore/release-checklist.md" "release-handoff-input-status.txt" "Release checklist must document the handoff release input status report"
+check_contains "AppStore/release-checklist.md" "release-owner-input-status" "Release checklist must document owner-scoped release input status reports"
 check_contains "AppStore/release-checklist.md" "release input missing check count" "Release checklist must document release input missing counts in the handoff summary"
 check_contains "AppStore/release-checklist.md" "release phase plan total action count" "Release checklist must document phase plan total action counts in the handoff summary"
 check_contains "AppStore/release-checklist.md" "final submission guard action count" "Release checklist must document final submission guard counts in the handoff summary"
