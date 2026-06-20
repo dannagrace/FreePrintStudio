@@ -162,7 +162,7 @@ sync_missing_template_assignments() {
         pending_guidance_count = 0
         next
       }
-      if ($0 ~ /^# Required:/) {
+      if ($0 ~ /^# (Required|Optional)(:|[[:space:]])/) {
         pending_guidance_count += 1
         pending_guidance[pending_guidance_count] = $0
       } else {

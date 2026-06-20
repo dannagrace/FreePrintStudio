@@ -5572,11 +5572,13 @@ check_contains "Scripts/generate_private_release_input_templates.sh" "STANDARD_M
 check_contains "Scripts/generate_private_release_input_templates.sh" "CONFIRM_UPLOAD_APP_PRIVACY" "Private release input template generator must include the App Privacy upload confirmation guard"
 check_contains "Scripts/generate_private_release_input_templates.sh" "CONFIRM_SUBMIT_FOR_REVIEW" "Private release input template generator must include the final App Review submission guard"
 check_contains "Scripts/generate_private_release_input_templates.sh" 'MANUAL_AIRPRINT_RULER_TARGET_INCHES="6"' "Private release input template generator must preserve the ruler target default"
+check_contains "Scripts/generate_private_release_input_templates.sh" "release_env_hint" "Private release input template generator must include release env field guidance"
 check_contains "Scripts/generate_private_release_input_templates.sh" "manual_env_hint" "Private release input template generator must include manual evidence field guidance"
 check_contains "Scripts/validate_private_release_input_templates.sh" "Private release input template count mismatch" "Private release input template validator must compare env assignment counts"
 check_contains "Scripts/validate_private_release_input_templates.sh" "template assignment is missing" "Private release input template validator must verify generated env assignments"
 check_contains "Scripts/validate_private_release_input_templates.sh" "STANDARD_RELEASE_ENV_NAMES" "Private release input template validator must require the complete release.env starter surface"
 check_contains "Scripts/validate_private_release_input_templates.sh" "STANDARD_MANUAL_ENV_NAMES" "Private release input template validator must require the complete manual evidence starter surface"
+check_contains "Scripts/validate_private_release_input_templates.sh" "release env field guidance" "Private release input template validator must require release env field guidance"
 check_contains "Scripts/validate_private_release_input_templates.sh" "manual evidence field guidance" "Private release input template validator must require manual evidence field guidance"
 check_contains "Scripts/validate_private_release_input_templates.sh" "safe installer command" "Private release input template validator must require safe installer guidance"
 check_contains "Scripts/validate_private_release_input_templates.sh" "unsafe manual copy instructions" "Private release input template validator must reject unsafe manual copy guidance"
@@ -5695,6 +5697,34 @@ EOF
       printf 'FAIL: Private release input template must include the final App Review submission guard\n'
       failures=$((failures + 1))
     fi
+    if ! grep -qF '# Required: Apple Developer Team ID.' "$private_template_output_dir/release.env"; then
+      printf 'FAIL: Private release input template must guide Apple Developer team values\n'
+      failures=$((failures + 1))
+    fi
+    if ! grep -qF '# Optional: set to 1 only when allowing Xcode-managed provisioning updates.' "$private_template_output_dir/release.env"; then
+      printf 'FAIL: Private release input template must guide provisioning update values\n'
+      failures=$((failures + 1))
+    fi
+    if ! grep -qF '# Required: choose APP_STORE_CONNECT_API_KEY_JSON or the ASC_KEY_ID/ASC_ISSUER_ID/ASC_KEY_PATH triplet.' "$private_template_output_dir/release.env"; then
+      printf 'FAIL: Private release input template must guide App Store Connect credential values\n'
+      failures=$((failures + 1))
+    fi
+    if ! grep -qF '# Required: App Review contact value.' "$private_template_output_dir/release.env"; then
+      printf 'FAIL: Private release input template must guide App Review contact values\n'
+      failures=$((failures + 1))
+    fi
+    if ! grep -qF '# Required: set to 1 only after App Store Connect matches the checked-in source.' "$private_template_output_dir/release.env"; then
+      printf 'FAIL: Private release input template must guide App Store Connect confirmation values\n'
+      failures=$((failures + 1))
+    fi
+    if ! grep -qF '# Required after upload: processed App Store Connect build number selected for App Review.' "$private_template_output_dir/release.env"; then
+      printf 'FAIL: Private release input template must guide selected App Store build values\n'
+      failures=$((failures + 1))
+    fi
+    if ! grep -qF '# Required for final submission: set to 1 only when ready to submit for review.' "$private_template_output_dir/release.env"; then
+      printf 'FAIL: Private release input template must guide final submission guard values\n'
+      failures=$((failures + 1))
+    fi
     if ! grep -q '^MANUAL_REAL_IPHONE_MODEL=""' "$private_template_output_dir/manual-release-verification.env"; then
       printf 'FAIL: Private release input template must include blank manual evidence assignments\n'
       failures=$((failures + 1))
@@ -5762,6 +5792,19 @@ EOF
       failures=$((failures + 1))
     elif ! grep -q 'manual evidence field guidance' "$private_template_log"; then
       printf 'FAIL: Private release input template validator must identify missing manual evidence field guidance\n'
+      failures=$((failures + 1))
+    fi
+    private_template_bad_dir="$private_template_test_dir/private-release-input-templates-missing-release-guidance"
+    cp -R "$private_template_output_dir" "$private_template_bad_dir"
+    BAD_TEMPLATE_INSTALL_COMMAND="Scripts/install_private_release_input_templates.sh --source-dir $private_template_bad_dir --target-dir Config" \
+      PRIVATE_TEMPLATE_INSTALL_COMMAND="$private_template_install_command" \
+      perl -0pi -e 's#\Q$ENV{PRIVATE_TEMPLATE_INSTALL_COMMAND}\E#$ENV{BAD_TEMPLATE_INSTALL_COMMAND}#m' "$private_template_bad_dir/index.md"
+    perl -0pi -e 's/^# Required: App Review contact value\.\n//mg' "$private_template_bad_dir/release.env"
+    if Scripts/validate_private_release_input_templates.sh "$private_template_actions" "$private_template_bad_dir" >"$private_template_log" 2>&1; then
+      printf 'FAIL: Private release input template validator must reject missing release env field guidance\n'
+      failures=$((failures + 1))
+    elif ! grep -q 'release env field guidance' "$private_template_log"; then
+      printf 'FAIL: Private release input template validator must identify missing release env field guidance\n'
       failures=$((failures + 1))
     fi
     private_template_bad_dir="$private_template_test_dir/private-release-input-templates-manual-copy"
@@ -5872,6 +5915,14 @@ EOF
     fi
     if ! grep -q '^ASC_KEY_ID=""' "$install_template_sync_target_dir/release.env"; then
       printf 'FAIL: Private release input template installer must append missing release env keys\n'
+      failures=$((failures + 1))
+    fi
+    if ! grep -qF '# Optional: set to 1 only when allowing Xcode-managed provisioning updates.' "$install_template_sync_target_dir/release.env"; then
+      printf 'FAIL: Private release input template installer must append optional release guidance with missing keys\n'
+      failures=$((failures + 1))
+    fi
+    if ! grep -qF '# Required: choose APP_STORE_CONNECT_API_KEY_JSON or the ASC_KEY_ID/ASC_ISSUER_ID/ASC_KEY_PATH triplet.' "$install_template_sync_target_dir/release.env"; then
+      printf 'FAIL: Private release input template installer must append required release guidance with missing keys\n'
       failures=$((failures + 1))
     fi
     if ! grep -q '^MANUAL_REAL_IPHONE_MODEL="iPhone 16 Pro"' "$install_template_sync_target_dir/manual-release-verification.env"; then

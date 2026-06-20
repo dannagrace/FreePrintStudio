@@ -212,6 +212,13 @@ else
 fi
 require_contains "$index_path" "Replace PROCESSED_BUILD_NUMBER with the processed App Store Connect build number before running selected-build commands" "selected-build placeholder replacement guidance"
 require_not_contains "$index_path" "cp private-release-input-templates/" "unsafe manual copy instructions"
+require_contains "$release_env_path" "# Required: Apple Developer Team ID." "release env field guidance"
+require_contains "$release_env_path" "# Optional: set to 1 only when allowing Xcode-managed provisioning updates." "release env field guidance"
+require_contains "$release_env_path" "# Required: choose APP_STORE_CONNECT_API_KEY_JSON or the ASC_KEY_ID/ASC_ISSUER_ID/ASC_KEY_PATH triplet." "release env field guidance"
+require_contains "$release_env_path" "# Required: App Review contact value." "release env field guidance"
+require_contains "$release_env_path" "# Required: set to 1 only after App Store Connect matches the checked-in source." "release env field guidance"
+require_contains "$release_env_path" "# Required after upload: processed App Store Connect build number selected for App Review." "release env field guidance"
+require_contains "$release_env_path" "# Required for final submission: set to 1 only when ready to submit for review." "release env field guidance"
 require_contains "$manual_env_path" "# Required: physical iPhone model, not Simulator." "manual evidence field guidance"
 require_contains "$manual_env_path" "# Required: YYYY-MM-DD." "manual evidence field guidance"
 require_contains "$manual_env_path" "# Required: pass." "manual evidence field guidance"

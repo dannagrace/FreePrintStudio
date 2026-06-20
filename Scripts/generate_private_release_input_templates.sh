@@ -104,6 +104,52 @@ awk -F '\t' \
     }
   }
 
+  function release_env_hint(name) {
+    if (name == "DEVELOPMENT_TEAM_ID") {
+      return "Required: Apple Developer Team ID."
+    }
+    if (name == "ALLOW_PROVISIONING_UPDATES") {
+      return "Optional: set to 1 only when allowing Xcode-managed provisioning updates."
+    }
+    if (name ~ /^(APP_STORE_CONNECT_API_KEY_JSON|ASC_KEY_ID|ASC_ISSUER_ID|ASC_KEY_PATH)$/) {
+      return "Required: choose APP_STORE_CONNECT_API_KEY_JSON or the ASC_KEY_ID/ASC_ISSUER_ID/ASC_KEY_PATH triplet."
+    }
+    if (name ~ /^APP_REVIEW_CONTACT_(FIRST_NAME|LAST_NAME|PHONE|EMAIL)$/) {
+      return "Required: App Review contact value."
+    }
+    if (name == "FASTLANE_USER") {
+      return "Optional: App Store Connect Apple ID for Fastlane Apple ID flows."
+    }
+    if (name == "FASTLANE_ITC_TEAM_ID") {
+      return "Optional: App Store Connect team ID when the account has multiple teams."
+    }
+    if (name == "FASTLANE_ITC_TEAM_NAME") {
+      return "Optional: App Store Connect team name when the account has multiple teams."
+    }
+    if (name == "CONFIRM_UPLOAD_APP_PRIVACY") {
+      return "Required for automated App Privacy upload: set to 1 immediately before uploading App Privacy details."
+    }
+    if (name == "APP_PRIVACY_SKIP_PUBLISH") {
+      return "Optional: set to 1 only to validate App Privacy upload without publishing."
+    }
+    if (name ~ /^(APP_PRIVACY_DETAILS_CONFIRMED_IN_APP_STORE_CONNECT|APP_STORE_COMMERCIAL_CONFIG_CONFIRMED_IN_APP_STORE_CONNECT)$/) {
+      return "Required: set to 1 only after App Store Connect matches the checked-in source."
+    }
+    if (name == "IPA_PATH") {
+      return "Required for manual TestFlight upload: absolute path to the signed IPA."
+    }
+    if (name == "TESTFLIGHT_CHANGELOG") {
+      return "Optional: TestFlight release notes for upload."
+    }
+    if (name == "APP_STORE_BUILD_NUMBER") {
+      return "Required after upload: processed App Store Connect build number selected for App Review."
+    }
+    if (name == "CONFIRM_SUBMIT_FOR_REVIEW") {
+      return "Required for final submission: set to 1 only when ready to submit for review."
+    }
+    return ""
+  }
+
   function manual_env_hint(name) {
     if (name == "MANUAL_VERIFIER_NAME") {
       return "verifier name or team."
@@ -146,7 +192,7 @@ awk -F '\t' \
     add_standard_env_assignments(standard_manual_env_names, "manual-release-verification.env")
   }
 
-  function write_env_file(path, label, count, names,   idx, name) {
+  function write_env_file(path, label, count, names,   idx, name, hint) {
     print "# FreePrint Studio " label "." >path
     print "# Generated At: " generated_at >>path
     print "# Source: " actions_path >>path
@@ -161,7 +207,12 @@ awk -F '\t' \
 
     for (idx = 1; idx <= count; idx += 1) {
       name = names[idx]
-      if (label == "manual-release-verification.env") {
+      if (label == "release.env") {
+        hint = release_env_hint(name)
+        if (hint != "") {
+          print "# " hint >>path
+        }
+      } else if (label == "manual-release-verification.env") {
         hint = manual_env_hint(name)
         if (hint != "") {
           print "# Required: " hint >>path
