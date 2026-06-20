@@ -4,6 +4,7 @@ Use this worksheet when collecting the private Apple account, signing, and real-
 
 ```sh
 Scripts/install_private_release_input_templates.sh --source-dir build/private-release-input-templates --target-dir Config
+Scripts/print_release_input_status.sh --strict
 ```
 
 ## Private File Rules
@@ -11,6 +12,7 @@ Scripts/install_private_release_input_templates.sh --source-dir build/private-re
 - Fill Apple signing, App Review contact, App Store Connect, and submission guard values in `Config/release.env`.
 - Fill real iPhone, AirPrint, iPad, and TestFlight evidence in `Config/manual-release-verification.env`.
 - Keep `Config/release.env`, `Config/manual-release-verification.env`, `AuthKey_*.p8`, `*.p12`, `*.mobileprovision`, `*.ipa`, and `*.xcarchive` out of git.
+- Run `Scripts/print_release_input_status.sh --strict` after installing templates and after every private value update. The output is redacted and shows missing fields without exposing values.
 - Run `git status --short --ignored Config/release.env Config/manual-release-verification.env` and confirm both files appear as ignored before adding any release values.
 
 ## App Review Contact
@@ -61,6 +63,7 @@ Optional Apple ID flow for App Privacy Details upload:
 - `FASTLANE_USER`
 - `FASTLANE_ITC_TEAM_ID` or `FASTLANE_ITC_TEAM_NAME`, if the Apple ID belongs to more than one team.
 - `CONFIRM_UPLOAD_APP_PRIVACY=1` only when the App Privacy Details JSON has been reviewed.
+- `APP_PRIVACY_SKIP_PUBLISH=1` only for App Privacy Details dry-run validation when you need to verify the Fastlane flow without publishing answers.
 
 Final App Privacy Details confirmation:
 
@@ -96,6 +99,20 @@ APP_STORE_COMMERCIAL_CONFIG_CONFIRMED_IN_APP_STORE_CONNECT=1 Scripts/validate_co
 ```
 
 Replace apple-id@example.com with the App Store Connect Apple ID before running Fastlane Apple ID commands.
+
+## TestFlight Upload Inputs
+
+Fill these optional upload overrides in `Config/release.env` only when the defaults do not match the signed artifact or release notes:
+
+- `IPA_PATH=/absolute/path/to/FreePrintStudio.ipa`: signed App Store IPA to upload when not using the default export path.
+- `TESTFLIGHT_CHANGELOG`: build notes shown to TestFlight testers.
+
+Validate the upload inputs before uploading the signed build:
+
+```sh
+Scripts/preflight_testflight_upload.sh
+Scripts/run_fastlane.sh ios upload_testflight
+```
 
 ## Manual Release Verification
 
