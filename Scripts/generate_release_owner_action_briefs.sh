@@ -86,6 +86,9 @@ awk -F '\t' -v output_dir="$output_dir" -v actions_path="$actions_path" -v gener
     if (placeholder_source ~ /apple-id@example\.com/) {
       owner_fastlane_apple_id_placeholder[action_owner] = 1
     }
+    if (action_target ~ /(^| )Config\//) {
+      owner_private_input_setup[action_owner] = 1
+    }
     if (!(action_owner in owner_seen)) {
       owner_seen[action_owner] = 1
       owner_order_count += 1
@@ -214,6 +217,19 @@ awk -F '\t' -v output_dir="$output_dir" -v actions_path="$actions_path" -v gener
           summary_counts[summary_order[summary_index]] >>owner_path
       }
       delete summary_seen
+
+      print "" >>owner_path
+      if (owner_private_input_setup[owner_name]) {
+        print "## Private Input Setup" >>owner_path
+        print "" >>owner_path
+        print "Run these before editing any `Config/` target listed in this brief. The installer backs up existing private files, appends missing generated keys, and keeps filled values out of git." >>owner_path
+        print "" >>owner_path
+        print "```sh" >>owner_path
+        print "Scripts/install_private_release_input_templates.sh --source-dir build/private-release-input-templates --target-dir Config" >>owner_path
+        print "Scripts/print_release_input_status.sh --strict" >>owner_path
+        print "```" >>owner_path
+        print "" >>owner_path
+      }
 
       print "" >>owner_path
       print "## Action Detail" >>owner_path

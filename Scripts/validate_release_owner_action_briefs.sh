@@ -53,6 +53,8 @@ expected_details="$temp_dir/expected-details.tsv"
 selected_build_placeholder_guidance="Replace PROCESSED_BUILD_NUMBER with the processed App Store Connect build number before running selected-build commands."
 team_id_placeholder_guidance="Replace YOURTEAMID with the Apple Developer Team ID before running signing or archive commands."
 fastlane_apple_id_placeholder_guidance="Replace apple-id@example.com with the App Store Connect Apple ID before running Fastlane Apple ID commands."
+private_input_installer_command="Scripts/install_private_release_input_templates.sh --source-dir build/private-release-input-templates --target-dir Config"
+private_input_status_command="Scripts/print_release_input_status.sh --strict"
 
 awk -F '\t' -v expected_owners="$expected_owners" -v expected_details="$expected_details" '
   function fail(message) {
@@ -97,6 +99,9 @@ awk -F '\t' -v expected_owners="$expected_owners" -v expected_details="$expected
     }
     if (placeholder_source ~ /apple-id@example\.com/) {
       owner_fastlane_apple_id_placeholder[action_owner] = 1
+    }
+    if (action_target ~ /(^| )Config\//) {
+      owner_private_input_setup[action_owner] = 1
     }
     if (!(action_owner in owner_seen)) {
       owner_seen[action_owner] = 1
@@ -176,7 +181,7 @@ awk -F '\t' -v expected_owners="$expected_owners" -v expected_details="$expected
       "APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER CONFIRM_SUBMIT_FOR_REVIEW=1 Scripts/run_fastlane.sh ios submit_review")
     for (owner_index = 1; owner_index <= owner_order_count; owner_index += 1) {
       owner_name = owner_order[owner_index]
-      print owner_name "\t" owner_file(owner_name) "\t" owner_counts[owner_name] "\t" owner_blocker_counts[owner_name] + 0 "\t" owner_warning_counts[owner_name] + 0 "\t" owner_selected_build_placeholder[owner_name] + 0 "\t" owner_team_id_placeholder[owner_name] + 0 "\t" owner_fastlane_apple_id_placeholder[owner_name] + 0 >expected_owners
+      print owner_name "\t" owner_file(owner_name) "\t" owner_counts[owner_name] "\t" owner_blocker_counts[owner_name] + 0 "\t" owner_warning_counts[owner_name] + 0 "\t" owner_selected_build_placeholder[owner_name] + 0 "\t" owner_team_id_placeholder[owner_name] + 0 "\t" owner_fastlane_apple_id_placeholder[owner_name] + 0 "\t" owner_private_input_setup[owner_name] + 0 >expected_owners
     }
   }
 ' "$actions_path" || {
@@ -187,7 +192,7 @@ index_path="$owner_dir/index.md"
 require_file "$index_path" "owner action brief index"
 require_contains_file "$index_path" "# FreePrint Studio Release Owner Action Briefs" "owner action brief index title"
 
-while IFS=$'\t' read -r owner_name file_name actions blockers warnings selected_build_placeholder team_id_placeholder fastlane_apple_id_placeholder; do
+while IFS=$'\t' read -r owner_name file_name actions blockers warnings selected_build_placeholder team_id_placeholder fastlane_apple_id_placeholder private_input_setup; do
   [[ -n "${owner_name:-}${file_name:-}" ]] || continue
   owner_path="$owner_dir/$file_name"
   require_file "$owner_path" "owner action brief for $owner_name"
@@ -200,6 +205,11 @@ while IFS=$'\t' read -r owner_name file_name actions blockers warnings selected_
   fi
   require_contains_file "$owner_path" "## Action Detail" "owner action detail section for $owner_name"
   require_contains_file "$owner_path" "## Validation Commands" "owner validation commands section for $owner_name"
+  if [[ "${private_input_setup:-0}" == "1" ]]; then
+    require_contains_file "$owner_path" "## Private Input Setup" "private input setup guidance for $owner_name"
+    require_contains_file "$owner_path" "$private_input_installer_command" "private input setup guidance for $owner_name"
+    require_contains_file "$owner_path" "$private_input_status_command" "private input setup guidance for $owner_name"
+  fi
   if [[ "${selected_build_placeholder:-0}" == "1" ]]; then
     require_contains_file "$owner_path" "$selected_build_placeholder_guidance" "selected-build placeholder replacement guidance for $owner_name"
   fi

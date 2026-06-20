@@ -5403,12 +5403,14 @@ if [[ -f "Scripts/validate_release_owner_action_briefs.sh" && ! -x "Scripts/vali
 fi
 check_contains "Scripts/generate_release_owner_action_briefs.sh" "owner-action-briefs" "Release owner action brief generator must document the owner-action-briefs output"
 check_contains "Scripts/generate_release_owner_action_briefs.sh" "Owner Action Briefs" "Release owner action brief generator must write a stable index title"
+check_contains "Scripts/generate_release_owner_action_briefs.sh" "Private Input Setup" "Release owner action brief generator must include private input setup guidance"
 check_contains "Scripts/generate_release_owner_action_briefs.sh" "Validation Commands" "Release owner action brief generator must group validation commands per owner"
 check_contains "Scripts/generate_release_owner_action_briefs.sh" "Final Submission Guard" "Release owner action brief generator must include final submission guard actions for Release owner"
 check_contains "Scripts/generate_release_owner_action_briefs.sh" "Replace PROCESSED_BUILD_NUMBER with the processed App Store Connect build number before running selected-build commands" "Release owner action brief generator must warn operators to replace selected-build placeholders"
 check_contains "Scripts/generate_release_owner_action_briefs.sh" "Replace YOURTEAMID with the Apple Developer Team ID before running signing or archive commands" "Release owner action brief generator must warn operators to replace Team ID placeholders"
 check_contains "Scripts/generate_release_owner_action_briefs.sh" "Replace apple-id@example.com with the App Store Connect Apple ID before running Fastlane Apple ID commands" "Release owner action brief generator must warn operators to replace Fastlane Apple ID placeholders"
 check_contains "Scripts/validate_release_owner_action_briefs.sh" "Owner action brief count mismatch" "Release owner action brief validator must compare owner counts"
+check_contains "Scripts/validate_release_owner_action_briefs.sh" "private input setup guidance" "Release owner action brief validator must require private input setup guidance"
 check_contains "Scripts/validate_release_owner_action_briefs.sh" "Final Submission Guard" "Release owner action brief validator must verify final submission guard actions for Release owner"
 check_contains "Scripts/validate_release_owner_action_briefs.sh" "action detail row is missing or mismatched" "Release owner action brief validator must verify action detail rows"
 check_contains "Scripts/validate_release_owner_action_briefs.sh" "selected-build placeholder replacement guidance" "Release owner action brief validator must require selected-build placeholder replacement guidance"
@@ -5461,12 +5463,28 @@ EOF
       printf 'FAIL: Release owner action brief must include APP_STORE_BUILD_NUMBER final submission guard\n'
       failures=$((failures + 1))
     fi
+    if ! grep -q '^## Private Input Setup' "$owner_brief_output_dir/release-owner.md"; then
+      printf 'FAIL: Release owner action brief must include private input setup guidance\n'
+      failures=$((failures + 1))
+    fi
+    if ! grep -q 'Scripts/install_private_release_input_templates.sh --source-dir build/private-release-input-templates --target-dir Config' "$owner_brief_output_dir/release-owner.md"; then
+      printf 'FAIL: Release owner action brief must include the safe private template installer command\n'
+      failures=$((failures + 1))
+    fi
+    if ! grep -q 'Scripts/print_release_input_status.sh --strict' "$owner_brief_output_dir/release-owner.md"; then
+      printf 'FAIL: Release owner action brief must include the strict release input status command\n'
+      failures=$((failures + 1))
+    fi
     if ! grep -Fq '| Final Submission Guard | blocker | `CONFIRM_SUBMIT_FOR_REVIEW` | `Config/release.env` | Explicit final confirmation before Fastlane submits the selected build for review. | Set CONFIRM_SUBMIT_FOR_REVIEW=1 only for the final deliberate App Review submission. | `APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER CONFIRM_SUBMIT_FOR_REVIEW=1 Scripts/run_fastlane.sh ios submit_review` |' "$owner_brief_output_dir/release-owner.md"; then
       printf 'FAIL: Release owner action brief must include CONFIRM_SUBMIT_FOR_REVIEW final submission guard\n'
       failures=$((failures + 1))
     fi
     if ! grep -q '^# QA/release owner Release Actions' "$owner_brief_output_dir/qa-release-owner.md"; then
       printf 'FAIL: Release owner action brief generator must create a QA/release owner file\n'
+      failures=$((failures + 1))
+    fi
+    if ! grep -q '^## Private Input Setup' "$owner_brief_output_dir/qa-release-owner.md"; then
+      printf 'FAIL: QA action brief must include private input setup guidance\n'
       failures=$((failures + 1))
     fi
     if ! grep -Fq '| Manual Verification | blocker | `MANUAL_REAL_IPHONE_MODEL` | `Config/manual-release-verification.env` | Real iPhone model is missing | Record real iPhone evidence. | `APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/validate_manual_release_verification.sh` |' "$owner_brief_output_dir/qa-release-owner.md"; then
@@ -5487,6 +5505,14 @@ EOF
     fi
     if ! grep -q 'Replace apple-id@example.com with the App Store Connect Apple ID before running Fastlane Apple ID commands' "$owner_brief_output_dir/app-store-connect-account-holder.md"; then
       printf 'FAIL: Release owner action brief must warn operators to replace Fastlane Apple ID placeholders\n'
+      failures=$((failures + 1))
+    fi
+    if ! grep -q '^## Private Input Setup' "$owner_brief_output_dir/apple-developer-account-holder.md"; then
+      printf 'FAIL: Apple Developer action brief must include private input setup guidance\n'
+      failures=$((failures + 1))
+    fi
+    if ! grep -q '^## Private Input Setup' "$owner_brief_output_dir/app-store-connect-account-holder.md"; then
+      printf 'FAIL: App Store Connect action brief must include private input setup guidance\n'
       failures=$((failures + 1))
     fi
     owner_brief_bad_dir="$owner_brief_test_dir/owner-action-briefs-bad"
@@ -5517,6 +5543,16 @@ EOF
       failures=$((failures + 1))
     elif ! grep -q 'MANUAL_REAL_IPHONE_MODEL' "$owner_brief_log"; then
       printf 'FAIL: Release owner action brief validator must identify missing owner action detail rows\n'
+      failures=$((failures + 1))
+    fi
+    owner_brief_bad_dir="$owner_brief_test_dir/owner-action-briefs-missing-private-input-setup"
+    cp -R "$owner_brief_output_dir" "$owner_brief_bad_dir"
+    perl -0pi -e 's/^## Private Input Setup\n\n(?:.*\n)*?\n## Action Detail\n/## Action Detail\n/m' "$owner_brief_bad_dir/qa-release-owner.md"
+    if Scripts/validate_release_owner_action_briefs.sh "$owner_brief_actions" "$owner_brief_bad_dir" >"$owner_brief_log" 2>&1; then
+      printf 'FAIL: Release owner action brief validator must reject missing private input setup guidance\n'
+      failures=$((failures + 1))
+    elif ! grep -q 'private input setup guidance' "$owner_brief_log"; then
+      printf 'FAIL: Release owner action brief validator must identify missing private input setup guidance\n'
       failures=$((failures + 1))
     fi
     owner_brief_bad_dir="$owner_brief_test_dir/owner-action-briefs-missing-placeholder-warning"
