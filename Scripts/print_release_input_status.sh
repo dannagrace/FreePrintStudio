@@ -435,8 +435,11 @@ printf '\n== Signing Inputs ==\n'
 if scope_requires "signing"; then
   project_team_id="$(setting_value DEVELOPMENT_TEAM)"
   team_ready=0
-  if { is_set "${DEVELOPMENT_TEAM_ID:-}" && matches_format "$DEVELOPMENT_TEAM_ID" '^[A-Z0-9]{10}$'; } \
-    || { is_set "$project_team_id" && matches_format "$project_team_id" '^[A-Z0-9]{10}$'; }; then
+  if is_set "${DEVELOPMENT_TEAM_ID:-}"; then
+    if matches_format "$DEVELOPMENT_TEAM_ID" '^[A-Z0-9]{10}$'; then
+      team_ready=1
+    fi
+  elif is_set "$project_team_id" && matches_format "$project_team_id" '^[A-Z0-9]{10}$'; then
     team_ready=1
   fi
   status_count "DEVELOPMENT_TEAM_ID or Xcode DEVELOPMENT_TEAM configured" "$team_ready" 1
