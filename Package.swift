@@ -26,5 +26,9 @@ let package = Package(
             name: "FreePrintStudioCoreChecks",
             dependencies: ["FreePrintStudioCore"]
         ),
+        .testTarget(
+            name: "FreePrintStudioCoreTests",
+            dependencies: ["FreePrintStudioCore"]
+        ),
     ]
 )

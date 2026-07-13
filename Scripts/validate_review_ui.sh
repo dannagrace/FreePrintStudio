@@ -128,6 +128,7 @@ run_review_ui_test() {
     -derivedDataPath "$DERIVED_DATA_PATH" \
     -only-testing:FreePrintStudioUITests/PhotoImportUITests/testAboutScreenShowsReviewAndSupportInformation \
     CODE_SIGNING_ALLOWED=NO \
+    ENABLE_DEBUG_DYLIB=NO \
     test >"$TEST_LOG_PATH" 2>&1
 }
 

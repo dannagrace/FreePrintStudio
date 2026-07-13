@@ -216,6 +216,7 @@ run_with_timeout "$XCODEBUILD_TIMEOUT_SECONDS" xcodebuild \
   -destination 'generic/platform=iOS Simulator' \
   -derivedDataPath "$DERIVED_DATA_PATH" \
   CODE_SIGNING_ALLOWED=NO \
+  ENABLE_DEBUG_DYLIB=NO \
   build >/tmp/freeprintstudio-screenshot-build.log
 
 DEVICE="$(select_installed_simulator)"

@@ -94,6 +94,38 @@ run_release_env_validation_fixture() {
     Scripts/validate_release_env.sh
 }
 
+run_with_clean_release_inputs() {
+  local release_env_fixture_path="$1"
+  local manual_evidence_fixture_path="$2"
+  shift 2
+
+  env \
+    -u DEVELOPMENT_TEAM_ID \
+    -u ALLOW_PROVISIONING_UPDATES \
+    -u APP_REVIEW_CONTACT_FIRST_NAME \
+    -u APP_REVIEW_CONTACT_LAST_NAME \
+    -u APP_REVIEW_CONTACT_PHONE \
+    -u APP_REVIEW_CONTACT_EMAIL \
+    -u APP_STORE_CONNECT_API_KEY_JSON \
+    -u ASC_KEY_ID \
+    -u ASC_ISSUER_ID \
+    -u ASC_KEY_PATH \
+    -u FASTLANE_USER \
+    -u FASTLANE_ITC_TEAM_ID \
+    -u FASTLANE_ITC_TEAM_NAME \
+    -u CONFIRM_UPLOAD_APP_PRIVACY \
+    -u APP_PRIVACY_SKIP_PUBLISH \
+    -u APP_PRIVACY_DETAILS_CONFIRMED_IN_APP_STORE_CONNECT \
+    -u APP_STORE_COMMERCIAL_CONFIG_CONFIRMED_IN_APP_STORE_CONNECT \
+    -u IPA_PATH \
+    -u TESTFLIGHT_CHANGELOG \
+    -u APP_STORE_BUILD_NUMBER \
+    -u CONFIRM_SUBMIT_FOR_REVIEW \
+    RELEASE_ENV_PATH="$release_env_fixture_path" \
+    MANUAL_RELEASE_VERIFICATION_PATH="$manual_evidence_fixture_path" \
+    "$@"
+}
+
 check_sips_property() {
   local path="$1"
   local property="$2"
@@ -2679,6 +2711,7 @@ check_contains "Scripts/capture_app_store_screenshots.sh" "run_with_timeout \"\$
 check_contains "Scripts/capture_app_store_screenshots.sh" "run_with_timeout \"\$SIMCTL_TIMEOUT_SECONDS\" xcrun simctl boot \"\$device\"" "Screenshot capture must bound simulator boot commands"
 check_contains "Scripts/capture_app_store_screenshots.sh" "run_with_timeout \"\$BOOTSTATUS_TIMEOUT_SECONDS\" xcrun simctl bootstatus \"\$device\" -b" "Screenshot capture must bound simulator bootstatus commands"
 check_contains "Scripts/capture_app_store_screenshots.sh" "run_with_timeout \"\$XCODEBUILD_TIMEOUT_SECONDS\" xcodebuild" "Screenshot capture must bound xcodebuild"
+check_contains "Scripts/capture_app_store_screenshots.sh" "ENABLE_DEBUG_DYLIB=NO" "Screenshot capture must disable debug dylib for clean simulator builds"
 check_contains "Scripts/capture_app_store_screenshots.sh" "run_with_timeout \"\$SIMCTL_TIMEOUT_SECONDS\" xcrun simctl ui \"\$DEVICE\" appearance" "Screenshot capture must bound simulator appearance commands"
 check_contains "Scripts/capture_app_store_screenshots.sh" "run_with_timeout \"\$SIMCTL_TIMEOUT_SECONDS\" xcrun simctl ui \"\$DEVICE\" content_size" "Screenshot capture must bound simulator content-size commands"
 check_file "Scripts/validate_accessibility_screenshots.sh" "Accessibility screenshot validation script is required"
@@ -2791,6 +2824,7 @@ check_contains "Scripts/validate_pdf_export.sh" "run_with_timeout \"\$SIMCTL_TIM
 check_contains "Scripts/validate_pdf_export.sh" "bootstatus_timeout" "PDF export validation must choose a bounded simulator boot wait"
 check_contains "Scripts/validate_pdf_export.sh" "xcrun simctl bootstatus" "PDF export validation must wait for simulator boot readiness"
 check_contains "Scripts/validate_pdf_export.sh" "XCODEBUILD_TIMEOUT_SECONDS" "PDF export validation must bound simulator build commands"
+check_contains "Scripts/validate_pdf_export.sh" "ENABLE_DEBUG_DYLIB=NO" "PDF export validation must disable debug dylib for clean simulator builds"
 check_contains "Scripts/validate_pdf_export.sh" "run_with_timeout \"\$container_timeout\" xcrun simctl get_app_container" "PDF export validation must bound simulator container lookup"
 check_contains "Scripts/validate_pdf_export.sh" "launch_timeout" "PDF export validation must choose a bounded app launch wait"
 check_contains "Scripts/validate_pdf_export.sh" "launch_status" "PDF export validation must inspect exported PDFs after app launch timeouts"
@@ -2822,6 +2856,7 @@ fi
 check_file "FreePrintStudioUITests/PhotoImportUITests.swift" "Photo import UI test is required"
 check_contains "Scripts/validate_photo_import.sh" "simctl addmedia" "Photo import validation must seed the simulator photo library"
 check_contains "Scripts/validate_photo_import.sh" "FreePrintStudioUITests/PhotoImportUITests" "Photo import validation must run the dedicated UI test"
+check_contains "Scripts/validate_photo_import.sh" "ENABLE_DEBUG_DYLIB=NO" "Photo import validation must disable debug dylib for clean simulator builds"
 check_contains "FreePrintStudioUITests/PhotoImportUITests.swift" "Choose Image" "Photo import UI test must exercise the real Choose Image control"
 check_contains "FreePrintStudioUITests/PhotoImportUITests.swift" "Change Image" "Photo import UI test must verify the app receives the selected photo"
 check_contains "FreePrintStudio.xcodeproj/project.pbxproj" "FreePrintStudioUITests" "Xcode project must include the UI test target"
@@ -2834,6 +2869,7 @@ if [[ -f "Scripts/validate_review_ui.sh" && ! -x "Scripts/validate_review_ui.sh"
 fi
 check_contains "Scripts/validate_review_ui.sh" "testAboutScreenShowsReviewAndSupportInformation" "Review UI validation must run the App Review information UI test"
 check_contains "Scripts/validate_review_ui.sh" "CODE_SIGNING_ALLOWED=NO" "Review UI validation must run without signing in CI"
+check_contains "Scripts/validate_review_ui.sh" "ENABLE_DEBUG_DYLIB=NO" "Review UI validation must disable debug dylib for clean simulator builds"
 check_contains "Scripts/validate_review_ui.sh" "SIMCTL_TIMEOUT_SECONDS" "Review UI validation must bound simulator discovery and boot commands"
 check_contains "Scripts/validate_review_ui.sh" "XCODEBUILD_TIMEOUT_SECONDS" "Review UI validation must bound xcodebuild UI test execution"
 check_contains "Scripts/validate_review_ui.sh" 'XCODEBUILD_TIMEOUT_SECONDS="${FREEPRINTSTUDIO_REVIEW_UI_XCODEBUILD_TIMEOUT_SECONDS:-720}"' "Review UI validation must allow slow CI UITest Runner builds"
@@ -2861,10 +2897,13 @@ check_contains "FreePrintStudio/Printing/PrintService.swift" "presentationFailed
 check_contains "Scripts/validate_print_sheet.sh" "FreePrintStudioAutoOpenPrintSheet" "Print sheet validation must exercise the debug print sheet workflow"
 check_contains "Scripts/validate_print_sheet.sh" "FreePrintStudioPrintSheetStatusPath" "Print sheet validation must read the debug print sheet status"
 check_contains "Scripts/verify_release.sh" "validate_print_sheet.sh" "Release verification must expose print sheet validation"
+check_contains "Scripts/validate_print_sheet.sh" "ENABLE_DEBUG_DYLIB=NO" "Print sheet validation must disable debug dylib for clean simulator builds"
 check_contains "Scripts/validate_print_sheet.sh" "SIMCTL_TIMEOUT_SECONDS" "Print sheet validation must bound simulator install commands"
 check_contains "Scripts/validate_print_sheet.sh" "Skipping simulator after install failure" "Print sheet validation must skip unhealthy simulators"
 check_file "Scripts/check_app_store_readiness.sh" "App Store readiness audit script is required"
 check_contains "Scripts/check_app_store_readiness.sh" "DEVELOPMENT_TEAM_ID" "Readiness audit must check Apple Developer Team ID"
+check_contains "Scripts/check_app_store_readiness.sh" "run_static_release_check" "Readiness audit must isolate static release checks from sourced private release inputs"
+check_contains "Scripts/check_app_store_readiness.sh" "-u APP_REVIEW_CONTACT_FIRST_NAME" "Readiness audit static release check must not inherit private App Review contact values"
 check_contains "Scripts/check_app_store_readiness.sh" "check_code_signing_assets.sh" "Readiness audit must run the precise code signing asset preflight"
 check_contains "Scripts/check_app_store_readiness.sh" "privacy-policy.html" "Readiness audit must check the public privacy policy URL"
 check_contains "Scripts/check_app_store_readiness.sh" "APP_REVIEW_CONTACT_EMAIL" "Readiness audit must check App Review contact variables"
@@ -4048,14 +4087,20 @@ if [[ -x "Scripts/validate_app_review_submission_readiness_report.sh" ]]; then
   review_submission_report_validator_test_dir="$(mktemp -d)"
   review_submission_report_actions="$review_submission_report_validator_test_dir/external-readiness-actions.tsv"
   review_submission_report_output="$review_submission_report_validator_test_dir/app-review-submission-readiness-report.md"
+  review_submission_report_release_env="$review_submission_report_validator_test_dir/release.env"
+  review_submission_report_manual_env="$review_submission_report_validator_test_dir/manual-release-verification.env"
   review_submission_report_log="$review_submission_report_validator_test_dir/validation.log"
+  : >"$review_submission_report_release_env"
+  : >"$review_submission_report_manual_env"
+  chmod 600 "$review_submission_report_release_env" "$review_submission_report_manual_env"
   cat >"$review_submission_report_actions" <<'EOF'
 category	severity	owner	field	target	item	next_action	validation_command
 App Review Contact	blocker	Release owner	APP_REVIEW_CONTACT_EMAIL	Config/release.env	APP_REVIEW_CONTACT_EMAIL is missing	Fill App Review contact fields in untracked Config/release.env.	Scripts/validate_app_review_contact.sh
 Manual Verification	blocker	QA/release owner	MANUAL_TESTFLIGHT_PRINT_WORKFLOW	Config/manual-release-verification.env	TestFlight print workflow result is missing	Record manual evidence in Config/manual-release-verification.env.	APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/validate_manual_release_verification.sh
 App Store Connect	blocker	App Store Connect account holder	APP_STORE_CONNECT_API_KEY_JSON or ASC_KEY_ID/ASC_ISSUER_ID/ASC_KEY_PATH	Config/release.env	Fastlane App Store Connect API credentials are not configured	Configure App Store Connect credentials.	Scripts/check_app_store_connect_credentials.sh
 EOF
-  Scripts/generate_app_review_submission_readiness_report.sh "$review_submission_report_output" >/dev/null
+  run_with_clean_release_inputs "$review_submission_report_release_env" "$review_submission_report_manual_env" \
+    Scripts/generate_app_review_submission_readiness_report.sh "$review_submission_report_output" >/dev/null
   if ! Scripts/validate_app_review_submission_readiness_report.sh "$review_submission_report_actions" "$review_submission_report_output" >"$review_submission_report_log" 2>&1; then
     printf 'FAIL: App Review submission readiness report validator must accept the generated report for matching final submission action fields\n'
     cat "$review_submission_report_log"

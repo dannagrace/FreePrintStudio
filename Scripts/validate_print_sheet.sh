@@ -116,6 +116,7 @@ xcodebuild \
   -destination 'generic/platform=iOS Simulator' \
   -derivedDataPath "$DERIVED_DATA_PATH" \
   CODE_SIGNING_ALLOWED=NO \
+  ENABLE_DEBUG_DYLIB=NO \
   build >/tmp/freeprintstudio-print-sheet-build.log
 
 DEVICE="$(select_installed_simulator)"

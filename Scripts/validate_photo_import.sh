@@ -122,6 +122,7 @@ xcodebuild \
   -derivedDataPath "$DERIVED_DATA_PATH" \
   -only-testing:FreePrintStudioUITests/PhotoImportUITests \
   CODE_SIGNING_ALLOWED=NO \
+  ENABLE_DEBUG_DYLIB=NO \
   test >"$TEST_LOG_PATH" 2>&1
 test_status="$?"
 set -e

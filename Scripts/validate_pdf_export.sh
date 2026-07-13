@@ -380,6 +380,7 @@ if ! run_with_timeout "$XCODEBUILD_TIMEOUT_SECONDS" \
     -destination 'generic/platform=iOS Simulator' \
     -derivedDataPath "$DERIVED_DATA_PATH" \
     CODE_SIGNING_ALLOWED=NO \
+    ENABLE_DEBUG_DYLIB=NO \
     build >/tmp/freeprintstudio-pdf-validation-build.log 2>&1; then
   cat /tmp/freeprintstudio-pdf-validation-build.log
   exit 1

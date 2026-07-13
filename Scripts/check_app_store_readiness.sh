@@ -111,6 +111,32 @@ sys.exit(result.returncode)
 PY
 }
 
+run_static_release_check() {
+  env \
+    -u DEVELOPMENT_TEAM_ID \
+    -u ALLOW_PROVISIONING_UPDATES \
+    -u APP_REVIEW_CONTACT_FIRST_NAME \
+    -u APP_REVIEW_CONTACT_LAST_NAME \
+    -u APP_REVIEW_CONTACT_PHONE \
+    -u APP_REVIEW_CONTACT_EMAIL \
+    -u APP_STORE_CONNECT_API_KEY_JSON \
+    -u ASC_KEY_ID \
+    -u ASC_ISSUER_ID \
+    -u ASC_KEY_PATH \
+    -u FASTLANE_USER \
+    -u FASTLANE_ITC_TEAM_ID \
+    -u FASTLANE_ITC_TEAM_NAME \
+    -u CONFIRM_UPLOAD_APP_PRIVACY \
+    -u APP_PRIVACY_SKIP_PUBLISH \
+    -u APP_PRIVACY_DETAILS_CONFIRMED_IN_APP_STORE_CONNECT \
+    -u APP_STORE_COMMERCIAL_CONFIG_CONFIRMED_IN_APP_STORE_CONNECT \
+    -u IPA_PATH \
+    -u TESTFLIGHT_CHANGELOG \
+    -u APP_STORE_BUILD_NUMBER \
+    -u CONFIRM_SUBMIT_FOR_REVIEW \
+    Scripts/release_check.sh
+}
+
 printf '== Project ==\n'
 bundle_id="$(setting_value PRODUCT_BUNDLE_IDENTIFIER)"
 marketing_version="$(setting_value MARKETING_VERSION)"
@@ -130,7 +156,7 @@ fi
 [[ "$build_number" == "1" ]] && ok "Build number: $build_number" || block "Unexpected build number: ${build_number:-missing}"
 
 printf '\n== Static Assets ==\n'
-Scripts/release_check.sh >/tmp/freeprintstudio-release-check.log 2>&1 && ok "Static release assets pass Scripts/release_check.sh" || {
+run_static_release_check >/tmp/freeprintstudio-release-check.log 2>&1 && ok "Static release assets pass Scripts/release_check.sh" || {
   block "Static release assets failed Scripts/release_check.sh"
   cat /tmp/freeprintstudio-release-check.log
 }
