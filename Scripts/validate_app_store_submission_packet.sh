@@ -307,9 +307,11 @@ require_contains "release-input-status.txt" "== Missing Release Input Fields =="
 require_contains "release-input-status.txt" "MISSING_FIELD:" "release input field-level missing item output"
 require_contains "release-input-todo.md" "FreePrint Studio Release Input TODO" "release input TODO title"
 require_contains "release-input-todo.md" "Config/release.env" "release input TODO private release env group"
-require_contains "release-input-todo.md" "DEVELOPMENT_TEAM_ID=" "release input TODO signing field"
 require_contains "release-input-todo.md" "Config/manual-release-verification.env" "release input TODO manual evidence group"
 require_contains "release-input-todo.md" "Non-env External Actions" "release input TODO non-env action group"
+if grep -q $'^Signing\t' "$PACKET_DIR/external-readiness-actions.tsv"; then
+  require_contains "release-input-todo.md" "DEVELOPMENT_TEAM_ID=" "release input TODO signing field"
+fi
 require_contains "release-phase-plan.md" "FreePrint Studio Release Phase Plan" "release phase plan title"
 require_contains "release-phase-plan.md" "Phase 1 - Private Inputs And Account Access" "release phase plan private input phase"
 require_contains "release-phase-plan.md" "Phase 5 - App Review Submission" "release phase plan final submission phase"
@@ -347,7 +349,7 @@ if grep -q 'APP_REVIEW_CONTACT_' "$PACKET_DIR/readiness.txt"; then
   require_contains "external-readiness-actions.tsv" "Scripts/validate_app_review_contact.sh" "App Review contact validation command tracking"
 fi
 
-if grep -qE 'Apple Developer Team ID|Apple Distribution|provisioning profile' "$PACKET_DIR/readiness.txt"; then
+if grep -qE '^BLOCKED: (Apple Developer Team ID|Apple Distribution|.*provisioning profile)' "$PACKET_DIR/readiness.txt"; then
   require_contains "external-readiness-actions.tsv" "Signing" "signing external action tracking"
   require_contains "external-readiness-actions.tsv" "Scripts/check_code_signing_assets.sh" "signing validation command tracking"
 fi

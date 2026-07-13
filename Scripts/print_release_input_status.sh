@@ -455,13 +455,22 @@ if scope_requires "signing"; then
     record_missing_field "Apple Distribution certificate" "login keychain" "Scripts/check_code_signing_assets.sh"
   fi
 
-  profiles_dir="$HOME/Library/MobileDevice/Provisioning Profiles"
-  if [[ -d "$profiles_dir" ]] \
-    && find "$profiles_dir" -maxdepth 1 -type f \( -name '*.mobileprovision' -o -name '*.provisionprofile' \) -print -quit 2>/dev/null | grep -q .; then
+  provisioning_profile_ready=0
+  for profiles_dir in \
+    "$HOME/Library/Developer/Xcode/UserData/Provisioning Profiles" \
+    "$HOME/Library/MobileDevice/Provisioning Profiles"; do
+    if [[ -d "$profiles_dir" ]] \
+      && find "$profiles_dir" -maxdepth 1 -type f \( -name '*.mobileprovision' -o -name '*.provisionprofile' \) -print -quit 2>/dev/null | grep -q .; then
+      provisioning_profile_ready=1
+      break
+    fi
+  done
+
+  if (( provisioning_profile_ready == 1 )); then
     mark_ok "Provisioning profile files are installed"
   else
     mark_missing "Provisioning profile files are missing"
-    record_missing_field "App Store provisioning profile" "~/Library/MobileDevice/Provisioning Profiles" "Scripts/check_code_signing_assets.sh"
+    record_missing_field "App Store provisioning profile" "Xcode UserData or ~/Library/MobileDevice/Provisioning Profiles" "Scripts/check_code_signing_assets.sh"
   fi
 else
   mark_optional "Signing inputs are deferred for this release input status scope"

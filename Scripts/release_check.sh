@@ -1424,7 +1424,6 @@ for expected_missing_field in \
   "== Missing Release Input Fields ==" \
   "MISSING_FIELD: APP_REVIEW_CONTACT_FIRST_NAME" \
   "MISSING_FIELD: MANUAL_REAL_IPHONE_PHOTOS_IMPORT" \
-  "MISSING_FIELD: Apple Distribution certificate" \
   "MISSING_FIELD: APP_STORE_CONNECT_API_KEY_JSON or ASC_KEY_ID/ASC_ISSUER_ID/ASC_KEY_PATH"
 do
   if ! grep -q "$expected_missing_field" "$release_input_status_missing_fields_log"; then

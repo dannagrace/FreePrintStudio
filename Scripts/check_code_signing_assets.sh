@@ -66,18 +66,23 @@ else
   block "No valid Apple Distribution code signing identity found in the keychain"
 fi
 
-profiles_dir="$HOME/Library/MobileDevice/Provisioning Profiles"
-if [[ -d "$profiles_dir" ]]; then
-  profile_paths=()
+profile_paths=()
+profile_directories=(
+  "$HOME/Library/Developer/Xcode/UserData/Provisioning Profiles"
+  "$HOME/Library/MobileDevice/Provisioning Profiles"
+)
+for profiles_dir in "${profile_directories[@]}"; do
+  if [[ ! -d "$profiles_dir" ]]; then
+    continue
+  fi
+
   while IFS= read -r -d '' profile_path; do
     profile_paths+=("$profile_path")
   done < <(find "$profiles_dir" -maxdepth 1 -type f \( -name '*.mobileprovision' -o -name '*.provisionprofile' \) -print0 2>/dev/null)
-else
-  profile_paths=()
-fi
+done
 
 if (( ${#profile_paths[@]} == 0 )); then
-  block "No provisioning profiles found under ~/Library/MobileDevice/Provisioning Profiles"
+  block "No provisioning profiles found under Xcode UserData or ~/Library/MobileDevice/Provisioning Profiles"
 elif [[ -n "$team_id" && -n "$bundle_id" ]]; then
   if ! python3 - "$bundle_id" "$team_id" "${profile_paths[@]}" <<'PY'
 import plistlib

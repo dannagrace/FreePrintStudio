@@ -89,16 +89,22 @@ elif [[ -z "$team_id" && "$distribution_identity_count" -gt 0 ]]; then
   matching_identity_ready=1
 fi
 
-profiles_dir="$HOME/Library/MobileDevice/Provisioning Profiles"
-profile_count=0
+profile_paths=()
 profile_summary_path="$(mktemp)"
-if [[ -d "$profiles_dir" ]]; then
-  while IFS= read -r -d '' _profile_path; do
-    profile_count=$((profile_count + 1))
-  done < <(find "$profiles_dir" -maxdepth 1 -type f \( -name '*.mobileprovision' -o -name '*.provisionprofile' \) -print0 2>/dev/null)
-fi
+for profiles_dir in \
+  "$HOME/Library/Developer/Xcode/UserData/Provisioning Profiles" \
+  "$HOME/Library/MobileDevice/Provisioning Profiles"; do
+  if [[ ! -d "$profiles_dir" ]]; then
+    continue
+  fi
 
-python3 - "$bundle_id" "$team_id" "$profiles_dir" >"$profile_summary_path" <<'PY'
+  while IFS= read -r -d '' _profile_path; do
+    profile_paths+=("$_profile_path")
+  done < <(find "$profiles_dir" -maxdepth 1 -type f \( -name '*.mobileprovision' -o -name '*.provisionprofile' \) -print0 2>/dev/null)
+done
+profile_count="${#profile_paths[@]}"
+
+python3 - "$bundle_id" "$team_id" "${profile_paths[@]}" >"$profile_summary_path" <<'PY'
 import plistlib
 import subprocess
 import sys
@@ -107,7 +113,7 @@ from pathlib import Path
 
 bundle_id = sys.argv[1]
 team_id = sys.argv[2]
-profiles_dir = Path(sys.argv[3])
+profile_paths = [Path(path) for path in sys.argv[3:]]
 now = datetime.now(timezone.utc)
 summary = {
     "readable": 0,
@@ -118,11 +124,6 @@ summary = {
     "device_bound": 0,
     "debuggable": 0,
 }
-
-profile_paths = []
-if profiles_dir.is_dir():
-    profile_paths.extend(profiles_dir.glob("*.mobileprovision"))
-    profile_paths.extend(profiles_dir.glob("*.provisionprofile"))
 
 for path in profile_paths:
     try:
