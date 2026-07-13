@@ -72,7 +72,15 @@ project_bundle_id() {
     -scheme "$SCHEME" \
     -configuration "$CONFIGURATION" \
     -showBuildSettings 2>/dev/null \
-    | awk -F'= ' '/PRODUCT_BUNDLE_IDENTIFIER/ { gsub(/^[ \t]+|[ \t]+$/, "", $2); print $2; exit }'
+    | awk -F'= ' '{
+        lhs = $1
+        gsub(/^[ \t]+|[ \t]+$/, "", lhs)
+        if (lhs == "PRODUCT_BUNDLE_IDENTIFIER") {
+          gsub(/^[ \t]+|[ \t]+$/, "", $2)
+          print $2
+          exit
+        }
+      }'
 }
 
 matching_app_store_profile_name() {
