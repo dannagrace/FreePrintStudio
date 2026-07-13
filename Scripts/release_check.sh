@@ -2599,6 +2599,7 @@ check_contains "Scripts/archive_app_store.sh" "xcodebuild" "Archive script must 
 check_contains "Scripts/archive_app_store.sh" "DEVELOPMENT_TEAM_ID" "Archive script must support an explicit Apple Developer Team ID"
 check_contains "Scripts/archive_app_store.sh" "CODE_SIGN_STYLE=Manual" "Archive script must use the installed App Store distribution profile instead of requesting a development profile"
 check_contains "Scripts/archive_app_store.sh" "PROVISIONING_PROFILE_SPECIFIER" "Archive script must select a matching installed App Store provisioning profile"
+check_contains "Scripts/archive_app_store.sh" "IsXcodeManaged" "Archive script must not select an Xcode-managed profile for manual signing"
 check_contains "Scripts/archive_app_store.sh" "secure_private_release_artifacts" "Archive script must restrict private archive and IPA permissions after export"
 check_contains "Scripts/archive_app_store.sh" "Scripts/preflight_app_store_archive.sh" "Archive script must run the archive preflight before creating a signed archive"
 check_contains "Scripts/archive_app_store.sh" "safe_output_path" "Archive script must validate archive/export output paths before destructive cleanup"

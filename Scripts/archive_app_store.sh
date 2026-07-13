@@ -133,6 +133,8 @@ for directory_text in sys.argv[3:]:
             continue
         if profile.get("ProvisionedDevices") or entitlements.get("get-task-allow"):
             continue
+        if profile.get("IsXcodeManaged"):
+            continue
         if profile.get("Name"):
             matches.append((expiration, profile["Name"]))
 
