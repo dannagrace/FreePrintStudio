@@ -84,7 +84,7 @@ Evidence already in the repository:
 - The app supports selecting an image, choosing paper size and orientation, entering exact print dimensions, choosing Fit/Fill/Stretch, previewing on a paper canvas, exporting a PDF, and opening the system print sheet.
 - `Scripts/validate_pdf_export.sh` verifies exact PDF layout behavior for inches, centimeters, millimeters, portrait, landscape, Fit, Fill, and Stretch.
 - `Scripts/validate_photo_import.sh` verifies the real Photos picker path in the simulator.
-- `Scripts/validate_print_sheet.sh` verifies the system print sheet can be presented.
+- `Scripts/validate_print_sheet.sh` verifies the system print sheet can be presented. The print service uses document output and requests the closest supported printer paper for the PDF page size after a printer is selected; final paper matching and physical scale remain part of the AirPrint device evidence.
 - `Scripts/validate_simulator_workflow.sh` exercises the main workflow with a generated image and PDF output.
 
 Open release blockers:

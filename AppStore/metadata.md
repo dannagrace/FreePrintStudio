@@ -46,6 +46,7 @@ To test:
 4. Enter a target width and height.
 5. Switch Fit, Fill, and Stretch to verify preview behavior.
 6. Export PDF or open the system AirPrint sheet.
+7. After selecting a printer, confirm the paper size matches the paper preset selected in the app. FreePrint Studio requests the closest supported printer paper for the PDF page size.
 
 The app processes selected images locally on device. It does not upload images, create accounts, use analytics, show ads, or track users.
 

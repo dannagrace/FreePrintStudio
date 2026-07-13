@@ -516,7 +516,7 @@ struct ContentView: View {
     private func printPDF() {
         do {
             let url = try renderPDF()
-            PrintService.printPDF(url) { result in
+            PrintService.printPDF(url, paperSize: paperSize) { result in
                 if case .failure(let error) = result {
                     alertMessage = error.localizedDescription
                 }
@@ -673,7 +673,7 @@ struct ContentView: View {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
             do {
                 let url = try renderPDF()
-                let didPresent = PrintService.printPDF(url) { result in
+                let didPresent = PrintService.printPDF(url, paperSize: paperSize) { result in
                     if case .failure(let error) = result {
                         writeDebugPrintSheetStatus("failed: \(error.localizedDescription)", to: statusURL)
                     }
