@@ -14,7 +14,7 @@ import sys
 EXPECTED_APP_NAME = "FreePrint Studio"
 EXPECTED_BUNDLE_ID = "com.dannagrace.FreePrintStudio"
 EXPECTED_MARKETING_VERSION = "1.0"
-EXPECTED_BUILD_NUMBER = "1"
+EXPECTED_BUILD_NUMBER = "2"
 EXPECTED_DEVICE_FAMILIES = {"1", "2"}
 
 failures = []

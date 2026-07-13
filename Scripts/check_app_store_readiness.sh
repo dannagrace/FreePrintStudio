@@ -153,7 +153,7 @@ fi
 
 [[ "$bundle_id" == "com.dannagrace.FreePrintStudio" ]] && ok "Bundle ID: $bundle_id" || block "Unexpected bundle ID: ${bundle_id:-missing}"
 [[ "$marketing_version" == "1.0" ]] && ok "Marketing version: $marketing_version" || block "Unexpected marketing version: ${marketing_version:-missing}"
-[[ "$build_number" == "1" ]] && ok "Build number: $build_number" || block "Unexpected build number: ${build_number:-missing}"
+[[ "$build_number" == "2" ]] && ok "Build number: $build_number" || block "Unexpected build number: ${build_number:-missing}"
 
 printf '\n== Static Assets ==\n'
 run_static_release_check >/tmp/freeprintstudio-release-check.log 2>&1 && ok "Static release assets pass Scripts/release_check.sh" || {

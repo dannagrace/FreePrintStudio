@@ -23,14 +23,15 @@ Use this file when completing App Accessibility in App Store Connect.
 
 ## Validation Notes
 
-- Main controls use native SwiftUI buttons, pickers, text fields, links, and system sheets.
+- Main controls use SwiftUI buttons, pickers, text fields, links, and system sheets.
 - The About button has an explicit accessibility label.
 - The image picker, centering action, print preview, target width and height fields, Export PDF, and Print actions expose explicit VoiceOver labels, hints, or values.
 - The app supports system dark mode through native semantic colors.
 - The primary workflow does not require color alone to identify actions.
 - No custom animation is required to complete the workflow.
-- Dark Interface was checked on an iPhone 17 Pro Max simulator on 2026-06-07 using `Scripts/verify_release.sh accessibility`; the main workflow remains readable and the paper preview preserves a white printable page.
-- Larger Text was checked on iPhone 17 Pro Max and iPad Pro 13-inch simulators on 2026-06-07 using `Scripts/verify_release.sh accessibility`; primary controls, measurement fields, and preview content remain readable and usable, with output actions available by scrolling.
+- Dark Interface was checked on an iPhone 17 Pro Max simulator on 2026-07-13 using `Scripts/verify_release.sh accessibility`; the main workflow remains readable and the paper preview preserves a white printable page.
+- Larger Text was checked on iPhone 17 Pro Max and iPad Pro 13-inch simulators on 2026-07-13 using `Scripts/verify_release.sh accessibility`; primary controls, measurement fields, and preview content remain readable and usable, with output actions available by scrolling.
+- The enabled main workflow passed the XCTest accessibility audit on an iPhone 17 Pro Max simulator on 2026-07-13. The primary and output actions use explicit high-contrast foreground, background, border, disabled, and pressed states.
 
 ## Device Testing Required Before Publishing Labels
 

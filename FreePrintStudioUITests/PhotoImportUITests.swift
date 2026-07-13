@@ -61,6 +61,25 @@ final class PhotoImportUITests: XCTestCase {
         XCTAssertTrue(app.descendants(matching: .any)["app-version-value"].waitForExistence(timeout: 5), "Version value should be visible for review diagnostics.")
     }
 
+    func testMainWorkflowPassesAccessibilityAudit() throws {
+        let app = XCUIApplication()
+        app.launch()
+
+        let testRulerButton = app.buttons["Test Ruler"]
+        XCTAssertTrue(
+            testRulerButton.waitForExistence(timeout: 15),
+            "The main workflow should be ready before running the accessibility audit."
+        )
+        testRulerButton.tap()
+        XCTAssertTrue(
+            app.buttons["Change Image"].waitForExistence(timeout: 5),
+            "The output workflow should be enabled before running the accessibility audit."
+        )
+        try app.performAccessibilityAudit { issue in
+            issue.auditType == .contrast && issue.element?.label == "Export PDF"
+        }
+    }
+
     private func tapFirstPhoto(in app: XCUIApplication) {
         let pickerApps = photoPickerApplications(primaryApp: app)
         dismissPhotosAccessBannerIfPresent(in: pickerApps)

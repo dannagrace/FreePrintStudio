@@ -203,7 +203,7 @@ struct ContentView: View {
                 systemImage: "photo.on.rectangle"
             )
         }
-        .buttonStyle(.borderedProminent)
+        .buttonStyle(OutputActionButtonStyle(isProminent: true))
         .accessibilityLabel(selectedImage == nil ? "Choose Image" : "Change Image")
         .accessibilityHint("Select or replace the image used for the print layout.")
     }
@@ -214,7 +214,7 @@ struct ContentView: View {
         } label: {
             commandLabel("Test Ruler", systemImage: "ruler")
         }
-        .buttonStyle(.bordered)
+        .buttonStyle(OutputActionButtonStyle(isProminent: false))
         .accessibilityLabel("Test Ruler")
         .accessibilityHint("Load a built-in six inch calibration ruler for exact-size print checks.")
     }
@@ -225,7 +225,7 @@ struct ContentView: View {
         } label: {
             commandLabel("Center", systemImage: "scope")
         }
-        .buttonStyle(.bordered)
+        .buttonStyle(OutputActionButtonStyle(isProminent: false))
         .disabled(isDisabled)
         .accessibilityLabel("Center")
         .accessibilityHint("Center the target print area on the selected paper.")
@@ -275,7 +275,7 @@ struct ContentView: View {
         } label: {
             commandLabel("Export PDF", systemImage: "square.and.arrow.up")
         }
-        .buttonStyle(.bordered)
+        .buttonStyle(OutputActionButtonStyle(isProminent: false))
         .disabled(!isOutputReady)
         .accessibilityLabel("Export PDF")
         .accessibilityHint("Create a PDF with the selected paper, size, and image placement.")
@@ -287,7 +287,7 @@ struct ContentView: View {
         } label: {
             commandLabel("Print", systemImage: "printer")
         }
-        .buttonStyle(.borderedProminent)
+        .buttonStyle(OutputActionButtonStyle(isProminent: true))
         .disabled(!isOutputReady)
         .accessibilityLabel("Print")
         .accessibilityHint("Open the system print sheet for the prepared PDF.")
@@ -701,6 +701,55 @@ struct ContentView: View {
     #endif
 }
 
+private struct OutputActionButtonStyle: ButtonStyle {
+    @Environment(\.isEnabled) private var isEnabled
+
+    let isProminent: Bool
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(.headline)
+            .foregroundStyle(foregroundColor)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
+            .background {
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .fill(backgroundColor)
+            }
+            .overlay {
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .stroke(borderColor, lineWidth: 1)
+            }
+            .contentShape(Rectangle())
+            .opacity(configuration.isPressed ? 0.82 : 1)
+    }
+
+    private var foregroundColor: Color {
+        if !isEnabled {
+            return Color(.label)
+        }
+        return isProminent ? .white : Color(.label)
+    }
+
+    private var backgroundColor: Color {
+        if !isEnabled {
+            return Color(.secondarySystemFill)
+        }
+        return isProminent ? accessibleBlue : .clear
+    }
+
+    private var borderColor: Color {
+        if !isEnabled {
+            return Color(.separator)
+        }
+        return isProminent ? .clear : accessibleBlue.opacity(0.6)
+    }
+
+    private var accessibleBlue: Color {
+        Color(red: 0, green: 0.36, blue: 0.75)
+    }
+}
+
 private struct MeasurementField: View {
     let title: String
     @Binding var text: String
@@ -713,7 +762,7 @@ private struct MeasurementField: View {
         VStack(alignment: .leading, spacing: 6) {
             Text(title)
                 .font(.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Color(.label))
             HStack(alignment: .firstTextBaseline, spacing: 8) {
                 TextField(title, text: $text)
                     .keyboardType(.decimalPad)
@@ -723,7 +772,7 @@ private struct MeasurementField: View {
                     .accessibilityValue("\(text) \(unit)")
                     .accessibilityHint(accessibilityHint)
                 Text(unit)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color(.label))
                     .lineLimit(1)
                     .accessibilityHidden(true)
             }

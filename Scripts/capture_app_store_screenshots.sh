@@ -191,6 +191,7 @@ select_installed_simulator() {
 ORIGINAL_APPEARANCE=""
 ORIGINAL_CONTENT_SIZE=""
 RESTORE_SIMULATOR_UI=0
+SCREENSHOT_CAPTURE_TEMP=""
 
 restore_simulator_ui() {
   if [[ "$RESTORE_SIMULATOR_UI" != "1" ]]; then
@@ -204,7 +205,14 @@ restore_simulator_ui() {
   fi
 }
 
-trap restore_simulator_ui EXIT
+cleanup() {
+  restore_simulator_ui
+  if [[ -n "$SCREENSHOT_CAPTURE_TEMP" ]]; then
+    rm -f "$SCREENSHOT_CAPTURE_TEMP"
+  fi
+}
+
+trap cleanup EXIT
 
 Scripts/generate_store_sample_image.py
 
@@ -265,5 +273,7 @@ fi
 run_with_timeout "$SIMCTL_TIMEOUT_SECONDS" xcrun simctl launch "$DEVICE" "$BUNDLE_ID" "${launch_args[@]}" >/tmp/freeprintstudio-screenshot-launch.log
 
 sleep "$SCREENSHOT_DELAY"
-run_with_timeout "$SIMCTL_TIMEOUT_SECONDS" xcrun simctl io "$DEVICE" screenshot --type=jpeg "$SCREENSHOT_PATH" >/tmp/freeprintstudio-screenshot-capture.log
+SCREENSHOT_CAPTURE_TEMP="$(mktemp -t freeprintstudio-screenshot)"
+run_with_timeout "$SIMCTL_TIMEOUT_SECONDS" xcrun simctl io "$DEVICE" screenshot --type=jpeg "$SCREENSHOT_CAPTURE_TEMP" >/tmp/freeprintstudio-screenshot-capture.log
+cp "$SCREENSHOT_CAPTURE_TEMP" "$SCREENSHOT_PATH"
 printf 'Wrote %s\n' "$SCREENSHOT_PATH"

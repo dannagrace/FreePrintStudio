@@ -6537,7 +6537,7 @@ check_contains "FreePrintStudio/Resources/Info.plist" "CFBundleDisplayName" "Inf
 check_contains "FreePrintStudio/Resources/Info.plist" "ITSAppUsesNonExemptEncryption" "Info.plist must declare non-exempt encryption usage"
 check_plist_raw_value "FreePrintStudio/Resources/Info.plist" "ITSAppUsesNonExemptEncryption" "false" "Info.plist must declare no non-exempt encryption"
 check_contains "FreePrintStudio.xcodeproj/project.pbxproj" "MARKETING_VERSION = 1.0" "Marketing version must be set"
-check_contains "FreePrintStudio.xcodeproj/project.pbxproj" "CURRENT_PROJECT_VERSION = 1" "Build number must be set"
+check_contains "FreePrintStudio.xcodeproj/project.pbxproj" "CURRENT_PROJECT_VERSION = 2" "Build number must be set"
 
 if [[ "$failures" -gt 0 ]]; then
   printf '\nRelease check failed with %d issue(s).\n' "$failures"
