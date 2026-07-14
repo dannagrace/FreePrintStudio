@@ -89,7 +89,8 @@ elif [[ -z "$team_id" && "$distribution_identity_count" -gt 0 ]]; then
   matching_identity_ready=1
 fi
 
-profile_paths=()
+profile_arguments=("$bundle_id" "$team_id")
+profile_count=0
 profile_summary_path="$(mktemp)"
 for profiles_dir in \
   "$HOME/Library/Developer/Xcode/UserData/Provisioning Profiles" \
@@ -99,12 +100,12 @@ for profiles_dir in \
   fi
 
   while IFS= read -r -d '' _profile_path; do
-    profile_paths+=("$_profile_path")
+    profile_arguments+=("$_profile_path")
+    profile_count=$((profile_count + 1))
   done < <(find "$profiles_dir" -maxdepth 1 -type f \( -name '*.mobileprovision' -o -name '*.provisionprofile' \) -print0 2>/dev/null)
 done
-profile_count="${#profile_paths[@]}"
 
-python3 - "$bundle_id" "$team_id" "${profile_paths[@]}" >"$profile_summary_path" <<'PY'
+python3 - "${profile_arguments[@]}" >"$profile_summary_path" <<'PY'
 import plistlib
 import subprocess
 import sys

@@ -3121,6 +3121,16 @@ check_contains "Scripts/generate_signing_readiness_report.sh" "redacted" "Signin
 check_not_contains "Scripts/generate_signing_readiness_report.sh" "DEVELOPMENT_TEAM_ID=<" "Signing readiness report must use shell-safe Team ID placeholders"
 check_contains "Scripts/generate_signing_readiness_report.sh" "DEVELOPMENT_TEAM_ID=YOURTEAMID ALLOW_PROVISIONING_UPDATES=1 Scripts/archive_app_store.sh" "Signing readiness report must show the guarded archive command"
 check_contains "Scripts/generate_signing_readiness_report.sh" "Replace YOURTEAMID with the Apple Developer Team ID before running signing or archive commands." "Signing readiness report must warn operators to replace Team ID placeholders"
+signing_report_empty_home_test_dir="$(mktemp -d)"
+signing_report_empty_home_output="$signing_report_empty_home_test_dir/signing-readiness-report.md"
+if ! HOME="$signing_report_empty_home_test_dir" Scripts/generate_signing_readiness_report.sh "$signing_report_empty_home_output" >/dev/null 2>&1; then
+  printf 'FAIL: Signing readiness report must support machines with no provisioning profile directories\n'
+  failures=$((failures + 1))
+elif ! grep -q '| Provisioning profile files | 0 |' "$signing_report_empty_home_output"; then
+  printf 'FAIL: Signing readiness report must record zero profiles when provisioning profile directories are absent\n'
+  failures=$((failures + 1))
+fi
+rm -rf "$signing_report_empty_home_test_dir"
 check_file "Scripts/validate_signing_readiness_report.sh" "Signing readiness report validator is required"
 if [[ -f "Scripts/validate_signing_readiness_report.sh" && ! -x "Scripts/validate_signing_readiness_report.sh" ]]; then
   printf 'FAIL: Signing readiness report validator must be executable (Scripts/validate_signing_readiness_report.sh)\n'
