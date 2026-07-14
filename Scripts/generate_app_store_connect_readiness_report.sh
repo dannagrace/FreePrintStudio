@@ -181,6 +181,32 @@ commercial_config_confirmed=0
 submit_review_confirmed=0
 [[ "${CONFIRM_SUBMIT_FOR_REVIEW:-}" == "1" ]] && submit_review_confirmed=1
 
+if [[ "${APP_STORE_CONNECT_SUBMISSION_MODE:-api}" == "manual" ]]; then
+  required_next_actions="$(cat <<'EOF'
+- [ ] Immediately before submission, re-open the signed-in App Store Connect version page and confirm the selected processed build.
+- [ ] Refresh `APP_STORE_CONNECT_MANUAL_STATE_VERIFIED_DATE`, then run `Scripts/validate_app_store_connect_submission_state.sh`.
+- [ ] Run `APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/preflight_app_review_submission.sh` before final submission.
+- [ ] After explicit action-time approval, click Add for Review in App Store Connect.
+- [ ] Configure App Store Connect API credentials only if Fastlane upload or submission automation is later required.
+EOF
+)"
+else
+  required_next_actions="$(cat <<'EOF'
+- [ ] Configure either `APP_STORE_CONNECT_API_KEY_JSON` or the `ASC_KEY_ID`, `ASC_ISSUER_ID`, and `ASC_KEY_PATH` triplet in untracked local release inputs.
+- [ ] Run `Scripts/check_app_store_connect_credentials.sh`.
+- [ ] Create or verify the App Store Connect app record for `com.dannagrace.FreePrintStudio`.
+- [ ] Run `Scripts/preflight_metadata_upload.sh`, then upload metadata and screenshots with `Scripts/run_fastlane.sh ios metadata`.
+- [ ] Run `FASTLANE_USER=apple-id@example.com CONFIRM_UPLOAD_APP_PRIVACY=1 Scripts/preflight_app_privacy_upload.sh`, then upload App Privacy Details with `Scripts/run_fastlane.sh ios privacy_details`.
+- [ ] Upload a signed IPA to TestFlight with `Scripts/run_fastlane.sh ios upload_testflight`.
+- [ ] Confirm App Privacy Details in App Store Connect match `AppStore/app_privacy_details.json`, then set `APP_PRIVACY_DETAILS_CONFIRMED_IN_APP_STORE_CONNECT=1` and run `APP_PRIVACY_DETAILS_CONFIRMED_IN_APP_STORE_CONNECT=1 Scripts/validate_app_privacy_connect_entry.sh`.
+- [ ] Confirm App Store Connect Pricing, Availability, monetization, release option, and phased release match `AppStore/commercial-configuration.md`, then set `APP_STORE_COMMERCIAL_CONFIG_CONFIRMED_IN_APP_STORE_CONNECT=1` and run `APP_STORE_COMMERCIAL_CONFIG_CONFIRMED_IN_APP_STORE_CONNECT=1 Scripts/validate_commercial_configuration_connect_entry.sh`.
+- [ ] Wait for the build to finish processing, then set `APP_STORE_BUILD_NUMBER`.
+- [ ] Run `APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/run_fastlane.sh ios app_store_connect_state`.
+- [ ] Run `APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/preflight_app_review_submission.sh` before final submission.
+EOF
+)"
+fi
+
 cat >"$output_path" <<EOF
 # FreePrint Studio App Store Connect Readiness Report
 
@@ -189,7 +215,7 @@ cat >"$output_path" <<EOF
 - Credential validation command: \`Scripts/check_app_store_connect_credentials.sh\`
 - Metadata upload preflight command: \`Scripts/preflight_metadata_upload.sh\`
 - App Privacy upload preflight command: \`Scripts/preflight_app_privacy_upload.sh\`
-- App/version/build state command: \`Scripts/run_fastlane.sh ios app_store_connect_state\`
+- App/version/build state command: \`Scripts/validate_app_store_connect_submission_state.sh\`
 - TestFlight preflight command: \`Scripts/preflight_testflight_upload.sh\`
 - App Review preflight command: \`Scripts/preflight_app_review_submission.sh\`
 
@@ -216,6 +242,10 @@ cat >"$output_path" <<EOF
 
 | Item | Status |
 | --- | --- |
+| \`APP_STORE_CONNECT_SUBMISSION_MODE\` | ${APP_STORE_CONNECT_SUBMISSION_MODE:-api} |
+| Manual selected-build state confirmation | ${APP_STORE_CONNECT_MANUAL_STATE_CONFIRMED:-missing} |
+| Manual state build configured | $(status_from_bool "$([[ -n "${APP_STORE_CONNECT_MANUAL_STATE_BUILD_NUMBER:-}" ]] && printf 1 || printf 0)" "Yes ($(mask_value "${APP_STORE_CONNECT_MANUAL_STATE_BUILD_NUMBER:-}"))" "No") |
+| Manual state verification date configured | $(status_from_bool "$([[ -n "${APP_STORE_CONNECT_MANUAL_STATE_VERIFIED_DATE:-}" ]] && printf 1 || printf 0)" "Yes" "No") |
 | \`FASTLANE_USER\` configured | $(status_from_bool "$fastlane_user_configured" "Yes ($(mask_value "${FASTLANE_USER:-}"))" "No") |
 | \`APP_STORE_BUILD_NUMBER\` configured | $build_number_status |
 | \`CONFIRM_UPLOAD_APP_PRIVACY=1\` | $(status_from_bool "$privacy_upload_confirmed" "Yes" "No") |
@@ -237,23 +267,13 @@ Replace apple-id@example.com with the App Store Connect Apple ID before running 
 | App Privacy Details upload | \`FASTLANE_USER=apple-id@example.com CONFIRM_UPLOAD_APP_PRIVACY=1 Scripts/run_fastlane.sh ios privacy_details\` | After the App Privacy upload preflight passes. |
 | App Privacy Details confirmation | \`APP_PRIVACY_DETAILS_CONFIRMED_IN_APP_STORE_CONNECT=1 Scripts/validate_app_privacy_connect_entry.sh\` | After App Store Connect matches \`AppStore/app_privacy_details.json\`. |
 | Commercial configuration confirmation | \`APP_STORE_COMMERCIAL_CONFIG_CONFIRMED_IN_APP_STORE_CONNECT=1 Scripts/validate_commercial_configuration_connect_entry.sh\` | After App Store Connect Pricing, Availability, monetization, release option, and phased release match \`AppStore/commercial-configuration.md\`. |
-| App record, version, and selected build | \`APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/run_fastlane.sh ios app_store_connect_state\` | After TestFlight processing completes. |
+| App record, version, and selected build | \`APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/validate_app_store_connect_submission_state.sh\` | After TestFlight processing completes. |
 | TestFlight upload preflight | \`Scripts/preflight_testflight_upload.sh\` | After signing and App Store Connect credentials are configured. |
 | App Review submission preflight | \`APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/preflight_app_review_submission.sh\` | After listing fields, manual evidence, and selected build are final. |
 
 ## Required Next Actions
 
-- [ ] Configure either \`APP_STORE_CONNECT_API_KEY_JSON\` or the \`ASC_KEY_ID\`, \`ASC_ISSUER_ID\`, and \`ASC_KEY_PATH\` triplet in untracked local release inputs.
-- [ ] Run \`Scripts/check_app_store_connect_credentials.sh\`.
-- [ ] Create or verify the App Store Connect app record for \`com.dannagrace.FreePrintStudio\`.
-- [ ] Run \`Scripts/preflight_metadata_upload.sh\`, then upload metadata and screenshots with \`Scripts/run_fastlane.sh ios metadata\`.
-- [ ] Run \`FASTLANE_USER=apple-id@example.com CONFIRM_UPLOAD_APP_PRIVACY=1 Scripts/preflight_app_privacy_upload.sh\`, then upload App Privacy Details with \`Scripts/run_fastlane.sh ios privacy_details\`.
-- [ ] Upload a signed IPA to TestFlight with \`Scripts/run_fastlane.sh ios upload_testflight\`.
-- [ ] Confirm App Privacy Details in App Store Connect match \`AppStore/app_privacy_details.json\`, then set \`APP_PRIVACY_DETAILS_CONFIRMED_IN_APP_STORE_CONNECT=1\` and run \`APP_PRIVACY_DETAILS_CONFIRMED_IN_APP_STORE_CONNECT=1 Scripts/validate_app_privacy_connect_entry.sh\`.
-- [ ] Confirm App Store Connect Pricing, Availability, monetization, release option, and phased release match \`AppStore/commercial-configuration.md\`, then set \`APP_STORE_COMMERCIAL_CONFIG_CONFIRMED_IN_APP_STORE_CONNECT=1\` and run \`APP_STORE_COMMERCIAL_CONFIG_CONFIRMED_IN_APP_STORE_CONNECT=1 Scripts/validate_commercial_configuration_connect_entry.sh\`.
-- [ ] Wait for the build to finish processing, then set \`APP_STORE_BUILD_NUMBER\`.
-- [ ] Run \`APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/run_fastlane.sh ios app_store_connect_state\`.
-- [ ] Run \`APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/preflight_app_review_submission.sh\` before final submission.
+$required_next_actions
 EOF
 
 printf 'App Store Connect readiness report generated: %s\n' "$output_path"

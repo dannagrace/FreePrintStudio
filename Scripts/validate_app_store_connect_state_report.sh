@@ -62,7 +62,8 @@ def has_action(predicate) -> bool:
 
 require("# FreePrint Studio App Store Connect State Report", "report title")
 require("This report is redacted", "redaction disclosure")
-require("State check command: `Scripts/check_app_store_connect_state.sh`", "state check command")
+require("Submission Mode:", "submission mode")
+require("State check command: `Scripts/validate_app_store_connect_submission_state.sh`", "state check command")
 require("Exit Code:", "state check exit code")
 require("Status:", "state check status")
 require("Timeout Seconds:", "state check timeout")
@@ -71,15 +72,21 @@ require("| `APP_STORE_BUILD_NUMBER` |", "selected build row")
 require("## Redacted Output", "redacted output section")
 require("```text", "redacted output code fence")
 require("## Required Next Actions", "required next actions section")
-require("Configure App Store Connect credentials", "credential setup guidance")
-require("Upload a signed TestFlight build", "TestFlight upload guidance")
-require("Wait for the build to finish App Store Connect processing", "build processing guidance")
-require("Set `APP_STORE_BUILD_NUMBER`", "selected build number guidance")
-require("processed build selected for App Review", "processed selected build guidance")
-require(
-    "APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/check_app_store_connect_state.sh",
-    "selected build verification command",
-)
+if "- Submission Mode: manual" in report:
+    require("re-open the signed-in App Store Connect version page", "manual state refresh guidance")
+    require("version is ready for submission", "manual version state guidance")
+    require("APP_STORE_CONNECT_MANUAL_STATE_VERIFIED_DATE", "manual state date guidance")
+    require("Scripts/validate_app_store_connect_submission_state.sh", "manual selected build validation command")
+else:
+    require("Configure App Store Connect credentials", "credential setup guidance")
+    require("Upload a signed TestFlight build", "TestFlight upload guidance")
+    require("Wait for the build to finish App Store Connect processing", "build processing guidance")
+    require("Set `APP_STORE_BUILD_NUMBER`", "selected build number guidance")
+    require("processed build selected for App Review", "processed selected build guidance")
+    require(
+        "APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/validate_app_store_connect_submission_state.sh",
+        "selected build verification command",
+    )
 require("Keep this report in the submission packet", "submission packet evidence guidance")
 
 selected_build_action = has_action(
@@ -93,8 +100,7 @@ selected_build_action = has_action(
 )
 if selected_build_action:
     require("`APP_STORE_BUILD_NUMBER`", "APP_STORE_BUILD_NUMBER action coverage")
-    require("Scripts/check_app_store_connect_state.sh", "selected build validation action coverage")
-    require("processed build selected for App Review", "selected build action guidance")
+    require("Scripts/validate_app_store_connect_submission_state.sh", "selected build validation action coverage")
 
 credential_action = has_action(
     lambda action: action.get("category") == "App Store Connect"

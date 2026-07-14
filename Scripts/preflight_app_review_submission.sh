@@ -79,8 +79,7 @@ run_step "Commercial configuration App Store Connect confirmation" Scripts/valid
 run_step "App Store questionnaires" Scripts/validate_app_store_questionnaires.sh
 run_step "App Review contact" Scripts/validate_app_review_contact.sh
 run_step "Manual release verification evidence" Scripts/validate_manual_release_verification.sh
-run_step "App Store Connect credentials" Scripts/check_app_store_connect_credentials.sh
-run_step "App Store Connect selected build" Scripts/check_app_store_connect_state.sh
+run_step "App Store Connect submission state" Scripts/validate_app_store_connect_submission_state.sh
 
 if (( failures > 0 )); then
   printf 'App Review submission preflight blocked with %d failed step(s).\n' "$failures"
@@ -89,4 +88,8 @@ if (( failures > 0 )); then
 fi
 
 printf 'App Review submission preflight passed.\n'
-printf 'Next: APP_STORE_BUILD_NUMBER=%s CONFIRM_SUBMIT_FOR_REVIEW=1 Scripts/run_fastlane.sh ios submit_review\n' "$APP_STORE_BUILD_NUMBER"
+if [[ "${APP_STORE_CONNECT_SUBMISSION_MODE:-api}" == "manual" ]]; then
+  printf 'Next: re-open App Store Connect, confirm the same selected build, and use Add for Review after explicit action-time approval.\n'
+else
+  printf 'Next: APP_STORE_BUILD_NUMBER=%s CONFIRM_SUBMIT_FOR_REVIEW=1 Scripts/run_fastlane.sh ios submit_review\n' "$APP_STORE_BUILD_NUMBER"
+fi

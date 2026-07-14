@@ -327,7 +327,7 @@ if ! Scripts/validate_release_provenance.sh "$PACKET_DIR/release-provenance.tsv"
 fi
 require_contains "SUMMARY.md" "external-readiness-actions.tsv" "summary external readiness manifest reference"
 require_contains "SUMMARY.md" "app-store-connect-state-report.md" "summary App Store Connect state report reference"
-require_contains "app-store-connect-state-report.md" "Scripts/check_app_store_connect_state.sh" "selected-build state report command tracking"
+require_contains "app-store-connect-state-report.md" "Scripts/validate_app_store_connect_submission_state.sh" "selected-build state report command tracking"
 require_contains "app-store-connect-state-report.md" "Exit Code:" "selected-build state report exit code"
 require_contains "app-store-connect-state-report.md" "Redacted Output" "selected-build state report redacted output"
 require_contains "readiness.txt" "Summary:" "readiness audit summary"
@@ -359,7 +359,7 @@ if grep -q '^BLOCKED: GitHub Pages build_type' "$PACKET_DIR/readiness.txt"; then
   require_contains "external-readiness-actions.tsv" "Scripts/check_github_pages_source.sh" "GitHub Pages source validation command tracking"
 fi
 
-if grep -qE 'FASTLANE_USER|App Store Connect|ASC_' "$PACKET_DIR/readiness.txt"; then
+if grep -qE '^BLOCKED:.*(FASTLANE_USER|App Store Connect|ASC_)|^WARN:.*(FASTLANE_USER|App Store Connect|ASC_)' "$PACKET_DIR/readiness.txt"; then
   require_contains "external-readiness-actions.tsv" "App Store Connect" "App Store Connect external action tracking"
   require_contains "external-readiness-actions.tsv" "Scripts/check_app_store_connect_credentials.sh" "App Store Connect validation command tracking"
 fi

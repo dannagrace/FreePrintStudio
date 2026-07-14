@@ -86,6 +86,11 @@ run_release_env_validation_fixture() {
     -u APP_PRIVACY_SKIP_PUBLISH \
     -u APP_PRIVACY_DETAILS_CONFIRMED_IN_APP_STORE_CONNECT \
     -u APP_STORE_COMMERCIAL_CONFIG_CONFIRMED_IN_APP_STORE_CONNECT \
+    -u APP_STORE_CONNECT_SUBMISSION_MODE \
+    -u APP_STORE_CONNECT_MANUAL_STATE_CONFIRMED \
+    -u APP_STORE_CONNECT_MANUAL_STATE_BUILD_NUMBER \
+    -u APP_STORE_CONNECT_MANUAL_STATE_VERIFIED_DATE \
+    -u APP_STORE_CONNECT_MANUAL_STATE_MAX_AGE_DAYS \
     -u IPA_PATH \
     -u TESTFLIGHT_CHANGELOG \
     -u APP_STORE_BUILD_NUMBER \
@@ -117,6 +122,11 @@ run_with_clean_release_inputs() {
     -u APP_PRIVACY_SKIP_PUBLISH \
     -u APP_PRIVACY_DETAILS_CONFIRMED_IN_APP_STORE_CONNECT \
     -u APP_STORE_COMMERCIAL_CONFIG_CONFIRMED_IN_APP_STORE_CONNECT \
+    -u APP_STORE_CONNECT_SUBMISSION_MODE \
+    -u APP_STORE_CONNECT_MANUAL_STATE_CONFIRMED \
+    -u APP_STORE_CONNECT_MANUAL_STATE_BUILD_NUMBER \
+    -u APP_STORE_CONNECT_MANUAL_STATE_VERIFIED_DATE \
+    -u APP_STORE_CONNECT_MANUAL_STATE_MAX_AGE_DAYS \
     -u IPA_PATH \
     -u TESTFLIGHT_CHANGELOG \
     -u APP_STORE_BUILD_NUMBER \
@@ -2917,12 +2927,10 @@ check_contains "Scripts/check_app_store_readiness.sh" "APP_REVIEW_CONTACT_EMAIL"
 check_contains "Scripts/check_app_store_readiness.sh" "validate_app_review_contact.sh" "Readiness audit must validate App Review contact details"
 check_contains "Scripts/check_app_store_readiness.sh" "validate_app_privacy_details.sh" "Readiness audit must validate App Privacy Details"
 check_contains "Scripts/check_app_store_readiness.sh" "validate_privacy_surface.sh" "Readiness audit must validate privacy surface"
-check_contains "Scripts/check_app_store_readiness.sh" 'block "Fastlane App Store Connect API credentials are not configured' "Readiness audit must block missing App Store Connect API credentials"
-check_not_contains "Scripts/check_app_store_readiness.sh" 'warn "Fastlane App Store Connect API credentials are not configured' "Readiness audit must not downgrade missing App Store Connect API credentials to a warning"
-check_contains "Scripts/check_app_store_readiness.sh" "app_store_connect_state_checked" "Readiness audit must only warn about account-specific App Store Connect verification when it could not query account state"
-check_contains "Scripts/check_app_store_readiness.sh" "check_app_store_connect_state.sh" "Readiness audit must run the App Store Connect state preflight when credentials are available"
-check_contains "Scripts/check_app_store_readiness.sh" "APP_STORE_CONNECT_SKIP_BUILD_CHECK=1" "Archive readiness audit must not require a processed TestFlight build before the first App Store archive"
-check_contains "Scripts/check_app_store_readiness.sh" "App Store Connect app record and version preflight passed" "Archive readiness audit must describe the pre-upload App Store Connect check accurately"
+check_contains "Scripts/check_app_store_readiness.sh" "validate_app_store_connect_submission_state.sh" "Readiness audit must validate either manual or API App Store Connect submission state"
+check_contains "Scripts/check_app_store_readiness.sh" 'ok "App Store Connect API credentials are optional' "Readiness audit must allow missing API automation credentials for manual submission"
+check_contains "Scripts/check_app_store_readiness.sh" "APP_STORE_CONNECT_SUBMISSION_MODE" "Readiness audit must distinguish manual and API submission modes"
+check_contains "Scripts/check_app_store_readiness.sh" "manual web submission path" "Readiness audit must describe successful manual App Store Connect verification"
 check_contains "Scripts/check_app_store_readiness.sh" "Replace YOURTEAMID with the Apple Developer Team ID before running signing or archive commands." "Readiness audit must warn operators to replace Team ID placeholders"
 check_file "Scripts/check_app_store_connect_credentials.sh" "App Store Connect credential audit script is required"
 check_contains "Scripts/check_app_store_connect_credentials.sh" "APP_STORE_CONNECT_API_KEY_JSON" "Credential audit must support Fastlane API key JSON"
@@ -3461,11 +3469,11 @@ check_contains "Scripts/preflight_app_review_submission.sh" "Scripts/validate_co
 check_contains "Scripts/preflight_app_review_submission.sh" "Scripts/validate_app_store_questionnaires.sh" "App Review preflight must validate questionnaire consistency"
 check_contains "Scripts/preflight_app_review_submission.sh" "Scripts/validate_app_review_contact.sh" "App Review preflight must validate App Review contact details"
 check_contains "Scripts/preflight_app_review_submission.sh" "Scripts/validate_manual_release_verification.sh" "App Review preflight must validate manual release evidence"
-check_contains "Scripts/preflight_app_review_submission.sh" "Scripts/check_app_store_connect_credentials.sh" "App Review preflight must validate App Store Connect credentials"
+check_contains "Scripts/preflight_app_review_submission.sh" "Scripts/validate_app_store_connect_submission_state.sh" "App Review preflight must validate the selected manual or API App Store Connect submission path"
 check_contains "Scripts/preflight_app_review_submission.sh" "source Scripts/load_release_env.sh" "App Review preflight must load private release inputs before checking selected build and credentials"
 check_contains "Scripts/preflight_app_review_submission.sh" "Scripts/validate_release_env.sh" "App Review preflight must reject placeholder private release inputs"
 check_contains "Scripts/preflight_app_review_submission.sh" "Scripts/print_release_input_status.sh --strict" "App Review preflight must print field-level release input status before final submission"
-check_contains "Scripts/preflight_app_review_submission.sh" "Scripts/check_app_store_connect_state.sh" "App Review preflight must require a processed selected build"
+check_contains "Scripts/preflight_app_review_submission.sh" "App Store Connect submission state" "App Review preflight must require a processed selected build"
 check_contains "Scripts/preflight_app_review_submission.sh" "APP_STORE_BUILD_NUMBER" "App Review preflight must require an explicit selected build number"
 check_contains "Scripts/preflight_app_review_submission.sh" "PROCESSED_BUILD_NUMBER placeholder" "App Review preflight must reject the selected-build placeholder"
 check_contains "Scripts/preflight_app_review_submission.sh" "App Review submission preflight passed" "App Review preflight must print a clear success message"
@@ -3487,8 +3495,7 @@ build_index = line_index("run_build_number_step")
 for later in (
     'run_step "App Store metadata" Scripts/validate_app_store_metadata.sh',
     'run_step "Manual release verification evidence" Scripts/validate_manual_release_verification.sh',
-    'run_step "App Store Connect credentials" Scripts/check_app_store_connect_credentials.sh',
-    'run_step "App Store Connect selected build" Scripts/check_app_store_connect_state.sh',
+    'run_step "App Store Connect submission state" Scripts/validate_app_store_connect_submission_state.sh',
 ):
     if build_index > line_index(later):
         raise SystemExit(1)
@@ -4024,7 +4031,7 @@ if [[ -f "Scripts/generate_app_store_connect_state_report.sh" && ! -x "Scripts/g
   failures=$((failures + 1))
 fi
 check_contains "Scripts/generate_app_store_connect_state_report.sh" "app-store-connect-state-report.md" "App Store Connect state report generator must use a deterministic output name"
-check_contains "Scripts/generate_app_store_connect_state_report.sh" "check_app_store_connect_state.sh" "App Store Connect state report must run the selected build state checker"
+check_contains "Scripts/generate_app_store_connect_state_report.sh" "validate_app_store_connect_submission_state.sh" "App Store Connect state report must run the selected build submission-state checker"
 check_contains "Scripts/generate_app_store_connect_state_report.sh" "Redacted Output" "App Store Connect state report must include redacted selected-build check output"
 check_contains "Scripts/generate_app_store_connect_state_report.sh" "Exit Code" "App Store Connect state report must include the selected-build check exit code"
 check_contains "Scripts/generate_app_store_connect_state_report.sh" "redacted" "App Store Connect state report must avoid printing private release values"
@@ -4032,7 +4039,7 @@ check_contains "Scripts/prepare_app_store_submission_packet.sh" "app-store-conne
 check_contains "Scripts/prepare_app_store_submission_packet.sh" "generate_app_store_connect_state_report.sh" "Submission packet generator must generate the App Store Connect state report"
 check_contains "Scripts/prepare_app_store_submission_packet.sh" '\\`app-store-connect-state-report.md\\`' "Submission packet summary must reference the App Store Connect state report"
 check_contains "Scripts/validate_app_store_submission_packet.sh" "app-store-connect-state-report.md" "Submission packet validator must require the App Store Connect state report"
-check_contains "Scripts/validate_app_store_submission_packet.sh" "Scripts/check_app_store_connect_state.sh" "Submission packet validator must require selected-build state report command tracking"
+check_contains "Scripts/validate_app_store_submission_packet.sh" "Scripts/validate_app_store_connect_submission_state.sh" "Submission packet validator must require selected-build state report command tracking"
 check_file "Scripts/validate_app_store_connect_state_report.sh" "App Store Connect state report validator is required"
 if [[ -f "Scripts/validate_app_store_connect_state_report.sh" && ! -x "Scripts/validate_app_store_connect_state_report.sh" ]]; then
   printf 'FAIL: App Store Connect state report validator must be executable (Scripts/validate_app_store_connect_state_report.sh)\n'
@@ -4049,7 +4056,8 @@ category	severity	owner	field	target	item	next_action	validation_command
 App Store Connect	warning	App Store Connect account holder	APP_STORE_BUILD_NUMBER	Config/release.env	App Store Connect app record and version require account-specific verification after credentials are configured	Upload and select a processed TestFlight build.	APP_STORE_CONNECT_SKIP_BUILD_CHECK=1 Scripts/check_app_store_connect_state.sh
 App Store Connect	blocker	App Store Connect account holder	APP_STORE_CONNECT_API_KEY_JSON or ASC_KEY_ID/ASC_ISSUER_ID/ASC_KEY_PATH	Config/release.env	Fastlane App Store Connect API credentials are not configured; automated metadata and TestFlight upload will be blocked	Create an App Store Connect API key and record it in Config/release.env.	Scripts/check_app_store_connect_credentials.sh
 EOF
-  APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER \
+  APP_STORE_CONNECT_SUBMISSION_MODE=api \
+    APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER \
     Scripts/generate_app_store_connect_state_report.sh "$asc_state_report_output" >/dev/null
   if ! Scripts/validate_app_store_connect_state_report.sh "$asc_state_report_actions" "$asc_state_report_output" >"$asc_state_report_log" 2>&1; then
     printf 'FAIL: App Store Connect state report validator must accept the generated report for matching selected-build actions\n'
@@ -4079,7 +4087,7 @@ check_contains "Scripts/generate_app_review_submission_readiness_report.sh" "pre
 check_contains "Scripts/generate_app_review_submission_readiness_report.sh" "validate_app_store_metadata.sh" "App Review submission readiness report must summarize metadata validation"
 check_contains "Scripts/generate_app_review_submission_readiness_report.sh" "validate_screenshot_privacy.sh" "App Review submission readiness report must summarize screenshot privacy metadata validation"
 check_contains "Scripts/generate_app_review_submission_readiness_report.sh" "validate_manual_release_verification.sh" "App Review submission readiness report must summarize manual release evidence"
-check_contains "Scripts/generate_app_review_submission_readiness_report.sh" "check_app_store_connect_state.sh" "App Review submission readiness report must summarize selected build state checks"
+check_contains "Scripts/generate_app_review_submission_readiness_report.sh" "validate_app_store_connect_submission_state.sh" "App Review submission readiness report must summarize selected build state checks"
 check_contains "Scripts/generate_app_review_submission_readiness_report.sh" "Scripts/print_release_input_status.sh --strict" "App Review submission readiness report must include field-level release input status"
 check_contains "Scripts/generate_app_review_submission_readiness_report.sh" "Missing Release Input Fields" "App Review submission readiness report must surface missing release input fields"
 check_contains "Scripts/generate_app_review_submission_readiness_report.sh" "processed App Store Connect build number" "App Review submission readiness report must warn that selected-build placeholders must be replaced"
@@ -4130,13 +4138,17 @@ selected_build_review_report="$selected_build_report_placeholder_test_dir/app-re
 selected_build_review_lowercase_report="$selected_build_report_placeholder_test_dir/app-review-lowercase.md"
 selected_build_manual_report="$selected_build_report_placeholder_test_dir/manual.md"
 selected_build_manual_lowercase_report="$selected_build_report_placeholder_test_dir/manual-lowercase.md"
-APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER \
+APP_STORE_CONNECT_SUBMISSION_MODE=api \
+  APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER \
   Scripts/generate_app_store_connect_readiness_report.sh "$selected_build_asc_report" >/dev/null
-APP_STORE_BUILD_NUMBER=todo \
+APP_STORE_CONNECT_SUBMISSION_MODE=api \
+  APP_STORE_BUILD_NUMBER=todo \
   Scripts/generate_app_store_connect_readiness_report.sh "$selected_build_asc_lowercase_report" >/dev/null
-APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER \
+APP_STORE_CONNECT_SUBMISSION_MODE=api \
+  APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER \
   Scripts/generate_app_review_submission_readiness_report.sh "$selected_build_review_report" >/dev/null
-APP_STORE_BUILD_NUMBER=todo \
+APP_STORE_CONNECT_SUBMISSION_MODE=api \
+  APP_STORE_BUILD_NUMBER=todo \
   Scripts/generate_app_review_submission_readiness_report.sh "$selected_build_review_lowercase_report" >/dev/null
 APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER \
   Scripts/generate_manual_release_readiness_report.sh "$selected_build_manual_report" >/dev/null

@@ -32,7 +32,7 @@
 - Run `Scripts/verify_release.sh simulator-workflow`; it calls `Scripts/validate_simulator_workflow.sh` to launch the app in a simulator with a generated selected image, centimeter units, A4 landscape paper, a screenshot, and PDF export.
 - Run `Scripts/verify_release.sh photo-import`; it calls `Scripts/validate_photo_import.sh` to seed the simulator photo library, open the real Photos picker, choose an image, verify export/print become available, and verify About screen privacy/support/version review information remains reachable.
 - Run `Scripts/verify_release.sh review-ui`; it calls `Scripts/validate_review_ui.sh` to verify the App Review-facing About screen privacy policy, support URL, and app version without the full Photos picker workflow.
-- Run `Scripts/check_app_store_readiness.sh`; fix every `BLOCKED` item before archiving.
+- Run `Scripts/check_app_store_readiness.sh`; fix every `BLOCKED` item before archiving. Manual App Store Connect submission is valid when the browser-confirmed state fields are current; API credentials are required only for Fastlane upload or submission lanes.
 - Run `Scripts/capture_app_store_screenshot_set.sh` after UI, fit mode, paper, orientation, unit, or iPad layout changes and inspect `iphone-main.jpg`, `iphone-test-ruler.jpg`, `iphone-fit.jpg`, `iphone-fill.jpg`, `iphone-stretch.jpg`, `iphone-metric-landscape.jpg`, and `ipad-main.jpg`.
 - Run `Scripts/verify_release.sh screenshots` before screenshot upload; it validates dimensions, blank-content, alpha, reviewed-to-Fastlane sync, and screenshot privacy metadata.
 - Run `Scripts/capture_app_store_screenshots.sh` only when refreshing or debugging one screenshot in isolation.
@@ -58,6 +58,7 @@
 - Create the App Store Connect app record for bundle ID `com.dannagrace.FreePrintStudio`.
 - Configure signing with an Apple Developer Program team in Xcode.
 - Fill local release environment values in the git-ignored `Config/release.env` installed from generated handoff templates; release scripts automatically load `Config/release.env` when it exists. Keep `Config/release.env` and any `AuthKey_*.p8` private key out of git.
+- For signed-in web submission, set `APP_STORE_CONNECT_SUBMISSION_MODE=manual`, record the selected build and verification date in the `APP_STORE_CONNECT_MANUAL_STATE_*` fields, and run `Scripts/validate_app_store_connect_submission_state.sh`. Refresh the confirmation immediately before clicking Add for Review.
 - Set private App Review contact values before metadata upload or submission: `APP_REVIEW_CONTACT_FIRST_NAME`, `APP_REVIEW_CONTACT_LAST_NAME`, `APP_REVIEW_CONTACT_PHONE`, and `APP_REVIEW_CONTACT_EMAIL`.
 - Run `Scripts/preflight_app_store_archive.sh` and fix every failed step before archiving; it starts with `Scripts/print_release_input_status.sh --strict --scope app-store-archive`, then runs `Scripts/verify_release.sh store-ready`, private release inputs, and signing asset checks without requiring later App Review contact, App Store Connect credentials, App Privacy confirmation, TestFlight evidence, or final submission guards.
 - Archive with Xcode 26 or later using `DEVELOPMENT_TEAM_ID=YOURTEAMID ALLOW_PROVISIONING_UPDATES=1 Scripts/archive_app_store.sh`.

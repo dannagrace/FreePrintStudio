@@ -107,7 +107,7 @@ import sys
 
 timeout_seconds = float(sys.argv[1])
 output_file = sys.argv[2]
-command = ["Scripts/check_app_store_connect_state.sh"]
+command = ["Scripts/validate_app_store_connect_submission_state.sh"]
 
 with open(output_file, "w", encoding="utf-8") as output:
     try:
@@ -143,12 +143,33 @@ else
   state_status="Blocked"
 fi
 
+if [[ "${APP_STORE_CONNECT_SUBMISSION_MODE:-api}" == "manual" ]]; then
+  required_next_actions="$(cat <<'EOF'
+- [ ] Immediately before submission, re-open the signed-in App Store Connect version page.
+- [ ] Confirm the version is ready for submission and the selected processed build still matches `APP_STORE_BUILD_NUMBER`.
+- [ ] Refresh `APP_STORE_CONNECT_MANUAL_STATE_VERIFIED_DATE` and rerun `Scripts/validate_app_store_connect_submission_state.sh`.
+- [ ] Keep this report in the submission packet as account-side selected-build evidence.
+EOF
+)"
+else
+  required_next_actions="$(cat <<'EOF'
+- [ ] Configure App Store Connect credentials in untracked `Config/release.env`.
+- [ ] Upload a signed TestFlight build.
+- [ ] Wait for the build to finish App Store Connect processing.
+- [ ] Set `APP_STORE_BUILD_NUMBER` to the processed build selected for App Review.
+- [ ] Rerun `APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/validate_app_store_connect_submission_state.sh` with the real processed build number.
+- [ ] Keep this report in the submission packet as account-side selected-build evidence.
+EOF
+)"
+fi
+
 cat >"$output_path" <<EOF
 # FreePrint Studio App Store Connect State Report
 
 - Generated At: $generated_at
 - This report is redacted: it does not print API key JSON paths, .p8 private key paths, Apple ID values, App Review contact values, selected build values, or private credential contents.
-- State check command: \`Scripts/check_app_store_connect_state.sh\`
+- Submission Mode: ${APP_STORE_CONNECT_SUBMISSION_MODE:-api}
+- State check command: \`Scripts/validate_app_store_connect_submission_state.sh\`
 - Exit Code: $state_exit_code
 - Status: $state_status
 - Timeout Seconds: $state_timeout_seconds
@@ -167,12 +188,7 @@ $(cat "$redacted_state_log")
 
 ## Required Next Actions
 
-- [ ] Configure App Store Connect credentials in untracked \`Config/release.env\`.
-- [ ] Upload a signed TestFlight build.
-- [ ] Wait for the build to finish App Store Connect processing.
-- [ ] Set \`APP_STORE_BUILD_NUMBER\` to the processed build selected for App Review.
-- [ ] Rerun \`APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/check_app_store_connect_state.sh\` with the real processed build number.
-- [ ] Keep this report in the submission packet as account-side selected-build evidence.
+$required_next_actions
 EOF
 
 rm -f "$state_log" "$redacted_state_log"

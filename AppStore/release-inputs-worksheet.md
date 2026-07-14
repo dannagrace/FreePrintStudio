@@ -46,7 +46,7 @@ Scripts/preflight_app_store_archive.sh
 
 ## App Store Connect Credentials
 
-Choose one credential path for automation and keep the key file private.
+API credentials are optional when the app is uploaded and submitted through the signed-in App Store Connect web interface. Choose one credential path only when Fastlane automation is required, and keep the key file private.
 
 Option A, Fastlane API JSON in `Config/release.env`:
 
@@ -75,7 +75,7 @@ Final commercial configuration confirmation:
 - `APP_STORE_COMMERCIAL_CONFIG_CONFIRMED_IN_APP_STORE_CONNECT=1` after App Store Connect Pricing, Availability, monetization, release option, and phased release match `AppStore/commercial-configuration.md`.
 - Validate with `Scripts/validate_commercial_configuration_connect_entry.sh`.
 
-Validate credentials before TestFlight upload or final review submission:
+Validate credentials before automated TestFlight upload or API-mode review submission:
 
 ```sh
 Scripts/check_app_store_connect_credentials.sh
@@ -171,7 +171,11 @@ iPad TestFlight evidence is required because the app targets iPhone and iPad:
 Set these only after the signed build is uploaded, processed, and selected for App Review:
 
 - `APP_STORE_BUILD_NUMBER`: the processed App Store Connect build to submit.
-- `CONFIRM_SUBMIT_FOR_REVIEW=1`: final guard for `Scripts/run_fastlane.sh ios submit_review`.
+- `APP_STORE_CONNECT_SUBMISSION_MODE=manual`: select the signed-in web submission path; use `api` only for Fastlane submission.
+- `APP_STORE_CONNECT_MANUAL_STATE_CONFIRMED=1`: set after checking the App Store version page.
+- `APP_STORE_CONNECT_MANUAL_STATE_BUILD_NUMBER`: must match `APP_STORE_BUILD_NUMBER`.
+- `APP_STORE_CONNECT_MANUAL_STATE_VERIFIED_DATE`: browser verification date in `YYYY-MM-DD`; refresh it immediately before submission.
+- `CONFIRM_SUBMIT_FOR_REVIEW=1`: Fastlane-only final guard for `Scripts/run_fastlane.sh ios submit_review`.
 
 Before final submission, confirm metadata upload, screenshot upload, App Privacy Details, `APP_PRIVACY_DETAILS_CONFIRMED_IN_APP_STORE_CONNECT=1`, and `APP_STORE_COMMERCIAL_CONFIG_CONFIRMED_IN_APP_STORE_CONNECT=1` are complete in App Store Connect.
 
@@ -181,7 +185,7 @@ Run the final preflight before submission:
 APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/preflight_app_review_submission.sh
 ```
 
-Submit only after the preflight passes:
+For manual mode, obtain explicit action-time approval and click **Add for Review** on the signed-in App Store Connect version page. For API mode, submit only after the preflight passes:
 
 ```sh
 APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER CONFIRM_SUBMIT_FOR_REVIEW=1 Scripts/run_fastlane.sh ios submit_review

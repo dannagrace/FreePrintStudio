@@ -344,6 +344,9 @@ awk -F '\t' -v output_path="$output_path" -v actions_path="$actions_path" -v gen
           target_has_rows = 1
         }
       }
+      if (target == "Config/release.env") {
+        target_has_rows = 1
+      }
       if (!target_has_rows) {
         continue
       }
@@ -352,10 +355,15 @@ awk -F '\t' -v output_path="$output_path" -v actions_path="$actions_path" -v gen
       print "" >>output_path
       print_env_assignments(target)
       print_table_header()
+      printed_target_rows = 0
       for (row = 1; row <= row_count; row += 1) {
         if (row_matches_env_group(row, target)) {
           print_table_row(row)
+          printed_target_rows += 1
         }
+      }
+      if (printed_target_rows == 0) {
+        print "| info | Release owner | `none` | No missing external release environment fields were found. | Keep the private release environment current and proceed to final guards. | `Scripts/validate_release_env.sh` |" >>output_path
       }
     }
 

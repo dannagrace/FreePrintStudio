@@ -478,36 +478,57 @@ fi
 
 printf '\n== App Store Connect Inputs ==\n'
 if scope_requires "app-store-connect"; then
-  asc_credentials_ready_for_validation=0
-  if is_set "${APP_STORE_CONNECT_API_KEY_JSON:-}"; then
-    if [[ -f "${APP_STORE_CONNECT_API_KEY_JSON:-}" ]]; then
-      mark_ok "APP_STORE_CONNECT_API_KEY_JSON is configured"
-      asc_credentials_ready_for_validation=1
-    else
-      mark_missing "APP_STORE_CONNECT_API_KEY_JSON is set but the file is missing"
-      record_missing_field "APP_STORE_CONNECT_API_KEY_JSON" "Config/release.env" "Scripts/check_app_store_connect_credentials.sh"
-    fi
-  else
-    asc_triplet_ready=0
-    for name in ASC_KEY_ID ASC_ISSUER_ID ASC_KEY_PATH; do
-      if is_set "${!name:-}"; then
-        asc_triplet_ready=$((asc_triplet_ready + 1))
+  app_store_connect_submission_mode="${APP_STORE_CONNECT_SUBMISSION_MODE:-api}"
+  if [[ "$app_store_connect_submission_mode" == "manual" && "$scope" != "metadata-upload" && "$scope" != "testflight-upload" ]]; then
+    mark_ok "App Store Connect manual web submission mode is selected"
+    for name in \
+      APP_STORE_CONNECT_MANUAL_STATE_CONFIRMED \
+      APP_STORE_CONNECT_MANUAL_STATE_BUILD_NUMBER \
+      APP_STORE_CONNECT_MANUAL_STATE_VERIFIED_DATE
+    do
+      if ! is_set "${!name:-}"; then
+        record_missing_field "$name" "Config/release.env" "Scripts/validate_manual_app_store_connect_state.sh"
       fi
     done
-    if (( asc_triplet_ready == 3 )) && [[ -f "${ASC_KEY_PATH:-}" ]]; then
-      mark_ok "ASC_KEY_ID, ASC_ISSUER_ID, and ASC_KEY_PATH are configured"
-      asc_credentials_ready_for_validation=1
+    if Scripts/validate_manual_app_store_connect_state.sh >/tmp/freeprintstudio-release-input-status-asc.log 2>&1; then
+      mark_ok "Manual App Store Connect selected-build state validation passes"
     else
-      mark_missing "App Store Connect API credentials configured: $asc_triplet_ready/3"
-      record_missing_field "APP_STORE_CONNECT_API_KEY_JSON or ASC_KEY_ID/ASC_ISSUER_ID/ASC_KEY_PATH" "Config/release.env" "Scripts/check_app_store_connect_credentials.sh"
+      mark_missing "Manual App Store Connect selected-build state validation fails"
+      sed 's/^/  /' /tmp/freeprintstudio-release-input-status-asc.log
     fi
-  fi
-
-  if (( asc_credentials_ready_for_validation == 1 )); then
-    if Scripts/check_app_store_connect_credentials.sh >/tmp/freeprintstudio-release-input-status-asc.log 2>&1; then
-      mark_ok "App Store Connect API credential validation passes"
+    mark_optional "App Store Connect API credentials are not required for manual web submission"
+  else
+    asc_credentials_ready_for_validation=0
+    if is_set "${APP_STORE_CONNECT_API_KEY_JSON:-}"; then
+      if [[ -f "${APP_STORE_CONNECT_API_KEY_JSON:-}" ]]; then
+        mark_ok "APP_STORE_CONNECT_API_KEY_JSON is configured"
+        asc_credentials_ready_for_validation=1
+      else
+        mark_missing "APP_STORE_CONNECT_API_KEY_JSON is set but the file is missing"
+        record_missing_field "APP_STORE_CONNECT_API_KEY_JSON" "Config/release.env" "Scripts/check_app_store_connect_credentials.sh"
+      fi
     else
-      mark_missing "App Store Connect API credential validation fails"
+      asc_triplet_ready=0
+      for name in ASC_KEY_ID ASC_ISSUER_ID ASC_KEY_PATH; do
+        if is_set "${!name:-}"; then
+          asc_triplet_ready=$((asc_triplet_ready + 1))
+        fi
+      done
+      if (( asc_triplet_ready == 3 )) && [[ -f "${ASC_KEY_PATH:-}" ]]; then
+        mark_ok "ASC_KEY_ID, ASC_ISSUER_ID, and ASC_KEY_PATH are configured"
+        asc_credentials_ready_for_validation=1
+      else
+        mark_missing "App Store Connect API credentials configured: $asc_triplet_ready/3"
+        record_missing_field "APP_STORE_CONNECT_API_KEY_JSON or ASC_KEY_ID/ASC_ISSUER_ID/ASC_KEY_PATH" "Config/release.env" "Scripts/check_app_store_connect_credentials.sh"
+      fi
+    fi
+
+    if (( asc_credentials_ready_for_validation == 1 )); then
+      if Scripts/check_app_store_connect_credentials.sh >/tmp/freeprintstudio-release-input-status-asc.log 2>&1; then
+        mark_ok "App Store Connect API credential validation passes"
+      else
+        mark_missing "App Store Connect API credential validation fails"
+      fi
     fi
   fi
 else
@@ -581,7 +602,9 @@ if scope_requires "final-submission"; then
   fi
 
   confirm_submit_for_review="$(trimmed_value "${CONFIRM_SUBMIT_FOR_REVIEW:-}")"
-  if [[ "$confirm_submit_for_review" == "1" ]]; then
+  if [[ "${APP_STORE_CONNECT_SUBMISSION_MODE:-api}" == "manual" ]]; then
+    mark_optional "CONFIRM_SUBMIT_FOR_REVIEW is a Fastlane-only guard; manual submission requires action-time approval in App Store Connect"
+  elif [[ "$confirm_submit_for_review" == "1" ]]; then
     mark_ok "CONFIRM_SUBMIT_FOR_REVIEW is set to 1 for guarded final App Review submission"
   else
     mark_missing "CONFIRM_SUBMIT_FOR_REVIEW is not set to 1; set only after final preflight passes"
@@ -738,15 +761,33 @@ print_testflight_commands() {
   printf 'ASC_KEY_ID=XXXXXXXXXX ASC_ISSUER_ID=00000000-0000-0000-0000-000000000000 ASC_KEY_PATH=/secure/AuthKey_XXXXXXXXXX.p8 Scripts/run_fastlane.sh ios upload_testflight\n'
 }
 
+print_final_submission_action() {
+  local selected_app_store_build="$1"
+  if [[ "${APP_STORE_CONNECT_SUBMISSION_MODE:-api}" == "manual" ]]; then
+    printf 'Manual action: after explicit approval, click Add for Review in the signed-in App Store Connect version page.\n'
+  else
+    printf 'APP_STORE_BUILD_NUMBER=%s CONFIRM_SUBMIT_FOR_REVIEW=1 Scripts/run_fastlane.sh ios submit_review\n' "$selected_app_store_build"
+  fi
+}
+
+print_app_store_connect_state_action() {
+  local selected_app_store_build="$1"
+  if [[ "${APP_STORE_CONNECT_SUBMISSION_MODE:-api}" == "manual" ]]; then
+    printf 'APP_STORE_BUILD_NUMBER=%s Scripts/validate_app_store_connect_submission_state.sh\n' "$selected_app_store_build"
+  else
+    printf 'APP_STORE_BUILD_NUMBER=%s Scripts/run_fastlane.sh ios app_store_connect_state\n' "$selected_app_store_build"
+  fi
+}
+
 print_review_submission_commands() {
   local selected_app_store_build="$1"
   print_private_setup_commands
   printf 'APP_STORE_BUILD_NUMBER=%s Scripts/validate_manual_release_verification.sh\n' "$selected_app_store_build"
   printf 'APP_PRIVACY_DETAILS_CONFIRMED_IN_APP_STORE_CONNECT=1 Scripts/validate_app_privacy_connect_entry.sh\n'
   printf 'APP_STORE_COMMERCIAL_CONFIG_CONFIRMED_IN_APP_STORE_CONNECT=1 Scripts/validate_commercial_configuration_connect_entry.sh\n'
-  printf 'APP_STORE_BUILD_NUMBER=%s Scripts/run_fastlane.sh ios app_store_connect_state\n' "$selected_app_store_build"
+  print_app_store_connect_state_action "$selected_app_store_build"
   printf 'APP_STORE_BUILD_NUMBER=%s Scripts/preflight_app_review_submission.sh\n' "$selected_app_store_build"
-  printf 'APP_STORE_BUILD_NUMBER=%s CONFIRM_SUBMIT_FOR_REVIEW=1 Scripts/run_fastlane.sh ios submit_review\n' "$selected_app_store_build"
+  print_final_submission_action "$selected_app_store_build"
 }
 
 print_owner_commands() {
@@ -757,7 +798,7 @@ print_owner_commands() {
       print_private_setup_commands
       printf 'Scripts/validate_app_review_contact.sh\n'
       printf 'APP_STORE_BUILD_NUMBER=%s Scripts/preflight_app_review_submission.sh\n' "$selected_app_store_build"
-      printf 'APP_STORE_BUILD_NUMBER=%s CONFIRM_SUBMIT_FOR_REVIEW=1 Scripts/run_fastlane.sh ios submit_review\n' "$selected_app_store_build"
+      print_final_submission_action "$selected_app_store_build"
       ;;
     qa-release-owner)
       print_private_setup_commands
@@ -801,9 +842,9 @@ else
     printf 'Replace YOURTEAMID with the Apple Developer Team ID before running signing or archive commands.\n'
     printf 'Scripts/preflight_testflight_upload.sh\n'
     printf 'ASC_KEY_ID=XXXXXXXXXX ASC_ISSUER_ID=00000000-0000-0000-0000-000000000000 ASC_KEY_PATH=/secure/AuthKey_XXXXXXXXXX.p8 Scripts/run_fastlane.sh ios upload_testflight\n'
-    printf 'APP_STORE_BUILD_NUMBER=%s Scripts/run_fastlane.sh ios app_store_connect_state\n' "$selected_app_store_build"
+    print_app_store_connect_state_action "$selected_app_store_build"
     printf 'APP_STORE_BUILD_NUMBER=%s Scripts/preflight_app_review_submission.sh\n' "$selected_app_store_build"
-    printf 'APP_STORE_BUILD_NUMBER=%s CONFIRM_SUBMIT_FOR_REVIEW=1 Scripts/run_fastlane.sh ios submit_review\n' "$selected_app_store_build"
+    print_final_submission_action "$selected_app_store_build"
     ;;
   metadata-upload)
     print_metadata_commands

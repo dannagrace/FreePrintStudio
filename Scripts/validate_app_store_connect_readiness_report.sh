@@ -89,7 +89,7 @@ def require_commercial_confirmation(field: str) -> None:
 
 def require_account_state_warning(field: str) -> None:
     require_contains("App record, version, and selected build", f"{field} account-state check")
-    require_contains("Scripts/run_fastlane.sh ios app_store_connect_state", f"{field} account-state command")
+    require_contains("Scripts/validate_app_store_connect_submission_state.sh", f"{field} account-state command")
     require_contains(
         "processed App Store Connect build number",
         f"{field} selected-build replacement guidance",

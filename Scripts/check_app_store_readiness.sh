@@ -130,6 +130,11 @@ run_static_release_check() {
     -u APP_PRIVACY_SKIP_PUBLISH \
     -u APP_PRIVACY_DETAILS_CONFIRMED_IN_APP_STORE_CONNECT \
     -u APP_STORE_COMMERCIAL_CONFIG_CONFIRMED_IN_APP_STORE_CONNECT \
+    -u APP_STORE_CONNECT_SUBMISSION_MODE \
+    -u APP_STORE_CONNECT_MANUAL_STATE_CONFIRMED \
+    -u APP_STORE_CONNECT_MANUAL_STATE_BUILD_NUMBER \
+    -u APP_STORE_CONNECT_MANUAL_STATE_VERIFIED_DATE \
+    -u APP_STORE_CONNECT_MANUAL_STATE_MAX_AGE_DAYS \
     -u IPA_PATH \
     -u TESTFLIGHT_CHANGELOG \
     -u APP_STORE_BUILD_NUMBER \
@@ -335,7 +340,6 @@ else
 fi
 
 printf '\n== App Store Connect ==\n'
-app_store_connect_state_checked=0
 if Scripts/validate_app_privacy_connect_entry.sh >/tmp/freeprintstudio-app-privacy-connect-entry.log 2>&1; then
   ok "App Privacy Details are confirmed in App Store Connect"
 else
@@ -366,21 +370,21 @@ else
   ok "FASTLANE_USER is not configured; manual App Privacy Details confirmation is allowed"
 fi
 
-if Scripts/check_app_store_connect_credentials.sh >/tmp/freeprintstudio-asc-credentials.log 2>&1; then
-  ok "Fastlane App Store Connect API credentials are configured"
-  app_store_connect_state_checked=1
-  if APP_STORE_CONNECT_SKIP_BUILD_CHECK=1 Scripts/check_app_store_connect_state.sh >/tmp/freeprintstudio-asc-state.log 2>&1; then
-    ok "App Store Connect app record and version preflight passed"
+if Scripts/validate_app_store_connect_submission_state.sh >/tmp/freeprintstudio-asc-submission-state.log 2>&1; then
+  if [[ "${APP_STORE_CONNECT_SUBMISSION_MODE:-api}" == "manual" ]]; then
+    ok "App Store Connect app, version, and selected build were confirmed through the manual web submission path"
+    ok "App Store Connect API credentials are optional for the selected manual submission mode"
   else
-    block "App Store Connect app record or version preflight failed"
-    sed 's/^/  /' /tmp/freeprintstudio-asc-state.log
+    ok "Fastlane App Store Connect API credentials and selected build state are valid"
   fi
 else
-  block "Fastlane App Store Connect API credentials are not configured; automated metadata and TestFlight upload will be blocked"
-  sed 's/^BLOCKED:/missing:/; s/^/  /' /tmp/freeprintstudio-asc-credentials.log
-fi
-if (( app_store_connect_state_checked == 0 )); then
-  warn "App Store Connect app record and version require account-specific verification after credentials are configured; the selected TestFlight build is checked after upload"
+  while IFS= read -r line; do
+    case "$line" in
+      OK:*) ok "${line#OK: }" ;;
+      BLOCKED:*) block "${line#BLOCKED: }" ;;
+      *) printf '  %s\n' "$line" ;;
+    esac
+  done </tmp/freeprintstudio-asc-submission-state.log
 fi
 
 printf '\nSummary: %d blocker(s), %d warning(s).\n' "$failures" "$warnings"

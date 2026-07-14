@@ -118,7 +118,7 @@ def require_app_store_connect(field: str) -> None:
     elif field == "App Store Connect app record/TestFlight status":
         require_check_row("App record, version, and selected build state", field)
         require_contains(
-            "APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/check_app_store_connect_state.sh",
+            "APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/validate_app_store_connect_submission_state.sh",
             f"{field} selected-build state command",
         )
     else:

@@ -92,7 +92,11 @@ run_step status_commercial_config_connect "Scripts/validate_commercial_configura
 run_step status_questionnaires "Scripts/validate_app_store_questionnaires.sh" Scripts/validate_app_store_questionnaires.sh
 run_step status_review_contact "Scripts/validate_app_review_contact.sh" Scripts/validate_app_review_contact.sh
 run_step status_manual_evidence "APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/validate_manual_release_verification.sh" Scripts/validate_manual_release_verification.sh
-run_step status_asc_credentials "Scripts/check_app_store_connect_credentials.sh" Scripts/check_app_store_connect_credentials.sh
+if [[ "${APP_STORE_CONNECT_SUBMISSION_MODE:-api}" == "manual" ]]; then
+  status_asc_credentials='Optional; manual web submission mode does not require API credentials'
+else
+  run_step status_asc_credentials "Scripts/check_app_store_connect_credentials.sh" Scripts/check_app_store_connect_credentials.sh
+fi
 
 release_input_status_log="$(mktemp)"
 set +e
@@ -125,10 +129,10 @@ else
   selected_build_ready=0
 fi
 
-if [[ "$status_asc_credentials" == "Pass" && "$selected_build_ready" == "1" ]]; then
-  run_step status_asc_state "APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/check_app_store_connect_state.sh" Scripts/check_app_store_connect_state.sh
+if [[ "$selected_build_ready" == "1" ]]; then
+  run_step status_asc_state "APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/validate_app_store_connect_submission_state.sh" Scripts/validate_app_store_connect_submission_state.sh
 else
-  status_asc_state='Blocked; configure App Store Connect credentials and `APP_STORE_BUILD_NUMBER` before selected-build state can be checked'
+  status_asc_state='Blocked; configure `APP_STORE_BUILD_NUMBER` before selected-build state can be checked'
   blocker_count=$((blocker_count + 1))
 fi
 
@@ -138,7 +142,8 @@ cat >"$output_path" <<EOF
 - Generated At: $generated_at
 - This report is redacted: it does not print App Review contact values, Apple IDs, App Store Connect key paths, private key contents, manual evidence values, or raw validator output.
 - Final preflight command: \`APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/preflight_app_review_submission.sh\`
-- Final submission command: \`APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER CONFIRM_SUBMIT_FOR_REVIEW=1 Scripts/run_fastlane.sh ios submit_review\`
+- Manual submission action: after explicit action-time approval, click Add for Review on the signed-in App Store Connect version page.
+- Optional API-mode submission command: \`APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER CONFIRM_SUBMIT_FOR_REVIEW=1 Scripts/run_fastlane.sh ios submit_review\`
 - Selected build placeholder: replace \`PROCESSED_BUILD_NUMBER\` with the processed App Store Connect build number before running selected-build commands; local validators intentionally reject that placeholder.
 
 ## Summary
@@ -186,16 +191,17 @@ ${release_input_missing_fields:-None.}
 
 | Check | Command | Status |
 | --- | --- | --- |
+| Submission mode | \`APP_STORE_CONNECT_SUBMISSION_MODE\` | ${APP_STORE_CONNECT_SUBMISSION_MODE:-api} |
 | API credentials | \`Scripts/check_app_store_connect_credentials.sh\` | $status_asc_credentials |
 | Selected processed build value | \`APP_STORE_BUILD_NUMBER\` | $status_selected_build |
-| App record, version, and selected build state | \`APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/check_app_store_connect_state.sh\` | $status_asc_state |
+| App record, version, and selected build state | \`APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/validate_app_store_connect_submission_state.sh\` | $status_asc_state |
 
 ## Required Next Actions
 
 - [ ] Resolve every blocking row above.
 - [ ] Run \`APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER Scripts/preflight_app_review_submission.sh\`.
 - [ ] Submit only after the preflight passes and the selected processed build matches the TestFlight evidence build.
-- [ ] Run \`APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER CONFIRM_SUBMIT_FOR_REVIEW=1 Scripts/run_fastlane.sh ios submit_review\` for the final guarded submission.
+- [ ] In manual mode, obtain explicit action-time approval and click Add for Review in App Store Connect. In API mode, run \`APP_STORE_BUILD_NUMBER=PROCESSED_BUILD_NUMBER CONFIRM_SUBMIT_FOR_REVIEW=1 Scripts/run_fastlane.sh ios submit_review\`.
 EOF
 
 printf 'App Review submission readiness report generated: %s\n' "$output_path"
