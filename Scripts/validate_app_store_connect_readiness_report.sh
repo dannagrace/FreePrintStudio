@@ -68,6 +68,24 @@ def require_credential_rows(field: str) -> None:
     require_contains("Scripts/check_app_store_connect_credentials.sh", f"{field} validation command")
 
 
+def require_credential_field(field: str) -> None:
+    credential_rows = {
+        "APP_STORE_CONNECT_API_KEY_JSON": "`APP_STORE_CONNECT_API_KEY_JSON` configured",
+        "ASC_KEY_ID": "`ASC_KEY_ID` configured",
+        "ASC_ISSUER_ID": "`ASC_ISSUER_ID` configured",
+        "ASC_KEY_PATH": "`ASC_KEY_PATH` configured",
+    }
+    combined_field = "APP_STORE_CONNECT_API_KEY_JSON or ASC_KEY_ID/ASC_ISSUER_ID/ASC_KEY_PATH"
+
+    if field == combined_field:
+        require_credential_rows(field)
+    elif field in credential_rows:
+        require_table_row(credential_rows[field], field)
+        require_contains("Scripts/check_app_store_connect_credentials.sh", f"{field} validation command")
+    else:
+        fail(f"{field} has no mapped App Store Connect readiness report coverage")
+
+
 def require_privacy_confirmation(field: str) -> None:
     require_table_row("`APP_PRIVACY_DETAILS_CONFIRMED_IN_APP_STORE_CONNECT=1`", field)
     require_contains(
@@ -137,8 +155,14 @@ for row in tracked_rows:
         require_privacy_confirmation(field)
     elif field == "APP_STORE_COMMERCIAL_CONFIG_CONFIRMED_IN_APP_STORE_CONNECT":
         require_commercial_confirmation(field)
-    elif field == "APP_STORE_CONNECT_API_KEY_JSON or ASC_KEY_ID/ASC_ISSUER_ID/ASC_KEY_PATH":
-        require_credential_rows(field)
+    elif field in {
+        "APP_STORE_CONNECT_API_KEY_JSON or ASC_KEY_ID/ASC_ISSUER_ID/ASC_KEY_PATH",
+        "APP_STORE_CONNECT_API_KEY_JSON",
+        "ASC_KEY_ID",
+        "ASC_ISSUER_ID",
+        "ASC_KEY_PATH",
+    }:
+        require_credential_field(field)
     elif field == "App Store Connect app record/TestFlight status":
         require_account_state_warning(field)
     else:

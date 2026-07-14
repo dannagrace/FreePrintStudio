@@ -111,10 +111,17 @@ def require_commercial_configuration(field: str) -> None:
 
 
 def require_app_store_connect(field: str) -> None:
-    if field == "APP_STORE_CONNECT_API_KEY_JSON or ASC_KEY_ID/ASC_ISSUER_ID/ASC_KEY_PATH":
+    credential_fields = {
+        "APP_STORE_CONNECT_API_KEY_JSON or ASC_KEY_ID/ASC_ISSUER_ID/ASC_KEY_PATH",
+        "APP_STORE_CONNECT_API_KEY_JSON",
+        "ASC_KEY_ID",
+        "ASC_ISSUER_ID",
+        "ASC_KEY_PATH",
+    }
+    if field in credential_fields:
         require_check_row("API credentials", field)
         require_contains("Scripts/check_app_store_connect_credentials.sh", f"{field} credential validation command")
-        require_missing_field(field)
+        require_missing_field("APP_STORE_CONNECT_API_KEY_JSON or ASC_KEY_ID/ASC_ISSUER_ID/ASC_KEY_PATH")
     elif field == "App Store Connect app record/TestFlight status":
         require_check_row("App record, version, and selected build state", field)
         require_contains(
