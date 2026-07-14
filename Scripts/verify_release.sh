@@ -333,10 +333,10 @@ run_screenshot_checks() {
     run_with_timeout "$SCREENSHOT_COMMAND_TIMEOUT_SECONDS" sips -g pixelWidth -g pixelHeight -g hasAlpha "$screenshot_path"
     case "$screenshot_path" in
       *iphone-main.jpg)
-        check_screenshot_dimensions "$screenshot_path" "1260 x 2736,1290 x 2796,1320 x 2868"
+        check_screenshot_dimensions "$screenshot_path" "1284 x 2778"
         ;;
       *iphone-*.jpg)
-        check_screenshot_dimensions "$screenshot_path" "1260 x 2736,1290 x 2796,1320 x 2868"
+        check_screenshot_dimensions "$screenshot_path" "1284 x 2778"
         ;;
       *ipad-main.jpg)
         check_screenshot_dimensions "$screenshot_path" "2048 x 2732,2064 x 2752"

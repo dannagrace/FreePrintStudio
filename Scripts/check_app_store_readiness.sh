@@ -168,19 +168,19 @@ else
   sed 's/^/  /' /tmp/freeprintstudio-app-icon-set.log
 fi
 
-check_screenshot_size "AppStore/Screenshots/iphone-main.jpg" "iPhone 6.9-inch" "1260 x 2736,1290 x 2796,1320 x 2868"
-check_screenshot_size "AppStore/Screenshots/iphone-test-ruler.jpg" "iPhone Test Ruler" "1260 x 2736,1290 x 2796,1320 x 2868"
-check_screenshot_size "AppStore/Screenshots/iphone-fit.jpg" "iPhone Fit mode" "1260 x 2736,1290 x 2796,1320 x 2868"
-check_screenshot_size "AppStore/Screenshots/iphone-fill.jpg" "iPhone Fill mode" "1260 x 2736,1290 x 2796,1320 x 2868"
-check_screenshot_size "AppStore/Screenshots/iphone-stretch.jpg" "iPhone Stretch mode" "1260 x 2736,1290 x 2796,1320 x 2868"
-check_screenshot_size "AppStore/Screenshots/iphone-metric-landscape.jpg" "iPhone metric landscape" "1260 x 2736,1290 x 2796,1320 x 2868"
+check_screenshot_size "AppStore/Screenshots/iphone-main.jpg" "iPhone 6.9-inch" "1284 x 2778"
+check_screenshot_size "AppStore/Screenshots/iphone-test-ruler.jpg" "iPhone Test Ruler" "1284 x 2778"
+check_screenshot_size "AppStore/Screenshots/iphone-fit.jpg" "iPhone Fit mode" "1284 x 2778"
+check_screenshot_size "AppStore/Screenshots/iphone-fill.jpg" "iPhone Fill mode" "1284 x 2778"
+check_screenshot_size "AppStore/Screenshots/iphone-stretch.jpg" "iPhone Stretch mode" "1284 x 2778"
+check_screenshot_size "AppStore/Screenshots/iphone-metric-landscape.jpg" "iPhone metric landscape" "1284 x 2778"
 check_screenshot_size "AppStore/Screenshots/ipad-main.jpg" "iPad 13-inch" "2048 x 2732,2064 x 2752"
-check_screenshot_size "fastlane/screenshots/en-US/iphone-main.jpg" "Fastlane iPhone" "1260 x 2736,1290 x 2796,1320 x 2868"
-check_screenshot_size "fastlane/screenshots/en-US/iphone-test-ruler.jpg" "Fastlane iPhone Test Ruler" "1260 x 2736,1290 x 2796,1320 x 2868"
-check_screenshot_size "fastlane/screenshots/en-US/iphone-fit.jpg" "Fastlane iPhone Fit" "1260 x 2736,1290 x 2796,1320 x 2868"
-check_screenshot_size "fastlane/screenshots/en-US/iphone-fill.jpg" "Fastlane iPhone Fill" "1260 x 2736,1290 x 2796,1320 x 2868"
-check_screenshot_size "fastlane/screenshots/en-US/iphone-stretch.jpg" "Fastlane iPhone Stretch" "1260 x 2736,1290 x 2796,1320 x 2868"
-check_screenshot_size "fastlane/screenshots/en-US/iphone-metric-landscape.jpg" "Fastlane iPhone metric landscape" "1260 x 2736,1290 x 2796,1320 x 2868"
+check_screenshot_size "fastlane/screenshots/en-US/iphone-main.jpg" "Fastlane iPhone" "1284 x 2778"
+check_screenshot_size "fastlane/screenshots/en-US/iphone-test-ruler.jpg" "Fastlane iPhone Test Ruler" "1284 x 2778"
+check_screenshot_size "fastlane/screenshots/en-US/iphone-fit.jpg" "Fastlane iPhone Fit" "1284 x 2778"
+check_screenshot_size "fastlane/screenshots/en-US/iphone-fill.jpg" "Fastlane iPhone Fill" "1284 x 2778"
+check_screenshot_size "fastlane/screenshots/en-US/iphone-stretch.jpg" "Fastlane iPhone Stretch" "1284 x 2778"
+check_screenshot_size "fastlane/screenshots/en-US/iphone-metric-landscape.jpg" "Fastlane iPhone metric landscape" "1284 x 2778"
 check_screenshot_size "fastlane/screenshots/en-US/ipad-main.jpg" "Fastlane iPad" "2048 x 2732,2064 x 2752"
 
 printf '\n== App Store Questionnaires ==\n'

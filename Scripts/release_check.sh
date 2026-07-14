@@ -4612,14 +4612,14 @@ if [[ -x "Scripts/validate_screenshot_manifest_integrity.sh" ]]; then
   screenshot_manifest_sha="$(shasum -a 256 "$screenshot_manifest_packet/files/AppStore/Screenshots/iphone-main.jpg" | awk '{ print $1 }')"
   {
     printf 'path\twidth\theight\thasAlpha\tsha256\n'
-    printf 'AppStore/Screenshots/iphone-main.jpg\t1320\t2868\tno\t%s\n' "$screenshot_manifest_sha"
+    printf 'AppStore/Screenshots/iphone-main.jpg\t1284\t2778\tno\t%s\n' "$screenshot_manifest_sha"
   } >"$screenshot_manifest_packet/screenshots.tsv"
   if ! Scripts/validate_screenshot_manifest_integrity.sh "$screenshot_manifest_packet" >"$screenshot_manifest_log" 2>&1; then
     printf 'FAIL: Screenshot manifest integrity validator must accept matching dimensions and sha256 checksums\n'
     cat "$screenshot_manifest_log"
     failures=$((failures + 1))
   fi
-  perl -0pi -e 's/AppStore\/Screenshots\/iphone-main\.jpg\t1320\t2868/AppStore\/Screenshots\/iphone-main.jpg\t1321\t2868/' "$screenshot_manifest_packet/screenshots.tsv"
+  perl -0pi -e 's/AppStore\/Screenshots\/iphone-main\.jpg\t1284\t2778/AppStore\/Screenshots\/iphone-main.jpg\t1285\t2778/' "$screenshot_manifest_packet/screenshots.tsv"
   if Scripts/validate_screenshot_manifest_integrity.sh "$screenshot_manifest_packet" >"$screenshot_manifest_log" 2>&1; then
     printf 'FAIL: Screenshot manifest integrity validator must reject screenshot dimension mismatches\n'
     failures=$((failures + 1))
